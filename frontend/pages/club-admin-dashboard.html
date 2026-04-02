@@ -294,6 +294,19 @@
             document.getElementById('club-preview-text').textContent = `社團：${name}｜社課時間：${time}｜地點：${loc}｜信箱：${mail}｜介紹：${desc.slice(0, 40)}${desc.length > 40 ? '...' : ''}`;
         }
 
+        function translateStatus(status) {
+            const statusMap = {
+                'active': '進行中',
+                'published': '已發布',
+                'ongoing': '進行中',
+                'draft': '草稿',
+                'completed': '已結束',
+                'archived': '已歸檔',
+                'inactive': '停止中'
+            };
+            return statusMap[status] || status || '-';
+        }
+
         function renderEmptyState(container, title, description) {
             container.innerHTML = `
                 <div class="empty-state">
@@ -316,7 +329,7 @@
                     <div class="admin-item-head">
                         <div>
                             <h4>${club.club_name}</h4>
-                            <span class="status-chip">${club.activity_status || '-'}</span>
+                            <span class="status-chip">${translateStatus(club.activity_status)}</span>
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="loadClubDetails(${club.club_id})">管理社團</button>
                     </div>
@@ -380,7 +393,7 @@
                         <div>
                             <h4>${event.event_name}</h4>
                             <div class="admin-item-badges">
-                                <span class="status-chip">${event.event_status || '-'}</span>
+                                <span class="status-chip">${translateStatus(event.event_status)}</span>
                             </div>
                         </div>
                         <button class="btn btn-secondary btn-sm" onclick="editEvent(${event.event_id})">編輯</button>
