@@ -98,13 +98,14 @@
             <div class="admin-form-wrapper">
                 <form id="club-admin-assignment-form" class="admin-form-grid">
                     <div class="form-field">
-                        <label for="club-admin-club-id">社團 ID <span class="required">*</span></label>
-                        <input type="number" id="club-admin-club-id" required />
+                        <label for="club-admin-club-id">社團 <span class="required">*</span></label>
+                        <select id="club-admin-club-id" required></select>
                         <div id="err-club-admin-club-id" class="field-error"></div>
                     </div>
                     <div class="form-field">
                         <label for="club-admin-user-key">帳號識別碼 <span class="required">*</span></label>
-                        <input type="text" id="club-admin-user-key" required placeholder="user ID / email / 學號" />
+                        <input type="text" id="club-admin-user-key" required placeholder="user ID / email / 學號" list="club-admin-user-options" />
+                        <datalist id="club-admin-user-options"></datalist>
                         <div id="err-club-admin-user-key" class="field-error"></div>
                     </div>
                     <div class="form-field">
@@ -354,15 +355,36 @@
             `;
         }
 
+        function renderClubAdminClubOptions() {
+            const select = document.getElementById('club-admin-club-id');
+            if (!select) return;
+            const options = clubsState.rows
+                .slice()
+                .sort((a, b) => compareByValue(a.club_code, b.club_code, 'asc'))
+                .map(club => `<option value="${club.club_id}">${club.club_code} ${club.club_name}</option>`)
+                .join('');
+            select.innerHTML = `<option value="">請選擇社團</option>${options}`;
+        }
+
+        function renderClubAdminUserOptions() {
+            const datalist = document.getElementById('club-admin-user-options');
+            if (!datalist) return;
+            datalist.innerHTML = usersState.rows
+                .slice()
+                .sort((a, b) => compareByValue(a.name, b.name, 'asc'))
+                .map(user => `<option value="${user.user_id}">${user.name || '-'}｜${user.email || '-'}｜${user.student_id || '-'}</option>`)
+                .join('');
+        }
+
         function clubAdminRoleLabel(role) {
-            return USER_ROLE_LABELS.club_admin && {
+            return ({
                 president: '社長',
                 vice_president: '副社長',
                 public_relations: '公關',
                 treasurer: '總務',
                 director: '幹事',
                 member: '一般成員'
-            }[role] || role || '-';
+            })[role] || role || '-';
         }
 
         function getFilteredClubAdminAssignments() {
@@ -428,6 +450,7 @@
                     document.getElementById('club-admin-user-key').value = btn.dataset.userKey;
                     document.getElementById('club-admin-role').value = btn.dataset.role;
                     document.getElementById('club-admin-active').value = btn.dataset.active;
+                    document.getElementById('club-admin-assignment-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
                 });
             });
 
@@ -473,6 +496,7 @@
             if (!response.success) return console.error(response.message);
             usersState.rows = response.data.users || [];
             document.getElementById('stat-users').textContent = usersState.rows.length;
+            renderClubAdminUserOptions();
             renderUsersTable();
         }
 
@@ -481,6 +505,7 @@
             if (!response.success) return console.error(response.message);
             clubsState.rows = response.data.clubs || [];
             document.getElementById('stat-clubs').textContent = clubsState.rows.length;
+            renderClubAdminClubOptions();
             renderClubsTable();
         }
 
@@ -886,6 +911,8 @@
             if (response.success) {
                 PageUtils.showAlert('幹部資格已更新', 'success');
                 event.target.reset();
+                renderClubAdminClubOptions();
+                renderClubAdminUserOptions();
                 loadClubAdminAssignments();
                 loadUsers();
             } else {
