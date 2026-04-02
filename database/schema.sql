@@ -345,6 +345,25 @@ CREATE TABLE account_transfers (
     FOREIGN KEY (transferred_by) REFERENCES users(user_id)
 );
 
+-- 帳戶轉讓申請表（由社團幹部提出，待管理員審核）
+CREATE TABLE account_transfer_requests (
+    request_id INT PRIMARY KEY AUTO_INCREMENT,
+    club_id INT NOT NULL,
+    requester_user_id INT NOT NULL,
+    target_user_id INT NOT NULL,
+    reason TEXT NOT NULL,
+    handover_note TEXT,
+    request_status ENUM('pending', 'approved', 'rejected', 'cancelled') DEFAULT 'pending',
+    reviewed_by INT,
+    review_note TEXT,
+    requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at DATETIME,
+    FOREIGN KEY (club_id) REFERENCES clubs(club_id),
+    FOREIGN KEY (requester_user_id) REFERENCES users(user_id),
+    FOREIGN KEY (target_user_id) REFERENCES users(user_id),
+    FOREIGN KEY (reviewed_by) REFERENCES users(user_id)
+);
+
 -- 參與證明表
 CREATE TABLE participation_certificates (
     certificate_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -396,6 +415,7 @@ CREATE INDEX idx_reports_status ON reports(status);
 CREATE INDEX idx_activity_logs_club ON activity_logs(club_id);
 CREATE INDEX idx_clubs_deleted_at ON clubs(deleted_at);
 CREATE INDEX idx_notifications_user_created ON notifications(user_id, created_at);
+CREATE INDEX idx_transfer_requests_status_time ON account_transfer_requests(request_status, requested_at);
 
 -- ============ 初始化基本分類與標籤 ============
 

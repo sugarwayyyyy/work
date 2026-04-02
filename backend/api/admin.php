@@ -7,6 +7,28 @@ require_once '../auth.php';
 
 class AdminAPI {
 
+    private static function syncUserRoleByClubAdminMembership($user_id) {
+        $activeAdminMembership = Database::getInstance()->fetchOne(
+            'SELECT 1
+             FROM club_members
+             WHERE user_id = ?
+               AND is_active = 1
+               AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")
+             LIMIT 1',
+            [$user_id]
+        );
+
+        if ($activeAdminMembership) {
+            dbUpdate('users', ['role' => 'club_admin'], 'user_id = ?', [$user_id]);
+            return;
+        }
+
+        $user = Database::getInstance()->fetchOne('SELECT role FROM users WHERE user_id = ?', [$user_id]);
+        if ($user && $user['role'] !== 'platform_admin') {
+            dbUpdate('users', ['role' => 'student'], 'user_id = ?', [$user_id]);
+        }
+    }
+
     private static function notifyAllUsersForAnnouncement($announcement_id, $title) {
         $users = Database::getInstance()->fetchAll('SELECT user_id FROM users WHERE is_active = 1');
         foreach ($users as $user) {
@@ -239,11 +261,159 @@ class AdminAPI {
         Helper::success('帳戶轉讓成功');
     }
 
+    public static function getTransferRequests() {
+        self::requireAdmin();
+        $requests = Database::getInstance()->fetchAll(
+            'SELECT r.request_id, r.club_id, c.club_code, c.club_name,
+                    r.requester_user_id, ru.name AS requester_name, ru.student_id AS requester_student_id, ru.email AS requester_email,
+                    r.target_user_id, tu.name AS target_name, tu.student_id AS target_student_id, tu.email AS target_email,
+                    r.reason, r.handover_note, r.request_status, r.review_note,
+                    r.requested_at, r.reviewed_at,
+                    r.reviewed_by, rv.name AS reviewed_by_name
+             FROM account_transfer_requests r
+             JOIN clubs c ON r.club_id = c.club_id
+             JOIN users ru ON r.requester_user_id = ru.user_id
+             JOIN users tu ON r.target_user_id = tu.user_id
+             LEFT JOIN users rv ON r.reviewed_by = rv.user_id
+             ORDER BY (r.request_status = "pending") DESC, r.requested_at DESC'
+        );
+
+        Helper::success('取得轉讓申請佇列成功', ['requests' => $requests]);
+    }
+
+    public static function reviewTransferRequest($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['request_id', 'decision']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $request_id = (int)$data['request_id'];
+        $decision = trim($data['decision']);
+        $review_note = trim($data['review_note'] ?? '');
+        $admin_user_id = Auth::getCurrentUser()['user_id'];
+
+        if (!in_array($decision, ['approved', 'rejected'], true)) {
+            Helper::error('decision 必須為 approved 或 rejected', 400);
+        }
+
+        $request = Database::getInstance()->fetchOne(
+            'SELECT request_id, club_id, requester_user_id, target_user_id, reason, handover_note, request_status
+             FROM account_transfer_requests
+             WHERE request_id = ?',
+            [$request_id]
+        );
+        if (!$request) Helper::error('找不到申請單', 404);
+        if ($request['request_status'] !== 'pending') {
+            Helper::error('此申請單已處理，無法重複審核', 409);
+        }
+
+        if ($decision === 'rejected' && $review_note === '') {
+            Helper::error('退回申請時請填寫審核意見', 400);
+        }
+
+        $db = Database::getInstance();
+
+        try {
+            $db->beginTransaction();
+
+            if ($decision === 'approved') {
+                $requesterMember = $db->fetchOne(
+                    'SELECT member_id FROM club_members
+                     WHERE club_id = ? AND user_id = ? AND is_active = 1
+                     LIMIT 1',
+                    [$request['club_id'], $request['requester_user_id']]
+                );
+                if (!$requesterMember) {
+                    throw new Exception('申請者目前已不在該社團幹部名單中，無法核准');
+                }
+
+                $targetMember = $db->fetchOne(
+                    'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? LIMIT 1',
+                    [$request['club_id'], $request['target_user_id']]
+                );
+
+                if ($targetMember) {
+                    dbUpdate('club_members', [
+                        'role' => 'president',
+                        'is_active' => 1
+                    ], 'member_id = ?', [$targetMember['member_id']]);
+                } else {
+                    dbInsert('club_members', [
+                        'club_id' => $request['club_id'],
+                        'user_id' => $request['target_user_id'],
+                        'role' => 'president',
+                        'is_active' => 1,
+                        'join_date' => date('Y-m-d H:i:s')
+                    ]);
+                }
+
+                dbUpdate('club_members', [
+                    'role' => 'member'
+                ], 'club_id = ? AND user_id = ?', [$request['club_id'], $request['requester_user_id']]);
+
+                self::syncUserRoleByClubAdminMembership($request['requester_user_id']);
+                dbUpdate('users', ['role' => 'club_admin'], 'user_id = ?', [$request['target_user_id']]);
+
+                dbInsert('account_transfers', [
+                    'club_id' => $request['club_id'],
+                    'from_user_id' => $request['requester_user_id'],
+                    'to_user_id' => $request['target_user_id'],
+                    'transferred_roles' => json_encode([
+                        'source' => 'request_review',
+                        'request_id' => $request_id,
+                        'handover_note' => $request['handover_note']
+                    ], JSON_UNESCAPED_UNICODE),
+                    'transferred_at' => date('Y-m-d H:i:s'),
+                    'transferred_by' => $admin_user_id,
+                    'reason' => $request['reason']
+                ]);
+            }
+
+            dbUpdate('account_transfer_requests', [
+                'request_status' => $decision,
+                'review_note' => $review_note,
+                'reviewed_by' => $admin_user_id,
+                'reviewed_at' => date('Y-m-d H:i:s')
+            ], 'request_id = ?', [$request_id]);
+
+            dbInsert('notifications', [
+                'user_id' => $request['requester_user_id'],
+                'title' => '帳戶轉讓申請審核結果',
+                'message' => $decision === 'approved' ? '你的社團帳戶轉讓申請已通過。' : '你的社團帳戶轉讓申請被退回：' . $review_note,
+                'notification_type' => 'system',
+                'related_type' => 'club',
+                'related_id' => $request['club_id'],
+                'is_read' => 0,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+
+            if ($decision === 'approved') {
+                dbInsert('notifications', [
+                    'user_id' => $request['target_user_id'],
+                    'title' => '你已成為社團幹部',
+                    'message' => '你的社團幹部權限轉讓申請已核准，請登入後確認社團管理頁。',
+                    'notification_type' => 'system',
+                    'related_type' => 'club',
+                    'related_id' => $request['club_id'],
+                    'is_read' => 0,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            $db->commit();
+        } catch (Exception $e) {
+            $db->rollback();
+            Helper::error('審核失敗：' . $e->getMessage(), 500);
+        }
+
+        Helper::success($decision === 'approved' ? '已核准帳戶轉讓申請' : '已退回帳戶轉讓申請');
+    }
+
     public static function getTransferHistory() {
         self::requireAdmin();
         $transfers = Database::getInstance()->fetchAll('
-            SELECT at.*, u1.name as from_user_name, u2.name as to_user_name, u3.name as admin_name
+            SELECT at.*, c.club_code, c.club_name, u1.name as from_user_name, u2.name as to_user_name, u3.name as admin_name
             FROM account_transfers at
+            LEFT JOIN clubs c ON at.club_id = c.club_id
             JOIN users u1 ON at.from_user_id = u1.user_id
             JOIN users u2 ON at.to_user_id = u2.user_id
             JOIN users u3 ON at.transferred_by = u3.user_id
@@ -270,6 +440,8 @@ if ($method === 'GET') {
         AdminAPI::getAnnouncements();
     } elseif ($action === 'transfer_history') {
         AdminAPI::getTransferHistory();
+    } elseif ($action === 'transfer_requests') {
+        AdminAPI::getTransferRequests();
     }
 }
 
@@ -289,6 +461,8 @@ if ($method === 'POST') {
         AdminAPI::createAnnouncement($data);
     } elseif ($action === 'transfer_account') {
         AdminAPI::transferAccount($data);
+    } elseif ($action === 'review_transfer_request') {
+        AdminAPI::reviewTransferRequest($data);
     }
 }
 

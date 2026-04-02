@@ -14,6 +14,7 @@
                 <li><a href="../index.html">首頁</a></li>
                 <li><a href="club-list.html">社團</a></li>
                 <li><a href="events.html">活動</a></li>
+                <li><a href="qa.html">提問</a></li>
             </ul>
             <div class="nav-right">
                 <span id="user-dropdown" style="display: none;"></span>
@@ -53,6 +54,39 @@
                     <span class="admin-panel-subtext">選擇管理的社團</span>
                 </div>
                 <div id="my-clubs-container" class="club-admin-clubs"></div>
+            </section>
+
+            <section class="card admin-panel reveal-up" id="transfer-request-section" style="display: none;">
+                <div class="admin-panel-head">
+                    <h2>帳戶轉讓申請</h2>
+                    <span class="admin-panel-subtext" id="transfer-request-subtitle">由社團幹部提出，送行政端審核</span>
+                </div>
+                <div class="admin-form-wrapper">
+                    <form id="transfer-request-form" class="admin-form-grid">
+                        <div class="form-field">
+                            <label for="transfer-target-user-id">目標用戶 ID <span class="required">*</span></label>
+                            <input type="number" id="transfer-target-user-id" required>
+                            <div id="err-transfer-target-user-id" class="field-error"></div>
+                        </div>
+                        <div class="form-field">
+                            <label for="transfer-target-student-id">目標學號（選填）</label>
+                            <input type="text" id="transfer-target-student-id" placeholder="例如：A123456789">
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label for="transfer-request-reason">轉讓原因 <span class="required">*</span></label>
+                            <textarea id="transfer-request-reason" required style="min-height: 100px;"></textarea>
+                            <div id="err-transfer-request-reason" class="field-error"></div>
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label for="transfer-request-note">補充說明（選填）</label>
+                            <textarea id="transfer-request-note" style="min-height: 80px;" placeholder="例如：交接時間、附件位置、備註事項"></textarea>
+                        </div>
+                        <div class="form-actions admin-span-2">
+                            <button type="submit" class="btn btn-primary">送出轉讓申請</button>
+                        </div>
+                    </form>
+                </div>
+                <div id="my-transfer-requests" class="admin-list"></div>
             </section>
 
             <section class="card admin-panel reveal-up" id="club-management-section" style="display: none;">
@@ -317,6 +351,47 @@
             `;
         }
 
+        function transferStatusLabel(status) {
+            const map = {
+                pending: '待審核',
+                approved: '已核准',
+                rejected: '已退回',
+                cancelled: '已取消'
+            };
+            return map[status] || status || '-';
+        }
+
+        async function loadMyTransferRequests() {
+            const response = await APIClient.get('club-admin.php?action=my_transfer_requests');
+            if (!response.success) return console.error(response.message);
+            const container = document.getElementById('my-transfer-requests');
+            if (!container) return;
+            container.innerHTML = '';
+            const rows = response.data.requests || [];
+            if (rows.length === 0) {
+                renderEmptyState(container, '尚未送出轉讓申請', '送出後，行政端審核進度會顯示在這裡。');
+                return;
+            }
+            rows.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head">
+                        <h4>${item.club_name || '-'}（${item.club_code || '-'}）</h4>
+                        <span class="status-chip">${transferStatusLabel(item.request_status)}</span>
+                    </div>
+                    <p class="admin-item-content">目標對象：${item.target_user_name || '-'}（ID:${item.target_user_id} / 學號:${item.target_student_id || '-' }）</p>
+                    <p class="admin-item-content">原因：${item.reason || '-'}</p>
+                    ${item.review_note ? `<p class="admin-item-content">審核意見：${item.review_note}</p>` : ''}
+                    <div class="admin-item-footer">
+                        <span class="admin-item-time">送出時間：${formatDateTime(item.requested_at)}</span>
+                        <span class="admin-item-time">審核時間：${formatDateTime(item.reviewed_at)}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
         async function loadMyClubs() {
             const response = await APIClient.get('club-admin.php?action=my_clubs');
             if (!response.success) return console.error(response.message);
@@ -362,6 +437,8 @@
             document.getElementById('update-club-fee').value = club.club_fee || '';
             document.getElementById('create-event-submit').disabled = false;
             document.getElementById('create-event-hint').textContent = `目前建立活動目標社團：${club.club_name || ''}`;
+            document.getElementById('transfer-request-section').style.display = 'block';
+            document.getElementById('transfer-request-subtitle').textContent = `目前申請社團：${club.club_name || ''}（${club.club_code || '-'}）`;
             refreshClubPreview();
 
             const logoImg = document.getElementById('club-logo-img');
@@ -647,12 +724,46 @@
             }
         });
 
+        document.getElementById('transfer-request-form').addEventListener('submit', async event => {
+            event.preventDefault();
+            if (!currentClubId) {
+                PageUtils.showAlert('請先選擇要管理的社團', 'error');
+                return;
+            }
+
+            const targetUserId = document.getElementById('transfer-target-user-id').value.trim();
+            const reason = document.getElementById('transfer-request-reason').value.trim();
+            const studentId = document.getElementById('transfer-target-student-id').value.trim();
+            const note = document.getElementById('transfer-request-note').value.trim();
+
+            setFieldError('transfer-target-user-id', targetUserId ? '' : '此為必填欄位');
+            setFieldError('transfer-request-reason', reason ? '' : '此為必填欄位');
+            if (!targetUserId || !reason) return;
+
+            const payload = {
+                club_id: currentClubId,
+                target_user_id: Number(targetUserId),
+                reason,
+                handover_note: [studentId ? `目標學號：${studentId}` : '', note].filter(Boolean).join('｜')
+            };
+
+            const response = await APIClient.post('club-admin.php?action=submit_transfer_request', payload);
+            if (response.success) {
+                PageUtils.showAlert('轉讓申請已送出，請等待行政端審核', 'success');
+                event.target.reset();
+                loadMyTransferRequests();
+            } else {
+                PageUtils.showAlert('送出申請失敗：' + response.message, 'error');
+            }
+        });
+
         ['update-club-name', 'update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', refreshClubPreview);
         });
 
         loadMyClubs();
+        loadMyTransferRequests();
     </script>
 </body>
 </html>

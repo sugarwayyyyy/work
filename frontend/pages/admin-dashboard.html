@@ -213,27 +213,11 @@
 
         <section class="card admin-panel reveal-up">
             <div class="admin-panel-head">
-                <h2>帳戶轉讓</h2>
-                <span class="admin-panel-subtext">記錄管理者帳戶權限交接</span>
+                <h2>帳戶轉讓審核</h2>
+                <span class="admin-panel-subtext">由社團幹部提出申請，管理端核對後核准/退回</span>
             </div>
             <div id="account-transfer-section">
-                <form id="transfer-account-form" class="admin-form-grid">
-                    <div class="form-field">
-                        <label for="from-user-id">原帳戶用戶 ID</label>
-                        <input type="number" id="from-user-id" required />
-                    </div>
-                    <div class="form-field">
-                        <label for="to-user-id">目標帳戶用戶 ID</label>
-                        <input type="number" id="to-user-id" required />
-                    </div>
-                    <div class="form-field admin-span-2">
-                        <label for="transfer-reason">轉讓原因</label>
-                        <textarea id="transfer-reason" required></textarea>
-                    </div>
-                    <div class="form-actions admin-span-2">
-                        <button type="submit" class="btn btn-primary">執行轉讓</button>
-                    </div>
-                </form>
+                <div id="transfer-requests" class="admin-list"></div>
                 <div id="transfer-history" class="admin-list"></div>
             </div>
         </section>
@@ -386,6 +370,7 @@
                         <h4>帳戶轉讓紀錄</h4>
                         <span class="status-chip chip-warning">${formatDateTime(transfer.transferred_at)}</span>
                     </div>
+                    <p class="admin-item-content">社團：${transfer.club_name || '-'}（${transfer.club_code || '-'}）</p>
                     <p class="admin-item-content">從用戶 ${transfer.from_user_name} (${transfer.from_user_id}) 轉讓到用戶 ${transfer.to_user_name} (${transfer.to_user_id})</p>
                     <div class="admin-item-footer">
                         <span class="admin-item-time">操作者：${transfer.admin_name || '-'}</span>
@@ -394,6 +379,83 @@
                 `;
                 container.appendChild(card);
             });
+        }
+
+        function transferRequestStatusLabel(status) {
+            const map = { pending: '待審核', approved: '已核准', rejected: '已退回', cancelled: '已取消' };
+            return map[status] || status || '-';
+        }
+
+        async function loadTransferRequests() {
+            const response = await APIClient.get('admin.php?action=transfer_requests');
+            if (!response.success) return console.error(response.message);
+            const rows = response.data.requests || [];
+            const container = document.getElementById('transfer-requests');
+            container.innerHTML = '';
+
+            if (rows.length === 0) {
+                renderEmptyState(container, '目前沒有待審核申請', '社團幹部送出申請後，會顯示在這裡。');
+                return;
+            }
+
+            rows.forEach(item => {
+                const isPending = item.request_status === 'pending';
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head">
+                        <h4>${item.club_name || '-'}（${item.club_code || '-'}）</h4>
+                        <span class="status-chip ${isPending ? 'chip-warning' : 'chip-success'}">${transferRequestStatusLabel(item.request_status)}</span>
+                    </div>
+                    <p class="admin-item-content">轉讓者：${item.requester_name || '-'}（ID:${item.requester_user_id} / 學號:${item.requester_student_id || '-'}）</p>
+                    <p class="admin-item-content">目標者：${item.target_name || '-'}（ID:${item.target_user_id} / 學號:${item.target_student_id || '-'}）</p>
+                    <p class="admin-item-content">轉讓原因：${item.reason || '-'}</p>
+                    ${item.handover_note ? `<p class="admin-item-content">補充：${item.handover_note}</p>` : ''}
+                    ${item.review_note ? `<p class="admin-item-content">審核意見：${item.review_note}</p>` : ''}
+                    <div class="admin-item-footer">
+                        <span class="admin-item-time">送出：${formatDateTime(item.requested_at)}</span>
+                        <span class="admin-item-time">審核者：${item.reviewed_by_name || '-'}</span>
+                    </div>
+                    ${isPending ? `
+                        <div class="row-actions" style="margin-top: 12px;">
+                            <button class="btn btn-primary btn-sm" data-transfer-approve="${item.request_id}">核准</button>
+                            <button class="btn btn-secondary btn-sm" data-transfer-reject="${item.request_id}">退回</button>
+                        </div>
+                    ` : ''}
+                `;
+                container.appendChild(card);
+            });
+
+            container.querySelectorAll('button[data-transfer-approve]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('確認核准此帳戶轉讓申請？核准後會立即生效。')) return;
+                    await reviewTransferRequest(btn.dataset.transferApprove, 'approved', '');
+                });
+            });
+
+            container.querySelectorAll('button[data-transfer-reject]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const note = prompt('請輸入退回原因（必填）');
+                    if (!note || !note.trim()) return;
+                    await reviewTransferRequest(btn.dataset.transferReject, 'rejected', note.trim());
+                });
+            });
+        }
+
+        async function reviewTransferRequest(requestId, decision, reviewNote) {
+            const response = await APIClient.post('admin.php?action=review_transfer_request', {
+                request_id: Number(requestId),
+                decision,
+                review_note: reviewNote
+            });
+
+            if (response.success) {
+                PageUtils.showAlert(decision === 'approved' ? '已核准轉讓申請' : '已退回轉讓申請', 'success');
+                loadTransferRequests();
+                loadTransferHistory();
+            } else {
+                PageUtils.showAlert('審核失敗：' + response.message, 'error');
+            }
         }
 
         async function loadEventReports() {
@@ -683,22 +745,10 @@
             }
         });
 
-        document.getElementById('transfer-account-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            const payload = { from_user_id: document.getElementById('from-user-id').value, to_user_id: document.getElementById('to-user-id').value, reason: document.getElementById('transfer-reason').value };
-            const response = await APIClient.post('admin.php?action=transfer_account', payload);
-            if (response.success) {
-                PageUtils.showAlert('帳戶轉讓成功', 'success');
-                event.target.reset();
-                loadTransferHistory();
-            } else {
-                PageUtils.showAlert('帳戶轉讓失敗：' + response.message, 'error');
-            }
-        });
-
         loadUsers();
         loadClubs();
         loadAnnouncements();
+        loadTransferRequests();
         loadTransferHistory();
     </script>
 </body>
