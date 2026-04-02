@@ -57,6 +57,104 @@ class AdminAPI {
         Helper::success('取得用戶列表成功', ['users' => $users]);
     }
 
+    public static function getClubAdminAssignments() {
+        self::requireAdmin();
+        $assignments = Database::getInstance()->fetchAll('
+            SELECT
+                cm.member_id,
+                cm.club_id,
+                c.club_code,
+                c.club_name,
+                cm.user_id,
+                u.name AS user_name,
+                u.email AS user_email,
+                u.student_id AS user_student_id,
+                cm.role,
+                cm.is_active,
+                cm.join_date
+            FROM club_members cm
+            JOIN clubs c ON c.club_id = cm.club_id
+            JOIN users u ON u.user_id = cm.user_id
+            WHERE cm.role IN ("president", "vice_president", "public_relations", "treasurer", "director")
+            ORDER BY c.club_code ASC, u.name ASC
+        ');
+
+        Helper::success('取得社團幹部名單成功', ['assignments' => $assignments]);
+    }
+
+    public static function upsertClubAdminAssignment($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['club_id', 'user_key', 'role']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $club_id = (int)$data['club_id'];
+        $user_key = trim($data['user_key']);
+        $role = in_array($data['role'], ['president', 'vice_president', 'public_relations', 'treasurer', 'director']) ? $data['role'] : 'member';
+        $is_active = isset($data['is_active']) ? (int)$data['is_active'] : 1;
+
+        $club = Database::getInstance()->fetchOne('SELECT club_id FROM clubs WHERE club_id = ?', [$club_id]);
+        if (!$club) Helper::error('社團不存在', 404);
+
+        $user = Database::getInstance()->fetchOne(
+            'SELECT user_id, role, is_active FROM users WHERE user_id = ? OR email = ? OR student_id = ?',
+            [$user_key, $user_key, $user_key]
+        );
+        if (!$user) Helper::error('找不到對應帳號', 404);
+
+        $member = Database::getInstance()->fetchOne(
+            'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ?',
+            [$club_id, $user['user_id']]
+        );
+
+        $memberData = [
+            'club_id' => $club_id,
+            'user_id' => (int)$user['user_id'],
+            'role' => $role,
+            'is_active' => $is_active,
+            'join_date' => date('Y-m-d H:i:s')
+        ];
+
+        if ($member) {
+            $result = dbUpdate('club_members', [
+                'role' => $role,
+                'is_active' => $is_active
+            ], 'member_id = ?', [$member['member_id']]);
+        } else {
+            $result = dbInsert('club_members', $memberData);
+        }
+
+        if (!$result) Helper::error('儲存幹部資格失敗', 500);
+
+        if ($is_active === 1 && in_array($role, ['president', 'vice_president', 'public_relations', 'treasurer', 'director'], true)) {
+            dbUpdate('users', ['role' => 'club_admin'], 'user_id = ?', [$user['user_id']]);
+        }
+
+        Helper::success($member ? '幹部資格已更新' : '幹部資格已新增');
+    }
+
+    public static function revokeClubAdminAssignment($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['member_id']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $member_id = (int)$data['member_id'];
+        $member = Database::getInstance()->fetchOne(
+            'SELECT member_id, club_id, user_id FROM club_members WHERE member_id = ?',
+            [$member_id]
+        );
+        if (!$member) Helper::error('找不到幹部資料', 404);
+
+        $result = dbUpdate('club_members', [
+            'role' => 'member',
+            'is_active' => 1
+        ], 'member_id = ?', [$member_id]);
+        if (!$result) Helper::error('撤銷幹部資格失敗', 500);
+
+        self::syncUserRoleByClubAdminMembership((int)$member['user_id']);
+
+        Helper::success('已撤銷幹部資格');
+    }
+
     public static function getClubs() {
         self::requireAdmin();
         $clubs = Database::getInstance()->fetchAll('SELECT club_id, club_code, club_name, category_id, activity_status, deleted_at, created_at FROM clubs ORDER BY created_at DESC');
@@ -432,6 +530,8 @@ if ($method === 'GET') {
         AdminAPI::getUsers();
     } elseif ($action === 'clubs') {
         AdminAPI::getClubs();
+    } elseif ($action === 'club_admin_assignments') {
+        AdminAPI::getClubAdminAssignments();
     } elseif ($action === 'event_reports') {
         AdminAPI::getEventReports();
     } elseif ($action === 'user_feedback') {
@@ -449,6 +549,10 @@ if ($method === 'POST') {
     $data = Helper::getJsonInput() ?? $_POST;
     if ($action === 'update_user_role') {
         AdminAPI::updateUserRole($data);
+    } elseif ($action === 'upsert_club_admin_assignment') {
+        AdminAPI::upsertClubAdminAssignment($data);
+    } elseif ($action === 'revoke_club_admin_assignment') {
+        AdminAPI::revokeClubAdminAssignment($data);
     } elseif ($action === 'update_club_status') {
         AdminAPI::updateClubStatus($data);
     } elseif ($action === 'create_club') {
