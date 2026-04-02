@@ -103,9 +103,10 @@
                         <div id="err-club-admin-club-id" class="field-error"></div>
                     </div>
                     <div class="form-field">
-                        <label for="club-admin-user-key">帳號識別碼 <span class="required">*</span></label>
-                        <input type="text" id="club-admin-user-key" required placeholder="user ID / email / 學號" list="club-admin-user-options" />
-                        <datalist id="club-admin-user-options"></datalist>
+                        <label for="club-admin-user-key">幹部帳號 <span class="required">*</span></label>
+                        <select id="club-admin-user-key" required disabled>
+                            <option value="">請先選擇社團</option>
+                        </select>
                         <div id="err-club-admin-user-key" class="field-error"></div>
                     </div>
                     <div class="form-field">
@@ -371,11 +372,12 @@
         }
 
         function renderClubAdminUserOptions() {
-            const datalist = document.getElementById('club-admin-user-options');
-            if (!datalist) return;
+            const select = document.getElementById('club-admin-user-key');
+            if (!select) return;
             const selectedClubId = document.getElementById('club-admin-club-id')?.value || '';
             const clubAdmins = clubAdminAssignmentsState.rows.filter(item => String(item.club_id) === String(selectedClubId));
-            datalist.innerHTML = clubAdmins
+            select.disabled = !selectedClubId;
+            select.innerHTML = `<option value="">${selectedClubId ? '請選擇幹部帳號' : '請先選擇社團'}</option>` + clubAdmins
                 .slice()
                 .sort((a, b) => compareByValue(a.user_name, b.user_name, 'asc'))
                 .map(user => `<option value="${user.user_id}">${user.user_name || '-'}｜${user.user_email || '-'}｜${user.user_student_id || '-'}</option>`)
