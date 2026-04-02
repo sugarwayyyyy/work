@@ -404,6 +404,55 @@ class EventAPI {
             Helper::error('報名失敗: ' . $e->getMessage(), 500);
         }
     }
+
+    /**
+     * 取消報名
+     * POST /api/events.php?action=unregister
+     */
+    public static function cancelRegistration($event_id) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        if (!$event_id) {
+            Helper::error('缺少活動ID', 400);
+        }
+
+        try {
+            $event = Database::getInstance()->fetchOne(
+                'SELECT event_id FROM events WHERE event_id = ?',
+                [$event_id]
+            );
+
+            if (!$event) {
+                Helper::error('活動不存在', 404);
+            }
+
+            $existing = Database::getInstance()->fetchOne(
+                'SELECT registration_id FROM event_registrations WHERE event_id = ? AND user_id = ?',
+                [$event_id, Auth::getCurrentUserId()]
+            );
+
+            if (!$existing) {
+                Helper::error('您尚未報名此活動', 400);
+            }
+
+            $deleted = dbDelete(
+                'event_registrations',
+                'event_id = ? AND user_id = ?',
+                [$event_id, Auth::getCurrentUserId()]
+            );
+
+            if (!$deleted) {
+                Helper::error('取消報名失敗', 500);
+            }
+
+            Helper::success('取消報名成功');
+
+        } catch (Exception $e) {
+            Helper::error('取消報名失敗: ' . $e->getMessage(), 500);
+        }
+    }
     
     /**
      * 檢查報名狀態

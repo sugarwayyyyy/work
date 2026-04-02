@@ -9,7 +9,6 @@
 </head>
 
 <body>
-    <!-- 導航 -->
     <header>
         <nav>
             <a href="../index.html" class="logo">⚡ 社團平台</a>
@@ -30,7 +29,6 @@
     <div id="alert-container"></div>
 
     <div class="container">
-        <!-- 社團標題和追蹤按鈕 -->
         <div id="club-header" class="card" style="margin-bottom: 2rem;">
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
@@ -55,11 +53,8 @@
             </div>
         </div>
 
-        <!-- 社團信息 -->
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-            <!-- 左欄 -->
             <div>
-                <!-- 基本信息 -->
                 <div class="card" style="margin-bottom: 2rem;">
                     <h3>基本信息</h3>
                     <div style="display: flex; flex-direction: column; gap: 1rem;">
@@ -94,19 +89,16 @@
                     </div>
                 </div>
 
-                <!-- 社團描述 -->
                 <div class="card" style="margin-bottom: 2rem;">
                     <h3>社團簡介</h3>
                     <p id="club-description">-</p>
                 </div>
 
-                <!-- 標籤 -->
                 <div class="card" style="margin-bottom: 2rem;">
                     <h3>社團標籤</h3>
                     <div id="club-tags">-</div>
                 </div>
 
-                <!-- 近期活動 -->
                 <div class="card" style="margin-bottom: 2rem;">
                     <h3>近期活動</h3>
                     <div id="upcoming-events">
@@ -116,7 +108,6 @@
                     </div>
                 </div>
 
-                <!-- 評價 -->
                 <div class="card">
                     <h3>用戶評價</h3>
                     <div id="reviews-section">
@@ -127,15 +118,19 @@
                 </div>
             </div>
 
-            <!-- 右欄 - 側邊欄 -->
             <div>
-                <!-- 成員列表 -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3>社團 Logo</h3>
+                    <div style="display: flex; justify-content: center; align-items: center; min-height: 160px;">
+                        <img id="club-logo" src="" alt="社團 Logo" style="display: none; max-width: 100%; max-height: 220px; border-radius: 12px; object-fit: contain;">
+                    </div>
+                </div>
+
                 <div class="card" style="margin-bottom: 2rem;">
                     <h3>主要幹部</h3>
                     <div id="club-admins">-</div>
                 </div>
 
-                <!-- 發布評價 -->
                 <div class="card">
                     <h3>評價此社團</h3>
                     <button id="review-btn" class="btn btn-primary" style="width: 100%;" onclick="openReviewModal()">發布評價</button>
@@ -144,7 +139,6 @@
         </div>
     </div>
 
-    <!-- 評價 Modal -->
     <div id="review-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
         <div class="card" style="max-width: 600px; width: 90%;">
             <h2>發布評價</h2>
@@ -186,7 +180,6 @@
         </div>
     </div>
 
-    <!-- 頁腳 -->
     <footer>
         <p>&copy; 2026 社團活動資訊統整平台</p>
     </footer>
@@ -222,7 +215,6 @@
                 return `${y}-${m}-${day}`;
             };
 
-            // 標題和成員信息
             document.getElementById('club-name').textContent = club.club_name;
             document.getElementById('club-category').textContent = club.category_id || '-';
             document.getElementById('club-fee').textContent = club.club_fee > 0 ? `$${club.club_fee}` : '免費';
@@ -236,15 +228,22 @@
             document.getElementById('avg-rating').textContent = (club.average_rating || 0).toFixed(1);
             document.getElementById('review-count').textContent = club.reviews_count || 0;
 
-            // 標籤
             const tagsHtml = club.tags.map(tag => `<span class="tag tag-primary">#${tag.tag_name}</span>`).join('');
             document.getElementById('club-tags').innerHTML = tagsHtml || '暫無標籤';
 
-            // 勳章
             const badgesHtml = `<span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>`;
             document.getElementById('club-badges').innerHTML = badgesHtml;
 
-            // 追蹤按鈕狀態
+            const logoImg = document.getElementById('club-logo');
+            if (club.logo_path) {
+                const logoPath = club.logo_path.replace(/^\.\//, '');
+                logoImg.src = logoPath.startsWith('http') ? logoPath : `../${logoPath}`;
+                logoImg.style.display = 'block';
+            } else {
+                logoImg.removeAttribute('src');
+                logoImg.style.display = 'none';
+            }
+
             const followBtn = document.getElementById('follow-btn');
             if (club.is_following) {
                 followBtn.textContent = '已追蹤';
@@ -252,13 +251,10 @@
                 followBtn.classList.add('btn-secondary');
             }
 
-            // 近期活動
             renderUpcomingEvents(club.upcoming_events || []);
 
-            // 評價
             renderReviews(club.reviews || []);
 
-            // 幹部列表
             renderAdmins(club.members || []);
         }
 

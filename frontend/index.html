@@ -9,7 +9,6 @@
 </head>
 
 <body>
-    <!-- 導航 -->
     <header>
         <nav>
             <a href="index.html" class="logo">⚡ 社團平台</a>
@@ -27,15 +26,12 @@
         </nav>
     </header>
 
-    <!-- 警告消息 -->
     <div id="alert-container"></div>
 
-    <!-- 英雄區域 -->
     <section class="hero">
         <h1>探索校園社團</h1>
         <p>輕鬆找到適合你的社團，參與校園活動，豐富大學生活</p>
 
-        <!-- 高级搜索 -->
         <div class="search-container" style="margin: 2rem 0; max-width: 600px; margin-left: auto; margin-right: auto;">
             <form id="advanced-search-form" style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 8px; backdrop-filter: blur(10px);">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
@@ -116,8 +112,12 @@
         </div>
     </section>
 
-    <!-- 主容器 -->
     <div class="container">
+        <section id="followed-clubs-section" style="margin-bottom: 2rem; display: none;">
+            <h2 style="margin-bottom: 1rem;">我追蹤的社團</h2>
+            <div id="followed-clubs-container" class="grid"></div>
+        </section>
+
         <section style="margin-bottom: 2rem;">
             <h2 style="margin-bottom: 1rem;">全校公告</h2>
             <div id="pinned-announcements">
@@ -128,7 +128,6 @@
             </div>
         </section>
 
-        <!-- 特色功能 -->
         <section style="margin-bottom: 4rem;">
             <h2 style="text-align: center; margin-bottom: 2rem;">平台特色</h2>
             <div class="grid">
@@ -159,7 +158,6 @@
             </div>
         </section>
 
-        <!-- 熱門社團 -->
         <section style="margin-bottom: 4rem;">
             <h2 style="margin-bottom: 2rem;">熱門社團</h2>
             <div id="featured-clubs" class="grid">
@@ -170,7 +168,6 @@
             </div>
         </section>
 
-        <!-- 近期活動 -->
         <section style="margin-bottom: 4rem;">
             <h2 style="margin-bottom: 2rem;">近期活動</h2>
             <div id="featured-events" class="grid">
@@ -182,7 +179,6 @@
         </section>
     </div>
 
-    <!-- 頁腳 -->
     <footer>
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>
@@ -305,9 +301,68 @@
             }
         }
 
+        async function loadFollowedClubs() {
+            const section = document.getElementById('followed-clubs-section');
+            const container = document.getElementById('followed-clubs-container');
+
+            if (!StorageUtils.isLoggedIn()) {
+                section.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await APIClient.get('clubs.php?action=my_follows');
+                if (!response.success) {
+                    section.style.display = 'none';
+                    return;
+                }
+
+                const clubs = response.data.clubs || [];
+                section.style.display = 'block';
+
+                if (clubs.length === 0) {
+                    container.innerHTML = `
+                        <div class="card">
+                            <div class="card-body">你目前尚未追蹤任何社團，前往社團列表開始追蹤吧。</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = '';
+                clubs.slice(0, 3).forEach(club => {
+                    const logoHtml = club.logo_path
+                        ? `<img src="${club.logo_path.startsWith('http') ? club.logo_path : club.logo_path}" alt="${club.club_name} logo" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover;">`
+                        : `<div style="width: 48px; height: 48px; border-radius: 10px; background: var(--light-gray);"></div>`;
+
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                ${logoHtml}
+                                <div>
+                                    <h3 style="margin:0;">${club.club_name}</h3>
+                                    <span class="badge">已追蹤</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body" style="margin-top:0.5rem;">
+                            <a href="pages/club-detail.html?id=${club.club_id}" class="btn btn-primary btn-sm">查看詳情</a>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading followed clubs:', error);
+                section.style.display = 'none';
+            }
+        }
+
         // 頁面載入時加載數據
         window.addEventListener('DOMContentLoaded', function() {
             loadPinnedAnnouncements();
+            loadFollowedClubs();
             loadFeaturedClubs();
             loadFeaturedEvents();
             loadClubCategories();

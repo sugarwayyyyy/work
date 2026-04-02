@@ -1,8 +1,5 @@
 <?php
-/**
- * 圖片上傳 API
- * 處理社團logo、活動海報、用戶頭像的上傳
- */
+// 圖片上傳 API：社團 Logo、活動海報與使用者頭像。
 
 require_once '../config.php';
 require_once '../auth.php';
@@ -28,7 +25,6 @@ class UploadAPI {
         $this->maxFileSize = MAX_FILE_SIZE;
         $this->allowedTypes = ALLOWED_IMAGE_TYPES;
 
-        // 確保上傳目錄存在
         if (!is_dir($this->uploadDir)) {
             mkdir($this->uploadDir, 0755, true);
         }
@@ -59,7 +55,7 @@ class UploadAPI {
         }
     }
 
-        private function canManageClub($clubId) {
+    private function canManageClub($clubId) {
             if (Auth::isAdmin()) {
                 return true;
             }
@@ -86,18 +82,18 @@ class UploadAPI {
         }
 
     private function uploadClubLogo() {
-            $clubId = (int)($_POST['club_id'] ?? 0);
+        $clubId = (int)($_POST['club_id'] ?? 0);
         if (!$clubId) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => '缺少社團ID']);
             return;
         }
 
-            if (!$this->canManageClub($clubId)) {
-                http_response_code(403);
-                echo json_encode(['success' => false, 'message' => '權限不足']);
-                return;
-            }
+        if (!$this->canManageClub($clubId)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => '權限不足']);
+            return;
+        }
 
         $file = $_FILES['logo'] ?? null;
         if (!$file) {
@@ -108,7 +104,6 @@ class UploadAPI {
 
         $result = $this->processUpload($file, 'club_' . $clubId . '_logo');
         if ($result['success']) {
-            // 更新社團logo路徑
             $stmt = $this->db->prepare("UPDATE clubs SET logo_path = ? WHERE club_id = ?");
             $stmt->bind_param("si", $result['path'], $clubId);
             $stmt->execute();
@@ -148,7 +143,6 @@ class UploadAPI {
 
         $result = $this->processUpload($file, 'event_' . $eventId . '_poster');
         if ($result['success']) {
-            // 更新活動海報路徑
             $stmt = $this->db->prepare("UPDATE events SET poster_path = ? WHERE event_id = ?");
             $stmt->bind_param("si", $result['path'], $eventId);
             $stmt->execute();
@@ -175,7 +169,6 @@ class UploadAPI {
 
         $result = $this->processUpload($file, 'user_' . $userId . '_avatar');
         if ($result['success']) {
-            // 更新用戶頭像路徑
             $stmt = $this->db->prepare("UPDATE users SET avatar_path = ? WHERE user_id = ?");
             $stmt->bind_param("si", $result['path'], $userId);
             $stmt->execute();
@@ -186,27 +179,22 @@ class UploadAPI {
     }
 
     private function processUpload($file, $prefix) {
-        // 檢查文件錯誤
         if ($file['error'] !== UPLOAD_ERR_OK) {
             return ['success' => false, 'message' => '文件上傳錯誤'];
         }
 
-        // 檢查文件大小
         if ($file['size'] > $this->maxFileSize) {
             return ['success' => false, 'message' => '文件大小超過限制'];
         }
 
-        // 檢查文件類型
         if (!in_array($file['type'], $this->allowedTypes)) {
             return ['success' => false, 'message' => '不支援的文件類型'];
         }
 
-        // 生成唯一文件名
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
         $filename = $prefix . '_' . time() . '_' . uniqid() . '.' . $extension;
         $filepath = $this->uploadDir . $filename;
 
-        // 移動文件
         if (move_uploaded_file($file['tmp_name'], $filepath)) {
             return [
                 'success' => true,
@@ -220,7 +208,6 @@ class UploadAPI {
     }
 }
 
-// 處理請求
 $uploadAPI = new UploadAPI();
 $uploadAPI->handleRequest();
 ?>

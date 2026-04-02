@@ -1,0 +1,9 @@
+# Runtime uploads (do not commit generated files)
+frontend/assets/uploads/*
+!frontend/assets/uploads/.gitkeep
+
+# Accidental legacy upload path from old config
+backend/frontend/
+
+# Local logs
+logs/*.log

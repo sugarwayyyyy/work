@@ -1,7 +1,5 @@
 <?php
-/**
- * 資料庫連接類 - 使用 MySQLi 進行資料庫操作
- */
+// MySQLi 資料庫封裝，統一提供連線與常用查詢方法。
 
 require_once 'config.php';
 
@@ -9,7 +7,6 @@ class Database {
     private $connection;
     private static $instance;
     
-    // 使用單例模式
     public static function getInstance() {
         if (!self::$instance) {
             self::$instance = new self();
@@ -30,21 +27,17 @@ class Database {
             DB_PORT
         );
         
-        // 檢查連接
         if ($this->connection->connect_error) {
             die('資料庫連接失敗: ' . $this->connection->connect_error);
         }
         
-        // 設置字符集
         $this->connection->set_charset('utf8mb4');
     }
     
-    // 獲取連接物件
     public function getConnection() {
         return $this->connection;
     }
     
-    // 執行查詢
     public function query($sql) {
         $result = $this->connection->query($sql);
         if (!$result && DEBUG_MODE) {
@@ -53,12 +46,10 @@ class Database {
         return $result;
     }
     
-    // 執行預備語句 (防止SQL注入)
     public function prepare($sql) {
         return $this->connection->prepare($sql);
     }
     
-    // 取得單筆記錄
     public function fetchOne($sql, $params = []) {
         $stmt = $this->connection->prepare($sql);
         if ($stmt === false) {
@@ -79,7 +70,6 @@ class Database {
         return $row;
     }
     
-    // 取得多筆記錄
     public function fetchAll($sql, $params = []) {
         $stmt = $this->connection->prepare($sql);
         if ($stmt === false) {
@@ -103,7 +93,6 @@ class Database {
         return $rows;
     }
     
-    // 插入資料
     public function insert($table, $data) {
         $columns = implode(', ', array_keys($data));
         $placeholders = implode(', ', array_fill(0, count($data), '?'));
@@ -126,7 +115,6 @@ class Database {
         return $result ? $insert_id : false;
     }
     
-    // 更新資料
     public function update($table, $data, $where, $where_params = []) {
         $set = implode(', ', array_map(function($k) { return "$k = ?"; }, array_keys($data)));
         $sql = "UPDATE $table SET $set WHERE $where";
@@ -147,7 +135,6 @@ class Database {
         return $result;
     }
     
-    // 刪除資料
     public function delete($table, $where, $where_params = []) {
         $sql = "DELETE FROM $table WHERE $where";
         
@@ -168,27 +155,22 @@ class Database {
         return $result;
     }
     
-    // 開啟事務
     public function beginTransaction() {
         $this->connection->begin_transaction();
     }
     
-    // 提交事務
     public function commit() {
         $this->connection->commit();
     }
     
-    // 回滾事務
     public function rollback() {
         $this->connection->rollback();
     }
     
-    // 獲取上次插入的ID
     public function getLastInsertId() {
         return $this->connection->insert_id;
     }
     
-    // 關閉連接
     public function close() {
         if ($this->connection) {
             $this->connection->close();
@@ -196,7 +178,7 @@ class Database {
     }
 }
 
-// 使用全域函數方便調用
+// 保留全域 helper，讓舊代碼可直接呼叫。
 function db() {
     return Database::getInstance()->getConnection();
 }

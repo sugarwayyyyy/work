@@ -1,7 +1,7 @@
--- 測試帳號與 User Story 驗收資料
+-- 測試帳號與驗收資料
 USE club_platform;
 
--- 固定測試密碼：Test123456（系統會在首次登入時自動升級為 bcrypt）
+-- 固定測試密碼：Test123456，首次登入後會依系統流程升級
 SET @pwd_hash = 'Test123456';
 
 INSERT INTO users (email, password, student_id, name, role, is_active)
@@ -16,9 +16,6 @@ INSERT INTO users (email, password, student_id, name, role, is_active)
 SELECT 'student@univ.edu', @pwd_hash, 'S000001', '一般學生測試員', 'student', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'student@univ.edu');
 
-INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
-SELECT 'CSC001', '程式設計社', 2, '以程式設計與實作為核心的技術社團', 2018, 300, '週三', '19:00-21:00', '資工館 R201', 'coding.club@univ.edu', '0911222333', 'active'
-WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = 'CSC001');
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
 SELECT 'SPT001', '羽球社', 1, '歡迎零基礎與進階同學一起運動', 2015, 500, '週二', '18:30-20:30', '體育館 A 場', 'badminton.club@univ.edu', '0922333444', 'active'

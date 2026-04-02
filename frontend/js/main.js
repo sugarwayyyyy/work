@@ -1,9 +1,6 @@
-/* JavaScript 共用函數和工具 */
-
-// API 基礎 URL
+// 共用 JavaScript 工具與 API 入口。
 const API_URL = '/社團活動資訊統整平台/backend/api';
 
-// 工具類
 class APIClient {
     static async request(endpoint, options = {}) {
         const method = options.method || 'GET';
@@ -48,7 +45,6 @@ class APIClient {
     }
 }
 
-// 頁面工具類
 class PageUtils {
     static showAlert(message, type = 'success') {
         const alertContainer = document.getElementById('alert-container');
@@ -125,7 +121,6 @@ class PageUtils {
     }
 }
 
-// 驗證工具
 class Validator {
     static validateEmail(email) {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -141,7 +136,6 @@ class Validator {
     }
 }
 
-// 本地儲存工具
 class StorageUtils {
     static setUser(user) {
         localStorage.setItem('user', JSON.stringify(user));
@@ -169,13 +163,11 @@ class StorageUtils {
     }
 }
 
-// 頁面初始化
 document.addEventListener('DOMContentLoaded', function() {
     initializePage();
 });
 
 function initializePage() {
-    // 檢查登入狀態並更新導航
     updateNavigation();
 }
 
@@ -220,10 +212,8 @@ function updateNavigation() {
             userDropdown.style.display = 'inline-block';
         }
 
-        // 顯示管理入口
         const navLinks = document.querySelector('.nav-links');
         if (navLinks) {
-            // 在管理員/幹部儀表板頁，僅保留對應角色入口
             if (isAdminDashboardPage()) {
                 setRestrictedDashboardNav('platform_admin');
                 return;
@@ -267,15 +257,12 @@ async function handleLogout() {
             return;
         }
     } catch (e) {
-        // ignore and use fallback
     }
 
-    // fallback: always clear local state and redirect
     StorageUtils.clearUser();
     window.location.href = '/社團活動資訊統整平台/frontend/index.html';
 }
 
-// 導出供其他頁面使用
 window.APIClient = APIClient;
 window.PageUtils = PageUtils;
 window.Validator = Validator;

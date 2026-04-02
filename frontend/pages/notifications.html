@@ -9,7 +9,6 @@
 </head>
 
 <body>
-    <!-- 導航 -->
     <header>
         <nav>
             <a href="../index.html" class="logo">⚡ 社團平台</a>
@@ -32,7 +31,6 @@
     <div class="container">
         <h1>通知中心</h1>
 
-        <!-- 通知列表 -->
         <div class="card">
             <div class="card-header">
                 <h3>最新通知</h3>
@@ -48,14 +46,12 @@
         </div>
     </div>
 
-    <!-- 頁腳 -->
     <footer>
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>
 
     <script src="../js/main.js"></script>
     <script>
-        // 載入通知
         async function loadNotifications() {
             try {
                 const response = await APIClient.get('notifications.php');
@@ -71,7 +67,6 @@
             }
         }
 
-        // 顯示通知
         function displayNotifications(notifications) {
             const container = document.getElementById('notifications-list');
 
@@ -100,21 +95,19 @@
             container.innerHTML = html;
         }
 
-        // 標記為已讀
         async function markAsRead(notificationId) {
             try {
                 const response = await APIClient.post('notifications.php?action=mark_read', {
                     notification_id: notificationId
                 });
                 if (response.success) {
-                    loadNotifications(); // 重新載入
+                    loadNotifications();
                 }
             } catch (error) {
                 console.error('Error:', error);
             }
         }
 
-        // 頁面載入時初始化
         window.addEventListener('DOMContentLoaded', function() {
             loadNotifications();
         });

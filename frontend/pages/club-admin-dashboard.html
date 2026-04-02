@@ -6,7 +6,7 @@
     <title>社團幹部儀表板</title>
     <link rel="stylesheet" href="../css/styles.css" />
 </head>
-<body>
+<body class="club-admin-page">
     <header>
         <nav>
             <a href="../index.html" class="logo">⚡ 社團平台</a>
@@ -24,98 +24,208 @@
 
     <div id="alert-container"></div>
 
-    <div class="container">
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <h1 style="margin-bottom: .5rem;">社團幹部儀表板</h1>
-            <p style="color: var(--text-light); margin: 0;">僅可管理你所屬社團的資訊與活動</p>
-        </div>
-
-    <section class="card">
-        <h2>我的社團</h2>
-        <ul id="my-clubs"></ul>
-    </section>
-
-    <section class="card">
-        <h2>社團管理</h2>
-        <div id="club-management" style="display: none;">
-            <h3 id="club-title"></h3>
-            <div class="card" style="margin-bottom: 1rem;">
-                <h4>更新預覽</h4>
-                <p id="club-preview-text" style="margin: 0; color: var(--text-light);">尚未修改資料</p>
-            </div>
-            <form id="update-club-form">
-                <input type="hidden" id="update-club-id">
-                <label>社團名稱（必填） <input type="text" id="update-club-name" required></label>
-                <div id="err-update-club-name" class="field-error"></div><br>
-                <label>介紹內文（必填） <textarea id="update-club-description" required></textarea></label>
-                <div id="err-update-club-description" class="field-error"></div><br>
-                <label>社課時間（必填） <input type="text" id="update-club-meeting-time" required placeholder="例如：每週三 19:00-21:00"></label>
-                <div id="err-update-club-meeting-time" class="field-error"></div><br>
-                <label>聯絡信箱（必填） <input type="email" id="update-club-email" required></label>
-                <div id="err-update-club-email" class="field-error"></div><br>
-                <label>地點（必填） <input type="text" id="update-club-location" required></label>
-                <div id="err-update-club-location" class="field-error"></div><br>
-                <label>聯絡電話 <input type="tel" id="update-club-phone"></label><br>
-                <label>社費（選填） <input type="number" id="update-club-fee"></label><br>
-                <label>Logo 圖片（選填） <input type="file" id="club-logo-upload" accept="image/*" onchange="previewClubLogo(event)"></label><br>
-                <div id="club-logo-preview" style="margin: 10px 0;">
-                    <img id="club-logo-img" src="" alt="Logo 預覽" style="max-width: 100px; max-height: 100px; display: none;">
+    <div class="club-admin-page">
+        <section class="club-admin-hero">
+            <div class="hero-content">
+                <h1>社團幹部儀表板</h1>
+                <p>僅可管理你所屬社團的資訊與活動</p>
+                <div class="hero-note-strip">
+                    <span class="hero-note">社團資料編修</span>
+                    <span class="hero-note">活動建立/更新</span>
+                    <span class="hero-note">海報預覽上傳</span>
                 </div>
-                <button type="submit">更新社團</button>
-            </form>
-        </div>
-    </section>
-
-    <section class="card">
-        <h2>建立活動</h2>
-        <p id="create-event-hint" style="color: var(--text-light); margin-bottom: .75rem;">請先在「我的社團」選擇要管理的社團。</p>
-        <form id="create-event-form">
-            <input type="hidden" id="event-club-id" required>
-            <label>活動名稱（必填） <input type="text" id="event-name" required></label>
-            <div id="err-event-name" class="field-error"></div><br>
-            <label>活動內容說明（必填） <textarea id="event-description" required></textarea></label>
-            <div id="err-event-description" class="field-error"></div><br>
-            <label>舉辦日期與時間（必填） <input type="datetime-local" id="event-date" required></label>
-            <div id="err-event-date" class="field-error"></div><br>
-            <label>地點（必填） <input type="text" id="event-location" required></label>
-            <div id="err-event-location" class="field-error"></div><br>
-            <label>名額 <input type="number" id="event-capacity"></label><br>
-            <label>費用 <input type="number" id="event-fee"></label><br>
-            <label>報名截止 <input type="datetime-local" id="event-deadline"></label><br>
-            <label>海報上傳 <input type="file" id="event-poster-upload" accept="image/*" onchange="previewEventPoster(event)"></label><br>
-            <div id="event-poster-preview" style="margin: 10px 0;">
-                <img id="event-poster-img" src="" alt="海報預覽" style="max-width: 200px; max-height: 200px; display: none;">
             </div>
-            <button type="submit" id="create-event-submit" disabled>建立活動</button>
-        </form>
-    </section>
+            <div class="club-hero-sidecard">
+                <p class="sidecard-label">管理捷徑</p>
+                <h3>先選社團，再編修內容</h3>
+                <ul class="sidecard-list">
+                    <li>先從「我的社團」點選管理對象</li>
+                    <li>社團編修區會即時顯示預覽</li>
+                    <li>活動編輯可直接替換海報與時間</li>
+                </ul>
+            </div>
+        </section>
 
-    <section class="card">
-        <h2>活動管理</h2>
-        <div id="event-management" style="display: none;">
-            <h3 id="event-manage-title"></h3>
-            <form id="update-event-form">
-                <input type="hidden" id="update-event-id">
-                <label>活動名稱 <input type="text" id="update-event-name" required></label><br>
-                <label>描述 <textarea id="update-event-description" required></textarea></label><br>
-                <label>日期 <input type="datetime-local" id="update-event-date" required></label><br>
-                <label>地點 <input type="text" id="update-event-location" required></label><br>
-                <label>名額 <input type="number" id="update-event-capacity"></label><br>
-                <label>費用 <input type="number" id="update-event-fee"></label><br>
-                <label>報名截止 <input type="datetime-local" id="update-event-deadline"></label><br>
-                <label>海報上傳 <input type="file" id="update-event-poster-upload" accept="image/*" onchange="previewUpdateEventPoster(event)"></label><br>
-                <div id="update-event-poster-preview" style="margin: 10px 0;">
-                    <img id="update-event-poster-img" src="" alt="海報預覽" style="max-width: 200px; max-height: 200px; display: none;">
+        <div class="container">
+            <section class="card admin-panel reveal-up">
+                <div class="admin-panel-head">
+                    <h2>我的社團</h2>
+                    <span class="admin-panel-subtext">選擇管理的社團</span>
                 </div>
-                <button type="submit">更新活動</button>
-            </form>
-        </div>
-    </section>
+                <div id="my-clubs-container" class="club-admin-clubs"></div>
+            </section>
 
-    <section class="card">
-        <h2>社團活動列表</h2>
-        <div id="club-events"></div>
-    </section>
+            <section class="card admin-panel reveal-up" id="club-management-section" style="display: none;">
+                <div class="admin-panel-head">
+                    <h2>社團管理</h2>
+                    <span class="admin-panel-subtext" id="club-subtitle"></span>
+                </div>
+                <div class="admin-form-wrapper">
+                    <div class="form-preview-card">
+                        <h4>編輯預覽</h4>
+                        <p id="club-preview-text" class="form-preview-text">尚未修改資料</p>
+                    </div>
+                    <form id="update-club-form" class="admin-form-grid">
+                        <input type="hidden" id="update-club-id">
+                        <div class="form-field">
+                            <label for="update-club-name">社團名稱 <span class="required">*</span></label>
+                            <input type="text" id="update-club-name" required>
+                            <div id="err-update-club-name" class="field-error"></div>
+                        </div>
+                        <div class="form-field">
+                            <label for="update-club-email">聯絡信箱 <span class="required">*</span></label>
+                            <input type="email" id="update-club-email" required>
+                            <div id="err-update-club-email" class="field-error"></div>
+                        </div>
+                        <div class="form-field">
+                            <label for="update-club-location">地點 <span class="required">*</span></label>
+                            <input type="text" id="update-club-location" required>
+                            <div id="err-update-club-location" class="field-error"></div>
+                        </div>
+                        <div class="form-field">
+                            <label for="update-club-phone">聯絡電話</label>
+                            <input type="tel" id="update-club-phone">
+                        </div>
+                        <div class="form-field">
+                            <label for="update-club-meeting-time">社課時間 <span class="required">*</span></label>
+                            <input type="text" id="update-club-meeting-time" required placeholder="例如：每週三 19:00-21:00">
+                            <div id="err-update-club-meeting-time" class="field-error"></div>
+                        </div>
+                        <div class="form-field">
+                            <label for="update-club-fee">社費（選填）</label>
+                            <input type="number" id="update-club-fee">
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label for="update-club-description">介紹內文 <span class="required">*</span></label>
+                            <textarea id="update-club-description" required style="min-height: 120px;"></textarea>
+                            <div id="err-update-club-description" class="field-error"></div>
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label for="club-logo-upload">Logo 圖片（選填）</label>
+                            <input type="file" id="club-logo-upload" accept="image/*" onchange="previewClubLogo(event)">
+                            <div id="club-logo-preview" class="image-preview-container">
+                                <img id="club-logo-img" src="" alt="Logo 預覽" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="form-actions admin-span-2">
+                            <button type="submit" class="btn btn-primary">更新社團</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="card admin-panel reveal-up">
+                <div class="admin-panel-head">
+                    <h2>建立活動</h2>
+                    <span class="admin-panel-subtext" id="create-event-hint">請先在「我的社團」選擇要管理的社團</span>
+                </div>
+                <div class="admin-form-wrapper">
+                    <form id="create-event-form" class="admin-form-grid">
+                        <input type="hidden" id="event-club-id" required>
+                        <div class="form-field">
+                            <label for="event-name">活動名稱 <span class="required">*</span></label>
+                            <input type="text" id="event-name" required>
+                            <div id="err-event-name" class="field-error"></div>
+                        </div>
+                        <div class="form-field">
+                            <label for="event-date">舉辦日期與時間 <span class="required">*</span></label>
+                            <input type="datetime-local" id="event-date" required>
+                            <div id="err-event-date" class="field-error"></div>
+                        </div>
+                        <div class="form-field">
+                            <label for="event-location">地點 <span class="required">*</span></label>
+                            <input type="text" id="event-location" required>
+                            <div id="err-event-location" class="field-error"></div>
+                        </div>
+                        <div class="form-field">
+                            <label for="event-capacity">名額</label>
+                            <input type="number" id="event-capacity" min="0">
+                        </div>
+                        <div class="form-field">
+                            <label for="event-deadline">報名截止</label>
+                            <input type="datetime-local" id="event-deadline">
+                        </div>
+                        <div class="form-field">
+                            <label for="event-fee">費用</label>
+                            <input type="number" id="event-fee" min="0">
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label for="event-description">活動內容說明 <span class="required">*</span></label>
+                            <textarea id="event-description" required style="min-height: 120px;"></textarea>
+                            <div id="err-event-description" class="field-error"></div>
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label for="event-poster-upload">海報上傳</label>
+                            <input type="file" id="event-poster-upload" accept="image/*" onchange="previewEventPoster(event)">
+                            <div id="event-poster-preview" class="image-preview-container">
+                                <img id="event-poster-img" src="" alt="海報預覽" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="form-actions admin-span-2">
+                            <button type="submit" id="create-event-submit" class="btn btn-primary" disabled>建立活動</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="card admin-panel reveal-up" id="event-management-section" style="display: none;">
+                <div class="admin-panel-head">
+                    <h2>活動管理</h2>
+                    <span class="admin-panel-subtext" id="event-manage-title"></span>
+                </div>
+                <div class="admin-form-wrapper">
+                    <form id="update-event-form" class="admin-form-grid">
+                        <input type="hidden" id="update-event-id">
+                        <div class="form-field">
+                            <label for="update-event-name">活動名稱 <span class="required">*</span></label>
+                            <input type="text" id="update-event-name" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="update-event-date">日期 <span class="required">*</span></label>
+                            <input type="datetime-local" id="update-event-date" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="update-event-location">地點 <span class="required">*</span></label>
+                            <input type="text" id="update-event-location" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="update-event-capacity">名額</label>
+                            <input type="number" id="update-event-capacity" min="0">
+                        </div>
+                        <div class="form-field">
+                            <label for="update-event-deadline">報名截止</label>
+                            <input type="datetime-local" id="update-event-deadline">
+                        </div>
+                        <div class="form-field">
+                            <label for="update-event-fee">費用</label>
+                            <input type="number" id="update-event-fee" min="0">
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label for="update-event-description">描述 <span class="required">*</span></label>
+                            <textarea id="update-event-description" required style="min-height: 120px;"></textarea>
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label for="update-event-poster-upload">海報上傳</label>
+                            <input type="file" id="update-event-poster-upload" accept="image/*" onchange="previewUpdateEventPoster(event)">
+                            <div id="update-event-poster-preview" class="image-preview-container">
+                                <img id="update-event-poster-img" src="" alt="海報預覽" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="form-actions admin-span-2">
+                            <button type="submit" class="btn btn-primary">更新活動</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="card admin-panel reveal-up">
+                <div class="admin-panel-head">
+                    <h2>社團活動列表</h2>
+                    <span class="admin-panel-subtext">管理所屬社團的活動</span>
+                </div>
+                <div id="club-events-container" class="admin-list"></div>
+            </section>
+        </div>
     </div>
 
     <script src="../js/main.js"></script>
@@ -126,21 +236,43 @@
         let currentClubLastUpdated = null;
 
         function setFieldError(inputId, message) {
-            const el = document.getElementById(inputId);
+            const input = document.getElementById(inputId);
             const err = document.getElementById(`err-${inputId}`);
-            if (!el || !err) return;
-            if (message) {
-                el.classList.add('input-error');
-                err.textContent = message;
-            } else {
-                el.classList.remove('input-error');
-                err.textContent = '';
-            }
+            if (!input || !err) return;
+            input.classList.toggle('input-error', !!message);
+            err.textContent = message || '';
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '-';
+            if (window.PageUtils && typeof PageUtils.formatDate === 'function') return PageUtils.formatDate(value);
+            return new Intl.DateTimeFormat('zh-TW', {
+                year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+            }).format(new Date(value));
+        }
+
+        function toDatetimeLocal(value) {
+            if (!value) return '';
+            return value.includes('T') ? value.slice(0, 16) : value.replace(' ', 'T').slice(0, 16);
         }
 
         function validateClubForm() {
             let ok = true;
-            const required = ['update-club-name', 'update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'];
+            ['update-club-name', 'update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'].forEach(id => {
+                const value = document.getElementById(id).value.trim();
+                if (!value) {
+                    setFieldError(id, '此為必填欄位');
+                    ok = false;
+                } else {
+                    setFieldError(id, '');
+                }
+            });
+            return ok;
+        }
+
+        function validateEventForm(prefix = '') {
+            let ok = true;
+            const required = [`${prefix}event-name`, `${prefix}event-description`, `${prefix}event-date`, `${prefix}event-location`];
             required.forEach(id => {
                 const value = document.getElementById(id).value.trim();
                 if (!value) {
@@ -162,206 +294,247 @@
             document.getElementById('club-preview-text').textContent = `社團：${name}｜社課時間：${time}｜地點：${loc}｜信箱：${mail}｜介紹：${desc.slice(0, 40)}${desc.length > 40 ? '...' : ''}`;
         }
 
-        function validateEventForm() {
-            let ok = true;
-            const required = ['event-name', 'event-description', 'event-date', 'event-location'];
-            required.forEach(id => {
-                const value = document.getElementById(id).value.trim();
-                if (!value) {
-                    setFieldError(id, '此為必填欄位');
-                    ok = false;
-                } else {
-                    setFieldError(id, '');
-                }
-            });
-            return ok;
+        function renderEmptyState(container, title, description) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-illustration"></div>
+                    <h4>${title}</h4>
+                    <p>${description}</p>
+                </div>
+            `;
         }
 
         async function loadMyClubs() {
-            const res = await APIClient.get('club-admin.php?action=my_clubs');
-            if (!res.success) return console.error(res.message);
-            const list = document.getElementById('my-clubs');
-            list.innerHTML = '';
-            res.data.clubs.forEach(c => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>ID: ${c.club_id} | ${c.club_name} | 狀態: ${c.activity_status}</span>
-                        <button onclick="loadClubDetails(${c.club_id})">管理社團</button>
+            const response = await APIClient.get('club-admin.php?action=my_clubs');
+            if (!response.success) return console.error(response.message);
+            const container = document.getElementById('my-clubs-container');
+            container.innerHTML = '';
+            (response.data.clubs || []).forEach(club => {
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head">
+                        <div>
+                            <h4>${club.club_name}</h4>
+                            <span class="status-chip">${club.activity_status || '-'}</span>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="loadClubDetails(${club.club_id})">管理社團</button>
                     </div>
                 `;
-                list.appendChild(li);
+                container.appendChild(card);
             });
+            if (container.children.length === 0) {
+                renderEmptyState(container, '目前沒有可管理的社團', '如果你預期應該看到社團，請先確認帳號權限是否正確。');
+            }
         }
 
         async function loadClubDetails(clubId) {
             currentClubId = clubId;
-            const res = await APIClient.get('clubs.php?action=detail&id=' + clubId);
-            if (!res.success) return console.error(res.message);
+            const response = await APIClient.get('clubs.php?action=detail&id=' + clubId);
+            if (!response.success) return console.error(response.message);
 
-            const club = res.data;
-            currentClubName = club.club_name;
+            const club = response.data;
+            currentClubName = club.club_name || '';
             currentClubLastUpdated = club.last_updated || null;
-            document.getElementById('club-title').innerText = '管理社團: ' + club.club_name;
+            document.getElementById('club-management-section').style.display = 'block';
+            document.getElementById('club-subtitle').textContent = club.club_name || '';
             document.getElementById('update-club-id').value = club.club_id;
             document.getElementById('event-club-id').value = club.club_id;
-            document.getElementById('update-club-name').value = club.club_name;
-            document.getElementById('update-club-description').value = club.description;
+            document.getElementById('update-club-name').value = club.club_name || '';
+            document.getElementById('update-club-description').value = club.description || '';
             document.getElementById('update-club-meeting-time').value = club.meeting_time || '';
             document.getElementById('update-club-location').value = club.meeting_location || '';
-            document.getElementById('update-club-email').value = club.contact_email;
-            document.getElementById('update-club-phone').value = club.contact_phone;
-            document.getElementById('update-club-fee').value = club.club_fee;
+            document.getElementById('update-club-email').value = club.contact_email || '';
+            document.getElementById('update-club-phone').value = club.contact_phone || '';
+            document.getElementById('update-club-fee').value = club.club_fee || '';
+            document.getElementById('create-event-submit').disabled = false;
+            document.getElementById('create-event-hint').textContent = `目前建立活動目標社團：${club.club_name || ''}`;
+            refreshClubPreview();
 
-            // 顯示logo預覽
+            const logoImg = document.getElementById('club-logo-img');
             if (club.logo_path) {
-                document.getElementById('club-logo-img').src = '../' + club.logo_path;
-                document.getElementById('club-logo-img').style.display = 'block';
+                logoImg.src = club.logo_path.startsWith('http') ? club.logo_path : '../' + club.logo_path.replace(/^\.\//, '');
+                logoImg.style.display = 'block';
+            } else {
+                logoImg.style.display = 'none';
             }
 
-            document.getElementById('club-management').style.display = 'block';
-            document.getElementById('create-event-submit').disabled = false;
-            document.getElementById('create-event-hint').textContent = `目前建立活動目標社團：${club.club_name}`;
-            refreshClubPreview();
             loadClubEvents(clubId);
         }
 
-        async function loadClubEvents(club_id) {
-            const res = await APIClient.get('club-admin.php?action=club_events&id=' + club_id);
-            if (!res.success) return console.error(res.message);
-            const container = document.getElementById('club-events');
-            container.innerHTML = '<h3>社團活動</h3>';
-            res.data.events.forEach(e => {
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
-                        ${e.event_id} - ${e.event_name} ${e.event_date} (${e.event_status})
-                        <button onclick="editEvent(${e.event_id})" style="margin-left: 10px;">編輯</button>
+        async function loadClubEvents(clubId) {
+            const response = await APIClient.get('club-admin.php?action=club_events&id=' + clubId);
+            if (!response.success) return console.error(response.message);
+            const container = document.getElementById('club-events-container');
+            container.innerHTML = '';
+            const events = response.data.events || [];
+            if (events.length === 0) {
+                renderEmptyState(container, '目前沒有活動', '建立第一場活動後，這裡就會顯示列表。');
+                return;
+            }
+            events.forEach(event => {
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head">
+                        <div>
+                            <h4>${event.event_name}</h4>
+                            <div class="admin-item-badges">
+                                <span class="status-chip">${event.event_status || '-'}</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="editEvent(${event.event_id})">編輯</button>
                     </div>
+                    <p class="admin-item-content">${formatDateTime(event.event_date)}${event.location ? '｜' + event.location : ''}</p>
                 `;
-                container.appendChild(div);
+                container.appendChild(card);
             });
         }
 
-        function editEvent(eventId) {
+        async function editEvent(eventId) {
             currentEventId = eventId;
-            // 載入活動詳情並填充編輯表單
-            APIClient.get('events.php?action=detail&id=' + eventId).then(res => {
-                if (res.success) {
-                    const event = res.data;
-                    document.getElementById('event-manage-title').innerText = '編輯活動: ' + event.event_name;
-                    document.getElementById('update-event-id').value = event.event_id;
-                    document.getElementById('update-event-name').value = event.event_name;
-                    document.getElementById('update-event-description').value = event.description;
-                    document.getElementById('update-event-date').value = event.event_date.replace(' ', 'T');
-                    document.getElementById('update-event-location').value = event.location;
-                    document.getElementById('update-event-capacity').value = event.capacity;
-                    document.getElementById('update-event-fee').value = event.fee;
-                    if (event.registration_deadline) {
-                        document.getElementById('update-event-deadline').value = event.registration_deadline.replace(' ', 'T');
-                    }
+            const response = await APIClient.get('events.php?action=detail&id=' + eventId);
+            if (!response.success) return console.error(response.message);
 
-                    // 顯示海報預覽
-                    if (event.poster_path) {
-                        document.getElementById('update-event-poster-img').src = '../' + event.poster_path;
-                        document.getElementById('update-event-poster-img').style.display = 'block';
-                    }
+            const event = response.data;
+            document.getElementById('event-management-section').style.display = 'block';
+            document.getElementById('event-manage-title').textContent = event.event_name || '';
+            document.getElementById('update-event-id').value = event.event_id;
+            document.getElementById('update-event-name').value = event.event_name || '';
+            document.getElementById('update-event-description').value = event.description || '';
+            document.getElementById('update-event-date').value = toDatetimeLocal(event.event_date);
+            document.getElementById('update-event-location').value = event.location || '';
+            document.getElementById('update-event-capacity').value = event.capacity || '';
+            document.getElementById('update-event-fee').value = event.fee || '';
+            document.getElementById('update-event-deadline').value = toDatetimeLocal(event.registration_deadline);
 
-                    document.getElementById('event-management').style.display = 'block';
-                }
-            });
+            const posterImg = document.getElementById('update-event-poster-img');
+            if (event.poster_path) {
+                posterImg.src = event.poster_path.startsWith('http') ? event.poster_path : '../' + event.poster_path.replace(/^\.\//, '');
+                posterImg.style.display = 'block';
+            } else {
+                posterImg.style.display = 'none';
+            }
         }
 
-        // 圖片預覽函數
         function previewClubLogo(event) {
             const file = event.target.files[0];
             const img = document.getElementById('club-logo-img');
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    img.src = e.target.result;
-                    img.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
+            if (!file) {
+                img.style.display = 'none';
+                return;
             }
+            const reader = new FileReader();
+            reader.onload = e => {
+                img.src = e.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
         }
 
         function previewEventPoster(event) {
             const file = event.target.files[0];
             const img = document.getElementById('event-poster-img');
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    img.src = e.target.result;
-                    img.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
+            if (!file) {
+                img.style.display = 'none';
+                return;
             }
+            const reader = new FileReader();
+            reader.onload = e => {
+                img.src = e.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
         }
 
         function previewUpdateEventPoster(event) {
             const file = event.target.files[0];
             const img = document.getElementById('update-event-poster-img');
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    img.src = e.target.result;
-                    img.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
+            if (!file) {
+                img.style.display = 'none';
+                return;
             }
+            const reader = new FileReader();
+            reader.onload = e => {
+                img.src = e.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
         }
 
-        // 表單提交處理
         document.getElementById('update-club-form').addEventListener('submit', async event => {
             event.preventDefault();
             if (!validateClubForm()) return;
 
-            const formData = new FormData();
-            formData.append('club_name', document.getElementById('update-club-name').value);
-            formData.append('description', document.getElementById('update-club-description').value);
-            formData.append('meeting_time', document.getElementById('update-club-meeting-time').value);
-            formData.append('meeting_location', document.getElementById('update-club-location').value);
-            formData.append('contact_email', document.getElementById('update-club-email').value);
-            formData.append('contact_phone', document.getElementById('update-club-phone').value);
-            formData.append('club_fee', document.getElementById('update-club-fee').value);
-            formData.append('last_updated', currentClubLastUpdated || '');
+            const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+            if (submitButton) submitButton.disabled = true;
 
-            const logoFile = document.getElementById('club-logo-upload').files[0];
-            if (logoFile) {
-                const uploadFormData = new FormData();
-                uploadFormData.append('logo', logoFile);
-                uploadFormData.append('club_id', currentClubId);
+            try {
+                if (!currentClubId) {
+                    PageUtils.showAlert('請先選擇要管理的社團', 'error');
+                    return;
+                }
 
-                const uploadRes = await fetch('../backend/api/upload.php?action=upload_club_logo', {
-                    method: 'POST',
-                    body: uploadFormData,
-                    headers: APIClient.getAuthHeaders()
-                });
-                const uploadResult = await uploadRes.json();
-                if (uploadResult.success) {
+                const formData = new FormData();
+                formData.append('club_name', document.getElementById('update-club-name').value);
+                formData.append('description', document.getElementById('update-club-description').value);
+                formData.append('meeting_time', document.getElementById('update-club-meeting-time').value);
+                formData.append('meeting_location', document.getElementById('update-club-location').value);
+                formData.append('contact_email', document.getElementById('update-club-email').value);
+                formData.append('contact_phone', document.getElementById('update-club-phone').value);
+                formData.append('club_fee', document.getElementById('update-club-fee').value);
+                formData.append('last_updated', currentClubLastUpdated || '');
+
+                const logoFile = document.getElementById('club-logo-upload').files[0];
+                if (logoFile) {
+                    const uploadFormData = new FormData();
+                    uploadFormData.append('logo', logoFile);
+                    uploadFormData.append('club_id', currentClubId);
+
+                    const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_club_logo', {
+                        method: 'POST',
+                        body: uploadFormData,
+                        credentials: 'same-origin',
+                        headers: APIClient.getAuthHeaders()
+                    });
+
+                    let uploadResult = null;
+                    try {
+                        uploadResult = await uploadResponse.json();
+                    } catch (parseError) {
+                        throw new Error('Logo 上傳回應格式錯誤');
+                    }
+
+                    if (!uploadResponse.ok || !uploadResult.success) {
+                        throw new Error(uploadResult.message || 'Logo 上傳失敗');
+                    }
+
                     formData.append('logo_path', uploadResult.path);
                 }
-            }
 
-            const res = await APIClient.put('clubs.php?action=update&id=' + currentClubId, Object.fromEntries(formData));
-            if (res.success) {
-                alert('社團更新成功');
-                loadClubDetails(currentClubId);
-            } else {
-                alert('更新社團失敗：' + res.message);
+                const response = await APIClient.put('clubs.php?action=update&id=' + currentClubId, Object.fromEntries(formData));
+                if (response.success) {
+                    PageUtils.showAlert('社團更新成功', 'success');
+                    loadClubDetails(currentClubId);
+                } else {
+                    PageUtils.showAlert('更新社團失敗：' + (response.message || '未知錯誤'), 'error');
+                }
+            } catch (error) {
+                console.error('更新社團失敗:', error);
+                PageUtils.showAlert('更新社團失敗：' + error.message, 'error');
+            } finally {
+                if (submitButton) submitButton.disabled = false;
             }
         });
 
         document.getElementById('create-event-form').addEventListener('submit', async event => {
             event.preventDefault();
             if (!currentClubId) {
-                alert('請先從「我的社團」選擇要管理的社團');
+                PageUtils.showAlert('請先從「我的社團」選擇要管理的社團', 'error');
                 return;
             }
             if (!validateEventForm()) return;
-            const confirmPublish = confirm(`即將以「${currentClubName}」幹部身份發布活動，是否確認？`);
-            if (!confirmPublish) return;
+            if (!confirm(`即將以「${currentClubName}」幹部身份發布活動，是否確認？`)) return;
 
             const formData = new FormData();
             formData.append('club_id', currentClubId);
@@ -379,42 +552,43 @@
             if (posterFile) {
                 const uploadFormData = new FormData();
                 uploadFormData.append('poster', posterFile);
-                uploadFormData.append('event_id', 'new'); // 對於新活動，使用臨時ID
-
-                // 先上傳海報，然後在創建活動時使用路徑
-                const uploadRes = await fetch('../backend/api/upload.php?action=upload_event_poster', {
+                uploadFormData.append('event_id', 'new');
+                const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_event_poster', {
                     method: 'POST',
                     body: uploadFormData,
+                    credentials: 'same-origin',
                     headers: APIClient.getAuthHeaders()
                 });
-                const uploadResult = await uploadRes.json();
-                if (uploadResult.success) {
-                    formData.append('poster_path', uploadResult.path);
+
+                let uploadResult = null;
+                try {
+                    uploadResult = await uploadResponse.json();
+                } catch (parseError) {
+                    throw new Error('活動海報上傳回應格式錯誤');
                 }
+
+                if (!uploadResponse.ok || !uploadResult.success) {
+                    throw new Error(uploadResult.message || '活動海報上傳失敗');
+                }
+
+                formData.append('poster_path', uploadResult.path);
             }
 
-            const res = await APIClient.post('events.php?action=create', Object.fromEntries(formData));
-            if (res.success) {
-                alert('活動建立成功');
+            const response = await APIClient.post('events.php?action=create', Object.fromEntries(formData));
+            if (response.success) {
+                PageUtils.showAlert('活動建立成功', 'success');
                 loadClubEvents(currentClubId);
-                // 清空表單
                 event.target.reset();
                 document.getElementById('event-poster-img').style.display = 'none';
             } else {
-                alert('建立活動失敗：' + res.message);
+                PageUtils.showAlert('建立活動失敗：' + response.message, 'error');
             }
         });
 
-        ['update-club-name', 'update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location']
-            .forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.addEventListener('input', refreshClubPreview);
-                }
-            });
-
         document.getElementById('update-event-form').addEventListener('submit', async event => {
             event.preventDefault();
+            if (!validateEventForm('update-')) return;
+
             const formData = new FormData();
             formData.append('event_name', document.getElementById('update-event-name').value);
             formData.append('description', document.getElementById('update-event-description').value);
@@ -429,25 +603,40 @@
                 const uploadFormData = new FormData();
                 uploadFormData.append('poster', posterFile);
                 uploadFormData.append('event_id', currentEventId);
-
-                const uploadRes = await fetch('../backend/api/upload.php?action=upload_event_poster', {
+                const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_event_poster', {
                     method: 'POST',
                     body: uploadFormData,
+                    credentials: 'same-origin',
                     headers: APIClient.getAuthHeaders()
                 });
-                const uploadResult = await uploadRes.json();
-                if (uploadResult.success) {
-                    formData.append('poster_path', uploadResult.path);
+
+                let uploadResult = null;
+                try {
+                    uploadResult = await uploadResponse.json();
+                } catch (parseError) {
+                    throw new Error('活動海報上傳回應格式錯誤');
                 }
+
+                if (!uploadResponse.ok || !uploadResult.success) {
+                    throw new Error(uploadResult.message || '活動海報上傳失敗');
+                }
+
+                formData.append('poster_path', uploadResult.path);
             }
 
-            const res = await APIClient.put('events.php?action=update&id=' + currentEventId, Object.fromEntries(formData));
-            if (res.success) {
-                alert('活動更新成功');
+            const response = await APIClient.put('events.php?action=update&id=' + currentEventId, Object.fromEntries(formData));
+            if (response.success) {
+                PageUtils.showAlert('活動更新成功', 'success');
                 loadClubEvents(currentClubId);
+                document.getElementById('event-management-section').style.display = 'none';
             } else {
-                alert('更新活動失敗：' + res.message);
+                PageUtils.showAlert('更新活動失敗：' + response.message, 'error');
             }
+        });
+
+        ['update-club-name', 'update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', refreshClubPreview);
         });
 
         loadMyClubs();

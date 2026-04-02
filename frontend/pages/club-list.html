@@ -9,7 +9,6 @@
 </head>
 
 <body>
-    <!-- 導航 -->
     <header>
         <nav>
             <a href="../index.html" class="logo">⚡ 社團平台</a>
@@ -32,7 +31,6 @@
     <div class="container">
         <h1>社團列表</h1>
 
-        <!-- 過濾欄 -->
         <div class="card" style="margin-bottom: 2rem;">
             <h3>篩選</h3>
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
@@ -57,7 +55,6 @@
             </div>
         </div>
 
-        <!-- 社團列表 -->
         <div id="clubs-container" class="grid">
             <div class="loading">
                 <div class="spinner"></div>
@@ -65,11 +62,9 @@
             </div>
         </div>
 
-        <!-- 分頁 -->
         <div id="pagination-container"></div>
     </div>
 
-    <!-- 頁腳 -->
     <footer>
         <p>&copy; 2026 社團活動資訊統整平台</p>
     </footer>
@@ -208,12 +203,10 @@
 
             let html = '<div class="pagination">';
             
-            // 上一頁
             if (pagination.current_page > 1) {
                 html += `<a onclick="changePage(${pagination.current_page - 1})">← 上一頁</a>`;
             }
 
-            // 頁碼
             for (let i = 1; i <= pagination.total_pages; i++) {
                 if (i === pagination.current_page) {
                     html += `<span class="active">${i}</span>`;
@@ -222,7 +215,6 @@
                 }
             }
 
-            // 下一頁
             if (pagination.current_page < pagination.total_pages) {
                 html += `<a onclick="changePage(${pagination.current_page + 1})">下一頁 →</a>`;
             }
@@ -263,7 +255,6 @@
             }, 250);
         });
 
-        // 頁面載入時初始化
         window.addEventListener('DOMContentLoaded', function() {
             loadCategories();
             loadPopularTags();

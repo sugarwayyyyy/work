@@ -53,6 +53,10 @@ foreach ($file in $htmlFiles) {
             if (-not $link) {
                 continue
             }
+            # Ignore dynamic template placeholders rendered at runtime.
+            if ($link.Contains('${')) {
+                continue
+            }
             if ($link.StartsWith('#') -or $link.StartsWith('javascript:') -or $link.StartsWith('mailto:') -or $link.StartsWith('http')) {
                 continue
             }

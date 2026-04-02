@@ -4,9 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>管理員儀表板</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../css/styles.css" />
 </head>
-<body>
+<body class="admin-dashboard-page">
     <header>
         <nav>
             <a href="../index.html" class="logo">⚡ 社團平台</a>
@@ -24,91 +27,300 @@
 
     <div id="alert-container"></div>
 
-    <div class="container">
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <h1 style="margin-bottom: .5rem;">管理員儀表板</h1>
-            <p style="color: var(--text-light); margin: 0;">平台核准、社團及用戶管理</p>
-        </div>
+    <div class="container admin-dashboard-container">
+        <section class="admin-hero reveal-up">
+            <div class="admin-hero-title-wrap">
+                <p class="admin-kicker">Platform Command Center</p>
+                <h1>管理員儀表板</h1>
+                <p>集中管理用戶權限、社團狀態、公告發布與帳號轉讓流程。</p>
+                <div class="hero-note-strip">
+                    <span class="hero-note">即時搜尋</span>
+                    <span class="hero-note">欄位排序</span>
+                    <span class="hero-note">分頁瀏覽</span>
+                </div>
+            </div>
+            <div class="admin-hero-sidecard">
+                <p class="sidecard-label">今日重點</p>
+                <h3>平台營運總覽</h3>
+                <ul class="sidecard-list">
+                    <li>先用搜尋快速定位用戶或社團</li>
+                    <li>公告支援置頂與類型標籤</li>
+                    <li>帳戶轉讓紀錄會在下方完整保留</li>
+                </ul>
+            </div>
+            <div class="admin-metrics" aria-live="polite">
+                <article class="metric-card"><p>用戶總數</p><strong id="stat-users">-</strong></article>
+                <article class="metric-card"><p>社團總數</p><strong id="stat-clubs">-</strong></article>
+                <article class="metric-card"><p>公告數量</p><strong id="stat-announcements">-</strong></article>
+                <article class="metric-card"><p>轉讓紀錄</p><strong id="stat-transfers">-</strong></article>
+            </div>
+        </section>
 
-    <section class="card">
-        <h2>用戶管理</h2>
-        <table class="table" id="users-table">
-            <thead>
-                <tr>
-                    <th>ID</th><th>姓名</th><th>郵箱</th><th>角色</th><th>狀態</th><th>動作</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </section>
-
-    <section class="card">
-        <h2>社團管理</h2>
-        <form id="create-club-base-form" style="margin-bottom: 1rem;">
-            <label>社團代碼（必填） <input type="text" id="new-club-code" required></label>
-            <div id="err-new-club-code" class="field-error"></div>
-            <label>社團名稱（必填） <input type="text" id="new-club-name" required></label>
-            <div id="err-new-club-name" class="field-error"></div>
-            <label>所屬分類（必填） <input type="number" id="new-club-category" required></label>
-            <div id="err-new-club-category" class="field-error"></div>
-            <button type="submit">新增社團基礎名單</button>
-        </form>
-        <table class="table" id="clubs-table">
-            <thead>
-                <tr>
-                    <th>ID</th><th>社團代碼</th><th>社團名</th><th>分類ID</th><th>狀態</th><th>隱藏狀態</th><th>動作</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </section>
-
-    <section class="card">
-        <h2>報告管理</h2>
-        <div id="reports-section">
-            <button onclick="loadEventReports()">載入活動報告</button>
-            <button onclick="loadUserFeedback()">載入用戶回饋</button>
-            <div id="reports-content"></div>
-        </div>
-    </section>
-
-    <section class="card">
-        <h2>系統公告</h2>
-        <div id="announcements-section">
-            <form id="create-announcement-form">
-                <label>公告標題 <input type="text" id="announcement-title" required></label><br>
-                <label>公告內容 <textarea id="announcement-content" required></textarea></label><br>
-                <label>公告類型
-                    <select id="announcement-type">
-                        <option value="important">重要</option>
-                        <option value="event">活動</option>
-                        <option value="maintenance">維護</option>
-                        <option value="update">更新</option>
+        <section class="card admin-panel reveal-up">
+            <div class="admin-panel-head">
+                <h2>用戶管理</h2>
+                <span class="admin-panel-subtext">快速調整角色與帳號狀態</span>
+            </div>
+            <div class="admin-table-controls">
+                <div class="form-field">
+                    <label for="users-search">關鍵字搜尋</label>
+                    <input type="text" id="users-search" placeholder="姓名、信箱、角色" />
+                </div>
+                <div class="form-field">
+                    <label for="users-sort">欄位排序</label>
+                    <select id="users-sort">
+                        <option value="user_id_desc">ID（新到舊）</option>
+                        <option value="user_id_asc">ID（舊到新）</option>
+                        <option value="name_asc">姓名（A-Z）</option>
+                        <option value="name_desc">姓名（Z-A）</option>
+                        <option value="role_asc">角色</option>
                     </select>
-                </label><br>
-                <label>是否置頂 <input type="checkbox" id="announcement-sticky"></label><br>
-                <button type="submit">發佈公告</button>
-            </form>
-            <div id="announcements-list"></div>
-        </div>
-    </section>
+                </div>
+            </div>
+            <div class="table-shell">
+                <table class="table" id="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>姓名</th><th>郵箱</th><th>角色</th><th>狀態</th><th>動作</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="admin-pagination" id="users-pagination"></div>
+        </section>
 
-    <section class="card">
-        <h2>帳戶轉讓</h2>
-        <div id="account-transfer-section">
-            <form id="transfer-account-form">
-                <label>原帳戶用戶ID <input type="number" id="from-user-id" required></label><br>
-                <label>目標帳戶用戶ID <input type="number" id="to-user-id" required></label><br>
-                <label>轉讓原因 <textarea id="transfer-reason" required></textarea></label><br>
-                <button type="submit">執行轉讓</button>
+        <section class="card admin-panel reveal-up">
+            <div class="admin-panel-head">
+                <h2>社團管理</h2>
+                <span class="admin-panel-subtext">新增基礎社團名單與控管顯示狀態</span>
+            </div>
+            <form id="create-club-base-form" class="admin-form-grid">
+                <div class="form-field">
+                    <label for="new-club-code">社團代碼（必填）</label>
+                    <input type="text" id="new-club-code" required />
+                    <div id="err-new-club-code" class="field-error"></div>
+                </div>
+                <div class="form-field">
+                    <label for="new-club-name">社團名稱（必填）</label>
+                    <input type="text" id="new-club-name" required />
+                    <div id="err-new-club-name" class="field-error"></div>
+                </div>
+                <div class="form-field">
+                    <label for="new-club-category">所屬分類 ID（必填）</label>
+                    <input type="number" id="new-club-category" required />
+                    <div id="err-new-club-category" class="field-error"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">新增社團基礎名單</button>
+                </div>
             </form>
-            <div id="transfer-history"></div>
-        </div>
-    </section>
+            <div class="admin-table-controls">
+                <div class="form-field">
+                    <label for="clubs-search">關鍵字搜尋</label>
+                    <input type="text" id="clubs-search" placeholder="社團代碼、社團名稱、狀態" />
+                </div>
+                <div class="form-field">
+                    <label for="clubs-sort">欄位排序</label>
+                    <select id="clubs-sort">
+                        <option value="club_id_desc">ID（新到舊）</option>
+                        <option value="club_id_asc">ID（舊到新）</option>
+                        <option value="club_name_asc">社團名稱（A-Z）</option>
+                        <option value="club_name_desc">社團名稱（Z-A）</option>
+                        <option value="activity_status_asc">狀態</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-shell">
+                <table class="table" id="clubs-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>社團代碼</th><th>社團名</th><th>分類ID</th><th>狀態</th><th>隱藏狀態</th><th>動作</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="admin-pagination" id="clubs-pagination"></div>
+        </section>
+
+        <section class="card admin-panel reveal-up">
+            <div class="admin-panel-head">
+                <h2>報告管理</h2>
+                <span class="admin-panel-subtext">活動成效與用戶回饋檢視</span>
+            </div>
+            <div id="reports-section">
+                <div class="admin-toolbar">
+                    <button class="btn btn-secondary" onclick="loadEventReports()">載入活動報告</button>
+                    <button class="btn btn-secondary" onclick="loadUserFeedback()">載入用戶回饋</button>
+                </div>
+                <div id="reports-content" class="admin-list"></div>
+            </div>
+        </section>
+
+        <section class="card admin-panel reveal-up">
+            <div class="admin-panel-head">
+                <h2>系統公告</h2>
+                <span class="admin-panel-subtext">發布全站公告與置頂訊息</span>
+            </div>
+            <div id="announcements-section">
+                <div class="admin-form-wrapper">
+                    <form id="create-announcement-form" class="admin-form-grid">
+                        <div class="form-field admin-span-2">
+                            <label for="announcement-title">公告標題</label>
+                            <input type="text" id="announcement-title" required />
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label for="announcement-content">公告內容</label>
+                            <textarea id="announcement-content" required></textarea>
+                        </div>
+                        <div class="form-field">
+                            <label for="announcement-type">公告類型</label>
+                            <select id="announcement-type">
+                                <option value="important">重要</option>
+                                <option value="event">活動</option>
+                                <option value="maintenance">維護</option>
+                                <option value="update">更新</option>
+                            </select>
+                        </div>
+                        <div class="form-field admin-checkbox-wrap">
+                            <label for="announcement-sticky">是否置頂</label>
+                            <input type="checkbox" id="announcement-sticky" />
+                        </div>
+                        <div class="form-actions admin-span-2">
+                            <button type="submit" class="btn btn-primary">發佈公告</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="admin-table-controls">
+                    <div class="form-field">
+                        <label for="announcements-search">關鍵字搜尋</label>
+                        <input type="text" id="announcements-search" placeholder="標題、內容、類型" />
+                    </div>
+                    <div class="form-field">
+                        <label for="announcements-sort">排序方式</label>
+                        <select id="announcements-sort">
+                            <option value="created_desc">最新發布</option>
+                            <option value="created_asc">最舊發布</option>
+                            <option value="pinned_first">置頂優先</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="announcements-list" class="admin-list"></div>
+                <div class="admin-pagination" id="announcements-pagination"></div>
+            </div>
+        </section>
+
+        <section class="card admin-panel reveal-up">
+            <div class="admin-panel-head">
+                <h2>帳戶轉讓</h2>
+                <span class="admin-panel-subtext">記錄管理者帳戶權限交接</span>
+            </div>
+            <div id="account-transfer-section">
+                <form id="transfer-account-form" class="admin-form-grid">
+                    <div class="form-field">
+                        <label for="from-user-id">原帳戶用戶 ID</label>
+                        <input type="number" id="from-user-id" required />
+                    </div>
+                    <div class="form-field">
+                        <label for="to-user-id">目標帳戶用戶 ID</label>
+                        <input type="number" id="to-user-id" required />
+                    </div>
+                    <div class="form-field admin-span-2">
+                        <label for="transfer-reason">轉讓原因</label>
+                        <textarea id="transfer-reason" required></textarea>
+                    </div>
+                    <div class="form-actions admin-span-2">
+                        <button type="submit" class="btn btn-primary">執行轉讓</button>
+                    </div>
+                </form>
+                <div id="transfer-history" class="admin-list"></div>
+            </div>
+        </section>
     </div>
 
     <script src="../js/main.js"></script>
     <script>
+        const PAGE_SIZE = 8;
+        const USER_ROLE_LABELS = { student: '學生', club_admin: '社團幹部', platform_admin: '平台管理員' };
+        const CLUB_STATUS_LABELS = { active: '啟用', inactive: '停用', suspended: '暫停', pending: '待審核' };
+        const ANNOUNCEMENT_TYPE_LABELS = { important: '重要', event: '活動', maintenance: '維護', update: '更新' };
+
+        const usersState = { rows: [], query: '', sort: 'user_id_desc', page: 1 };
+        const clubsState = { rows: [], query: '', sort: 'club_id_desc', page: 1 };
+        const announcementsState = { rows: [], query: '', sort: 'created_desc', page: 1 };
+
+        function toSearchableText(value) {
+            return (value ?? '').toString().trim().toLowerCase();
+        }
+
+        function compareByValue(a, b, direction = 'asc') {
+            const first = typeof a === 'number' ? a : toSearchableText(a);
+            const second = typeof b === 'number' ? b : toSearchableText(b);
+            if (first < second) return direction === 'asc' ? -1 : 1;
+            if (first > second) return direction === 'asc' ? 1 : -1;
+            return 0;
+        }
+
+        function paginateRows(rows, page) {
+            const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+            const currentPage = Math.min(Math.max(1, page), totalPages);
+            const start = (currentPage - 1) * PAGE_SIZE;
+            return { rows: rows.slice(start, start + PAGE_SIZE), totalPages, currentPage, totalRows: rows.length };
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '-';
+            if (window.PageUtils && typeof PageUtils.formatDate === 'function') return PageUtils.formatDate(value);
+            return new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+        }
+
+        function renderPagination(containerId, pageData, onPageChange) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            if (pageData.totalRows === 0) {
+                container.innerHTML = '<span class="admin-page-meta">查無資料</span>';
+                return;
+            }
+
+            const prevDisabled = pageData.currentPage === 1;
+            const nextDisabled = pageData.currentPage === pageData.totalPages;
+            container.innerHTML = `
+                <button class="btn btn-secondary btn-sm" ${prevDisabled ? 'disabled' : ''} data-page="prev">上一頁</button>
+                <span class="admin-page-meta">第 ${pageData.currentPage} / ${pageData.totalPages} 頁，共 ${pageData.totalRows} 筆</span>
+                <button class="btn btn-secondary btn-sm" ${nextDisabled ? 'disabled' : ''} data-page="next">下一頁</button>
+            `;
+
+            container.querySelectorAll('button[data-page]').forEach(btn => {
+                btn.addEventListener('click', () => onPageChange(btn.dataset.page === 'prev' ? pageData.currentPage - 1 : pageData.currentPage + 1));
+            });
+        }
+
+        function renderEmptyState(container, title, description, colspan = 1) {
+            if (container.tagName === 'TBODY') {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="${colspan}">
+                            <div class="empty-state">
+                                <div class="empty-state-illustration"></div>
+                                <h4>${title}</h4>
+                                <p>${description}</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-illustration"></div>
+                    <h4>${title}</h4>
+                    <p>${description}</p>
+                </div>
+            `;
+        }
+
         function setFieldError(inputId, message) {
             const input = document.getElementById(inputId);
             const err = document.getElementById(`err-${inputId}`);
@@ -134,230 +346,361 @@
         async function loadUsers() {
             const response = await APIClient.get('admin.php?action=users');
             if (!response.success) return console.error(response.message);
-            const body = document.querySelector('#users-table tbody');
-            body.innerHTML = '';
-            response.data.users.forEach(u => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${u.user_id}</td>
-                    <td>${u.name}</td>
-                    <td>${u.email}</td>
-                    <td>${u.role}</td>
-                    <td>${u.is_active ? '啟用' : '停用'}</td>
-                    <td>
-                        <button data-id="${u.user_id}" data-role="student">學生</button>
-                        <button data-id="${u.user_id}" data-role="club_admin">社團幹部</button>
-                        <button data-id="${u.user_id}" data-role="platform_admin">管理員</button>
-                    </td>`;
-                body.appendChild(row);
-            });
-
-            document.querySelectorAll('#users-table button').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const user_id = btn.dataset.id;
-                    const role = btn.dataset.role;
-                    const res = await APIClient.post('admin.php?action=update_user_role', { user_id, role });
-                    if (res.success) { loadUsers(); } else { console.error(res.message); }
-                });
-            });
+            usersState.rows = response.data.users || [];
+            document.getElementById('stat-users').textContent = usersState.rows.length;
+            renderUsersTable();
         }
 
         async function loadClubs() {
             const response = await APIClient.get('admin.php?action=clubs');
             if (!response.success) return console.error(response.message);
-            const body = document.querySelector('#clubs-table tbody');
-            body.innerHTML = '';
-            response.data.clubs.forEach(c => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${c.club_id}</td>
-                    <td>${c.club_code || '-'}</td>
-                    <td>${c.club_name}</td>
-                    <td>${c.category_id}</td>
-                    <td>${c.activity_status}</td>
-                    <td>${c.deleted_at ? '已隱藏' : '顯示中'}</td>
-                    <td>
-                        <select data-id="${c.club_id}">
-                            <option value="active" ${c.activity_status==='active'?'selected':''}>active</option>
-                            <option value="inactive" ${c.activity_status==='inactive'?'selected':''}>inactive</option>
-                            <option value="suspended" ${c.activity_status==='suspended'?'selected':''}>suspended</option>
-                            <option value="pending" ${c.activity_status==='pending'?'selected':''}>pending</option>
-                        </select>
-                        <button data-id="${c.club_id}">更新</button>
-                        <button data-soft-delete="${c.club_id}">${c.deleted_at ? '恢復' : '停用/隱藏'}</button>
-                    </td>`;
-                body.appendChild(row);
-            });
+            clubsState.rows = response.data.clubs || [];
+            document.getElementById('stat-clubs').textContent = clubsState.rows.length;
+            renderClubsTable();
+        }
 
-            document.querySelectorAll('#clubs-table button').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    if (btn.dataset.softDelete) {
-                        const hide = btn.textContent.includes('停用');
-                        const res = await APIClient.post('admin.php?action=soft_delete_club', {
-                            club_id: btn.dataset.softDelete,
-                            hide
-                        });
-                        if (res.success) { loadClubs(); }
-                        return;
-                    }
+        async function loadAnnouncements() {
+            const response = await APIClient.get('admin.php?action=announcements');
+            if (!response.success) return console.error(response.message);
+            announcementsState.rows = response.data.announcements || [];
+            document.getElementById('stat-announcements').textContent = announcementsState.rows.length;
+            renderAnnouncementsList();
+        }
 
-                    const club_id = btn.dataset.id;
-                    if (!club_id) return;
-                    const status = btn.closest('tr').querySelector('select').value;
-                    const res = await APIClient.post('admin.php?action=update_club_status', { club_id, activity_status: status });
-                    if (res.success) { loadClubs(); } else { console.error(res.message); }
-                });
+        async function loadTransferHistory() {
+            const response = await APIClient.get('admin.php?action=transfer_history');
+            if (!response.success) return console.error(response.message);
+            const rows = response.data.transfers || [];
+            document.getElementById('stat-transfers').textContent = rows.length;
+            const container = document.getElementById('transfer-history');
+            container.innerHTML = '';
+            if (rows.length === 0) {
+                renderEmptyState(container, '目前沒有轉讓紀錄', '當有帳戶交接時，紀錄會顯示在這裡。');
+                return;
+            }
+            rows.forEach(transfer => {
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head">
+                        <h4>帳戶轉讓紀錄</h4>
+                        <span class="status-chip chip-warning">${formatDateTime(transfer.transferred_at)}</span>
+                    </div>
+                    <p class="admin-item-content">從用戶 ${transfer.from_user_name} (${transfer.from_user_id}) 轉讓到用戶 ${transfer.to_user_name} (${transfer.to_user_id})</p>
+                    <div class="admin-item-footer">
+                        <span class="admin-item-time">操作者：${transfer.admin_name || '-'}</span>
+                        <span class="status-chip">${transfer.reason || '未填寫原因'}</span>
+                    </div>
+                `;
+                container.appendChild(card);
             });
         }
 
-        loadUsers();
-        loadClubs();
-        loadAnnouncements();
-
-        document.getElementById('create-club-base-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            if (!validateCreateClubBaseForm()) return;
-
-            const payload = {
-                club_code: document.getElementById('new-club-code').value.trim(),
-                club_name: document.getElementById('new-club-name').value.trim(),
-                category_id: Number(document.getElementById('new-club-category').value)
-            };
-
-            const res = await APIClient.post('admin.php?action=create_club', payload);
-            if (res.success) {
-                event.target.reset();
-                loadClubs();
-                alert('社團基礎名單新增成功');
-            } else {
-                alert('新增失敗：' + res.message);
-            }
-        });
-
-        // 公告表單提交
-        document.getElementById('create-announcement-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            const data = {
-                title: document.getElementById('announcement-title').value,
-                content: document.getElementById('announcement-content').value,
-                type: document.getElementById('announcement-type').value,
-                is_sticky: document.getElementById('announcement-sticky').checked ? 1 : 0
-            };
-            const res = await APIClient.post('admin.php?action=create_announcement', data);
-            if (res.success) {
-                alert('公告發佈成功');
-                event.target.reset();
-                loadAnnouncements();
-            } else {
-                alert('發佈公告失敗：' + res.message);
-            }
-        });
-
-        // 帳戶轉讓表單提交
-        document.getElementById('transfer-account-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            const data = {
-                from_user_id: document.getElementById('from-user-id').value,
-                to_user_id: document.getElementById('to-user-id').value,
-                reason: document.getElementById('transfer-reason').value
-            };
-            const res = await APIClient.post('admin.php?action=transfer_account', data);
-            if (res.success) {
-                alert('帳戶轉讓成功');
-                event.target.reset();
-                loadTransferHistory();
-            } else {
-                alert('帳戶轉讓失敗：' + res.message);
-            }
-        });
-
         async function loadEventReports() {
-            const res = await APIClient.get('admin.php?action=event_reports');
-            if (!res.success) return console.error(res.message);
+            const response = await APIClient.get('admin.php?action=event_reports');
+            if (!response.success) return console.error(response.message);
             const container = document.getElementById('reports-content');
-            container.innerHTML = '<h3>活動報告</h3>';
-            res.data.reports.forEach(report => {
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+            container.innerHTML = '';
+            const reports = response.data.reports || [];
+            if (reports.length === 0) {
+                renderEmptyState(container, '目前沒有活動報告', '等有活動成果資料後，這裡會顯示統計內容。');
+                return;
+            }
+            reports.forEach(report => {
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head">
                         <h4>${report.event_name}</h4>
-                        <p>參與人數: ${report.participants_count}</p>
-                        <p>評價: ${report.average_rating || '無'}</p>
-                        <p>狀態: ${report.event_status}</p>
+                        <span class="status-chip">${CLUB_STATUS_LABELS[report.event_status] || report.event_status || '-'}</span>
                     </div>
+                    <p class="admin-item-content">參與人數：${report.participants_count ?? 0}，平均評分：${report.average_rating ?? '無'}</p>
                 `;
-                container.appendChild(div);
+                container.appendChild(card);
             });
         }
 
         async function loadUserFeedback() {
-            const res = await APIClient.get('admin.php?action=user_feedback');
-            if (!res.success) return console.error(res.message);
+            const response = await APIClient.get('admin.php?action=user_feedback');
+            if (!response.success) return console.error(response.message);
             const container = document.getElementById('reports-content');
-            container.innerHTML = '<h3>用戶回饋</h3>';
-            res.data.feedback.forEach(item => {
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
-                        <p><strong>${item.user_name}</strong> (${item.user_email})</p>
-                        <p>類型: ${item.feedback_type}</p>
-                        <p>內容: ${item.content}</p>
-                        <p>時間: ${item.created_at}</p>
+            container.innerHTML = '';
+            const feedback = response.data.feedback || [];
+            if (feedback.length === 0) {
+                renderEmptyState(container, '目前沒有用戶回饋', '等有回饋資料後，這裡會顯示留言與評語。');
+                return;
+            }
+            feedback.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head">
+                        <h4>${item.subject || '用戶回饋'}</h4>
+                        <span class="status-chip">${formatDateTime(item.created_at)}</span>
                     </div>
+                    <p class="admin-item-content">${item.message || item.content || '-'}</p>
                 `;
-                container.appendChild(div);
+                container.appendChild(card);
             });
         }
 
-        async function loadAnnouncements() {
-            const res = await APIClient.get('admin.php?action=announcements');
-            if (!res.success) return console.error(res.message);
+        function getFilteredSortedUsers() {
+            const query = toSearchableText(usersState.query);
+            let rows = [...usersState.rows];
+            if (query) {
+                rows = rows.filter(user => {
+                    const roleLabel = USER_ROLE_LABELS[user.role] || user.role;
+                    const statusLabel = user.is_active ? '啟用' : '停用';
+                    return [user.user_id, user.name, user.email, roleLabel, statusLabel].some(v => toSearchableText(v).includes(query));
+                });
+            }
+            const sortMap = {
+                user_id_desc: (a, b) => compareByValue(a.user_id, b.user_id, 'desc'),
+                user_id_asc: (a, b) => compareByValue(a.user_id, b.user_id, 'asc'),
+                name_asc: (a, b) => compareByValue(a.name, b.name, 'asc'),
+                name_desc: (a, b) => compareByValue(a.name, b.name, 'desc'),
+                role_asc: (a, b) => compareByValue(USER_ROLE_LABELS[a.role] || a.role, USER_ROLE_LABELS[b.role] || b.role, 'asc')
+            };
+            rows.sort(sortMap[usersState.sort] || sortMap.user_id_desc);
+            return rows;
+        }
+
+        function getFilteredSortedClubs() {
+            const query = toSearchableText(clubsState.query);
+            let rows = [...clubsState.rows];
+            if (query) {
+                rows = rows.filter(club => {
+                    const statusLabel = CLUB_STATUS_LABELS[club.activity_status] || club.activity_status;
+                    const visibilityLabel = club.deleted_at ? '已隱藏' : '顯示中';
+                    return [club.club_id, club.club_code, club.club_name, club.category_id, statusLabel, visibilityLabel].some(v => toSearchableText(v).includes(query));
+                });
+            }
+            const sortMap = {
+                club_id_desc: (a, b) => compareByValue(a.club_id, b.club_id, 'desc'),
+                club_id_asc: (a, b) => compareByValue(a.club_id, b.club_id, 'asc'),
+                club_name_asc: (a, b) => compareByValue(a.club_name, b.club_name, 'asc'),
+                club_name_desc: (a, b) => compareByValue(a.club_name, b.club_name, 'desc'),
+                activity_status_asc: (a, b) => compareByValue(CLUB_STATUS_LABELS[a.activity_status] || a.activity_status, CLUB_STATUS_LABELS[b.activity_status] || b.activity_status, 'asc')
+            };
+            rows.sort(sortMap[clubsState.sort] || sortMap.club_id_desc);
+            return rows;
+        }
+
+        function getFilteredSortedAnnouncements() {
+            const query = toSearchableText(announcementsState.query);
+            let rows = [...announcementsState.rows];
+            if (query) {
+                rows = rows.filter(item => {
+                    const typeKey = item.announcement_type || item.type;
+                    const typeLabel = ANNOUNCEMENT_TYPE_LABELS[typeKey] || typeKey;
+                    return [item.title, item.content, typeLabel].some(v => toSearchableText(v).includes(query));
+                });
+            }
+            const sortMap = {
+                created_desc: (a, b) => new Date(b.created_at) - new Date(a.created_at),
+                created_asc: (a, b) => new Date(a.created_at) - new Date(b.created_at),
+                pinned_first: (a, b) => {
+                    const pinnedA = Boolean(a.is_pinned ?? a.is_sticky);
+                    const pinnedB = Boolean(b.is_pinned ?? b.is_sticky);
+                    if (pinnedA !== pinnedB) return pinnedB ? 1 : -1;
+                    return new Date(b.created_at) - new Date(a.created_at);
+                }
+            };
+            rows.sort(sortMap[announcementsState.sort] || sortMap.created_desc);
+            return rows;
+        }
+
+        function renderUsersTable() {
+            const filtered = getFilteredSortedUsers();
+            const pageData = paginateRows(filtered, usersState.page);
+            usersState.page = pageData.currentPage;
+            const body = document.querySelector('#users-table tbody');
+            body.innerHTML = '';
+            if (pageData.rows.length === 0) {
+                renderEmptyState(body, '沒有符合條件的用戶', '試試其他關鍵字或調整排序條件。', 6);
+                renderPagination('users-pagination', pageData, nextPage => { usersState.page = nextPage; renderUsersTable(); });
+                return;
+            }
+            pageData.rows.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.user_id}</td>
+                    <td>${user.name || '-'}</td>
+                    <td>${user.email || '-'}</td>
+                    <td><span class="status-chip role-chip">${USER_ROLE_LABELS[user.role] || user.role || '-'}</span></td>
+                    <td><span class="status-chip ${user.is_active ? 'chip-success' : 'chip-danger'}">${user.is_active ? '啟用' : '停用'}</span></td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="btn btn-secondary btn-sm" data-user-id="${user.user_id}" data-role="student">學生</button>
+                            <button class="btn btn-secondary btn-sm" data-user-id="${user.user_id}" data-role="club_admin">社團幹部</button>
+                            <button class="btn btn-secondary btn-sm" data-user-id="${user.user_id}" data-role="platform_admin">管理員</button>
+                        </div>
+                    </td>`;
+                body.appendChild(row);
+            });
+            document.querySelectorAll('#users-table button[data-user-id]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const response = await APIClient.post('admin.php?action=update_user_role', { user_id: btn.dataset.userId, role: btn.dataset.role });
+                    if (response.success) loadUsers();
+                    else PageUtils.showAlert('更新角色失敗：' + response.message, 'error');
+                });
+            });
+            renderPagination('users-pagination', pageData, nextPage => { usersState.page = nextPage; renderUsersTable(); });
+        }
+
+        function renderClubsTable() {
+            const filtered = getFilteredSortedClubs();
+            const pageData = paginateRows(filtered, clubsState.page);
+            clubsState.page = pageData.currentPage;
+            const body = document.querySelector('#clubs-table tbody');
+            body.innerHTML = '';
+            if (pageData.rows.length === 0) {
+                renderEmptyState(body, '沒有符合條件的社團', '可嘗試搜尋社團代碼、名稱或狀態。', 7);
+                renderPagination('clubs-pagination', pageData, nextPage => { clubsState.page = nextPage; renderClubsTable(); });
+                return;
+            }
+            pageData.rows.forEach(club => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${club.club_id}</td>
+                    <td>${club.club_code || '-'}</td>
+                    <td>${club.club_name || '-'}</td>
+                    <td>${club.category_id ?? '-'}</td>
+                    <td><span class="status-chip">${CLUB_STATUS_LABELS[club.activity_status] || club.activity_status || '-'}</span></td>
+                    <td><span class="status-chip ${club.deleted_at ? 'chip-warning' : 'chip-success'}">${club.deleted_at ? '已隱藏' : '顯示中'}</span></td>
+                    <td>
+                        <div class="row-actions">
+                            <select data-club-id="${club.club_id}" class="table-select">
+                                <option value="active" ${club.activity_status === 'active' ? 'selected' : ''}>啟用</option>
+                                <option value="inactive" ${club.activity_status === 'inactive' ? 'selected' : ''}>停用</option>
+                                <option value="suspended" ${club.activity_status === 'suspended' ? 'selected' : ''}>暫停</option>
+                                <option value="pending" ${club.activity_status === 'pending' ? 'selected' : ''}>待審核</option>
+                            </select>
+                            <button class="btn btn-secondary btn-sm" data-club-update="${club.club_id}">更新</button>
+                            <button class="btn btn-secondary btn-sm" data-club-toggle="${club.club_id}">${club.deleted_at ? '恢復' : '停用/隱藏'}</button>
+                        </div>
+                    </td>`;
+                body.appendChild(row);
+            });
+            document.querySelectorAll('#clubs-table button[data-club-update]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const row = btn.closest('tr');
+                    const status = row.querySelector('select').value;
+                    const response = await APIClient.post('admin.php?action=update_club_status', { club_id: btn.dataset.clubUpdate, activity_status: status });
+                    if (response.success) loadClubs();
+                    else PageUtils.showAlert('更新社團狀態失敗：' + response.message, 'error');
+                });
+            });
+            document.querySelectorAll('#clubs-table button[data-club-toggle]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const response = await APIClient.post('admin.php?action=soft_delete_club', { club_id: btn.dataset.clubToggle, hide: btn.textContent.includes('停用') });
+                    if (response.success) loadClubs();
+                    else PageUtils.showAlert('更新社團顯示狀態失敗：' + response.message, 'error');
+                });
+            });
+            renderPagination('clubs-pagination', pageData, nextPage => { clubsState.page = nextPage; renderClubsTable(); });
+        }
+
+        function renderAnnouncementsList() {
+            const filtered = getFilteredSortedAnnouncements();
+            const pageData = paginateRows(filtered, announcementsState.page);
+            announcementsState.page = pageData.currentPage;
             const container = document.getElementById('announcements-list');
-            container.innerHTML = '<h3>現有公告</h3>';
-            res.data.announcements.forEach(announcement => {
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
-                        <h4>${announcement.title}</h4>
-                        <p>${announcement.content}</p>
-                        <p>類型: ${announcement.announcement_type} | 置頂: ${announcement.is_pinned ? '是' : '否'}</p>
-                        <p>時間: ${announcement.created_at}</p>
-                        <button onclick="deleteAnnouncement(${announcement.announcement_id})">刪除</button>
+            container.innerHTML = '';
+            if (pageData.rows.length === 0) {
+                renderEmptyState(container, '目前沒有公告', '新增第一則公告，或改用其他排序方式查看。');
+                renderPagination('announcements-pagination', pageData, nextPage => { announcementsState.page = nextPage; renderAnnouncementsList(); });
+                return;
+            }
+            pageData.rows.forEach(item => {
+                const typeKey = item.announcement_type || item.type;
+                const isPinned = Boolean(item.is_pinned ?? item.is_sticky);
+                const card = document.createElement('div');
+                card.className = `admin-item-card ${isPinned ? 'admin-item-card-pinned' : ''}`;
+                card.innerHTML = `
+                    <div class="admin-item-head">
+                        <h4>${item.title || '-'}</h4>
+                        <div class="admin-item-badges">
+                            ${isPinned ? '<span class="status-chip chip-warning">置頂</span>' : ''}
+                            <span class="status-chip">${ANNOUNCEMENT_TYPE_LABELS[typeKey] || typeKey || '-'}</span>
+                        </div>
+                    </div>
+                    <p class="admin-item-content">${item.content || '-'}</p>
+                    <div class="admin-item-footer">
+                        <span class="admin-item-time">${formatDateTime(item.created_at)}</span>
+                        <button class="btn btn-secondary btn-sm" data-announcement-delete="${item.announcement_id}">刪除</button>
                     </div>
                 `;
-                container.appendChild(div);
+                container.appendChild(card);
             });
+            container.querySelectorAll('button[data-announcement-delete]').forEach(btn => {
+                btn.addEventListener('click', async () => { await deleteAnnouncement(btn.dataset.announcementDelete); });
+            });
+            renderPagination('announcements-pagination', pageData, nextPage => { announcementsState.page = nextPage; renderAnnouncementsList(); });
         }
 
         async function deleteAnnouncement(id) {
             if (!confirm('確定要刪除此公告嗎？')) return;
-            const res = await APIClient.delete('admin.php?action=delete_announcement&id=' + id);
-            if (res.success) {
-                alert('公告刪除成功');
+            const response = await APIClient.delete('admin.php?action=delete_announcement&id=' + id);
+            if (response.success) {
+                PageUtils.showAlert('公告刪除成功', 'success');
                 loadAnnouncements();
             } else {
-                alert('刪除公告失敗：' + res.message);
+                PageUtils.showAlert('刪除公告失敗：' + response.message, 'error');
             }
         }
 
-        async function loadTransferHistory() {
-            const res = await APIClient.get('admin.php?action=transfer_history');
-            if (!res.success) return console.error(res.message);
-            const container = document.getElementById('transfer-history');
-            container.innerHTML = '<h3>轉讓歷史</h3>';
-            res.data.transfers.forEach(transfer => {
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
-                        <p>從用戶 ${transfer.from_user_name} (${transfer.from_user_id}) 轉讓到用戶 ${transfer.to_user_name} (${transfer.to_user_id})</p>
-                        <p>原因: ${transfer.reason}</p>
-                        <p>時間: ${transfer.transferred_at}</p>
-                        <p>操作者: ${transfer.admin_name}</p>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
+        document.getElementById('users-search').addEventListener('input', event => { usersState.query = event.target.value; usersState.page = 1; renderUsersTable(); });
+        document.getElementById('users-sort').addEventListener('change', event => { usersState.sort = event.target.value; usersState.page = 1; renderUsersTable(); });
+        document.getElementById('clubs-search').addEventListener('input', event => { clubsState.query = event.target.value; clubsState.page = 1; renderClubsTable(); });
+        document.getElementById('clubs-sort').addEventListener('change', event => { clubsState.sort = event.target.value; clubsState.page = 1; renderClubsTable(); });
+        document.getElementById('announcements-search').addEventListener('input', event => { announcementsState.query = event.target.value; announcementsState.page = 1; renderAnnouncementsList(); });
+        document.getElementById('announcements-sort').addEventListener('change', event => { announcementsState.sort = event.target.value; announcementsState.page = 1; renderAnnouncementsList(); });
+
+        document.getElementById('create-club-base-form').addEventListener('submit', async event => {
+            event.preventDefault();
+            if (!validateCreateClubBaseForm()) return;
+            const payload = { club_code: document.getElementById('new-club-code').value.trim(), club_name: document.getElementById('new-club-name').value.trim(), category_id: Number(document.getElementById('new-club-category').value) };
+            const response = await APIClient.post('admin.php?action=create_club', payload);
+            if (response.success) {
+                event.target.reset();
+                loadClubs();
+                PageUtils.showAlert('社團基礎名單新增成功', 'success');
+            } else {
+                PageUtils.showAlert('新增失敗：' + response.message, 'error');
+            }
+        });
+
+        document.getElementById('create-announcement-form').addEventListener('submit', async event => {
+            event.preventDefault();
+            const payload = { title: document.getElementById('announcement-title').value, content: document.getElementById('announcement-content').value, type: document.getElementById('announcement-type').value, is_sticky: document.getElementById('announcement-sticky').checked ? 1 : 0 };
+            const response = await APIClient.post('admin.php?action=create_announcement', payload);
+            if (response.success) {
+                PageUtils.showAlert('公告發佈成功', 'success');
+                event.target.reset();
+                loadAnnouncements();
+            } else {
+                PageUtils.showAlert('發佈公告失敗：' + response.message, 'error');
+            }
+        });
+
+        document.getElementById('transfer-account-form').addEventListener('submit', async event => {
+            event.preventDefault();
+            const payload = { from_user_id: document.getElementById('from-user-id').value, to_user_id: document.getElementById('to-user-id').value, reason: document.getElementById('transfer-reason').value };
+            const response = await APIClient.post('admin.php?action=transfer_account', payload);
+            if (response.success) {
+                PageUtils.showAlert('帳戶轉讓成功', 'success');
+                event.target.reset();
+                loadTransferHistory();
+            } else {
+                PageUtils.showAlert('帳戶轉讓失敗：' + response.message, 'error');
+            }
+        });
+
+        loadUsers();
+        loadClubs();
+        loadAnnouncements();
+        loadTransferHistory();
     </script>
 </body>
 </html>

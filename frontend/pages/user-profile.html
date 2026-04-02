@@ -9,7 +9,6 @@
 </head>
 
 <body>
-    <!-- 導航 -->
     <header>
         <nav>
             <a href="../index.html" class="logo">⚡ 社團平台</a>
@@ -30,13 +29,11 @@
     <div id="alert-container"></div>
 
     <div class="container">
-        <!-- 載入中 -->
         <div id="loading" class="loading" style="display: block;">
             <div class="spinner"></div>
             <p>載入個人檔案...</p>
         </div>
 
-        <!-- 個人檔案 -->
         <div id="profile-content" style="display: none;">
             <div class="card">
                 <div class="card-header">
@@ -45,7 +42,6 @@
 
                 <div class="card-body">
                     <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
-                        <!-- 個人信息 -->
                         <div>
                             <div class="card">
                                 <h3>基本信息</h3>
@@ -77,7 +73,6 @@
                             </div>
                         </div>
 
-                        <!-- 活動歷史 -->
                         <div>
                             <div class="card">
                                 <div class="card-header">
@@ -118,7 +113,6 @@
         </div>
     </div>
 
-    <!-- 頁腳 -->
     <footer>
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>
@@ -127,7 +121,6 @@
     <script>
         let currentUser = null;
 
-        // 載入用戶資料
         async function loadUserProfile() {
             try {
                 const response = await APIClient.get('auth.php?action=current');
@@ -151,7 +144,6 @@
             }
         }
 
-        // 顯示用戶資料
         function displayUserProfile(user) {
             const userInfo = document.getElementById('user-info');
             const avatarUrl = user.avatar_path ? `../${user.avatar_path}` : null;
@@ -168,12 +160,10 @@
                 </div>
             `;
 
-            // 填充編輯表單
             document.getElementById('edit-name').value = user.name;
             document.getElementById('edit-phone').value = user.phone || '';
         }
 
-        // 取得角色名稱
         function getRoleName(role) {
             const roles = {
                 'student': '學生',
@@ -183,7 +173,6 @@
             return roles[role] || role;
         }
 
-        // 載入用戶活動
         async function loadUserEvents() {
             try {
                 const response = await APIClient.get('events.php?action=my_events');
@@ -221,7 +210,6 @@
             }
         }
 
-        // 載入個人動態牆（依追蹤社團活動）
         async function loadFollowedFeed() {
             try {
                 const response = await APIClient.get('notifications.php?action=feed');
@@ -265,7 +253,6 @@
             }
         }
 
-        // 載入用戶提問
         async function loadUserQuestions() {
             try {
                 const response = await APIClient.get('qa.php?action=my_questions');
@@ -303,7 +290,6 @@
             }
         }
 
-        // 頭像預覽
         function previewAvatar(event) {
             const file = event.target.files[0];
             const preview = document.getElementById('avatar-preview');
@@ -321,7 +307,6 @@
             }
         }
 
-        // 處理個人資料更新
         async function handleProfileUpdate(e) {
             e.preventDefault();
 
@@ -335,29 +320,35 @@
             }
 
             try {
-                // 如果有頭像文件，先上傳頭像
                 let avatarPath = null;
                 if (avatarFile) {
                     const formData = new FormData();
                     formData.append('avatar', avatarFile);
 
-                    const uploadResponse = await fetch('../backend/api/upload.php?action=upload_user_avatar', {
+                    const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_user_avatar', {
                         method: 'POST',
                         body: formData,
+                        credentials: 'same-origin',
                         headers: APIClient.getAuthHeaders()
                     });
 
-                    const uploadResult = await uploadResponse.json();
-                    if (uploadResult.success) {
+                    let uploadResult = null;
+                    try {
+                        uploadResult = await uploadResponse.json();
+                    } catch (parseError) {
+                        PageUtils.showAlert('頭像上傳失敗: 回應格式錯誤', 'error');
+                        return;
+                    }
+
+                    if (uploadResponse.ok && uploadResult.success) {
                         avatarPath = uploadResult.path;
                         PageUtils.showAlert('頭像上傳成功', 'success');
                     } else {
-                        PageUtils.showAlert('頭像上傳失敗: ' + uploadResult.message, 'error');
+                        PageUtils.showAlert('頭像上傳失敗: ' + (uploadResult.message || '未知錯誤'), 'error');
                         return;
                     }
                 }
 
-                // 更新個人資料
                 const updateData = {
                     name: name,
                     phone: phone
@@ -371,7 +362,7 @@
 
                 if (response.success) {
                     PageUtils.showAlert('個人資料更新成功', 'success');
-                    loadUserProfile(); // 重新載入
+                    loadUserProfile();
                 } else {
                     PageUtils.showAlert(response.message, 'error');
                 }
@@ -381,11 +372,9 @@
             }
         }
 
-        // 頁面載入時初始化
         window.addEventListener('DOMContentLoaded', function() {
             loadUserProfile();
 
-            // 綁定事件
             document.getElementById('edit-profile-form').addEventListener('submit', handleProfileUpdate);
         });
     </script>

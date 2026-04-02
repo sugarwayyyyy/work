@@ -345,7 +345,7 @@ class ClubAPI {
         try {
             // 檢查權限
             $member = Database::getInstance()->fetchOne(
-                'SELECT * FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "public_relations")',
+                'SELECT * FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
                 [$club_id, Auth::getCurrentUserId()]
             );
             
