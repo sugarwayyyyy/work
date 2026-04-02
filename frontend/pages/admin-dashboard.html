@@ -123,8 +123,8 @@
                 <div class="form-field">
                     <label for="clubs-sort">欄位排序</label>
                     <select id="clubs-sort">
-                        <option value="club_id_desc">ID（新到舊）</option>
-                        <option value="club_id_asc">ID（舊到新）</option>
+                        <option value="club_code_asc">社團代碼（A-Z）</option>
+                        <option value="club_code_desc">社團代碼（Z-A）</option>
                         <option value="club_name_asc">社團名稱（A-Z）</option>
                         <option value="club_name_desc">社團名稱（Z-A）</option>
                         <option value="activity_status_asc">狀態</option>
@@ -135,7 +135,7 @@
                 <table class="table" id="clubs-table">
                     <thead>
                         <tr>
-                            <th>ID</th><th>社團代碼</th><th>社團名</th><th>分類ID</th><th>狀態</th><th>隱藏狀態</th><th>動作</th>
+                            <th>社團代碼</th><th>社團名</th><th>分類ID</th><th>狀態</th><th>隱藏狀態</th><th>動作</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -247,7 +247,7 @@
         const ANNOUNCEMENT_TYPE_LABELS = { important: '重要', event: '活動', maintenance: '維護', update: '更新' };
 
         const usersState = { rows: [], query: '', sort: 'user_id_desc', page: 1 };
-        const clubsState = { rows: [], query: '', sort: 'club_id_desc', page: 1 };
+        const clubsState = { rows: [], query: '', sort: 'club_code_asc', page: 1 };
         const announcementsState = { rows: [], query: '', sort: 'created_desc', page: 1 };
 
         function toSearchableText(value) {
@@ -476,13 +476,13 @@
                 });
             }
             const sortMap = {
-                club_id_desc: (a, b) => compareByValue(a.club_id, b.club_id, 'desc'),
-                club_id_asc: (a, b) => compareByValue(a.club_id, b.club_id, 'asc'),
+                club_code_asc: (a, b) => compareByValue(a.club_code, b.club_code, 'asc'),
+                club_code_desc: (a, b) => compareByValue(a.club_code, b.club_code, 'desc'),
                 club_name_asc: (a, b) => compareByValue(a.club_name, b.club_name, 'asc'),
                 club_name_desc: (a, b) => compareByValue(a.club_name, b.club_name, 'desc'),
                 activity_status_asc: (a, b) => compareByValue(CLUB_STATUS_LABELS[a.activity_status] || a.activity_status, CLUB_STATUS_LABELS[b.activity_status] || b.activity_status, 'asc')
             };
-            rows.sort(sortMap[clubsState.sort] || sortMap.club_id_desc);
+            rows.sort(sortMap[clubsState.sort] || sortMap.club_code_asc);
             return rows;
         }
 
@@ -555,14 +555,13 @@
             const body = document.querySelector('#clubs-table tbody');
             body.innerHTML = '';
             if (pageData.rows.length === 0) {
-                renderEmptyState(body, '沒有符合條件的社團', '可嘗試搜尋社團代碼、名稱或狀態。', 7);
+                renderEmptyState(body, '沒有符合條件的社團', '可嘗試搜尋社團代碼、名稱或狀態。', 6);
                 renderPagination('clubs-pagination', pageData, nextPage => { clubsState.page = nextPage; renderClubsTable(); });
                 return;
             }
             pageData.rows.forEach(club => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${club.club_id}</td>
                     <td>${club.club_code || '-'}</td>
                     <td>${club.club_name || '-'}</td>
                     <td>${club.category_id ?? '-'}</td>
