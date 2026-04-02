@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入 - 社團平台</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+    <!-- 導航 -->
+    <header>
+        <nav>
+            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">首頁</a></li>
+                <li><a href="club-list.html">社團</a></li>
+                <li><a href="events.html">活動</a></li>
+                <li><a href="qa.html">提問</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div style="max-width: 400px; margin: 3rem auto;">
+            <div class="card">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem;">登入</h1>
+                    <p style="color: var(--text-light);">歡迎回到社團平台</p>
+                </div>
+
+                <div id="alert-container"></div>
+
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="email">郵箱</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">密碼</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">登入</button>
+                </form>
+
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <p>沒有帳號？<a href="register.html" style="color: var(--primary-color); text-decoration: none;">立即註冊</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!Validator.validateEmail(email)) {
+                PageUtils.showAlert('請輸入有效的郵箱', 'error');
+                return;
+            }
+
+            if (!Validator.validatePassword(password)) {
+                PageUtils.showAlert('密碼至少需要6個字符', 'error');
+                return;
+            }
+
+            try {
+                const response = await APIClient.post('auth.php?action=login', {
+                    email,
+                    password
+                });
+
+                if (response.success) {
+                    StorageUtils.setUser(response.data);
+                    PageUtils.showAlert('登入成功，正在重定向...', 'success');
+                    setTimeout(() => {
+                        const role = response.data.role;
+                        if (role === 'platform_admin') {
+                            window.location.href = 'admin-dashboard.html';
+                        } else if (role === 'club_admin') {
+                            window.location.href = 'club-admin-dashboard.html';
+                        } else {
+                            window.location.href = '../index.html';
+                        }
+                    }, 1000);
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('登入失敗，請稍後重試', 'error');
+            }
+        });
+    </script>
+</body>
+
+</html>

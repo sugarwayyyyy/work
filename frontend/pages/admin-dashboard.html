@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理員儀表板</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">首頁</a></li>
+                <li><a href="club-list.html">社團</a></li>
+                <li><a href="events.html">活動</a></li>
+            </ul>
+            <div class="nav-right">
+                <span id="user-dropdown" style="display: none;"></span>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()">登出</button>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container">
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <h1 style="margin-bottom: .5rem;">管理員儀表板</h1>
+            <p style="color: var(--text-light); margin: 0;">平台核准、社團及用戶管理</p>
+        </div>
+
+    <section class="card">
+        <h2>用戶管理</h2>
+        <table class="table" id="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th><th>姓名</th><th>郵箱</th><th>角色</th><th>狀態</th><th>動作</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </section>
+
+    <section class="card">
+        <h2>社團管理</h2>
+        <form id="create-club-base-form" style="margin-bottom: 1rem;">
+            <label>社團代碼（必填） <input type="text" id="new-club-code" required></label>
+            <div id="err-new-club-code" class="field-error"></div>
+            <label>社團名稱（必填） <input type="text" id="new-club-name" required></label>
+            <div id="err-new-club-name" class="field-error"></div>
+            <label>所屬分類（必填） <input type="number" id="new-club-category" required></label>
+            <div id="err-new-club-category" class="field-error"></div>
+            <button type="submit">新增社團基礎名單</button>
+        </form>
+        <table class="table" id="clubs-table">
+            <thead>
+                <tr>
+                    <th>ID</th><th>社團代碼</th><th>社團名</th><th>分類ID</th><th>狀態</th><th>隱藏狀態</th><th>動作</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </section>
+
+    <section class="card">
+        <h2>報告管理</h2>
+        <div id="reports-section">
+            <button onclick="loadEventReports()">載入活動報告</button>
+            <button onclick="loadUserFeedback()">載入用戶回饋</button>
+            <div id="reports-content"></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>系統公告</h2>
+        <div id="announcements-section">
+            <form id="create-announcement-form">
+                <label>公告標題 <input type="text" id="announcement-title" required></label><br>
+                <label>公告內容 <textarea id="announcement-content" required></textarea></label><br>
+                <label>公告類型
+                    <select id="announcement-type">
+                        <option value="important">重要</option>
+                        <option value="event">活動</option>
+                        <option value="maintenance">維護</option>
+                        <option value="update">更新</option>
+                    </select>
+                </label><br>
+                <label>是否置頂 <input type="checkbox" id="announcement-sticky"></label><br>
+                <button type="submit">發佈公告</button>
+            </form>
+            <div id="announcements-list"></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>帳戶轉讓</h2>
+        <div id="account-transfer-section">
+            <form id="transfer-account-form">
+                <label>原帳戶用戶ID <input type="number" id="from-user-id" required></label><br>
+                <label>目標帳戶用戶ID <input type="number" id="to-user-id" required></label><br>
+                <label>轉讓原因 <textarea id="transfer-reason" required></textarea></label><br>
+                <button type="submit">執行轉讓</button>
+            </form>
+            <div id="transfer-history"></div>
+        </div>
+    </section>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script>
+        function setFieldError(inputId, message) {
+            const input = document.getElementById(inputId);
+            const err = document.getElementById(`err-${inputId}`);
+            if (!input || !err) return;
+            input.classList.toggle('input-error', !!message);
+            err.textContent = message || '';
+        }
+
+        function validateCreateClubBaseForm() {
+            let ok = true;
+            ['new-club-code', 'new-club-name', 'new-club-category'].forEach(id => {
+                const value = document.getElementById(id).value.trim();
+                if (!value) {
+                    setFieldError(id, '此為必填欄位');
+                    ok = false;
+                } else {
+                    setFieldError(id, '');
+                }
+            });
+            return ok;
+        }
+
+        async function loadUsers() {
+            const response = await APIClient.get('admin.php?action=users');
+            if (!response.success) return console.error(response.message);
+            const body = document.querySelector('#users-table tbody');
+            body.innerHTML = '';
+            response.data.users.forEach(u => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${u.user_id}</td>
+                    <td>${u.name}</td>
+                    <td>${u.email}</td>
+                    <td>${u.role}</td>
+                    <td>${u.is_active ? '啟用' : '停用'}</td>
+                    <td>
+                        <button data-id="${u.user_id}" data-role="student">學生</button>
+                        <button data-id="${u.user_id}" data-role="club_admin">社團幹部</button>
+                        <button data-id="${u.user_id}" data-role="platform_admin">管理員</button>
+                    </td>`;
+                body.appendChild(row);
+            });
+
+            document.querySelectorAll('#users-table button').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const user_id = btn.dataset.id;
+                    const role = btn.dataset.role;
+                    const res = await APIClient.post('admin.php?action=update_user_role', { user_id, role });
+                    if (res.success) { loadUsers(); } else { console.error(res.message); }
+                });
+            });
+        }
+
+        async function loadClubs() {
+            const response = await APIClient.get('admin.php?action=clubs');
+            if (!response.success) return console.error(response.message);
+            const body = document.querySelector('#clubs-table tbody');
+            body.innerHTML = '';
+            response.data.clubs.forEach(c => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${c.club_id}</td>
+                    <td>${c.club_code || '-'}</td>
+                    <td>${c.club_name}</td>
+                    <td>${c.category_id}</td>
+                    <td>${c.activity_status}</td>
+                    <td>${c.deleted_at ? '已隱藏' : '顯示中'}</td>
+                    <td>
+                        <select data-id="${c.club_id}">
+                            <option value="active" ${c.activity_status==='active'?'selected':''}>active</option>
+                            <option value="inactive" ${c.activity_status==='inactive'?'selected':''}>inactive</option>
+                            <option value="suspended" ${c.activity_status==='suspended'?'selected':''}>suspended</option>
+                            <option value="pending" ${c.activity_status==='pending'?'selected':''}>pending</option>
+                        </select>
+                        <button data-id="${c.club_id}">更新</button>
+                        <button data-soft-delete="${c.club_id}">${c.deleted_at ? '恢復' : '停用/隱藏'}</button>
+                    </td>`;
+                body.appendChild(row);
+            });
+
+            document.querySelectorAll('#clubs-table button').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (btn.dataset.softDelete) {
+                        const hide = btn.textContent.includes('停用');
+                        const res = await APIClient.post('admin.php?action=soft_delete_club', {
+                            club_id: btn.dataset.softDelete,
+                            hide
+                        });
+                        if (res.success) { loadClubs(); }
+                        return;
+                    }
+
+                    const club_id = btn.dataset.id;
+                    if (!club_id) return;
+                    const status = btn.closest('tr').querySelector('select').value;
+                    const res = await APIClient.post('admin.php?action=update_club_status', { club_id, activity_status: status });
+                    if (res.success) { loadClubs(); } else { console.error(res.message); }
+                });
+            });
+        }
+
+        loadUsers();
+        loadClubs();
+        loadAnnouncements();
+
+        document.getElementById('create-club-base-form').addEventListener('submit', async event => {
+            event.preventDefault();
+            if (!validateCreateClubBaseForm()) return;
+
+            const payload = {
+                club_code: document.getElementById('new-club-code').value.trim(),
+                club_name: document.getElementById('new-club-name').value.trim(),
+                category_id: Number(document.getElementById('new-club-category').value)
+            };
+
+            const res = await APIClient.post('admin.php?action=create_club', payload);
+            if (res.success) {
+                event.target.reset();
+                loadClubs();
+                alert('社團基礎名單新增成功');
+            } else {
+                alert('新增失敗：' + res.message);
+            }
+        });
+
+        // 公告表單提交
+        document.getElementById('create-announcement-form').addEventListener('submit', async event => {
+            event.preventDefault();
+            const data = {
+                title: document.getElementById('announcement-title').value,
+                content: document.getElementById('announcement-content').value,
+                type: document.getElementById('announcement-type').value,
+                is_sticky: document.getElementById('announcement-sticky').checked ? 1 : 0
+            };
+            const res = await APIClient.post('admin.php?action=create_announcement', data);
+            if (res.success) {
+                alert('公告發佈成功');
+                event.target.reset();
+                loadAnnouncements();
+            } else {
+                alert('發佈公告失敗：' + res.message);
+            }
+        });
+
+        // 帳戶轉讓表單提交
+        document.getElementById('transfer-account-form').addEventListener('submit', async event => {
+            event.preventDefault();
+            const data = {
+                from_user_id: document.getElementById('from-user-id').value,
+                to_user_id: document.getElementById('to-user-id').value,
+                reason: document.getElementById('transfer-reason').value
+            };
+            const res = await APIClient.post('admin.php?action=transfer_account', data);
+            if (res.success) {
+                alert('帳戶轉讓成功');
+                event.target.reset();
+                loadTransferHistory();
+            } else {
+                alert('帳戶轉讓失敗：' + res.message);
+            }
+        });
+
+        async function loadEventReports() {
+            const res = await APIClient.get('admin.php?action=event_reports');
+            if (!res.success) return console.error(res.message);
+            const container = document.getElementById('reports-content');
+            container.innerHTML = '<h3>活動報告</h3>';
+            res.data.reports.forEach(report => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                        <h4>${report.event_name}</h4>
+                        <p>參與人數: ${report.participants_count}</p>
+                        <p>評價: ${report.average_rating || '無'}</p>
+                        <p>狀態: ${report.event_status}</p>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function loadUserFeedback() {
+            const res = await APIClient.get('admin.php?action=user_feedback');
+            if (!res.success) return console.error(res.message);
+            const container = document.getElementById('reports-content');
+            container.innerHTML = '<h3>用戶回饋</h3>';
+            res.data.feedback.forEach(item => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                        <p><strong>${item.user_name}</strong> (${item.user_email})</p>
+                        <p>類型: ${item.feedback_type}</p>
+                        <p>內容: ${item.content}</p>
+                        <p>時間: ${item.created_at}</p>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function loadAnnouncements() {
+            const res = await APIClient.get('admin.php?action=announcements');
+            if (!res.success) return console.error(res.message);
+            const container = document.getElementById('announcements-list');
+            container.innerHTML = '<h3>現有公告</h3>';
+            res.data.announcements.forEach(announcement => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                        <h4>${announcement.title}</h4>
+                        <p>${announcement.content}</p>
+                        <p>類型: ${announcement.announcement_type} | 置頂: ${announcement.is_pinned ? '是' : '否'}</p>
+                        <p>時間: ${announcement.created_at}</p>
+                        <button onclick="deleteAnnouncement(${announcement.announcement_id})">刪除</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function deleteAnnouncement(id) {
+            if (!confirm('確定要刪除此公告嗎？')) return;
+            const res = await APIClient.delete('admin.php?action=delete_announcement&id=' + id);
+            if (res.success) {
+                alert('公告刪除成功');
+                loadAnnouncements();
+            } else {
+                alert('刪除公告失敗：' + res.message);
+            }
+        }
+
+        async function loadTransferHistory() {
+            const res = await APIClient.get('admin.php?action=transfer_history');
+            if (!res.success) return console.error(res.message);
+            const container = document.getElementById('transfer-history');
+            container.innerHTML = '<h3>轉讓歷史</h3>';
+            res.data.transfers.forEach(transfer => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                        <p>從用戶 ${transfer.from_user_name} (${transfer.from_user_id}) 轉讓到用戶 ${transfer.to_user_name} (${transfer.to_user_id})</p>
+                        <p>原因: ${transfer.reason}</p>
+                        <p>時間: ${transfer.transferred_at}</p>
+                        <p>操作者: ${transfer.admin_name}</p>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>

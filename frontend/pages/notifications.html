@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知中心 - 社團平台</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+    <!-- 導航 -->
+    <header>
+        <nav>
+            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">首頁</a></li>
+                <li><a href="club-list.html">社團</a></li>
+                <li><a href="events.html">活動</a></li>
+                <li><a href="qa.html">提問</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href = 'login.html'">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container">
+        <h1>通知中心</h1>
+
+        <!-- 通知列表 -->
+        <div class="card">
+            <div class="card-header">
+                <h3>最新通知</h3>
+            </div>
+            <div class="card-body">
+                <div id="notifications-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>載入通知中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁腳 -->
+    <footer>
+        <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        // 載入通知
+        async function loadNotifications() {
+            try {
+                const response = await APIClient.get('notifications.php');
+                if (response.success) {
+                    const notifications = response.data.notifications;
+                    displayNotifications(notifications);
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('載入通知失敗', 'error');
+            }
+        }
+
+        // 顯示通知
+        function displayNotifications(notifications) {
+            const container = document.getElementById('notifications-list');
+
+            if (notifications.length === 0) {
+                container.innerHTML = '<p>目前沒有新通知</p>';
+                return;
+            }
+
+            let html = '<div style="display: grid; gap: 1rem;">';
+            notifications.forEach(notification => {
+                const isRead = notification.is_read ? 'read' : '';
+                html += `
+                    <div class="card notification-card ${isRead}" onclick="markAsRead(${notification.notification_id})">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <h4 style="margin: 0 0 0.5rem 0;">${notification.title}</h4>
+                                <p style="margin: 0 0 0.5rem 0;">${notification.message}</p>
+                                <small style="color: var(--text-light);">${PageUtils.timeAgo(notification.created_at)}</small>
+                            </div>
+                            ${!notification.is_read ? '<span class="badge badge-primary">新</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 標記為已讀
+        async function markAsRead(notificationId) {
+            try {
+                const response = await APIClient.post('notifications.php?action=mark_read', {
+                    notification_id: notificationId
+                });
+                if (response.success) {
+                    loadNotifications(); // 重新載入
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // 頁面載入時初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            loadNotifications();
+        });
+    </script>
+</body>
+
+</html>

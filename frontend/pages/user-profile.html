@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人檔案 - 社團平台</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+    <!-- 導航 -->
+    <header>
+        <nav>
+            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">首頁</a></li>
+                <li><a href="club-list.html">社團</a></li>
+                <li><a href="events.html">活動</a></li>
+                <li><a href="qa.html">提問</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href = 'login.html'">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container">
+        <!-- 載入中 -->
+        <div id="loading" class="loading" style="display: block;">
+            <div class="spinner"></div>
+            <p>載入個人檔案...</p>
+        </div>
+
+        <!-- 個人檔案 -->
+        <div id="profile-content" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h1>個人檔案</h1>
+                </div>
+
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+                        <!-- 個人信息 -->
+                        <div>
+                            <div class="card">
+                                <h3>基本信息</h3>
+                                <div id="user-info">
+                                    <p>載入中...</p>
+                                </div>
+                            </div>
+
+                            <div class="card" style="margin-top: 1rem;">
+                                <h3>編輯個人資料</h3>
+                                <form id="edit-profile-form">
+                                    <div class="form-group">
+                                        <label for="edit-name">姓名</label>
+                                        <input type="text" id="edit-name" name="name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="edit-phone">電話</label>
+                                        <input type="tel" id="edit-phone" name="phone">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="avatar-upload">頭像上傳</label>
+                                        <input type="file" id="avatar-upload" name="avatar" accept="image/*" onchange="previewAvatar(event)">
+                                        <div id="avatar-preview" style="margin-top: 1rem;">
+                                            <img id="avatar-img" src="" alt="頭像預覽" style="max-width: 100px; max-height: 100px; border-radius: 50%; display: none;">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">更新資料</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- 活動歷史 -->
+                        <div>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>我的活動</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="my-events">
+                                        <p>載入中...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card" style="margin-top: 2rem;">
+                                <div class="card-header">
+                                    <h3>個人動態牆</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="followed-feed">
+                                        <p>載入中...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card" style="margin-top: 2rem;">
+                                <div class="card-header">
+                                    <h3>我的提問</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="my-questions">
+                                        <p>載入中...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁腳 -->
+    <footer>
+        <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        let currentUser = null;
+
+        // 載入用戶資料
+        async function loadUserProfile() {
+            try {
+                const response = await APIClient.get('auth.php?action=current');
+                if (response.success) {
+                    currentUser = response.data;
+                    displayUserProfile(currentUser);
+                    loadUserEvents();
+                    loadFollowedFeed();
+                    loadUserQuestions();
+                } else {
+                    PageUtils.showAlert('載入用戶資料失敗', 'error');
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('載入用戶資料失敗', 'error');
+                window.location.href = 'login.html';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('profile-content').style.display = 'block';
+            }
+        }
+
+        // 顯示用戶資料
+        function displayUserProfile(user) {
+            const userInfo = document.getElementById('user-info');
+            const avatarUrl = user.avatar_path ? `../${user.avatar_path}` : null;
+
+            userInfo.innerHTML = `
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    <div style="width: 80px; height: 80px; background-color: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 2rem; color: white; ${avatarUrl ? 'background-image: url(' + avatarUrl + '); background-size: cover; background-position: center;' : ''}">
+                        ${avatarUrl ? '' : user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <h4>${user.name}</h4>
+                    <p style="color: var(--text-light);">${user.email}</p>
+                    <p style="color: var(--text-light);">${user.student_id || '未設定學號'}</p>
+                    <span class="badge">${getRoleName(user.role)}</span>
+                </div>
+            `;
+
+            // 填充編輯表單
+            document.getElementById('edit-name').value = user.name;
+            document.getElementById('edit-phone').value = user.phone || '';
+        }
+
+        // 取得角色名稱
+        function getRoleName(role) {
+            const roles = {
+                'student': '學生',
+                'club_admin': '社團幹部',
+                'platform_admin': '平台管理員'
+            };
+            return roles[role] || role;
+        }
+
+        // 載入用戶活動
+        async function loadUserEvents() {
+            try {
+                const response = await APIClient.get('events.php?action=my_events');
+                if (response.success) {
+                    const events = response.data.events;
+                    const container = document.getElementById('my-events');
+
+                    if (events.length === 0) {
+                        container.innerHTML = '<p>您還沒有參加任何活動</p>';
+                        return;
+                    }
+
+                    let html = '<div style="display: grid; gap: 1rem;">';
+                    events.forEach(event => {
+                        const status = event.registration_status === 'approved' ? '已報名' : '待審核';
+                        html += `
+                            <div class="card">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div>
+                                        <h4 style="margin: 0 0 0.5rem 0;">${event.event_name}</h4>
+                                        <p style="color: var(--text-light); margin: 0;">${event.club_name}</p>
+                                        <p style="color: var(--text-light); margin: 0;">${PageUtils.formatDate(event.event_date)}</p>
+                                    </div>
+                                    <span class="badge">${status}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading events:', error);
+                document.getElementById('my-events').innerHTML = '<p>載入失敗</p>';
+            }
+        }
+
+        // 載入個人動態牆（依追蹤社團活動）
+        async function loadFollowedFeed() {
+            try {
+                const response = await APIClient.get('notifications.php?action=feed');
+                if (response.success) {
+                    const feed = response.data.feed || [];
+                    const container = document.getElementById('followed-feed');
+
+                    if (feed.length === 0) {
+                        const emptyState = response.data.empty_state;
+                        container.innerHTML = `
+                            <div style="padding: 1rem; border: 1px dashed var(--border-color); border-radius: 8px;">
+                                <p>${emptyState?.message || '您尚未追蹤任何社團，無法顯示動態'}</p>
+                                <a href="club-list.html" class="btn btn-primary btn-sm">${emptyState?.cta_text || '前往探索社團'}</a>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    let html = '<div style="display: grid; gap: 1rem;">';
+                    feed.forEach(item => {
+                        html += `
+                            <div class="card">
+                                <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+                                    <div>
+                                        <h4 style="margin: 0 0 0.5rem 0;">${item.event_name}</h4>
+                                        <p style="margin: 0 0 0.5rem 0; color: var(--text-light);">${item.club_name}</p>
+                                        <p style="margin: 0 0 0.5rem 0; color: var(--text-light);">${PageUtils.formatDate(item.event_date)}</p>
+                                        <p style="margin: 0; color: var(--text-light);">${item.description || ''}</p>
+                                    </div>
+                                    <a href="event-detail.html?id=${item.event_id}" class="btn btn-primary btn-sm">查看活動</a>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading feed:', error);
+                document.getElementById('followed-feed').innerHTML = '<p>載入失敗</p>';
+            }
+        }
+
+        // 載入用戶提問
+        async function loadUserQuestions() {
+            try {
+                const response = await APIClient.get('qa.php?action=my_questions');
+                if (response.success) {
+                    const questions = response.data.questions;
+                    const container = document.getElementById('my-questions');
+
+                    if (questions.length === 0) {
+                        container.innerHTML = '<p>您還沒有發布任何提問</p>';
+                        return;
+                    }
+
+                    let html = '<div style="display: grid; gap: 1rem;">';
+                    questions.forEach(question => {
+                        const status = question.is_solved ? '已解決' : '待解決';
+                        html += `
+                            <div class="card">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div>
+                                        <h4 style="margin: 0 0 0.5rem 0;">${question.title}</h4>
+                                        <p style="color: var(--text-light); margin: 0;">${PageUtils.timeAgo(question.created_at)}</p>
+                                    </div>
+                                    <span class="badge">${status}</span>
+                                </div>
+                                <a href="qa-detail.html?id=${question.qa_id}" class="btn btn-primary btn-sm" style="margin-top: 1rem;">查看詳情</a>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading questions:', error);
+                document.getElementById('my-questions').innerHTML = '<p>載入失敗</p>';
+            }
+        }
+
+        // 頭像預覽
+        function previewAvatar(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('avatar-preview');
+            const img = document.getElementById('avatar-img');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                img.style.display = 'none';
+            }
+        }
+
+        // 處理個人資料更新
+        async function handleProfileUpdate(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('edit-name').value.trim();
+            const phone = document.getElementById('edit-phone').value.trim();
+            const avatarFile = document.getElementById('avatar-upload').files[0];
+
+            if (!name) {
+                PageUtils.showAlert('請輸入姓名', 'error');
+                return;
+            }
+
+            try {
+                // 如果有頭像文件，先上傳頭像
+                let avatarPath = null;
+                if (avatarFile) {
+                    const formData = new FormData();
+                    formData.append('avatar', avatarFile);
+
+                    const uploadResponse = await fetch('../backend/api/upload.php?action=upload_user_avatar', {
+                        method: 'POST',
+                        body: formData,
+                        headers: APIClient.getAuthHeaders()
+                    });
+
+                    const uploadResult = await uploadResponse.json();
+                    if (uploadResult.success) {
+                        avatarPath = uploadResult.path;
+                        PageUtils.showAlert('頭像上傳成功', 'success');
+                    } else {
+                        PageUtils.showAlert('頭像上傳失敗: ' + uploadResult.message, 'error');
+                        return;
+                    }
+                }
+
+                // 更新個人資料
+                const updateData = {
+                    name: name,
+                    phone: phone
+                };
+
+                if (avatarPath) {
+                    updateData.avatar_path = avatarPath;
+                }
+
+                const response = await APIClient.put('auth.php?action=update', updateData);
+
+                if (response.success) {
+                    PageUtils.showAlert('個人資料更新成功', 'success');
+                    loadUserProfile(); // 重新載入
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('更新失敗', 'error');
+            }
+        }
+
+        // 頁面載入時初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            loadUserProfile();
+
+            // 綁定事件
+            document.getElementById('edit-profile-form').addEventListener('submit', handleProfileUpdate);
+        });
+    </script>
+</body>
+
+</html>

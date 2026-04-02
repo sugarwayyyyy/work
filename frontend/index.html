@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社團活動資訊統整平台 - 首頁</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <!-- 導航 -->
+    <header>
+        <nav>
+            <a href="index.html" class="logo">⚡ 社團平台</a>
+            <ul class="nav-links">
+                <li><a href="index.html">首頁</a></li>
+                <li><a href="pages/club-list.html">社團</a></li>
+                <li><a href="pages/events.html">活動</a></li>
+                <li><a href="pages/qa.html">提問</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href = 'pages/login.html'">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <!-- 警告消息 -->
+    <div id="alert-container"></div>
+
+    <!-- 英雄區域 -->
+    <section class="hero">
+        <h1>探索校園社團</h1>
+        <p>輕鬆找到適合你的社團，參與校園活動，豐富大學生活</p>
+
+        <!-- 高级搜索 -->
+        <div class="search-container" style="margin: 2rem 0; max-width: 600px; margin-left: auto; margin-right: auto;">
+            <form id="advanced-search-form" style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 8px; backdrop-filter: blur(10px);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label for="search-type" style="color: white; display: block; margin-bottom: 0.5rem;">搜尋類型</label>
+                        <select id="search-type" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="clubs">社團</option>
+                            <option value="events">活動</option>
+                            <option value="qa">問答</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="search-keyword" style="color: white; display: block; margin-bottom: 0.5rem;">關鍵字</label>
+                        <input type="text" id="search-keyword" placeholder="輸入關鍵字..." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                </div>
+
+                <div id="clubs-filters" class="search-filters" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label for="club-category" style="color: white; display: block; margin-bottom: 0.5rem;">社團分類</label>
+                        <select id="club-category" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="">全部</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="club-fee-range" style="color: white; display: block; margin-bottom: 0.5rem;">社費範圍</label>
+                        <select id="club-fee-range" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="">全部</option>
+                            <option value="0-500">0-500元</option>
+                            <option value="500-1000">500-1000元</option>
+                            <option value="1000+">1000元以上</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="events-filters" class="search-filters" style="display: none; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label for="event-date-from" style="color: white; display: block; margin-bottom: 0.5rem;">活動日期從</label>
+                        <input type="date" id="event-date-from" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label for="event-date-to" style="color: white; display: block; margin-bottom: 0.5rem;">活動日期到</label>
+                        <input type="date" id="event-date-to" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label for="event-fee-range" style="color: white; display: block; margin-bottom: 0.5rem;">費用範圍</label>
+                        <select id="event-fee-range" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="">全部</option>
+                            <option value="free">免費</option>
+                            <option value="0-100">0-100元</option>
+                            <option value="100+">100元以上</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="qa-filters" class="search-filters" style="display: none; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label for="qa-status" style="color: white; display: block; margin-bottom: 0.5rem;">問題狀態</label>
+                        <select id="qa-status" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="">全部</option>
+                            <option value="open">開放中</option>
+                            <option value="answered">已回答</option>
+                            <option value="closed">已關閉</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <button type="submit" class="btn btn-primary">搜尋</button>
+                    <button type="button" id="clear-search" class="btn btn-secondary">清除</button>
+                </div>
+            </form>
+        </div>
+
+        <div style="margin-top: 2rem;">
+            <a href="pages/club-list.html" class="btn btn-primary">瀏覽社團</a>
+            <a href="pages/events.html" class="btn btn-secondary" style="Color: white; background-color: rgba(255,255,255,0.2); margin-left: 1rem;">查看活動</a>
+        </div>
+    </section>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <section style="margin-bottom: 2rem;">
+            <h2 style="margin-bottom: 1rem;">全校公告</h2>
+            <div id="pinned-announcements">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>載入公告中...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 特色功能 -->
+        <section style="margin-bottom: 4rem;">
+            <h2 style="text-align: center; margin-bottom: 2rem;">平台特色</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header">📋 社團分類搜尋</div>
+                    <div class="card-body">使用系統預設的分類和熱門標籤，快速篩選符合條件的社團</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">📅 活動一覽</div>
+                    <div class="card-body">追蹤社團動態，接收即時活動通知，不錯過任何精彩活動</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">💬 線上提問</div>
+                    <div class="card-body">在公開提問板發問，快速找到相似問題的解答</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">⭐ 真實評價</div>
+                    <div class="card-body">查看參與者留下的真實評價，作為加入社團的參考</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">🗺️ 校園導航</div>
+                    <div class="card-body">在社課地點信息中直接開啟校園地圖，不會迷路</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">📱 行事曆同步</div>
+                    <div class="card-body">同步社團活動到Google或Apple行事曆，統一管理行程</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 熱門社團 -->
+        <section style="margin-bottom: 4rem;">
+            <h2 style="margin-bottom: 2rem;">熱門社團</h2>
+            <div id="featured-clubs" class="grid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>載入中...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 近期活動 -->
+        <section style="margin-bottom: 4rem;">
+            <h2 style="margin-bottom: 2rem;">近期活動</h2>
+            <div id="featured-events" class="grid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>載入中...</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 頁腳 -->
+    <footer>
+        <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        async function loadPinnedAnnouncements() {
+            try {
+                const response = await APIClient.get('admin.php?action=announcements');
+                const container = document.getElementById('pinned-announcements');
+
+                if (!response.success) {
+                    container.innerHTML = '<p>公告載入失敗</p>';
+                    return;
+                }
+
+                const announcements = (response.data.announcements || []).filter(a => Number(a.is_pinned) === 1);
+                if (announcements.length === 0) {
+                    container.innerHTML = '<p>目前沒有置頂公告</p>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                announcements.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'announcement-card announcement-card-pinned';
+                    card.innerHTML = `
+                        <div class="announcement-head">
+                            <span class="announcement-badge">置頂公告</span>
+                            <span class="announcement-time">${PageUtils.formatDate(item.created_at)}</span>
+                        </div>
+                        <h3>${item.title}</h3>
+                        <p>${item.content}</p>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('pinned-announcements').innerHTML = '<p>公告載入失敗</p>';
+            }
+        }
+
+        async function loadFeaturedClubs() {
+            try {
+                const response = await APIClient.get('clubs.php');
+                if (response.success) {
+                    const clubs = response.data.clubs.slice(0, 3);
+                    const container = document.getElementById('featured-clubs');
+                    container.innerHTML = '';
+
+                    clubs.forEach(club => {
+                        const tagHtml = club.tags.map(tag => `<span class="tag tag-primary">#${tag.tag_name}</span>`).join('');
+                        const html = `
+                            <div class="card">
+                                <div class="card-header" style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div>
+                                        <h3 style="margin: 0 0 0.5rem 0;">${club.club_name}</h3>
+                                        <span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 1rem;">
+                                    ${tagHtml}
+                                </div>
+                                <div class="card-body" style="margin-bottom: 1rem;">
+                                    ${club.description}
+                                </div>
+                                <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-light); margin-bottom: 1rem;">
+                                    <span>👥 ${club.member_count} 成員</span>
+                                    <span>⭐ ${(club.average_rating || 0).toFixed(1)} (${club.reviews_count} 評價)</span>
+                                </div>
+                                <a href="pages/club-detail.html?id=${club.club_id}" class="btn btn-primary btn-sm">查看詳情</a>
+                            </div>
+                        `;
+                        container.innerHTML += html;
+                    });
+                } else {
+                    document.getElementById('featured-clubs').innerHTML = '<p>載入失敗</p>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('featured-clubs').innerHTML = '<p>發生錯誤</p>';
+            }
+        }
+
+        async function loadFeaturedEvents() {
+            try {
+                const response = await APIClient.get('events.php');
+                if (response.success) {
+                    const events = response.data.events.slice(0, 3);
+                    const container = document.getElementById('featured-events');
+                    container.innerHTML = '';
+
+                    events.forEach(event => {
+                        const eventDate = PageUtils.formatDate(event.event_date);
+                        const html = `
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 style="margin: 0 0 0.5rem 0;">${event.event_name}</h3>
+                                    <span style="color: var(--text-light); font-size: 0.875rem;">${event.club_name}</span>
+                                </div>
+                                <div class="card-body" style="margin: 1rem 0;">
+                                    ${event.description}
+                                </div>
+                                <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-light); margin-bottom: 1rem;">
+                                    <span>📅 ${eventDate}</span>
+                                    <span>📍 ${event.location}</span>
+                                    <span>👥 ${event.registered_count} 人報名</span>
+                                </div>
+                                <a href="pages/event-detail.html?id=${event.event_id}" class="btn btn-primary btn-sm">查看活動</a>
+                            </div>
+                        `;
+                        container.innerHTML += html;
+                    });
+                } else {
+                    document.getElementById('featured-events').innerHTML = '<p>載入失敗</p>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('featured-events').innerHTML = '<p>發生錯誤</p>';
+            }
+        }
+
+        // 頁面載入時加載數據
+        window.addEventListener('DOMContentLoaded', function() {
+            loadPinnedAnnouncements();
+            loadFeaturedClubs();
+            loadFeaturedEvents();
+            loadClubCategories();
+            setupSearchFilters();
+        });
+
+        // 加載社團分類
+        async function loadClubCategories() {
+            try {
+                const response = await APIClient.get('clubs.php?action=categories');
+                if (response.success) {
+                    const select = document.getElementById('club-category');
+                    response.data.categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.category_id;
+                        option.textContent = category.category_name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        // 設置搜尋過濾器
+        function setupSearchFilters() {
+            const searchType = document.getElementById('search-type');
+            const clubsFilters = document.getElementById('clubs-filters');
+            const eventsFilters = document.getElementById('events-filters');
+            const qaFilters = document.getElementById('qa-filters');
+
+            searchType.addEventListener('change', function() {
+                clubsFilters.style.display = 'none';
+                eventsFilters.style.display = 'none';
+                qaFilters.style.display = 'none';
+
+                if (this.value === 'clubs') {
+                    clubsFilters.style.display = 'grid';
+                } else if (this.value === 'events') {
+                    eventsFilters.style.display = 'grid';
+                } else if (this.value === 'qa') {
+                    qaFilters.style.display = 'grid';
+                }
+            });
+
+            // 搜尋表單提交
+            document.getElementById('advanced-search-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                performAdvancedSearch();
+            });
+
+            // 清除搜尋
+            document.getElementById('clear-search').addEventListener('click', function() {
+                document.getElementById('advanced-search-form').reset();
+                clubsFilters.style.display = 'grid';
+                eventsFilters.style.display = 'none';
+                qaFilters.style.display = 'none';
+            });
+        }
+
+        // 執行高級搜尋
+        async function performAdvancedSearch() {
+            const searchType = document.getElementById('search-type').value;
+            const keyword = document.getElementById('search-keyword').value.trim();
+
+            let params = new URLSearchParams();
+            params.append('search', keyword);
+
+            if (searchType === 'clubs') {
+                const category = document.getElementById('club-category').value;
+                const feeRange = document.getElementById('club-fee-range').value;
+
+                if (category) params.append('category_id', category);
+                if (feeRange) {
+                    if (feeRange === '0-500') {
+                        params.append('max_fee', '500');
+                    } else if (feeRange === '500-1000') {
+                        params.append('min_fee', '500');
+                        params.append('max_fee', '1000');
+                    } else if (feeRange === '1000+') {
+                        params.append('min_fee', '1000');
+                    }
+                }
+
+                window.location.href = `pages/club-list.html?${params.toString()}`;
+
+            } else if (searchType === 'events') {
+                const dateFrom = document.getElementById('event-date-from').value;
+                const dateTo = document.getElementById('event-date-to').value;
+                const feeRange = document.getElementById('event-fee-range').value;
+
+                if (dateFrom) params.append('date_from', dateFrom);
+                if (dateTo) params.append('date_to', dateTo);
+                if (feeRange) {
+                    if (feeRange === 'free') {
+                        params.append('max_fee', '0');
+                    } else if (feeRange === '0-100') {
+                        params.append('max_fee', '100');
+                    } else if (feeRange === '100+') {
+                        params.append('min_fee', '100');
+                    }
+                }
+
+                window.location.href = `pages/events.html?${params.toString()}`;
+
+            } else if (searchType === 'qa') {
+                const status = document.getElementById('qa-status').value;
+                if (status) params.append('status', status);
+
+                window.location.href = `pages/qa.html?${params.toString()}`;
+            }
+        }
+    </script>
+</body>
+
+</html>

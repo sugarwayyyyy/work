@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社團列表 - 社團平台</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+    <!-- 導航 -->
+    <header>
+        <nav>
+            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">首頁</a></li>
+                <li><a href="club-list.html">社團</a></li>
+                <li><a href="events.html">活動</a></li>
+                <li><a href="qa.html">提問</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href = 'login.html'">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container">
+        <h1>社團列表</h1>
+
+        <!-- 過濾欄 -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <h3>篩選</h3>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label>分類</label>
+                    <select id="category-filter">
+                        <option value="">全部分類</option>
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label>搜尋</label>
+                    <input type="text" id="search-filter" placeholder="搜尋社團...">
+                </div>
+                <div style="align-self: flex-end;">
+                    <button class="btn btn-primary" onclick="loadClubs()">篩選</button>
+                    <button class="btn btn-secondary" onclick="resetFilters()">重製</button>
+                </div>
+            </div>
+            <div style="margin-top: 1rem;">
+                <label>熱門標籤</label>
+                <div id="popular-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;"></div>
+            </div>
+        </div>
+
+        <!-- 社團列表 -->
+        <div id="clubs-container" class="grid">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>載入中...</p>
+            </div>
+        </div>
+
+        <!-- 分頁 -->
+        <div id="pagination-container"></div>
+    </div>
+
+    <!-- 頁腳 -->
+    <footer>
+        <p>&copy; 2026 社團活動資訊統整平台</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        let currentPage = 1;
+        let selectedTagIds = [];
+
+        async function loadCategories() {
+            try {
+                // 注意：這是示例，實際需要建立分類API端點
+                const categories = [
+                    { id: 1, name: '體育性' },
+                    { id: 2, name: '學術性' },
+                    { id: 3, name: '藝文性' },
+                    { id: 4, name: '服務性' },
+                    { id: 5, name: '休閒性' }
+                ];
+
+                const select = document.getElementById('category-filter');
+                categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.id;
+                    option.textContent = cat.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadPopularTags() {
+            try {
+                const response = await APIClient.get('clubs.php?action=popular_tags');
+                if (!response.success) return;
+
+                const container = document.getElementById('popular-tags');
+                container.innerHTML = '';
+
+                response.data.tags.forEach(tag => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'tag tag-primary';
+                    btn.style.border = '1px solid var(--primary-color)';
+                    btn.style.cursor = 'pointer';
+                    btn.dataset.tagId = tag.tag_id;
+                    btn.textContent = `#${tag.tag_name}`;
+
+                    btn.addEventListener('click', () => {
+                        const id = Number(tag.tag_id);
+                        if (selectedTagIds.includes(id)) {
+                            selectedTagIds = selectedTagIds.filter(t => t !== id);
+                            btn.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
+                            btn.style.color = 'var(--primary-color)';
+                        } else {
+                            selectedTagIds.push(id);
+                            btn.style.backgroundColor = 'var(--primary-color)';
+                            btn.style.color = '#fff';
+                        }
+                        currentPage = 1;
+                        loadClubs();
+                    });
+
+                    container.appendChild(btn);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadClubs() {
+            try {
+                const categoryId = document.getElementById('category-filter').value;
+                const search = document.getElementById('search-filter').value;
+                
+                let url = `clubs.php?page=${currentPage}`;
+                if (categoryId) url += `&category_id=${categoryId}`;
+                if (search) url += `&search=${encodeURIComponent(search)}`;
+                if (selectedTagIds.length > 0) url += `&tags=${selectedTagIds.join(',')}`;
+
+                const response = await APIClient.get(url);
+                if (response.success) {
+                    renderClubs(response.data.clubs);
+                    renderPagination(response.data.pagination);
+                } else {
+                    document.getElementById('clubs-container').innerHTML = '<p>載入失敗</p>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('clubs-container').innerHTML = '<p>發生錯誤</p>';
+            }
+        }
+
+        function renderClubs(clubs) {
+            const container = document.getElementById('clubs-container');
+            container.innerHTML = '';
+
+            if (clubs.length === 0) {
+                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">目前無符合此條件的社團，請嘗試其他關鍵字</p>';
+                return;
+            }
+
+            clubs.forEach(club => {
+                const tagHtml = club.tags.map(tag => `<span class="tag tag-primary">#${tag.tag_name}</span>`).join('');
+                const html = `
+                    <div class="card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <h3 style="margin: 0 0 0.5rem 0;">${club.club_name}</h3>
+                                <span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            ${tagHtml}
+                        </div>
+                        <div class="card-body" style="margin-bottom: 1rem; height: 60px; overflow: hidden;">
+                            ${club.description}
+                        </div>
+                        <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-light); margin-bottom: 1rem;">
+                            <span>👥 ${club.member_count} 成員</span>
+                            <span>⭐ ${(club.average_rating || 0).toFixed(1)}</span>
+                        </div>
+                        <a href="club-detail.html?id=${club.club_id}" class="btn btn-primary btn-sm">查看詳情</a>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        function renderPagination(pagination) {
+            const container = document.getElementById('pagination-container');
+            container.innerHTML = '';
+
+            if (pagination.total_pages <= 1) return;
+
+            let html = '<div class="pagination">';
+            
+            // 上一頁
+            if (pagination.current_page > 1) {
+                html += `<a onclick="changePage(${pagination.current_page - 1})">← 上一頁</a>`;
+            }
+
+            // 頁碼
+            for (let i = 1; i <= pagination.total_pages; i++) {
+                if (i === pagination.current_page) {
+                    html += `<span class="active">${i}</span>`;
+                } else if (i <= pagination.current_page + 2 && i >= pagination.current_page - 2) {
+                    html += `<a onclick="changePage(${i})">${i}</a>`;
+                }
+            }
+
+            // 下一頁
+            if (pagination.current_page < pagination.total_pages) {
+                html += `<a onclick="changePage(${pagination.current_page + 1})">下一頁 →</a>`;
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            loadClubs();
+            window.scrollTo(0, 0);
+        }
+
+        function resetFilters() {
+            document.getElementById('category-filter').value = '';
+            document.getElementById('search-filter').value = '';
+            selectedTagIds = [];
+            document.querySelectorAll('#popular-tags button').forEach(btn => {
+                btn.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
+                btn.style.color = 'var(--primary-color)';
+            });
+            currentPage = 1;
+            loadClubs();
+        }
+
+        let searchTimer = null;
+        document.getElementById('category-filter').addEventListener('change', () => {
+            currentPage = 1;
+            loadClubs();
+        });
+
+        document.getElementById('search-filter').addEventListener('input', () => {
+            if (searchTimer) clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                currentPage = 1;
+                loadClubs();
+            }, 250);
+        });
+
+        // 頁面載入時初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            loadCategories();
+            loadPopularTags();
+            loadClubs();
+        });
+    </script>
+</body>
+
+</html>

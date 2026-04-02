@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提問 - 社團平台</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+    <!-- 導航 -->
+    <header>
+        <nav>
+            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">首頁</a></li>
+                <li><a href="club-list.html">社團</a></li>
+                <li><a href="events.html">活動</a></li>
+                <li><a href="qa.html">提問</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href = 'login.html'">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container">
+        <h1>提問留言板</h1>
+
+        <!-- 發布提問按鈕 -->
+        <div style="margin-bottom: 2rem;">
+            <button id="ask-btn" class="btn btn-primary" onclick="openAskModal()">發布新提問</button>
+        </div>
+
+        <!-- 提問列表 -->
+        <div id="qa-container">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>載入中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 發布提問 Modal -->
+    <div id="ask-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="card" style="max-width: 600px; width: 90%;">
+            <h2>發布提問</h2>
+            <form id="ask-form">
+                <div class="form-group">
+                    <label for="ask-club">選擇社團</label>
+                    <select id="ask-club" required>
+                        <option value="">-- 請選擇社團 --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="ask-title">提問標題</label>
+                    <input type="text" id="ask-title" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="ask-content">提問內容</label>
+                    <textarea id="ask-content" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="ask-anonymous">
+                        匿名提問
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary">發布</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAskModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 頁腳 -->
+    <footer>
+        <p>&copy; 2026 社團活動資訊統整平台</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        async function loadQA() {
+            try {
+                const response = await APIClient.get('qa.php');
+                if (response.success) {
+                    renderQA(response.data.questions);
+                } else {
+                    document.getElementById('qa-container').innerHTML = '<p>載入失敗</p>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('qa-container').innerHTML = '<p>發生錯誤</p>';
+            }
+        }
+
+        function renderQA(questions) {
+            const container = document.getElementById('qa-container');
+            container.innerHTML = '';
+
+            if (questions.length === 0) {
+                container.innerHTML = '<p style="text-align: center;">還沒有提問，成為第一個提問者吧！</p>';
+                return;
+            }
+
+            questions.forEach(question => {
+                const tagsHtml = question.tags.map(tag => `<span class="tag">#${tag.tag_name}</span>`).join('');
+                const html = `
+                    <div class="card" style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <h3 style="margin: 0 0 0.5rem 0;">${question.question_title}</h3>
+                                <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">
+                                    提問者：${question.display_name || '匿名用戶'} • ${PageUtils.timeAgo(question.created_at)}
+                                </p>
+                            </div>
+                            <span class="badge">${question.replies_count} 個回覆</span>
+                        </div>
+                        <div style="margin: 1rem 0;">
+                            ${tagsHtml}
+                        </div>
+                        <p style="color: var(--text-light);">${question.question_content}</p>
+                        <div style="display: flex; gap: 1rem; font-size: 0.9rem; color: #999;">
+                            <span>👁️ ${question.views_count} 次瀏覽</span>
+                            <span>💬 ${question.replies_count} 個回覆</span>
+                        </div>
+                        <a href="qa-detail.html?id=${question.qa_id}" class="btn btn-primary btn-sm" style="margin-top: 1rem;">查看詳情</a>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        async function loadClubsForModal() {
+            try {
+                const response = await APIClient.get('clubs.php');
+                if (response.success) {
+                    const select = document.getElementById('ask-club');
+                    response.data.clubs.forEach(club => {
+                        const option = document.createElement('option');
+                        option.value = club.club_id;
+                        option.textContent = club.club_name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function openAskModal() {
+            if (!StorageUtils.isLoggedIn()) {
+                PageUtils.showAlert('請先登入', 'warning');
+                window.location.href = 'login.html';
+                return;
+            }
+            document.getElementById('ask-modal').style.display = 'flex';
+        }
+
+        function closeAskModal() {
+            document.getElementById('ask-modal').style.display = 'none';
+        }
+
+        document.getElementById('ask-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const club_id = document.getElementById('ask-club').value;
+            const question_title = document.getElementById('ask-title').value;
+            const question_content = document.getElementById('ask-content').value;
+            const is_anonymous = document.getElementById('ask-anonymous').checked;
+
+            try {
+                const response = await APIClient.post('qa.php?action=create', {
+                    club_id,
+                    question_title,
+                    question_content,
+                    is_anonymous
+                });
+
+                if (response.success) {
+                    PageUtils.showAlert('提問發布成功', 'success');
+                    closeAskModal();
+                    document.getElementById('ask-form').reset();
+                    loadQA();
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('發布失敗', 'error');
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', function() {
+            loadQA();
+            if (StorageUtils.isLoggedIn()) {
+                loadClubsForModal();
+            }
+        });
+    </script>
+</body>
+
+</html>

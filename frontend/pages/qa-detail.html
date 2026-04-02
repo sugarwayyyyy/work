@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提問詳情 - 社團平台</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+    <!-- 導航 -->
+    <header>
+        <nav>
+            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">首頁</a></li>
+                <li><a href="club-list.html">社團</a></li>
+                <li><a href="events.html">活動</a></li>
+                <li><a href="qa.html">提問</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href = 'login.html'">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container">
+        <!-- 載入中 -->
+        <div id="loading" class="loading" style="display: block;">
+            <div class="spinner"></div>
+            <p>載入提問詳情...</p>
+        </div>
+
+        <!-- 提問詳情 -->
+        <div id="qa-detail" style="display: none;">
+            <!-- 提問內容 -->
+            <div class="card">
+                <div class="card-header">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h1 id="question-title"></h1>
+                            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+                                <span id="question-author" class="badge"></span>
+                                <span id="question-date" style="color: var(--text-light);"></span>
+                                <span id="question-category" class="tag tag-primary"></span>
+                            </div>
+                        </div>
+                        <div id="question-status" class="badge"></div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div id="question-content" style="line-height: 1.6; margin-bottom: 2rem;"></div>
+
+                    <div style="display: flex; gap: 2rem; margin-bottom: 1rem;">
+                        <div class="stat-card">
+                            <div class="stat-number" id="replies-count">0</div>
+                            <div class="stat-label">回覆數</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="views-count">0</div>
+                            <div class="stat-label">瀏覽數</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="helpful-count">0</div>
+                            <div class="stat-label">有幫助</div>
+                        </div>
+                    </div>
+
+                    <!-- 標記為解決按鈕（提問者） -->
+                    <div id="question-actions" style="display: none;">
+                        <button id="mark-solved-btn" class="btn btn-success btn-sm">標記為已解決</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 回覆列表 -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3>回覆列表</h3>
+                </div>
+                <div class="card-body">
+                    <div id="replies-list">
+                        <p>載入中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 新增回覆 -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3>提供回覆</h3>
+                </div>
+                <div class="card-body">
+                    <div id="reply-form-section">
+                        <p style="color: var(--text-light);">請先登入以提供回覆</p>
+                    </div>
+
+                    <div id="reply-form" style="display: none;">
+                        <form id="add-reply-form">
+                            <div class="form-group">
+                                <label for="reply-content">回覆內容</label>
+                                <textarea id="reply-content" rows="6" placeholder="提供您的解答或建議..." required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="is-official-reply"> 官方回覆（社團幹部）
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">提交回覆</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁腳 -->
+    <footer>
+        <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        let currentQuestion = null;
+
+        // 獲取URL參數
+        function getQuestionId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // 載入提問詳情
+        async function loadQuestionDetail() {
+            const questionId = getQuestionId();
+            if (!questionId) {
+                PageUtils.showAlert('無效的提問ID', 'error');
+                return;
+            }
+
+            try {
+                const response = await APIClient.get(`qa.php?action=detail&id=${questionId}`);
+                if (response.success) {
+                    currentQuestion = response.data;
+                    displayQuestionDetail(currentQuestion);
+                    loadReplies(questionId);
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('載入提問詳情失敗', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('qa-detail').style.display = 'block';
+            }
+        }
+
+        // 顯示提問詳情
+        function displayQuestionDetail(question) {
+            document.getElementById('question-title').textContent = question.title;
+            document.getElementById('question-author').textContent = question.user_name;
+            document.getElementById('question-date').textContent = PageUtils.formatDate(question.created_at);
+            document.getElementById('question-category').textContent = question.category_name || '一般';
+            document.getElementById('question-content').textContent = question.content;
+            document.getElementById('replies-count').textContent = question.replies_count;
+            document.getElementById('views-count').textContent = question.views_count;
+            document.getElementById('helpful-count').textContent = question.helpful_count;
+
+            // 設定狀態
+            const statusElement = document.getElementById('question-status');
+            if (question.is_solved) {
+                statusElement.textContent = '已解決';
+                statusElement.className = 'badge badge-success';
+            } else {
+                statusElement.textContent = '待解決';
+                statusElement.className = 'badge badge-warning';
+            }
+
+            // 檢查是否顯示操作按鈕
+            const user = StorageUtils.getUser();
+            if (user && user.user_id === question.user_id && !question.is_solved) {
+                document.getElementById('question-actions').style.display = 'block';
+            }
+        }
+
+        // 載入回覆列表
+        async function loadReplies(questionId) {
+            try {
+                const response = await APIClient.get(`qa.php?action=replies&question_id=${questionId}`);
+                if (response.success) {
+                    const replies = response.data.replies;
+                    const container = document.getElementById('replies-list');
+
+                    if (replies.length === 0) {
+                        container.innerHTML = '<p>尚無回覆</p>';
+                        return;
+                    }
+
+                    let html = '';
+                    replies.forEach(reply => {
+                        const isOfficial = reply.is_official ? '<span class="badge badge-primary">官方回覆</span>' : '';
+                        const helpfulBtn = reply.can_mark_helpful ?
+                            `<button class="btn btn-sm" onclick="markHelpful(${reply.reply_id})">👍 有幫助 (${reply.helpful_count})</button>` :
+                            `<span style="color: var(--text-light);">👍 ${reply.helpful_count}</span>`;
+
+                        html += `
+                            <div class="card reply-card" style="margin-bottom: 1rem; ${reply.is_official ? 'border-left: 4px solid var(--primary-color);' : ''}">
+                                <div class="card-header" style="padding-bottom: 0.5rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                                        <div>
+                                            <strong>${reply.user_name}</strong>
+                                            ${isOfficial}
+                                            <div style="color: var(--text-light); font-size: 0.875rem; margin-top: 0.25rem;">
+                                                ${PageUtils.timeAgo(reply.created_at)}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            ${helpfulBtn}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body" style="padding-top: 0;">
+                                    <p style="margin: 0; line-height: 1.6;">${reply.content}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading replies:', error);
+                document.getElementById('replies-list').innerHTML = '<p>載入失敗</p>';
+            }
+        }
+
+        // 標記為已解決
+        async function markAsSolved() {
+            const questionId = getQuestionId();
+            try {
+                const response = await APIClient.post('qa.php?action=mark_solved', { question_id: questionId });
+                if (response.success) {
+                    PageUtils.showAlert('已標記為已解決', 'success');
+                    loadQuestionDetail(); // 重新載入
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('操作失敗', 'error');
+            }
+        }
+
+        // 標記為有幫助
+        async function markHelpful(replyId) {
+            try {
+                const response = await APIClient.post('qa.php?action=mark_helpful', { reply_id: replyId });
+                if (response.success) {
+                    PageUtils.showAlert('感謝您的回饋', 'success');
+                    loadReplies(getQuestionId()); // 重新載入回覆
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('操作失敗', 'error');
+            }
+        }
+
+        // 處理回覆提交
+        async function handleReplySubmit(e) {
+            e.preventDefault();
+
+            const content = document.getElementById('reply-content').value.trim();
+            if (!content) {
+                PageUtils.showAlert('請輸入回覆內容', 'error');
+                return;
+            }
+
+            const questionId = getQuestionId();
+            const isOfficial = document.getElementById('is-official-reply').checked;
+
+            try {
+                const response = await APIClient.post('qa.php?action=add_reply', {
+                    question_id: questionId,
+                    content: content,
+                    is_official: isOfficial
+                });
+
+                if (response.success) {
+                    PageUtils.showAlert('回覆提交成功', 'success');
+                    document.getElementById('add-reply-form').reset();
+                    loadReplies(questionId);
+                    loadQuestionDetail(); // 更新回覆數
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('提交回覆失敗', 'error');
+            }
+        }
+
+        // 頁面載入時初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            loadQuestionDetail();
+
+            // 綁定事件
+            document.getElementById('mark-solved-btn').addEventListener('click', markAsSolved);
+            document.getElementById('add-reply-form').addEventListener('submit', handleReplySubmit);
+
+            // 檢查登入狀態顯示回覆表單
+            const user = StorageUtils.getUser();
+            if (user) {
+                document.getElementById('reply-form').style.display = 'block';
+                document.getElementById('reply-form-section').style.display = 'none';
+
+                // 檢查是否為社團幹部
+                if (user.role === 'club_admin' || user.role === 'platform_admin') {
+                    document.getElementById('is-official-reply').parentElement.style.display = 'block';
+                } else {
+                    document.getElementById('is-official-reply').parentElement.style.display = 'none';
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

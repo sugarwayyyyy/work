@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活動詳情 - 社團平台</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+    <!-- 導航 -->
+    <header>
+        <nav>
+            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">首頁</a></li>
+                <li><a href="club-list.html">社團</a></li>
+                <li><a href="events.html">活動</a></li>
+                <li><a href="qa.html">提問</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href = 'login.html'">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container">
+        <!-- 載入中 -->
+        <div id="loading" class="loading" style="display: block;">
+            <div class="spinner"></div>
+            <p>載入活動詳情...</p>
+        </div>
+
+        <!-- 活動詳情 -->
+        <div id="event-detail" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h1 id="event-title"></h1>
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+                        <span id="event-club" class="badge"></span>
+                        <span id="event-date" style="color: var(--text-light);"></span>
+                        <span id="event-location" style="color: var(--text-light);"></span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem;">
+                        <!-- 主要內容 -->
+                        <div>
+                            <h3>活動描述</h3>
+                            <p id="event-description" style="line-height: 1.6; margin-bottom: 2rem;"></p>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                                <div class="stat-card">
+                                    <div class="stat-number" id="registered-count">0</div>
+                                    <div class="stat-label">已報名</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number" id="max-participants">0</div>
+                                    <div class="stat-label">名額上限</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number" id="event-status">進行中</div>
+                                    <div class="stat-label">狀態</div>
+                                </div>
+                            </div>
+
+                            <!-- 報名按鈕 -->
+                            <div id="registration-section" style="margin-bottom: 2rem;">
+                                <button id="register-btn" class="btn btn-primary" style="display: none;">報名參加</button>
+                                <button id="unregister-btn" class="btn btn-secondary" style="display: none;">取消報名</button>
+                                <p id="registration-message" style="color: var(--text-light); margin-top: 0.5rem;"></p>
+                            </div>
+                        </div>
+
+                        <!-- 側邊欄 -->
+                        <div>
+                            <div class="card">
+                                <h4>活動資訊</h4>
+                                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                    <div>
+                                        <strong>📅 日期時間</strong>
+                                        <p id="event-datetime-detail"></p>
+                                    </div>
+                                    <div>
+                                        <strong>📍 地點</strong>
+                                        <p id="event-location-detail"></p>
+                                    </div>
+                                    <div>
+                                        <strong>👥 主辦社團</strong>
+                                        <p id="event-club-detail"></p>
+                                    </div>
+                                    <div>
+                                        <strong>💰 費用</strong>
+                                        <p id="event-fee">免費</p>
+                                    </div>
+                                    <div>
+                                        <strong>📅 加入日曆</strong>
+                                        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+                                            <button id="google-calendar-btn" class="btn btn-secondary btn-sm" onclick="addToGoogleCalendar()">📅 Google 日曆</button>
+                                            <button id="apple-calendar-btn" class="btn btn-secondary btn-sm" onclick="addToAppleCalendar()">📱 Apple 日曆</button>
+                                            <button id="outlook-calendar-btn" class="btn btn-secondary btn-sm" onclick="addToOutlookCalendar()">💼 Outlook 日曆</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <strong>📞 聯絡方式</strong>
+                                        <p id="event-contact"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 社團資訊 -->
+                            <div class="card" style="margin-top: 1rem;">
+                                <h4>關於主辦社團</h4>
+                                <div id="club-info">
+                                    <p>載入中...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 參與者列表 -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3>參與者列表</h3>
+                </div>
+                <div class="card-body">
+                    <div id="participants-list">
+                        <p>載入中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 評論區 -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3>活動評論</h3>
+                </div>
+                <div class="card-body">
+                    <!-- 評論表單 -->
+                    <div id="comment-form" style="display: none; margin-bottom: 2rem;">
+                        <h4>留下您的評論</h4>
+                        <form id="add-comment-form">
+                            <div class="form-group">
+                                <label>評分</label>
+                                <div id="rating-stars">
+                                    <span class="rating-star" data-rating="1">★</span>
+                                    <span class="rating-star" data-rating="2">★</span>
+                                    <span class="rating-star" data-rating="3">★</span>
+                                    <span class="rating-star" data-rating="4">★</span>
+                                    <span class="rating-star" data-rating="5">★</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="comment-content">評論內容</label>
+                                <textarea id="comment-content" rows="4" placeholder="分享您的活動體驗..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">提交評論</button>
+                        </form>
+                    </div>
+
+                    <!-- 評論列表 -->
+                    <div id="comments-list">
+                        <p>載入中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁腳 -->
+    <footer>
+        <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        let currentEvent = null;
+        let currentRating = 0;
+
+        // 獲取URL參數
+        function getEventId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // 載入活動詳情
+        async function loadEventDetail() {
+            const eventId = getEventId();
+            if (!eventId) {
+                PageUtils.showAlert('無效的活動ID', 'error');
+                return;
+            }
+
+            try {
+                const response = await APIClient.get(`events.php?action=detail&id=${eventId}`);
+                if (response.success) {
+                    currentEvent = response.data;
+                    displayEventDetail(currentEvent);
+                    loadParticipants(eventId);
+                    loadComments(eventId);
+                    loadClubInfo(currentEvent.club_id);
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('載入活動詳情失敗', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('event-detail').style.display = 'block';
+            }
+        }
+
+        // 顯示活動詳情
+        function displayEventDetail(event) {
+            document.getElementById('event-title').textContent = event.event_name;
+            document.getElementById('event-club').textContent = event.club_name;
+            document.getElementById('event-date').textContent = PageUtils.formatDate(event.event_date);
+            document.getElementById('event-location').textContent = event.location;
+            document.getElementById('event-description').textContent = event.description;
+            document.getElementById('registered-count').textContent = event.registered_count;
+            document.getElementById('max-participants').textContent = event.max_participants || '無上限';
+            document.getElementById('event-datetime-detail').textContent = PageUtils.formatDate(event.event_date);
+            document.getElementById('event-location-detail').textContent = event.location;
+            document.getElementById('event-club-detail').textContent = event.club_name;
+            document.getElementById('event-fee').textContent = event.fee ? `NT$ ${event.fee}` : '免費';
+            document.getElementById('event-contact').textContent = event.contact_info || '請聯繫社團幹部';
+
+            // 設定活動狀態
+            const eventDate = new Date(event.event_date);
+            const now = new Date();
+            let status = '進行中';
+            if (eventDate < now) {
+                status = '已結束';
+            }
+            document.getElementById('event-status').textContent = status;
+
+            // 檢查用戶是否已報名
+            checkRegistrationStatus(event.event_id);
+        }
+
+        // 檢查報名狀態
+        async function checkRegistrationStatus(eventId) {
+            const user = StorageUtils.getUser();
+            if (!user) {
+                document.getElementById('registration-message').textContent = '請先登入以報名活動';
+                return;
+            }
+
+            try {
+                const response = await APIClient.get(`events.php?action=check_registration&event_id=${eventId}`);
+                if (response.success) {
+                    if (response.data.registered) {
+                        document.getElementById('unregister-btn').style.display = 'inline-block';
+                        document.getElementById('registration-message').textContent = '您已報名此活動';
+                    } else {
+                        document.getElementById('register-btn').style.display = 'inline-block';
+                        document.getElementById('registration-message').textContent = '';
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking registration:', error);
+            }
+        }
+
+        // 載入參與者列表
+        async function loadParticipants(eventId) {
+            try {
+                const response = await APIClient.get(`events.php?action=participants&event_id=${eventId}`);
+                if (response.success) {
+                    const participants = response.data.participants;
+                    const container = document.getElementById('participants-list');
+
+                    if (participants.length === 0) {
+                        container.innerHTML = '<p>尚無參與者</p>';
+                        return;
+                    }
+
+                    let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">';
+                    participants.forEach(participant => {
+                        html += `
+                            <div class="card" style="text-align: center;">
+                                <div style="font-weight: bold;">${participant.name}</div>
+                                <div style="color: var(--text-light); font-size: 0.875rem;">${participant.student_id || ''}</div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading participants:', error);
+                document.getElementById('participants-list').innerHTML = '<p>載入失敗</p>';
+            }
+        }
+
+        // 載入評論
+        async function loadComments(eventId) {
+            try {
+                const response = await APIClient.get(`events.php?action=comments&event_id=${eventId}`);
+                if (response.success) {
+                    const comments = response.data.comments;
+                    const container = document.getElementById('comments-list');
+
+                    if (comments.length === 0) {
+                        container.innerHTML = '<p>尚無評論</p>';
+                        return;
+                    }
+
+                    let html = '';
+                    comments.forEach(comment => {
+                        const ratingHtml = PageUtils.renderStars(comment.rating);
+                        html += `
+                            <div class="card" style="margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div>
+                                        <strong>${comment.user_name}</strong>
+                                        <div style="color: var(--text-light); font-size: 0.875rem; margin: 0.25rem 0;">
+                                            ${PageUtils.timeAgo(comment.created_at)}
+                                        </div>
+                                    </div>
+                                    <div>${ratingHtml}</div>
+                                </div>
+                                <p style="margin-top: 0.5rem;">${comment.comment}</p>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading comments:', error);
+                document.getElementById('comments-list').innerHTML = '<p>載入失敗</p>';
+            }
+        }
+
+        // 載入社團資訊
+        async function loadClubInfo(clubId) {
+            try {
+                const response = await APIClient.get(`clubs.php?action=detail&id=${clubId}`);
+                if (response.success) {
+                    const club = response.data;
+                    const container = document.getElementById('club-info');
+                    container.innerHTML = `
+                        <h5>${club.club_name}</h5>
+                        <p>${club.description}</p>
+                        <div style="margin-top: 1rem;">
+                            <a href="club-detail.html?id=${club.club_id}" class="btn btn-primary btn-sm">查看社團詳情</a>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading club info:', error);
+                document.getElementById('club-info').innerHTML = '<p>載入失敗</p>';
+            }
+        }
+
+        // 處理報名
+        async function registerForEvent() {
+            const eventId = getEventId();
+            try {
+                const response = await APIClient.post('events.php?action=register', { event_id: eventId });
+                if (response.success) {
+                    PageUtils.showAlert('報名成功', 'success');
+                    loadEventDetail(); // 重新載入頁面
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('報名失敗', 'error');
+            }
+        }
+
+        // 處理取消報名
+        async function unregisterFromEvent() {
+            const eventId = getEventId();
+            try {
+                const response = await APIClient.post('events.php?action=unregister', { event_id: eventId });
+                if (response.success) {
+                    PageUtils.showAlert('取消報名成功', 'success');
+                    loadEventDetail(); // 重新載入頁面
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('取消報名失敗', 'error');
+            }
+        }
+
+        // 處理評分選擇
+        function handleRatingClick(e) {
+            if (e.target.classList.contains('rating-star')) {
+                const rating = parseInt(e.target.dataset.rating);
+                currentRating = rating;
+
+                // 更新星星顯示
+                const stars = document.querySelectorAll('.rating-star');
+                stars.forEach((star, index) => {
+                    if (index < rating) {
+                        star.classList.add('selected');
+                    } else {
+                        star.classList.remove('selected');
+                    }
+                });
+            }
+        }
+
+        // 處理評論提交
+        async function handleCommentSubmit(e) {
+            e.preventDefault();
+
+            if (currentRating === 0) {
+                PageUtils.showAlert('請選擇評分', 'error');
+                return;
+            }
+
+            const content = document.getElementById('comment-content').value.trim();
+            if (!content) {
+                PageUtils.showAlert('請輸入評論內容', 'error');
+                return;
+            }
+
+            const eventId = getEventId();
+            try {
+                const response = await APIClient.post('events.php?action=add_comment', {
+                    event_id: eventId,
+                    rating: currentRating,
+                    comment: content
+                });
+
+                if (response.success) {
+                    PageUtils.showAlert('評論提交成功', 'success');
+                    document.getElementById('add-comment-form').reset();
+                    currentRating = 0;
+                    document.querySelectorAll('.rating-star').forEach(star => star.classList.remove('selected'));
+                    loadComments(eventId);
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('提交評論失敗', 'error');
+            }
+        }
+
+        // 頁面載入時初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            loadEventDetail();
+
+            // 綁定事件
+            document.getElementById('register-btn').addEventListener('click', registerForEvent);
+            document.getElementById('unregister-btn').addEventListener('click', unregisterFromEvent);
+            document.getElementById('rating-stars').addEventListener('click', handleRatingClick);
+            document.getElementById('add-comment-form').addEventListener('submit', handleCommentSubmit);
+
+            // 綁定日曆導出按鈕
+            document.getElementById('google-calendar-btn').addEventListener('click', addToGoogleCalendar);
+            document.getElementById('apple-calendar-btn').addEventListener('click', addToAppleCalendar);
+            document.getElementById('outlook-calendar-btn').addEventListener('click', addToOutlookCalendar);
+
+            // 檢查登入狀態顯示評論表單
+            const user = StorageUtils.getUser();
+            if (user) {
+                document.getElementById('comment-form').style.display = 'block';
+            }
+        });
+
+        // 日曆導出功能
+        function addToGoogleCalendar() {
+            if (!currentEvent) return;
+
+            const startDate = new Date(currentEvent.start_date + 'T' + (currentEvent.start_time || '00:00'));
+            const endDate = new Date(currentEvent.end_date + 'T' + (currentEvent.end_time || '23:59'));
+
+            const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(currentEvent.title)}&dates=${startDate.toISOString().replace(/[:-]/g, '').replace(/\.\d{3}/, '')}/${endDate.toISOString().replace(/[:-]/g, '').replace(/\.\d{3}/, '')}&details=${encodeURIComponent(currentEvent.description || '')}&location=${encodeURIComponent(currentEvent.location || '')}`;
+
+            window.open(googleUrl, '_blank');
+        }
+
+        function addToAppleCalendar() {
+            if (!currentEvent) return;
+
+            const startDate = new Date(currentEvent.start_date + 'T' + (currentEvent.start_time || '00:00'));
+            const endDate = new Date(currentEvent.end_date + 'T' + (currentEvent.end_time || '23:59'));
+
+            // Apple Calendar URL scheme
+            const appleUrl = `webcal://calendar.google.com/calendar/ical/${encodeURIComponent('primary')}/public/basic.ics?text=${encodeURIComponent(currentEvent.title)}&dates=${startDate.toISOString().replace(/[:-]/g, '').replace(/\.\d{3}/, '')}/${endDate.toISOString().replace(/[:-]/g, '').replace(/\.\d{3}/, '')}&details=${encodeURIComponent(currentEvent.description || '')}&location=${encodeURIComponent(currentEvent.location || '')}`;
+
+            // Fallback to Google Calendar for Apple devices
+            const fallbackUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(currentEvent.title)}&dates=${startDate.toISOString().replace(/[:-]/g, '').replace(/\.\d{3}/, '')}/${endDate.toISOString().replace(/[:-]/g, '').replace(/\.\d{3}/, '')}&details=${encodeURIComponent(currentEvent.description || '')}&location=${encodeURIComponent(currentEvent.location || '')}`;
+
+            // Try Apple URL first, fallback to Google
+            window.open(appleUrl, '_blank') || window.open(fallbackUrl, '_blank');
+        }
+
+        function addToOutlookCalendar() {
+            if (!currentEvent) return;
+
+            const startDate = new Date(currentEvent.start_date + 'T' + (currentEvent.start_time || '00:00'));
+            const endDate = new Date(currentEvent.end_date + 'T' + (currentEvent.end_time || '23:59'));
+
+            const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(currentEvent.title)}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&body=${encodeURIComponent(currentEvent.description || '')}&location=${encodeURIComponent(currentEvent.location || '')}`;
+
+            window.open(outlookUrl, '_blank');
+        }
+    </script>
+</body>
+
+</html>
