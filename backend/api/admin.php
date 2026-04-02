@@ -321,44 +321,6 @@ class AdminAPI {
         Helper::success('公告刪除成功');
     }
 
-    public static function transferAccount($data) {
-        self::requireAdmin();
-        $errors = Helper::validateRequired($data, ['from_user_id', 'to_user_id', 'reason']);
-        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
-
-        $from_user_id = (int)$data['from_user_id'];
-        $to_user_id = (int)$data['to_user_id'];
-        $reason = trim($data['reason']);
-        $admin_user_id = Auth::getCurrentUser()['user_id'];
-
-        // 檢查用戶是否存在
-        $from_user = Database::getInstance()->fetchOne('SELECT user_id FROM users WHERE user_id = ?', [$from_user_id]);
-        $to_user = Database::getInstance()->fetchOne('SELECT user_id FROM users WHERE user_id = ?', [$to_user_id]);
-
-        if (!$from_user || !$to_user) {
-            Helper::error('用戶不存在', 404);
-        }
-
-        // 記錄轉讓操作（這裡需要指定club_id，假設是社團管理權限轉讓）
-        $transfer_record = [
-            'club_id' => 0, // 臨時設置，需要根據實際需求修改
-            'from_user_id' => $from_user_id,
-            'to_user_id' => $to_user_id,
-            'transferred_roles' => json_encode(['reason' => $reason]), // 存儲原因
-            'transferred_at' => date('Y-m-d H:i:s'),
-            'transferred_by' => $admin_user_id,
-            'reason' => $reason
-        ];
-
-        $result = dbInsert('account_transfers', $transfer_record);
-        if (!$result) Helper::error('帳戶轉讓記錄失敗', 500);
-
-        // 這裡可以添加實際的帳戶轉讓邏輯，比如轉移社團管理權限等
-        // 根據具體需求實現
-
-        Helper::success('帳戶轉讓成功');
-    }
-
     public static function getTransferRequests() {
         self::requireAdmin();
         $requests = Database::getInstance()->fetchAll(
@@ -563,8 +525,6 @@ if ($method === 'POST') {
         AdminAPI::softDeleteClub($data);
     } elseif ($action === 'create_announcement') {
         AdminAPI::createAnnouncement($data);
-    } elseif ($action === 'transfer_account') {
-        AdminAPI::transferAccount($data);
     } elseif ($action === 'review_transfer_request') {
         AdminAPI::reviewTransferRequest($data);
     }

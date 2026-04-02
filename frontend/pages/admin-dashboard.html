@@ -358,21 +358,27 @@
         function renderClubAdminClubOptions() {
             const select = document.getElementById('club-admin-club-id');
             if (!select) return;
+            const previousValue = select.value;
             const options = clubsState.rows
                 .slice()
                 .sort((a, b) => compareByValue(a.club_code, b.club_code, 'asc'))
                 .map(club => `<option value="${club.club_id}">${club.club_code} ${club.club_name}</option>`)
                 .join('');
             select.innerHTML = `<option value="">請選擇社團</option>${options}`;
+            if (previousValue) {
+                select.value = previousValue;
+            }
         }
 
         function renderClubAdminUserOptions() {
             const datalist = document.getElementById('club-admin-user-options');
             if (!datalist) return;
-            datalist.innerHTML = usersState.rows
+            const selectedClubId = document.getElementById('club-admin-club-id')?.value || '';
+            const clubAdmins = clubAdminAssignmentsState.rows.filter(item => String(item.club_id) === String(selectedClubId));
+            datalist.innerHTML = clubAdmins
                 .slice()
-                .sort((a, b) => compareByValue(a.name, b.name, 'asc'))
-                .map(user => `<option value="${user.user_id}">${user.name || '-'}｜${user.email || '-'}｜${user.student_id || '-'}</option>`)
+                .sort((a, b) => compareByValue(a.user_name, b.user_name, 'asc'))
+                .map(user => `<option value="${user.user_id}">${user.user_name || '-'}｜${user.user_email || '-'}｜${user.user_student_id || '-'}</option>`)
                 .join('');
         }
 
@@ -408,6 +414,7 @@
             const response = await APIClient.get('admin.php?action=club_admin_assignments');
             if (!response.success) return console.error(response.message);
             clubAdminAssignmentsState.rows = response.data.assignments || [];
+            renderClubAdminUserOptions();
             renderClubAdminAssignments();
         }
 
@@ -447,6 +454,7 @@
             container.querySelectorAll('button[data-admin-edit]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.getElementById('club-admin-club-id').value = btn.dataset.clubId;
+                    renderClubAdminUserOptions();
                     document.getElementById('club-admin-user-key').value = btn.dataset.userKey;
                     document.getElementById('club-admin-role').value = btn.dataset.role;
                     document.getElementById('club-admin-active').value = btn.dataset.active;
@@ -880,6 +888,10 @@
         document.getElementById('users-search').addEventListener('input', event => { usersState.query = event.target.value; usersState.page = 1; renderUsersTable(); });
         document.getElementById('users-sort').addEventListener('change', event => { usersState.sort = event.target.value; usersState.page = 1; renderUsersTable(); });
         document.getElementById('club-admin-assignments-search').addEventListener('input', event => { clubAdminAssignmentsState.query = event.target.value; renderClubAdminAssignments(); });
+        document.getElementById('club-admin-club-id').addEventListener('change', () => {
+            document.getElementById('club-admin-user-key').value = '';
+            renderClubAdminUserOptions();
+        });
         document.getElementById('clubs-search').addEventListener('input', event => { clubsState.query = event.target.value; clubsState.page = 1; renderClubsTable(); });
         document.getElementById('clubs-sort').addEventListener('change', event => { clubsState.sort = event.target.value; clubsState.page = 1; renderClubsTable(); });
         document.getElementById('announcements-search').addEventListener('input', event => { announcementsState.query = event.target.value; announcementsState.page = 1; renderAnnouncementsList(); });
