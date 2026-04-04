@@ -12,6 +12,7 @@
 - [測試資料](#測試資料)
 - [測試與驗收](#測試與驗收)
 - [API 概覽](#api-概覽)
+- [版本與發布紀錄](#版本與發布紀錄)
 - [文件索引](#文件索引)
 - [目前狀態](#目前狀態)
 - [維護建議](#維護建議)
@@ -97,8 +98,14 @@
 ```bash
 mysql -u root -p < database/schema.sql
 mysql -u root -p club_platform < database/migrations/2026_04_01_user_stories_core.sql
+mysql -u root -p club_platform < database/migrations/2026_04_03_event_tags.sql
+mysql -u root -p club_platform < database/migrations/2026_04_03_qa_urgency.sql
+mysql -u root -p club_platform < database/migrations/2026_04_04_event_poster_path.sql
+mysql -u root -p club_platform < database/migrations/2026_04_04_qa_reply_helpful.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
+
+若要一次性執行遷移流程，可使用 `run_migration.php`（依專案環境設定後執行）。
 
 ### 2. 設定後端連線
 編輯 `backend/config.php`，確認資料庫名稱、帳號、密碼與連接埠。
@@ -174,6 +181,10 @@ pwsh -File tests/api/acceptance_user_stories.ps1 -BaseUrl "http://localhost:8000
 - `backend/api/upload.php`
 - `backend/api/notifications.php`
 
+## 版本與發布紀錄
+
+- [Release Notes 2026-04-04](RELEASE_NOTES_2026-04-04.md)
+
 ## 文件索引
 
 - [正式文件首頁索引](DOCS_INDEX.md)
@@ -184,6 +195,7 @@ pwsh -File tests/api/acceptance_user_stories.ps1 -BaseUrl "http://localhost:8000
 - [測試分工表](TESTING_TEAM.md)
 - [測試者名單](TESTERS_ASSIGNMENT.md)
 - [手動驗收清單](tests/manual/user_story_acceptance_checklist.md)
+- [版本發布紀錄](RELEASE_NOTES_2026-04-04.md)
 
 ## 目前狀態
 

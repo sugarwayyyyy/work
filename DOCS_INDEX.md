@@ -21,6 +21,7 @@
 | [QUICKSTART.md](QUICKSTART.md) | 最短啟動流程與環境設定 |
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | 目前進度與後續工作重點 |
 | [COMPLETION_REPORT.md](COMPLETION_REPORT.md) | 完成內容與交付摘要 |
+| [RELEASE_NOTES_2026-04-04.md](RELEASE_NOTES_2026-04-04.md) | 最新版本變更與影響範圍 |
 
 ## 測試與驗收
 
@@ -46,3 +47,4 @@
 1. README 保持簡短，作為入口與專案摘要。
 2. 新增文件時，同步更新本頁索引。
 3. 測試與部署步驟若有異動，先改本頁與 QUICKSTART，再補其他文件。
+4. 每次推送重要版本後，新增或更新 Release Notes 並在本頁掛載連結。

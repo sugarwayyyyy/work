@@ -29,8 +29,14 @@
 ```bash
 mysql -u root -p < database/schema.sql
 mysql -u root -p club_platform < database/migrations/2026_04_01_user_stories_core.sql
+mysql -u root -p club_platform < database/migrations/2026_04_03_event_tags.sql
+mysql -u root -p club_platform < database/migrations/2026_04_03_qa_urgency.sql
+mysql -u root -p club_platform < database/migrations/2026_04_04_event_poster_path.sql
+mysql -u root -p club_platform < database/migrations/2026_04_04_qa_reply_helpful.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
+
+可選方案：使用 `run_migration.php` 執行整批遷移（執行前先確認資料庫連線設定）。
 
 ### 2. 設定連線
 編輯 `backend/config.php`，確認資料庫名稱、帳號、密碼與埠號。
@@ -83,3 +89,4 @@ php -S localhost:8000
 - [完成總結](COMPLETION_REPORT.md)
 - [測試報告](TESTING_REPORT.md)
 - [手動驗收清單](tests/manual/user_story_acceptance_checklist.md)
+- [版本發布紀錄](RELEASE_NOTES_2026-04-04.md)
