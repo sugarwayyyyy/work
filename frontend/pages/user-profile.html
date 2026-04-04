@@ -58,6 +58,10 @@
                                         <input type="text" id="edit-name" name="name" required>
                                     </div>
                                     <div class="form-group">
+                                        <label for="edit-student-id">學號</label>
+                                        <input type="text" id="edit-student-id" name="student_id" placeholder="例如：A123456789">
+                                    </div>
+                                    <div class="form-group">
                                         <label for="edit-phone">電話</label>
                                         <input type="tel" id="edit-phone" name="phone">
                                     </div>
@@ -151,9 +155,9 @@
             userInfo.innerHTML = `
                 <div style="text-align: center; margin-bottom: 1rem;">
                     <div style="width: 80px; height: 80px; background-color: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 2rem; color: white; ${avatarUrl ? 'background-image: url(' + avatarUrl + '); background-size: cover; background-position: center;' : ''}">
-                        ${avatarUrl ? '' : user.name.charAt(0).toUpperCase()}
+                        ${avatarUrl ? '' : (user.name || '用戶').charAt(0).toUpperCase()}
                     </div>
-                    <h4>${user.name}</h4>
+                    <h4>${user.name || '未命名用戶'}</h4>
                     <p style="color: var(--text-light);">${user.email}</p>
                     <p style="color: var(--text-light);">${user.student_id || '未設定學號'}</p>
                     <span class="badge">${getRoleName(user.role)}</span>
@@ -161,6 +165,7 @@
             `;
 
             document.getElementById('edit-name').value = user.name;
+            document.getElementById('edit-student-id').value = user.student_id || '';
             document.getElementById('edit-phone').value = user.phone || '';
         }
 
@@ -192,8 +197,8 @@
                             <div class="card">
                                 <div style="display: flex; justify-content: space-between; align-items: start;">
                                     <div>
-                                        <h4 style="margin: 0 0 0.5rem 0;">${event.event_name}</h4>
-                                        <p style="color: var(--text-light); margin: 0;">${event.club_name}</p>
+                                        <h4 style="margin: 0 0 0.5rem 0;">${event.event_name || '未命名活動'}</h4>
+                                        <p style="color: var(--text-light); margin: 0;">${event.club_name || '-'}</p>
                                         <p style="color: var(--text-light); margin: 0;">${PageUtils.formatDate(event.event_date)}</p>
                                     </div>
                                     <span class="badge">${status}</span>
@@ -234,8 +239,8 @@
                             <div class="card">
                                 <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
                                     <div>
-                                        <h4 style="margin: 0 0 0.5rem 0;">${item.event_name}</h4>
-                                        <p style="margin: 0 0 0.5rem 0; color: var(--text-light);">${item.club_name}</p>
+                                        <h4 style="margin: 0 0 0.5rem 0;">${item.event_name || '未命名活動'}</h4>
+                                        <p style="margin: 0 0 0.5rem 0; color: var(--text-light);">${item.club_name || '-'}</p>
                                         <p style="margin: 0 0 0.5rem 0; color: var(--text-light);">${PageUtils.formatDate(item.event_date)}</p>
                                         <p style="margin: 0; color: var(--text-light);">${item.description || ''}</p>
                                     </div>
@@ -268,11 +273,12 @@
                     let html = '<div style="display: grid; gap: 1rem;">';
                     questions.forEach(question => {
                         const status = question.is_solved ? '已解決' : '待解決';
+                        const title = question.title || question.question_title || '未命名提問';
                         html += `
                             <div class="card">
                                 <div style="display: flex; justify-content: space-between; align-items: start;">
                                     <div>
-                                        <h4 style="margin: 0 0 0.5rem 0;">${question.title}</h4>
+                                        <h4 style="margin: 0 0 0.5rem 0;">${title}</h4>
                                         <p style="color: var(--text-light); margin: 0;">${PageUtils.timeAgo(question.created_at)}</p>
                                     </div>
                                     <span class="badge">${status}</span>
@@ -311,6 +317,7 @@
             e.preventDefault();
 
             const name = document.getElementById('edit-name').value.trim();
+            const studentId = document.getElementById('edit-student-id').value.trim();
             const phone = document.getElementById('edit-phone').value.trim();
             const avatarFile = document.getElementById('avatar-upload').files[0];
 
@@ -351,6 +358,7 @@
 
                 const updateData = {
                     name: name,
+                    student_id: studentId,
                     phone: phone
                 };
 

@@ -16,6 +16,7 @@ class ClubAPI {
             $category_id = $_GET['category_id'] ?? null;
             $tags = isset($_GET['tags']) ? explode(',', $_GET['tags']) : [];
             $search = $_GET['search'] ?? '';
+            $tag_match_mode = strtolower((string)($_GET['tag_match_mode'] ?? 'or'));
             $min_fee = $_GET['min_fee'] ?? null;
             $max_fee = $_GET['max_fee'] ?? null;
             $page = (int)($_GET['page'] ?? 1);
@@ -26,6 +27,7 @@ class ClubAPI {
             $params = [];
             $categoryCondition = null;
             $tagCondition = null;
+            $tagConditionParams = [];
             
             if ($category_id) {
                 $categoryCondition = 'category_id = ?';
@@ -48,29 +50,44 @@ class ClubAPI {
 
             $tag_ids = array_values(array_filter(array_map('intval', $tags)));
             if (!empty($tag_ids)) {
-                $placeholders = implode(',', array_fill(0, count($tag_ids), '?'));
-                $tagCondition = 'club_id IN (
-                    SELECT DISTINCT ctr.club_id
-                    FROM club_tag_relations ctr
-                    WHERE ctr.tag_id IN (' . $placeholders . ')
-                )';
+                if ($tag_match_mode === 'and') {
+                    $placeholders = implode(',', array_fill(0, count($tag_ids), '?'));
+                    $tagCondition = 'club_id IN (
+                        SELECT ctr.club_id
+                        FROM club_tag_relations ctr
+                        WHERE ctr.tag_id IN (' . $placeholders . ')
+                        GROUP BY ctr.club_id
+                        HAVING COUNT(DISTINCT ctr.tag_id) = ?
+                    )';
+                    foreach ($tag_ids as $tag_id) {
+                        $tagConditionParams[] = $tag_id;
+                    }
+                    $tagConditionParams[] = count($tag_ids);
+                } else {
+                    // 預設 OR：只要社團符合任一標籤即可
+                    $placeholders = implode(',', array_fill(0, count($tag_ids), '?'));
+                    $tagCondition = 'club_id IN (
+                        SELECT DISTINCT ctr.club_id
+                        FROM club_tag_relations ctr
+                        WHERE ctr.tag_id IN (' . $placeholders . ')
+                    )';
+                    foreach ($tag_ids as $tag_id) {
+                        $tagConditionParams[] = $tag_id;
+                    }
+                }
             }
 
             // 依新需求改為 OR：同時選分類與標籤時，符合其一即可
             if ($categoryCondition && $tagCondition) {
                 $where_conditions[] = '(' . $categoryCondition . ' OR ' . $tagCondition . ')';
                 $params[] = $category_id;
-                foreach ($tag_ids as $tag_id) {
-                    $params[] = $tag_id;
-                }
+                $params = array_merge($params, $tagConditionParams);
             } elseif ($categoryCondition) {
                 $where_conditions[] = $categoryCondition;
                 $params[] = $category_id;
             } elseif ($tagCondition) {
                 $where_conditions[] = $tagCondition;
-                foreach ($tag_ids as $tag_id) {
-                    $params[] = $tag_id;
-                }
+                $params = array_merge($params, $tagConditionParams);
             }
             
             $where = implode(' AND ', $where_conditions);
@@ -165,6 +182,33 @@ class ClubAPI {
     }
 
     /**
+     * 依分類取得社團（不分頁）
+     * GET /api/clubs.php?action=by_category&category_id=1
+     */
+    public static function getClubsByCategory() {
+        try {
+            $category_id = (int)($_GET['category_id'] ?? 0);
+            if ($category_id <= 0) {
+                Helper::error('缺少或無效的分類', 400);
+            }
+
+            $clubs = Database::getInstance()->fetchAll(
+                'SELECT club_id, club_name, club_code
+                 FROM clubs
+                 WHERE category_id = ?
+                   AND activity_status = "active"
+                   AND deleted_at IS NULL
+                 ORDER BY club_name ASC',
+                [$category_id]
+            );
+
+            Helper::success('取得分類社團成功', ['clubs' => $clubs]);
+        } catch (Exception $e) {
+            Helper::error('取得分類社團失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * 取得熱門標籤（可供前端過濾）
      * GET /api/clubs.php?action=popular_tags
      */
@@ -174,7 +218,11 @@ class ClubAPI {
                 'SELECT t.*, COUNT(ctr.club_id) AS usage_count
                  FROM club_tags t
                  LEFT JOIN club_tag_relations ctr ON ctr.tag_id = t.tag_id
+                 LEFT JOIN clubs c ON c.club_id = ctr.club_id
+                    AND c.activity_status = "active"
+                    AND c.deleted_at IS NULL
                  GROUP BY t.tag_id
+                 HAVING usage_count > 0
                  ORDER BY usage_count DESC, t.tag_name ASC
                  LIMIT 20'
             );
@@ -261,14 +309,27 @@ class ClubAPI {
             
             // 檢查用戶是否追蹤此社團
             $is_following = false;
+            $has_reviewed = false;
+            $user_review_status = null;
             if (Auth::isLoggedIn()) {
                 $following = Database::getInstance()->fetchOne(
                     'SELECT * FROM club_followers WHERE club_id = ? AND user_id = ?',
                     [$club_id, Auth::getCurrentUserId()]
                 );
                 $is_following = !empty($following);
+
+                $userReview = Database::getInstance()->fetchOne(
+                    'SELECT review_status FROM reviews WHERE club_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1',
+                    [$club_id, Auth::getCurrentUserId()]
+                );
+                if (!empty($userReview)) {
+                    $has_reviewed = true;
+                    $user_review_status = $userReview['review_status'] ?? null;
+                }
             }
             $club['is_following'] = $is_following;
+            $club['user_has_reviewed'] = $has_reviewed;
+            $club['user_review_status'] = $user_review_status;
             
             Helper::success('取得社團詳細信息成功', $club);
             
@@ -463,6 +524,119 @@ class ClubAPI {
             Helper::error('操作失敗: ' . $e->getMessage(), 500);
         }
     }
+
+    /**
+     * 取得所有標籤
+     * GET /api/clubs.php?action=get_all_tags
+     */
+    public static function getAllTags() {
+        try {
+            $tags = Database::getInstance()->fetchAll(
+                'SELECT * FROM club_tags ORDER BY tag_type, tag_name'
+            );
+            Helper::success('取得標籤成功', $tags);
+        } catch (Exception $e) {
+            Helper::error('取得標籤失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * 建立新標籤
+     * POST /api/clubs.php?action=create_tag
+     */
+    public static function createTag($data) {
+        $tag_name = trim($data['tag_name'] ?? '');
+        $tag_type = trim($data['tag_type'] ?? 'other');
+        $description = trim($data['description'] ?? '');
+
+        if (empty($tag_name)) {
+            Helper::error('標籤名稱不能為空', 400);
+        }
+
+        if (!in_array($tag_type, ['experience', 'fee', 'time', 'other'])) {
+            $tag_type = 'other';
+        }
+
+        try {
+            // 檢查標籤是否已存在
+            $existing = Database::getInstance()->fetchOne(
+                'SELECT * FROM club_tags WHERE tag_name = ?',
+                [$tag_name]
+            );
+
+            if ($existing) {
+                Helper::success('標籤已存在', $existing);
+                return;
+            }
+
+            $tag_id = dbInsert('club_tags', [
+                'tag_name' => $tag_name,
+                'tag_type' => $tag_type,
+                'description' => $description
+            ]);
+
+            $tag = Database::getInstance()->fetchOne(
+                'SELECT * FROM club_tags WHERE tag_id = ?',
+                [$tag_id]
+            );
+
+            Helper::success('標籤建立成功', $tag);
+        } catch (Exception $e) {
+            Helper::error('建立標籤失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * 更新社團標籤
+     * POST /api/clubs.php?action=update_tags
+     * Body: { club_id, tag_ids: [1, 2, 3] }
+     */
+    public static function updateTags($data) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        $club_id = (int)($data['club_id'] ?? 0);
+        $tag_ids = (array)($data['tag_ids'] ?? []);
+
+        if (!$club_id) {
+            Helper::error('社團 ID 不能為空', 400);
+        }
+
+        try {
+            // 驗證權限：檢查用戶是否為該社團的幹部
+            $is_admin = Database::getInstance()->fetchOne(
+                'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
+                [$club_id, Auth::getCurrentUserId()]
+            );
+
+            if (!$is_admin && !Auth::isAdmin()) {
+                Helper::error('您沒有權限修改此社團的標籤', 403);
+            }
+
+            // 刪除舊標籤關聯
+            $stmt = Database::getInstance()->prepare('DELETE FROM club_tag_relations WHERE club_id = ?');
+            if ($stmt === false) {
+                throw new Exception('刪除舊標籤關聯準備失敗: ' . Database::getInstance()->error);
+            }
+            $stmt->bind_param('i', $club_id);
+            $stmt->execute();
+            $stmt->close();
+
+            // 新增新標籤關聯
+            $tag_ids = array_filter(array_map('intval', $tag_ids));
+            foreach ($tag_ids as $tag_id) {
+                dbInsert('club_tag_relations', [
+                    'club_id' => $club_id,
+                    'tag_id' => $tag_id
+                ]);
+            }
+
+            Helper::success('標籤更新成功');
+        } catch (Exception $e) {
+            Helper::error('更新標籤失敗: ' . $e->getMessage(), 500);
+        }
+    }
 }
 
 // 路由處理
@@ -475,8 +649,12 @@ if ($method === 'GET') {
         ClubAPI::getClubs();
     } elseif ($action === 'categories') {
         ClubAPI::getCategories();
+    } elseif ($action === 'by_category') {
+        ClubAPI::getClubsByCategory();
     } elseif ($action === 'popular_tags') {
         ClubAPI::getPopularTags();
+    } elseif ($action === 'get_all_tags') {
+        ClubAPI::getAllTags();
     } elseif ($action === 'detail' && $club_id) {
         ClubAPI::getClubDetail($club_id);
     } elseif ($action === 'my_follows') {
@@ -488,6 +666,10 @@ if ($method === 'POST') {
     $data = Helper::getJsonInput() ?? $_POST;
     if ($action === 'create') {
         ClubAPI::createClub($data);
+    } elseif ($action === 'create_tag') {
+        ClubAPI::createTag($data);
+    } elseif ($action === 'update_tags') {
+        ClubAPI::updateTags($data);
     } elseif ($action === 'toggle_follow' && $club_id) {
         ClubAPI::toggleFollowClub($club_id);
     }

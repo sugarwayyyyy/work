@@ -66,6 +66,10 @@
                             <div class="stat-number" id="helpful-count">0</div>
                             <div class="stat-label">有幫助</div>
                         </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="not-helpful-count">0</div>
+                            <div class="stat-label">沒有幫助</div>
+                        </div>
                     </div>
 
                     <div id="question-actions" style="display: none;">
@@ -128,7 +132,16 @@
         }
 
         // 載入提問詳情
-        async function loadQuestionDetail() {
+        function shouldTrackView(questionId) {
+            const key = `qa-viewed-${questionId}`;
+            if (sessionStorage.getItem(key) === '1') {
+                return false;
+            }
+            sessionStorage.setItem(key, '1');
+            return true;
+        }
+
+        async function loadQuestionDetail(trackView = false) {
             const questionId = getQuestionId();
             if (!questionId) {
                 PageUtils.showAlert('無效的提問ID', 'error');
@@ -136,7 +149,7 @@
             }
 
             try {
-                const response = await APIClient.get(`qa.php?action=detail&id=${questionId}`);
+                const response = await APIClient.get(`qa.php?action=detail&id=${questionId}&track_view=${trackView && shouldTrackView(questionId) ? 1 : 0}`);
                 if (response.success) {
                     currentQuestion = response.data;
                     displayQuestionDetail(currentQuestion);
@@ -155,18 +168,31 @@
 
         // 顯示提問詳情
         function displayQuestionDetail(question) {
-            document.getElementById('question-title').textContent = question.title;
-            document.getElementById('question-author').textContent = question.user_name;
+            const title = question.title || question.question_title || '';
+            const author = question.author_name || question.user_name || question.display_name || '匿名用戶';
+            const content = question.content || question.question_content || '';
+            const solved = Boolean(question.is_solved) || question.status === 'closed';
+            const urgencyLabel = question.urgency_label || '一般';
+            const urgencyStyle = question.urgency_level === 'urgent'
+                ? 'background: #c92a2a; color: white;'
+                : (question.urgency_level === 'important'
+                    ? 'background: #f08c00; color: white;'
+                    : 'background: #868e96; color: white;');
+
+            document.getElementById('question-title').textContent = title;
+            document.getElementById('question-author').textContent = author;
             document.getElementById('question-date').textContent = PageUtils.formatDate(question.created_at);
-            document.getElementById('question-category').textContent = question.category_name || '一般';
-            document.getElementById('question-content').textContent = question.content;
+            document.getElementById('question-category').textContent = urgencyLabel;
+            document.getElementById('question-category').style.cssText = urgencyStyle;
+            document.getElementById('question-content').textContent = content;
             document.getElementById('replies-count').textContent = question.replies_count;
             document.getElementById('views-count').textContent = question.views_count;
             document.getElementById('helpful-count').textContent = question.helpful_count;
+            document.getElementById('not-helpful-count').textContent = question.not_helpful_count || 0;
 
             // 設定狀態
             const statusElement = document.getElementById('question-status');
-            if (question.is_solved) {
+            if (solved) {
                 statusElement.textContent = '已解決';
                 statusElement.className = 'badge badge-success';
             } else {
@@ -176,7 +202,7 @@
 
             // 檢查是否顯示操作按鈕
             const user = StorageUtils.getUser();
-            if (user && user.user_id === question.user_id && !question.is_solved) {
+            if (user && user.user_id === question.user_id && !solved) {
                 document.getElementById('question-actions').style.display = 'block';
             }
         }
@@ -197,16 +223,22 @@
                     let html = '';
                     replies.forEach(reply => {
                         const isOfficial = reply.is_official ? '<span class="badge badge-primary">官方回覆</span>' : '';
-                        const helpfulBtn = reply.can_mark_helpful ?
-                            `<button class="btn btn-sm" onclick="markHelpful(${reply.reply_id})">👍 有幫助 (${reply.helpful_count})</button>` :
-                            `<span style="color: var(--text-light);">👍 ${reply.helpful_count}</span>`;
+                        const author = reply.author_name || reply.user_name || '匿名用戶';
+                        const helpfulActive = reply.my_vote === 'helpful';
+                        const notHelpfulActive = reply.my_vote === 'not_helpful';
+                        const helpfulBtn = reply.can_vote ?
+                            `<button class="btn btn-sm ${helpfulActive ? 'btn-success' : ''}" onclick="markReplyVote(${reply.reply_id}, 'helpful')">👍 有幫助 (${reply.helpful_count})</button>` :
+                            `<span style="color: var(--text-light);">👍 有幫助 (${reply.helpful_count})</span>`;
+                        const notHelpfulBtn = reply.can_vote ?
+                            `<button class="btn btn-sm ${notHelpfulActive ? 'btn-danger' : ''}" onclick="markReplyVote(${reply.reply_id}, 'not_helpful')">👎 沒有幫助 (${reply.not_helpful_count})</button>` :
+                            `<span style="color: var(--text-light);">👎 沒有幫助 (${reply.not_helpful_count})</span>`;
 
                         html += `
                             <div class="card reply-card" style="margin-bottom: 1rem; ${reply.is_official ? 'border-left: 4px solid var(--primary-color);' : ''}">
                                 <div class="card-header" style="padding-bottom: 0.5rem;">
                                     <div style="display: flex; justify-content: space-between; align-items: start;">
                                         <div>
-                                            <strong>${reply.user_name}</strong>
+                                            <strong>${author}</strong>
                                             ${isOfficial}
                                             <div style="color: var(--text-light); font-size: 0.875rem; margin-top: 0.25rem;">
                                                 ${PageUtils.timeAgo(reply.created_at)}
@@ -214,6 +246,8 @@
                                         </div>
                                         <div>
                                             ${helpfulBtn}
+                                            <span style="display: inline-block; width: 0.5rem;"></span>
+                                            ${notHelpfulBtn}
                                         </div>
                                     </div>
                                 </div>
@@ -238,7 +272,7 @@
                 const response = await APIClient.post('qa.php?action=mark_solved', { question_id: questionId });
                 if (response.success) {
                     PageUtils.showAlert('已標記為已解決', 'success');
-                    loadQuestionDetail(); // 重新載入
+                    loadQuestionDetail(false); // 重新載入
                 } else {
                     PageUtils.showAlert(response.message, 'error');
                 }
@@ -248,13 +282,15 @@
             }
         }
 
-        // 標記為有幫助
-        async function markHelpful(replyId) {
+        // 標記回覆回饋
+        async function markReplyVote(replyId, voteType) {
             try {
-                const response = await APIClient.post('qa.php?action=mark_helpful', { reply_id: replyId });
+                const action = voteType === 'not_helpful' ? 'mark_not_helpful' : 'mark_helpful';
+                const response = await APIClient.post(`qa.php?action=${action}`, { reply_id: replyId });
                 if (response.success) {
                     PageUtils.showAlert('感謝您的回饋', 'success');
                     loadReplies(getQuestionId()); // 重新載入回覆
+                    loadQuestionDetail(false);
                 } else {
                     PageUtils.showAlert(response.message, 'error');
                 }
@@ -262,6 +298,10 @@
                 console.error('Error:', error);
                 PageUtils.showAlert('操作失敗', 'error');
             }
+        }
+
+        async function markHelpful(replyId) {
+            return markReplyVote(replyId, 'helpful');
         }
 
         // 處理回覆提交
@@ -288,7 +328,7 @@
                     PageUtils.showAlert('回覆提交成功', 'success');
                     document.getElementById('add-reply-form').reset();
                     loadReplies(questionId);
-                    loadQuestionDetail(); // 更新回覆數
+                    loadQuestionDetail(false); // 更新回覆數
                 } else {
                     PageUtils.showAlert(response.message, 'error');
                 }
@@ -299,8 +339,12 @@
         }
 
         // 頁面載入時初始化
-        window.addEventListener('DOMContentLoaded', function() {
-            loadQuestionDetail();
+        window.addEventListener('DOMContentLoaded', async function() {
+            loadQuestionDetail(true);
+
+            if (typeof hydrateUserFromSession === 'function') {
+                await hydrateUserFromSession();
+            }
 
             // 綁定事件
             document.getElementById('mark-solved-btn').addEventListener('click', markAsSolved);
@@ -309,8 +353,8 @@
             // 檢查登入狀態顯示回覆表單
             const user = StorageUtils.getUser();
             if (user) {
-                document.getElementById('reply-form').style.display = 'block';
                 document.getElementById('reply-form-section').style.display = 'none';
+                document.getElementById('reply-form').style.display = 'block';
 
                 // 檢查是否為社團幹部
                 if (user.role === 'club_admin' || user.role === 'platform_admin') {

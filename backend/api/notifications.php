@@ -17,6 +17,15 @@ class NotificationAPI {
         }
 
         try {
+            $userId = Auth::getCurrentUserId();
+
+            $followCountRow = Database::getInstance()->fetchOne(
+                'SELECT COUNT(*) AS total FROM club_followers WHERE user_id = ?',
+                [$userId]
+            );
+            $followCount = (int)($followCountRow['total'] ?? 0);
+
+            // 優先顯示即將到來的活動
             $events = Database::getInstance()->fetchAll(
                 'SELECT
                     e.event_id,
@@ -36,18 +45,49 @@ class NotificationAPI {
                    AND e.event_status = "published"
                    AND e.event_date >= NOW()
                  ORDER BY COALESCE(e.published_at, e.created_at) DESC, e.event_date ASC',
-                [Auth::getCurrentUserId()]
+                [$userId]
             );
 
+            // 若沒有未來活動，改抓追蹤社團最近動態（避免誤判成未追蹤）
+            if (empty($events) && $followCount > 0) {
+                $events = Database::getInstance()->fetchAll(
+                    'SELECT
+                        e.event_id,
+                        e.event_name,
+                        e.description,
+                        e.event_date,
+                        e.location,
+                        e.published_at,
+                        c.club_id,
+                        c.club_name
+                     FROM club_followers cf
+                     JOIN clubs c ON c.club_id = cf.club_id
+                     JOIN events e ON e.club_id = c.club_id
+                     WHERE cf.user_id = ?
+                       AND c.deleted_at IS NULL
+                       AND c.activity_status = "active"
+                       AND e.event_status IN ("published", "ongoing", "completed")
+                       AND e.event_date >= DATE_SUB(NOW(), INTERVAL 120 DAY)
+                     ORDER BY e.event_date DESC
+                     LIMIT 20',
+                    [$userId]
+                );
+            }
+
             if (empty($events)) {
+                $emptyMessage = $followCount > 0
+                    ? '您已追蹤社團，但目前尚無可顯示的活動動態'
+                    : '您尚未追蹤任何社團，無法顯示動態';
+
                 Helper::success('取得動態牆成功', [
                     'feed' => [],
                     'empty_state' => [
-                        'message' => '您尚未追蹤任何社團，無法顯示動態',
+                        'message' => $emptyMessage,
                         'cta_text' => '前往探索社團',
                         'cta_url' => 'pages/club-list.html'
                     ]
                 ]);
+                return;
             }
 
             Helper::success('取得動態牆成功', [

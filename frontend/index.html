@@ -210,8 +210,8 @@
                             <span class="announcement-badge">置頂公告</span>
                             <span class="announcement-time">${PageUtils.formatDate(item.created_at)}</span>
                         </div>
-                        <h3>${item.title}</h3>
-                        <p>${item.content}</p>
+                        <h3>${item.title || '公告'}</h3>
+                        <p>${item.content || ''}</p>
                     `;
                     container.appendChild(card);
                 });
@@ -235,7 +235,7 @@
                             <div class="card">
                                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: start;">
                                     <div>
-                                        <h3 style="margin: 0 0 0.5rem 0;">${club.club_name}</h3>
+                                        <h3 style="margin: 0 0 0.5rem 0;">${club.club_name || '-'}</h3>
                                         <span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>
                                     </div>
                                 </div>
@@ -243,11 +243,11 @@
                                     ${tagHtml}
                                 </div>
                                 <div class="card-body" style="margin-bottom: 1rem;">
-                                    ${club.description}
+                                    ${club.description || ''}
                                 </div>
                                 <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-light); margin-bottom: 1rem;">
                                     <span>👥 ${club.member_count} 成員</span>
-                                    <span>⭐ ${(club.average_rating || 0).toFixed(1)} (${club.reviews_count} 評價)</span>
+                                    <span>⭐ ${(club.average_rating || 0).toFixed(1)}（${club.reviews_count || 0} 人評分）</span>
                                 </div>
                                 <a href="pages/club-detail.html?id=${club.club_id}" class="btn btn-primary btn-sm">查看詳情</a>
                             </div>
@@ -276,15 +276,15 @@
                         const html = `
                             <div class="card">
                                 <div class="card-header">
-                                    <h3 style="margin: 0 0 0.5rem 0;">${event.event_name}</h3>
-                                    <span style="color: var(--text-light); font-size: 0.875rem;">${event.club_name}</span>
+                                    <h3 style="margin: 0 0 0.5rem 0;">${event.event_name || '未命名活動'}</h3>
+                                    <span style="color: var(--text-light); font-size: 0.875rem;">${event.club_name || '-'}</span>
                                 </div>
                                 <div class="card-body" style="margin: 1rem 0;">
-                                    ${event.description}
+                                    ${event.description || ''}
                                 </div>
                                 <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-light); margin-bottom: 1rem;">
                                     <span>📅 ${eventDate}</span>
-                                    <span>📍 ${event.location}</span>
+                                    <span>📍 ${event.location || '-'}</span>
                                     <span>👥 ${event.registered_count} 人報名</span>
                                 </div>
                                 <a href="pages/event-detail.html?id=${event.event_id}" class="btn btn-primary btn-sm">查看活動</a>
@@ -332,7 +332,7 @@
                 container.innerHTML = '';
                 clubs.slice(0, 3).forEach(club => {
                     const logoHtml = club.logo_path
-                        ? `<img src="${club.logo_path.startsWith('http') ? club.logo_path : club.logo_path}" alt="${club.club_name} logo" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover;">`
+                        ? `<img src="${club.logo_path.startsWith('http') ? club.logo_path : club.logo_path}" alt="${club.club_name || '社團'} logo" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover;">`
                         : `<div style="width: 48px; height: 48px; border-radius: 10px; background: var(--light-gray);"></div>`;
 
                     const card = document.createElement('div');
@@ -342,7 +342,7 @@
                             <div style="display:flex; align-items:center; gap:0.75rem;">
                                 ${logoHtml}
                                 <div>
-                                    <h3 style="margin:0;">${club.club_name}</h3>
+                                    <h3 style="margin:0;">${club.club_name || '-'}</h3>
                                     <span class="badge">已追蹤</span>
                                 </div>
                             </div>

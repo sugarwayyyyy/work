@@ -38,6 +38,7 @@
             <div class="card">
                 <div class="card-header">
                     <h1 id="event-title"></h1>
+                    <div id="event-last-updated" style="margin-top: 0.35rem; color: var(--text-light); font-size: 0.92rem;">最新上傳時間：-</div>
                     <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
                         <span id="event-club" class="badge"></span>
                         <span id="event-date" style="color: var(--text-light);"></span>
@@ -135,8 +136,10 @@
             <div class="card" style="margin-top: 2rem;">
                 <div class="card-header">
                     <h3>活動評論</h3>
+                    <div id="comments-rating-summary" style="margin-top: 0.5rem; color: var(--text-light); font-size: 0.9rem;">⭐ 0.0（0 人評分）</div>
                 </div>
                 <div class="card-body">
+                    <div id="comment-form-hint" style="display: none; margin-bottom: 1rem; color: var(--text-light);"></div>
                     <div id="comment-form" style="display: none; margin-bottom: 2rem;">
                         <h4>留下您的評論</h4>
                         <form id="add-comment-form">
@@ -174,6 +177,39 @@
     <script>
         let currentEvent = null;
         let currentRating = 0;
+        let eventHasEnded = false;
+        let userRegisteredForEvent = false;
+
+        function renderCommentFormAccess() {
+            const user = StorageUtils.getUser();
+            const form = document.getElementById('comment-form');
+            const hint = document.getElementById('comment-form-hint');
+            if (!form || !hint) return;
+
+            if (!user) {
+                form.style.display = 'none';
+                hint.style.display = 'block';
+                hint.textContent = '請先登入；活動結束後，參與者可留下評論。';
+                return;
+            }
+
+            if (!eventHasEnded) {
+                form.style.display = 'none';
+                hint.style.display = 'block';
+                hint.textContent = '活動尚未結束，需參與完成後才能評論。';
+                return;
+            }
+
+            if (!userRegisteredForEvent) {
+                form.style.display = 'none';
+                hint.style.display = 'block';
+                hint.textContent = '僅限已參與此活動的使用者可評論。';
+                return;
+            }
+
+            hint.style.display = 'none';
+            form.style.display = 'block';
+        }
 
         // 獲取URL參數
         function getEventId() {
@@ -211,10 +247,24 @@
 
         // 顯示活動詳情
         function displayEventDetail(event) {
+            const formatDateTime = (dateString) => {
+                if (!dateString) return '-';
+                const d = new Date(dateString);
+                if (Number.isNaN(d.getTime())) return '-';
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hh = String(d.getHours()).padStart(2, '0');
+                const mm = String(d.getMinutes()).padStart(2, '0');
+                return `${y}-${m}-${day} ${hh}:${mm}`;
+            };
+
             document.getElementById('event-title').textContent = event.event_name;
             document.getElementById('event-club').textContent = event.club_name;
             document.getElementById('event-date').textContent = PageUtils.formatDate(event.event_date);
             document.getElementById('event-location').textContent = event.location;
+            const latestEventTime = event.updated_at || event.published_at || event.created_at || null;
+            document.getElementById('event-last-updated').textContent = `最新上傳時間：${formatDateTime(latestEventTime)}`;
             document.getElementById('event-description').textContent = event.description;
             document.getElementById('registered-count').textContent = event.registered_count;
             document.getElementById('max-participants').textContent = event.max_participants || '無上限';
@@ -231,7 +281,9 @@
             if (eventDate < now) {
                 status = '已結束';
             }
+            eventHasEnded = eventDate < now;
             document.getElementById('event-status').textContent = status;
+            renderCommentFormAccess();
 
             // 檢查用戶是否已報名
             checkRegistrationStatus(event.event_id);
@@ -242,12 +294,15 @@
             const user = StorageUtils.getUser();
             if (!user) {
                 document.getElementById('registration-message').textContent = '請先登入以報名活動';
+                userRegisteredForEvent = false;
+                renderCommentFormAccess();
                 return;
             }
 
             try {
                 const response = await APIClient.get(`events.php?action=check_registration&event_id=${eventId}`);
                 if (response.success) {
+                    userRegisteredForEvent = !!response.data.registered;
                     if (response.data.registered) {
                         document.getElementById('unregister-btn').style.display = 'inline-block';
                         document.getElementById('registration-message').textContent = '您已報名此活動';
@@ -255,9 +310,12 @@
                         document.getElementById('register-btn').style.display = 'inline-block';
                         document.getElementById('registration-message').textContent = '';
                     }
+                    renderCommentFormAccess();
                 }
             } catch (error) {
                 console.error('Error checking registration:', error);
+                userRegisteredForEvent = false;
+                renderCommentFormAccess();
             }
         }
 
@@ -278,7 +336,7 @@
                     participants.forEach(participant => {
                         html += `
                             <div class="card" style="text-align: center;">
-                                <div style="font-weight: bold;">${participant.name}</div>
+                                <div style="font-weight: bold;">${participant.name || '匿名參與者'}</div>
                                 <div style="color: var(--text-light); font-size: 0.875rem;">${participant.student_id || ''}</div>
                             </div>
                         `;
@@ -299,6 +357,19 @@
                 if (response.success) {
                     const comments = response.data.comments;
                     const container = document.getElementById('comments-list');
+                    const summary = document.getElementById('comments-rating-summary');
+
+                    const ratings = comments
+                        .map(comment => Number(comment.rating))
+                        .filter(rating => Number.isFinite(rating) && rating > 0);
+                    const ratingCount = ratings.length;
+                    const averageRating = ratingCount > 0
+                        ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratingCount)
+                        : 0;
+
+                    if (summary) {
+                        summary.textContent = `⭐ ${averageRating.toFixed(1)}（${ratingCount} 人評分）`;
+                    }
 
                     if (comments.length === 0) {
                         container.innerHTML = '<p>尚無評論</p>';
@@ -308,18 +379,22 @@
                     let html = '';
                     comments.forEach(comment => {
                         const ratingHtml = PageUtils.renderStars(comment.rating);
+                        const author = comment.author_name || comment.user_name || '匿名用戶';
                         html += `
                             <div class="card" style="margin-bottom: 1rem;">
                                 <div style="display: flex; justify-content: space-between; align-items: start;">
                                     <div>
-                                        <strong>${comment.user_name}</strong>
+                                        <strong>${author}</strong>
                                         <div style="color: var(--text-light); font-size: 0.875rem; margin: 0.25rem 0;">
                                             ${PageUtils.timeAgo(comment.created_at)}
                                         </div>
                                     </div>
-                                    <div>${ratingHtml}</div>
+                                    <div style="text-align: right;">
+                                        <div>${ratingHtml}</div>
+                                        <div style="color: var(--text-light); font-size: 0.8rem;">1 人評分</div>
+                                    </div>
                                 </div>
-                                <p style="margin-top: 0.5rem;">${comment.comment}</p>
+                                <p style="margin-top: 0.5rem;">${comment.comment || ''}</p>
                             </div>
                         `;
                     });
@@ -339,7 +414,7 @@
                     const club = response.data;
                     const container = document.getElementById('club-info');
                     container.innerHTML = `
-                        <h5>${club.club_name}</h5>
+                        <h5>${club.club_name || '-'}</h5>
                         <p>${club.description}</p>
                         <div style="margin-top: 1rem;">
                             <a href="club-detail.html?id=${club.club_id}" class="btn btn-primary btn-sm">查看社團詳情</a>
@@ -450,11 +525,7 @@
             document.getElementById('unregister-btn').addEventListener('click', unregisterFromEvent);
             document.getElementById('rating-stars').addEventListener('click', handleRatingClick);
             document.getElementById('add-comment-form').addEventListener('submit', handleCommentSubmit);
-
-            const user = StorageUtils.getUser();
-            if (user) {
-                document.getElementById('comment-form').style.display = 'block';
-            }
+            renderCommentFormAccess();
         });
 
         function toCalendarDate(value) {

@@ -48,9 +48,16 @@
             <h2>發布提問</h2>
             <form id="ask-form">
                 <div class="form-group">
+                    <label for="ask-category">選擇社團類別</label>
+                    <select id="ask-category" required>
+                        <option value="">-- 請先選擇類別 --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label for="ask-club">選擇社團</label>
-                    <select id="ask-club" required>
-                        <option value="">-- 請選擇社團 --</option>
+                    <select id="ask-club" required disabled>
+                        <option value="">-- 請先選擇類別 --</option>
                     </select>
                 </div>
 
@@ -62,6 +69,22 @@
                 <div class="form-group">
                     <label for="ask-content">提問內容</label>
                     <textarea id="ask-content" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>抓字推薦標籤</label>
+                    <div id="ask-tag-hint" style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">輸入標題或內容後，系統會自動抓字推薦標籤。</div>
+                    <div id="ask-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>緊急程度</label>
+                    <input type="hidden" id="ask-urgency" value="normal">
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary btn-sm urgency-btn is-active" data-urgency="normal">一般</button>
+                        <button type="button" class="btn btn-secondary btn-sm urgency-btn" data-urgency="important">重要</button>
+                        <button type="button" class="btn btn-secondary btn-sm urgency-btn" data-urgency="urgent">緊急</button>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -85,6 +108,70 @@
 
     <script src="../js/main.js"></script>
     <script>
+        let qaTags = [];
+        let selectedQATagIds = new Set();
+
+        function normalizeKeyword(text) {
+            return String(text || '').toLowerCase().replace(/[\s\p{P}\p{S}]+/gu, '');
+        }
+
+        function renderQATagSelector() {
+            const container = document.getElementById('ask-tags');
+            if (!container) return;
+
+            if (!qaTags.length) {
+                container.innerHTML = '<span style="color: var(--text-light); font-size: 0.9rem;">目前尚無可用標籤</span>';
+                return;
+            }
+
+            container.innerHTML = qaTags.map(tag => {
+                const isSelected = selectedQATagIds.has(Number(tag.qa_tag_id));
+                const style = isSelected
+                    ? 'background: var(--primary-color); color: white; border-color: var(--primary-color);'
+                    : 'background: rgba(99, 102, 241, 0.08); color: var(--primary-color); border-color: rgba(99, 102, 241, 0.25);';
+                return `<button type="button" class="tag" data-tag-id="${tag.qa_tag_id}" style="margin: 0; border: 1px solid; cursor: pointer; ${style}">#${tag.tag_name}</button>`;
+            }).join('');
+        }
+
+        function updateTagRecommendations() {
+            const title = document.getElementById('ask-title').value || '';
+            const content = document.getElementById('ask-content').value || '';
+            const source = normalizeKeyword(`${title} ${content}`);
+            const hint = document.getElementById('ask-tag-hint');
+
+            selectedQATagIds = new Set();
+            qaTags.forEach(tag => {
+                const keyword = normalizeKeyword(tag.tag_name);
+                if (keyword && source.includes(keyword)) {
+                    selectedQATagIds.add(Number(tag.qa_tag_id));
+                }
+            });
+
+            if (hint) {
+                hint.textContent = selectedQATagIds.size > 0
+                    ? `已抓到 ${selectedQATagIds.size} 個推薦標籤，可自行點擊增減。`
+                    : '尚未抓到對應標籤，可手動點擊選擇。';
+            }
+
+            renderQATagSelector();
+        }
+
+        async function loadQATags() {
+            try {
+                const response = await APIClient.get('qa.php?action=tags');
+                if (response.success) {
+                    qaTags = response.data.tags || [];
+                } else {
+                    qaTags = [];
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                qaTags = [];
+            }
+
+            renderQATagSelector();
+        }
+
         async function loadQA() {
             try {
                 const response = await APIClient.get('qa.php');
@@ -110,16 +197,26 @@
 
             questions.forEach(question => {
                 const tagsHtml = question.tags.map(tag => `<span class="tag">#${tag.tag_name}</span>`).join('');
+                const author = question.author_name || question.user_name || question.display_name || '匿名用戶';
+                const urgencyLabel = question.urgency_label || '一般';
+                const urgencyStyle = question.urgency_level === 'urgent'
+                    ? 'background: #c92a2a; color: white;'
+                    : (question.urgency_level === 'important'
+                        ? 'background: #f08c00; color: white;'
+                        : 'background: #868e96; color: white;');
                 const html = `
                     <div class="card" style="margin-bottom: 1.5rem;">
                         <div style="display: flex; justify-content: space-between; align-items: start;">
                             <div style="flex: 1;">
-                                <h3 style="margin: 0 0 0.5rem 0;">${question.question_title}</h3>
+                                <h3 style="margin: 0 0 0.5rem 0;">${question.question_title || '未命名提問'}</h3>
                                 <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">
-                                    提問者：${question.display_name || '匿名用戶'} • ${PageUtils.timeAgo(question.created_at)}
+                                    提問者：${author} • ${PageUtils.timeAgo(question.created_at)}
                                 </p>
                             </div>
-                            <span class="badge">${question.replies_count} 個回覆</span>
+                            <div style="display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end;">
+                                <span class="badge">${question.replies_count} 個回覆</span>
+                                <span class="badge" style="${urgencyStyle}">${urgencyLabel}</span>
+                            </div>
                         </div>
                         <div style="margin: 1rem 0;">
                             ${tagsHtml}
@@ -136,15 +233,16 @@
             });
         }
 
-        async function loadClubsForModal() {
+        async function loadCategoriesForModal() {
             try {
-                const response = await APIClient.get('clubs.php');
+                const response = await APIClient.get('clubs.php?action=categories');
                 if (response.success) {
-                    const select = document.getElementById('ask-club');
-                    response.data.clubs.forEach(club => {
+                    const select = document.getElementById('ask-category');
+                    select.innerHTML = '<option value="">-- 請先選擇類別 --</option>';
+                    (response.data.categories || []).forEach(category => {
                         const option = document.createElement('option');
-                        option.value = club.club_id;
-                        option.textContent = club.club_name;
+                        option.value = category.category_id;
+                        option.textContent = category.category_name;
                         select.appendChild(option);
                     });
                 }
@@ -153,17 +251,93 @@
             }
         }
 
-        function openAskModal() {
-            if (!StorageUtils.isLoggedIn()) {
-                PageUtils.showAlert('請先登入', 'warning');
-                window.location.href = 'login.html';
+        async function loadClubsByCategoryForModal(categoryId) {
+            const clubSelect = document.getElementById('ask-club');
+            clubSelect.innerHTML = '<option value="">載入中...</option>';
+            clubSelect.disabled = true;
+
+            if (!categoryId) {
+                clubSelect.innerHTML = '<option value="">-- 請先選擇類別 --</option>';
                 return;
             }
-            document.getElementById('ask-modal').style.display = 'flex';
+
+            try {
+                const response = await APIClient.get(`clubs.php?action=by_category&category_id=${encodeURIComponent(categoryId)}`);
+                if (!response.success) {
+                    clubSelect.innerHTML = '<option value="">-- 載入失敗 --</option>';
+                    return;
+                }
+
+                const clubs = response.data.clubs || [];
+                if (clubs.length === 0) {
+                    clubSelect.innerHTML = '<option value="">-- 此類別尚無可選社團 --</option>';
+                    return;
+                }
+
+                clubSelect.innerHTML = '<option value="">-- 請選擇社團 --</option>';
+                clubs.forEach(club => {
+                    const option = document.createElement('option');
+                    option.value = club.club_id;
+                    option.textContent = `${club.club_name || '-'}${club.club_code ? `（${club.club_code}）` : ''}`;
+                    clubSelect.appendChild(option);
+                });
+                clubSelect.disabled = false;
+            } catch (error) {
+                console.error('Error:', error);
+                clubSelect.innerHTML = '<option value="">-- 載入失敗 --</option>';
+            }
+        }
+
+        function setUrgencyLevel(level) {
+            document.getElementById('ask-urgency').value = level;
+            document.querySelectorAll('.urgency-btn').forEach(button => {
+                const active = button.dataset.urgency === level;
+                button.classList.toggle('btn-primary', active);
+                button.classList.toggle('btn-secondary', !active);
+                button.classList.toggle('is-active', active);
+            });
+        }
+
+        function openAskModal() {
+            ensureCanAsk().then(canAsk => {
+                if (!canAsk) {
+                    PageUtils.showAlert('請先登入', 'warning');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                document.getElementById('ask-modal').style.display = 'flex';
+            });
+        }
+
+        async function ensureCanAsk() {
+            if (StorageUtils.isLoggedIn()) return true;
+            try {
+                const response = await APIClient.get('auth.php?action=current');
+                if (response.success && response.data) {
+                    StorageUtils.setUser({
+                        user_id: response.data.user_id,
+                        name: response.data.name,
+                        email: response.data.email,
+                        role: response.data.role,
+                        student_id: response.data.student_id || null,
+                        avatar_path: response.data.avatar_path || null
+                    });
+                    return true;
+                }
+            } catch (error) {
+            }
+            return false;
         }
 
         function closeAskModal() {
             document.getElementById('ask-modal').style.display = 'none';
+            setUrgencyLevel('normal');
+            selectedQATagIds = new Set();
+            const hint = document.getElementById('ask-tag-hint');
+            if (hint) {
+                hint.textContent = '輸入標題或內容後，系統會自動抓字推薦標籤。';
+            }
+            renderQATagSelector();
         }
 
         document.getElementById('ask-form').addEventListener('submit', async (e) => {
@@ -172,14 +346,18 @@
             const club_id = document.getElementById('ask-club').value;
             const question_title = document.getElementById('ask-title').value;
             const question_content = document.getElementById('ask-content').value;
+            const urgency_level = document.getElementById('ask-urgency').value;
             const is_anonymous = document.getElementById('ask-anonymous').checked;
+            const tag_ids = Array.from(selectedQATagIds);
 
             try {
                 const response = await APIClient.post('qa.php?action=create', {
                     club_id,
                     question_title,
                     question_content,
-                    is_anonymous
+                    urgency_level,
+                    is_anonymous,
+                    tag_ids
                 });
 
                 if (response.success) {
@@ -198,9 +376,39 @@
 
         window.addEventListener('DOMContentLoaded', function() {
             loadQA();
-            if (StorageUtils.isLoggedIn()) {
-                loadClubsForModal();
-            }
+            loadCategoriesForModal();
+            loadQATags();
+            document.getElementById('ask-category').addEventListener('change', event => {
+                loadClubsByCategoryForModal(event.target.value);
+            });
+
+            document.getElementById('ask-title').addEventListener('input', updateTagRecommendations);
+            document.getElementById('ask-content').addEventListener('input', updateTagRecommendations);
+
+            document.getElementById('ask-tags').addEventListener('click', event => {
+                const button = event.target.closest('[data-tag-id]');
+                if (!button) return;
+                const tagId = Number(button.dataset.tagId);
+                if (selectedQATagIds.has(tagId)) {
+                    selectedQATagIds.delete(tagId);
+                } else {
+                    selectedQATagIds.add(tagId);
+                }
+
+                const hint = document.getElementById('ask-tag-hint');
+                if (hint) {
+                    hint.textContent = selectedQATagIds.size > 0
+                        ? `目前已選 ${selectedQATagIds.size} 個標籤。`
+                        : '尚未選擇標籤。';
+                }
+
+                renderQATagSelector();
+            });
+
+            document.querySelectorAll('.urgency-btn').forEach(button => {
+                button.addEventListener('click', () => setUrgencyLevel(button.dataset.urgency));
+            });
+            setUrgencyLevel('normal');
         });
     </script>
 </body>

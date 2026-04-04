@@ -12,15 +12,13 @@
 <body class="admin-dashboard-page">
     <header>
         <nav>
-            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <a href="admin-dashboard.html" class="logo">⚡ 社團平台</a>
             <ul class="nav-links">
-                <li><a href="../index.html">首頁</a></li>
-                <li><a href="club-list.html">社團</a></li>
-                <li><a href="events.html">活動</a></li>
+                <li><a href="admin-dashboard.html">管理員</a></li>
             </ul>
             <div class="nav-right">
-                <span id="user-dropdown" style="display: none;"></span>
                 <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
             </div>
         </nav>
     </header>
@@ -69,8 +67,6 @@
                 <div class="form-field">
                     <label for="users-sort">欄位排序</label>
                     <select id="users-sort">
-                        <option value="user_id_desc">ID（新到舊）</option>
-                        <option value="user_id_asc">ID（舊到新）</option>
                         <option value="name_asc">姓名（A-Z）</option>
                         <option value="name_desc">姓名（Z-A）</option>
                         <option value="role_asc">角色</option>
@@ -81,7 +77,7 @@
                 <table class="table" id="users-table">
                     <thead>
                         <tr>
-                            <th>ID</th><th>姓名</th><th>郵箱</th><th>角色</th><th>狀態</th><th>動作</th>
+                            <th>姓名</th><th>郵箱</th><th>角色</th><th>狀態</th><th>動作</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -157,8 +153,10 @@
                     <div id="err-new-club-name" class="field-error"></div>
                 </div>
                 <div class="form-field">
-                    <label for="new-club-category">所屬分類 ID（必填）</label>
-                    <input type="number" id="new-club-category" required />
+                    <label for="new-club-category">社團類別（必填）</label>
+                    <select id="new-club-category" required>
+                        <option value="">請選擇社團類別</option>
+                    </select>
                     <div id="err-new-club-category" class="field-error"></div>
                 </div>
                 <div class="form-actions">
@@ -185,7 +183,7 @@
                 <table class="table" id="clubs-table">
                     <thead>
                         <tr>
-                            <th>社團代碼</th><th>社團名</th><th>分類ID</th><th>狀態</th><th>隱藏狀態</th><th>動作</th>
+                            <th>社團代碼</th><th>社團名</th><th>社團類別</th><th>狀態</th><th>隱藏狀態</th><th>動作</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -280,10 +278,11 @@
         const CLUB_STATUS_LABELS = { active: '啟用', inactive: '停用', suspended: '暫停', pending: '待審核' };
         const ANNOUNCEMENT_TYPE_LABELS = { important: '重要', event: '活動', maintenance: '維護', update: '更新' };
 
-        const usersState = { rows: [], query: '', sort: 'user_id_desc', page: 1 };
+        const usersState = { rows: [], query: '', sort: 'name_asc', page: 1 };
         const clubsState = { rows: [], query: '', sort: 'club_code_asc', page: 1 };
         const clubAdminAssignmentsState = { rows: [], query: '' };
         const announcementsState = { rows: [], query: '', sort: 'created_desc', page: 1 };
+        let clubCategories = [];
 
         function toSearchableText(value) {
             return (value ?? '').toString().trim().toLowerCase();
@@ -363,7 +362,7 @@
             const options = clubsState.rows
                 .slice()
                 .sort((a, b) => compareByValue(a.club_code, b.club_code, 'asc'))
-                .map(club => `<option value="${club.club_id}">${club.club_code} ${club.club_name}</option>`)
+                .map(club => `<option value="${club.club_id}">${club.club_code || '-'} ${club.club_name || '-'}</option>`)
                 .join('');
             select.innerHTML = `<option value="">請選擇社團</option>${options}`;
             if (previousValue) {
@@ -519,6 +518,27 @@
             renderClubsTable();
         }
 
+        async function loadClubCategories() {
+            const response = await APIClient.get('clubs.php?action=categories');
+            if (!response.success) return console.error(response.message);
+            clubCategories = response.data.categories || [];
+            const select = document.getElementById('new-club-category');
+            if (!select) return;
+            select.innerHTML = '<option value="">請選擇社團類別</option>';
+            clubCategories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.category_id;
+                option.textContent = cat.category_name;
+                select.appendChild(option);
+            });
+        }
+
+        function getCategoryName(categoryId) {
+            const idNum = Number(categoryId);
+            const category = clubCategories.find(c => Number(c.category_id) === idNum);
+            return category ? category.category_name : '-';
+        }
+
         async function loadAnnouncements() {
             const response = await APIClient.get('admin.php?action=announcements');
             if (!response.success) return console.error(response.message);
@@ -649,7 +669,7 @@
                 card.className = 'admin-item-card';
                 card.innerHTML = `
                     <div class="admin-item-head">
-                        <h4>${report.event_name}</h4>
+                        <h4>${report.event_name || '-'}</h4>
                         <span class="status-chip">${CLUB_STATUS_LABELS[report.event_status] || report.event_status || '-'}</span>
                     </div>
                     <p class="admin-item-content">參與人數：${report.participants_count ?? 0}，平均評分：${report.average_rating ?? '無'}</p>
@@ -689,17 +709,15 @@
                 rows = rows.filter(user => {
                     const roleLabel = USER_ROLE_LABELS[user.role] || user.role;
                     const statusLabel = user.is_active ? '啟用' : '停用';
-                    return [user.user_id, user.name, user.email, roleLabel, statusLabel].some(v => toSearchableText(v).includes(query));
+                    return [user.name, user.email, roleLabel, statusLabel].some(v => toSearchableText(v).includes(query));
                 });
             }
             const sortMap = {
-                user_id_desc: (a, b) => compareByValue(a.user_id, b.user_id, 'desc'),
-                user_id_asc: (a, b) => compareByValue(a.user_id, b.user_id, 'asc'),
                 name_asc: (a, b) => compareByValue(a.name, b.name, 'asc'),
                 name_desc: (a, b) => compareByValue(a.name, b.name, 'desc'),
                 role_asc: (a, b) => compareByValue(USER_ROLE_LABELS[a.role] || a.role, USER_ROLE_LABELS[b.role] || b.role, 'asc')
             };
-            rows.sort(sortMap[usersState.sort] || sortMap.user_id_desc);
+            rows.sort(sortMap[usersState.sort] || sortMap.name_asc);
             return rows;
         }
 
@@ -710,7 +728,8 @@
                 rows = rows.filter(club => {
                     const statusLabel = CLUB_STATUS_LABELS[club.activity_status] || club.activity_status;
                     const visibilityLabel = club.deleted_at ? '已隱藏' : '顯示中';
-                    return [club.club_id, club.club_code, club.club_name, club.category_id, statusLabel, visibilityLabel].some(v => toSearchableText(v).includes(query));
+                    const categoryName = getCategoryName(club.category_id);
+                    return [club.club_code, club.club_name, categoryName, statusLabel, visibilityLabel].some(v => toSearchableText(v).includes(query));
                 });
             }
             const sortMap = {
@@ -755,14 +774,13 @@
             const body = document.querySelector('#users-table tbody');
             body.innerHTML = '';
             if (pageData.rows.length === 0) {
-                renderEmptyState(body, '沒有符合條件的用戶', '試試其他關鍵字或調整排序條件。', 6);
+                renderEmptyState(body, '沒有符合條件的用戶', '試試其他關鍵字或調整排序條件。', 5);
                 renderPagination('users-pagination', pageData, nextPage => { usersState.page = nextPage; renderUsersTable(); });
                 return;
             }
             pageData.rows.forEach(user => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${user.user_id}</td>
                     <td>${user.name || '-'}</td>
                     <td>${user.email || '-'}</td>
                     <td><span class="status-chip role-chip">${USER_ROLE_LABELS[user.role] || user.role || '-'}</span></td>
@@ -798,11 +816,12 @@
                 return;
             }
             pageData.rows.forEach(club => {
+                const categoryName = getCategoryName(club.category_id);
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${club.club_code || '-'}</td>
                     <td>${club.club_name || '-'}</td>
-                    <td>${club.category_id ?? '-'}</td>
+                    <td>${categoryName}</td>
                     <td><span class="status-chip">${CLUB_STATUS_LABELS[club.activity_status] || club.activity_status || '-'}</span></td>
                     <td><span class="status-chip ${club.deleted_at ? 'chip-warning' : 'chip-success'}">${club.deleted_at ? '已隱藏' : '顯示中'}</span></td>
                     <td>
@@ -961,6 +980,7 @@
             }
         });
 
+        loadClubCategories();
         loadUsers();
         loadClubAdminAssignments();
         loadClubs();

@@ -33,6 +33,7 @@
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
                     <h1 id="club-name" style="margin: 0 0 1rem 0;"></h1>
+                    <div id="club-last-updated-banner" style="margin: -0.25rem 0 0.85rem 0; color: var(--text-light); font-size: 0.92rem;">最後更新時間：-</div>
                     <div id="club-badges" style="margin-bottom: 1rem;"></div>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin: 1rem 0;">
                         <div>
@@ -188,6 +189,27 @@
     <script>
         const clubId = new URLSearchParams(window.location.search).get('id');
         let selectedRating = 0;
+        let hasReviewedClub = false;
+
+        function updateReviewActionState() {
+            const reviewBtn = document.getElementById('review-btn');
+            if (!reviewBtn) return;
+
+            if (hasReviewedClub) {
+                reviewBtn.textContent = '您已評價過此社團';
+                reviewBtn.disabled = true;
+                reviewBtn.classList.remove('btn-primary');
+                reviewBtn.classList.add('btn-secondary');
+                reviewBtn.title = '每位使用者對同一社團僅能評價一次';
+                return;
+            }
+
+            reviewBtn.textContent = '發布評價';
+            reviewBtn.disabled = false;
+            reviewBtn.classList.remove('btn-secondary');
+            reviewBtn.classList.add('btn-primary');
+            reviewBtn.title = '';
+        }
 
         async function loadClubDetail() {
             try {
@@ -205,14 +227,16 @@
         }
 
         function renderClubDetail(club) {
-            const formatDateOnly = (dateString) => {
+            const formatDateTime = (dateString) => {
                 if (!dateString) return '-';
                 const d = new Date(dateString);
                 if (Number.isNaN(d.getTime())) return '-';
                 const y = d.getFullYear();
                 const m = String(d.getMonth() + 1).padStart(2, '0');
                 const day = String(d.getDate()).padStart(2, '0');
-                return `${y}-${m}-${day}`;
+                const hh = String(d.getHours()).padStart(2, '0');
+                const mm = String(d.getMinutes()).padStart(2, '0');
+                return `${y}-${m}-${day} ${hh}:${mm}`;
             };
 
             document.getElementById('club-name').textContent = club.club_name;
@@ -222,13 +246,16 @@
             document.getElementById('meeting-location').textContent = club.meeting_location || '-';
             document.getElementById('contact-email').textContent = club.contact_email || '-';
             document.getElementById('contact-phone').textContent = club.contact_phone || '-';
-            document.getElementById('last-updated').textContent = formatDateOnly(club.last_updated);
+            document.getElementById('last-updated').textContent = formatDateTime(club.last_updated);
+            document.getElementById('club-last-updated-banner').textContent = `最後更新時間：${formatDateTime(club.last_updated)}`;
             document.getElementById('club-description').textContent = club.description || '-';
             document.getElementById('member-count').textContent = club.member_count || 0;
-            document.getElementById('avg-rating').textContent = (club.average_rating || 0).toFixed(1);
+            const avgRating = Number(club.average_rating || 0);
+            document.getElementById('avg-rating').textContent = Number.isFinite(avgRating) ? avgRating.toFixed(1) : '0.0';
             document.getElementById('review-count').textContent = club.reviews_count || 0;
 
-            const tagsHtml = club.tags.map(tag => `<span class="tag tag-primary">#${tag.tag_name}</span>`).join('');
+            const tags = Array.isArray(club.tags) ? club.tags : [];
+            const tagsHtml = tags.map(tag => `<span class="tag tag-primary">#${tag.tag_name}</span>`).join('');
             document.getElementById('club-tags').innerHTML = tagsHtml || '暫無標籤';
 
             const badgesHtml = `<span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>`;
@@ -256,6 +283,9 @@
             renderReviews(club.reviews || []);
 
             renderAdmins(club.members || []);
+
+            hasReviewedClub = !!club.user_has_reviewed;
+            updateReviewActionState();
         }
 
         function renderUpcomingEvents(events) {
@@ -270,7 +300,7 @@
                 const eventDate = PageUtils.formatDate(event.event_date);
                 html += `
                     <div style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
-                        <h4 style="margin: 0 0 0.5rem 0;">${event.event_name}</h4>
+                                <h4 style="margin: 0 0 0.5rem 0;">${event.event_name || '未命名活動'}</h4>
                         <p style="margin: 0.5rem 0; color: var(--text-light); font-size: 0.9rem;">
                             <strong>時間：</strong>${eventDate}
                         </p>
@@ -290,19 +320,35 @@
                 return;
             }
 
+            const formatDateOnly = (dateString) => {
+                if (!dateString) return '-';
+                const d = new Date(dateString);
+                if (Number.isNaN(d.getTime())) return '-';
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            };
+
             let html = '';
             reviews.forEach(review => {
                 const stars = PageUtils.renderStars(review.rating);
+                const author = review.author_name || review.display_name || '匿名用戶';
+                const relativeTime = PageUtils.timeAgo(review.created_at);
+                const absoluteDate = formatDateOnly(review.created_at);
                 html += `
                     <div style="padding: 1.5rem 0; border-bottom: 1px solid var(--border-color);">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
                             <div>
-                                <strong>${review.review_title || review.display_name}</strong>
+                                <strong>${review.review_title || author}</strong>
                                 <div style="color: var(--text-light); font-size: 0.9rem;">
-                                    ${review.display_name} • ${PageUtils.timeAgo(review.created_at)}
+                                    ${author} • ${relativeTime}（${absoluteDate}）
                                 </div>
                             </div>
-                            <div>${stars}</div>
+                            <div style="text-align: right;">
+                                <div>${stars}</div>
+                                <div style="color: var(--text-light); font-size: 0.8rem;">1 人評分</div>
+                            </div>
                         </div>
                         <p style="margin: 0.5rem 0; color: var(--text-light);">${review.review_content}</p>
                     </div>
@@ -330,7 +376,7 @@
 
                 html += `
                     <div style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
-                        <div style="font-weight: 500;">${admin.name}</div>
+                        <div style="font-weight: 500;">${admin.name || '未命名幹部'}</div>
                         <div style="font-size: 0.85rem; color: var(--text-light);">${roleText}</div>
                     </div>
                 `;
@@ -375,6 +421,12 @@
                 window.location.href = 'login.html';
                 return;
             }
+
+            if (hasReviewedClub) {
+                PageUtils.showAlert('您已評價過此社團，每位使用者僅能評價一次', 'warning');
+                return;
+            }
+
             document.getElementById('review-modal').style.display = 'flex';
         }
 
@@ -402,6 +454,11 @@
         document.getElementById('review-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            if (hasReviewedClub) {
+                PageUtils.showAlert('您已評價過此社團，每位使用者僅能評價一次', 'warning');
+                return;
+            }
+
             if (selectedRating === 0) {
                 PageUtils.showAlert('請選擇評分', 'warning');
                 return;
@@ -417,10 +474,13 @@
                 });
 
                 if (response.success) {
-                    PageUtils.showAlert('評價已提交審核', 'success');
+                    PageUtils.showAlert('評價已發布', 'success');
                     closeReviewModal();
                     document.getElementById('review-form').reset();
                     selectedRating = 0;
+                    hasReviewedClub = true;
+                    updateReviewActionState();
+                    loadClubDetail();
                 } else {
                     PageUtils.showAlert(response.message, 'error');
                 }

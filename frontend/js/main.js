@@ -1,5 +1,6 @@
 // 共用 JavaScript 工具與 API 入口。
 const API_URL = '/社團活動資訊統整平台/backend/api';
+const FRONTEND_HOME_URL = '/社團活動資訊統整平台/frontend/index.html';
 
 class APIClient {
     static async request(endpoint, options = {}) {
@@ -167,8 +168,30 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePage();
 });
 
-function initializePage() {
+async function initializePage() {
+    await hydrateUserFromSession();
     updateNavigation();
+}
+
+async function hydrateUserFromSession() {
+    try {
+        const response = await APIClient.get('auth.php?action=current');
+        if (response && response.success && response.data) {
+            const user = response.data;
+            StorageUtils.setUser({
+                user_id: user.user_id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                student_id: user.student_id || null,
+                avatar_path: user.avatar_path || null
+            });
+        } else {
+            StorageUtils.clearUser();
+        }
+    } catch (error) {
+        StorageUtils.clearUser();
+    }
 }
 
 function isPagesDir() {
@@ -204,25 +227,51 @@ function updateNavigation() {
     const logoutBtn = document.getElementById('logout-btn');
     const userDropdown = document.getElementById('user-dropdown');
 
+    const avatarUrl = user && user.avatar_path
+        ? (user.avatar_path.startsWith('http')
+            ? user.avatar_path
+            : `/社團活動資訊統整平台/${user.avatar_path.replace(/^\.\//, '')}`)
+        : null;
+
     if (user) {
         if (loginBtn) loginBtn.style.display = 'none';
         if (logoutBtn) logoutBtn.style.display = 'inline-block';
         if (userDropdown) {
-            userDropdown.textContent = user.name;
+            const initial = (user.name || '?').charAt(0).toUpperCase();
+            userDropdown.innerHTML = avatarUrl
+                ? `<img src="${avatarUrl}" alt="個人資料" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;">`
+                : `<span style="display: inline-flex; width: 32px; height: 32px; border-radius: 50%; background: var(--primary-color); color: #fff; align-items: center; justify-content: center; font-weight: 700; border: 2px solid #e5e7eb;">${initial}</span>`;
             userDropdown.style.display = 'inline-block';
+            userDropdown.style.cursor = 'pointer';
+            userDropdown.title = '前往個人資料';
+            userDropdown.onclick = () => {
+                window.location.href = getPageLink('user-profile.html');
+            };
+
+            // 幹部頁要求：頭像在登出按鈕右側
+            if (isClubAdminDashboardPage() && logoutBtn && logoutBtn.parentNode) {
+                logoutBtn.insertAdjacentElement('afterend', userDropdown);
+            }
         }
 
         const navLinks = document.querySelector('.nav-links');
         if (navLinks) {
             if (isAdminDashboardPage()) {
-                setRestrictedDashboardNav('platform_admin');
-                return;
+                navLinks.innerHTML = `<li id="admin-dashboard-link"><a href="${getPageLink('admin-dashboard.html')}">管理員</a></li>`;
             }
 
             if (isClubAdminDashboardPage()) {
-                setRestrictedDashboardNav('club_admin');
-                return;
+                navLinks.innerHTML = `
+                    <li><a href="${FRONTEND_HOME_URL}">首頁</a></li>
+                    <li><a href="${getPageLink('club-list.html')}">社團</a></li>
+                    <li><a href="${getPageLink('events.html')}">活動</a></li>
+                    <li><a href="${getPageLink('qa.html')}">提問</a></li>
+                    <li id="club-admin-dashboard-link"><a href="${getPageLink('club-admin-dashboard.html')}">幹部</a></li>
+                `;
             }
+
+            const staleProfileLink = document.getElementById('user-profile-link');
+            if (staleProfileLink) staleProfileLink.remove();
 
             if (user.role === 'platform_admin' && !document.getElementById('admin-dashboard-link')) {
                 const li = document.createElement('li');
@@ -230,19 +279,34 @@ function updateNavigation() {
                 li.innerHTML = `<a href="${getPageLink('admin-dashboard.html')}">管理員</a>`;
                 navLinks.appendChild(li);
             }
-            if ((user.role === 'club_admin' || user.role === 'platform_admin') && !document.getElementById('club-admin-dashboard-link')) {
+            if (user.role === 'club_admin' && !document.getElementById('club-admin-dashboard-link')) {
                 const li = document.createElement('li');
                 li.id = 'club-admin-dashboard-link';
                 li.innerHTML = `<a href="${getPageLink('club-admin-dashboard.html')}">幹部</a>`;
                 navLinks.appendChild(li);
             }
         }
+
+        if (isAdminDashboardPage() && logoutBtn && logoutBtn.parentNode && userDropdown) {
+            logoutBtn.insertAdjacentElement('afterend', userDropdown);
+        }
+
+        const profileShortcut = document.getElementById('user-profile-shortcut');
+        if (profileShortcut) profileShortcut.remove();
     } else {
         if (loginBtn) loginBtn.style.display = 'inline-block';
         if (logoutBtn) logoutBtn.style.display = 'none';
-        if (userDropdown) userDropdown.style.display = 'none';
+        if (userDropdown) {
+            userDropdown.style.display = 'none';
+            userDropdown.innerHTML = '';
+            userDropdown.onclick = null;
+        }
+        const profileLink = document.getElementById('user-profile-link');
+        const profileShortcut = document.getElementById('user-profile-shortcut');
         const adminLink = document.getElementById('admin-dashboard-link');
         const clubAdminLink = document.getElementById('club-admin-dashboard-link');
+        if (profileLink) profileLink.remove();
+        if (profileShortcut) profileShortcut.remove();
         if (adminLink) adminLink.remove();
         if (clubAdminLink) clubAdminLink.remove();
     }

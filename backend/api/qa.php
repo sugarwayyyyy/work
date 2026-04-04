@@ -6,6 +6,146 @@
 require_once '../auth.php';
 
 class QandAAPI {
+    private static function toLower($text) {
+        $value = (string)$text;
+        if (function_exists('mb_strtolower')) {
+            return mb_strtolower($value, 'UTF-8');
+        }
+        return strtolower($value);
+    }
+
+    private static function containsText($haystack, $needle) {
+        if ($needle === '') {
+            return false;
+        }
+
+        if (function_exists('mb_strpos')) {
+            return mb_strpos($haystack, $needle, 0, 'UTF-8') !== false;
+        }
+
+        return strpos($haystack, $needle) !== false;
+    }
+
+    private static function getFilterRules() {
+        static $rules = null;
+        if ($rules === null) {
+            $rules = require __DIR__ . '/../review_filter_rules.php';
+        }
+        return $rules;
+    }
+
+    private static function normalizeForFilter($text) {
+        $normalized = self::toLower((string)$text);
+        $result = preg_replace('/[\s\p{P}\p{S}]+/u', '', $normalized);
+        return $result === null ? $normalized : $result;
+    }
+
+    private static function isWhitelistedContext($normalizedText) {
+        $rules = self::getFilterRules();
+        $whitelist = $rules['whitelist'] ?? [];
+
+        foreach ($whitelist as $term) {
+            if (self::containsText($normalizedText, $term)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function containsProfanity($normalizedText) {
+        $rules = self::getFilterRules();
+        $patterns = $rules['profanity_patterns'] ?? [];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $normalizedText) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function containsExtraBadWords($normalizedText) {
+        $rules = self::getFilterRules();
+        $badWords = $rules['extra_bad_words'] ?? [];
+
+        foreach ($badWords as $word) {
+            if (self::containsText($normalizedText, $word)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function containsSpamPattern($rawText, $normalizedText) {
+        $raw = (string)$rawText;
+        $rules = self::getFilterRules();
+        $spamPatterns = $rules['spam_patterns'] ?? [];
+
+        foreach ($spamPatterns as $pattern) {
+            if (preg_match($pattern, $raw) === 1 || preg_match($pattern, $normalizedText) === 1) {
+                return true;
+            }
+        }
+
+        if (preg_match('/(.)\1{8,}/u', $normalizedText) === 1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static function containsRestrictedLanguage($text) {
+        $normalized = self::normalizeForFilter($text);
+
+        if (self::isWhitelistedContext($normalized)) {
+            return false;
+        }
+
+        if (self::containsProfanity($normalized)) {
+            return true;
+        }
+
+        if (self::containsExtraBadWords($normalized)) {
+            return true;
+        }
+
+        if (self::containsSpamPattern($text, $normalized)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static function getUrgencyLabel($urgency) {
+        switch ($urgency) {
+            case 'urgent':
+                return '緊急';
+            case 'important':
+                return '重要';
+            case 'normal':
+            default:
+                return '一般';
+        }
+    }
+
+    /**
+     * 取得 QA 標籤列表
+     * GET /api/qa.php?action=tags
+     */
+    public static function getTags() {
+        try {
+            $tags = Database::getInstance()->fetchAll(
+                'SELECT qa_tag_id, tag_name, tag_category FROM qa_tags ORDER BY tag_name ASC'
+            );
+
+            Helper::success('取得 QA 標籤成功', ['tags' => $tags]);
+        } catch (Exception $e) {
+            Helper::error('取得 QA 標籤失敗: ' . $e->getMessage(), 500);
+        }
+    }
     
     /**
      * 取得提問列表
@@ -25,30 +165,33 @@ class QandAAPI {
             $params = [];
             
             if ($club_id) {
-                $conditions[] = 'club_id = ?';
+                $conditions[] = 'qa.club_id = ?';
                 $params[] = $club_id;
             }
 
             if ($tag_id) {
-                $conditions[] = 'qa_id IN (SELECT qa_id FROM qa_replies WHERE tag_id = ?)';
+                $conditions[] = 'qa.qa_id IN (SELECT qa_id FROM qa_tag_relations WHERE qa_tag_id = ?)';
                 $params[] = $tag_id;
             }
 
             if ($search) {
-                $conditions[] = '(question_title LIKE ? OR question_content LIKE ?)';
+                $conditions[] = '(qa.question_title LIKE ? OR qa.question_content LIKE ?)';
                 $params[] = "%$search%";
                 $params[] = "%$search%";
             }
 
             if ($status) {
-                $conditions[] = 'status = ?';
+                $conditions[] = 'qa.status = ?';
                 $params[] = $status;
             }
             
             $where = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
             
             // 取得提問列表
-            $sql = "SELECT * FROM q_and_a $where ORDER BY created_at DESC LIMIT ? OFFSET ?";
+            $sql = "SELECT qa.*, u.name AS user_name, u.avatar_path AS user_avatar_path
+                    FROM q_and_a qa
+                    JOIN users u ON qa.user_id = u.user_id
+                    $where ORDER BY qa.created_at DESC LIMIT ? OFFSET ?";
             $stmt = Database::getInstance()->prepare($sql);
             if ($stmt === false) {
                 throw new Exception('查詢準備失敗: ' . Database::getInstance()->error);
@@ -69,12 +212,10 @@ class QandAAPI {
             
             $questions = [];
             while ($row = $result->fetch_assoc()) {
-                // 隱藏實名信息如果是匿名
-                if ($row['is_anonymous']) {
-                    $row['display_name'] = $row['display_name'] ?: '匿名用戶';
-                    unset($row['user_id']);
-                }
-                
+                $row['author_name'] = !empty($row['is_anonymous'])
+                    ? ($row['display_name'] ?: '匿名用戶')
+                    : ($row['user_name'] ?: '匿名用戶');
+
                 // 取得標籤
                 $tags = Database::getInstance()->fetchAll(
                     'SELECT t.* FROM qa_tags t 
@@ -90,13 +231,15 @@ class QandAAPI {
                     [$row['qa_id']]
                 );
                 $row['replies_count'] = $replies['count'];
+                $row['is_solved'] = ($row['status'] ?? '') === 'closed' ? 1 : 0;
+                $row['urgency_label'] = self::getUrgencyLabel($row['urgency_level'] ?? 'normal');
                 
                 $questions[] = $row;
             }
             $stmt->close();
             
             // 取得總數
-            $count_sql = "SELECT COUNT(*) as total FROM q_and_a $where";
+            $count_sql = "SELECT COUNT(*) as total FROM q_and_a qa $where";
             $count_stmt = Database::getInstance()->prepare($count_sql);
             if ($count_stmt === false) {
                 throw new Exception('計數查詢準備失敗: ' . Database::getInstance()->error);
@@ -131,8 +274,12 @@ class QandAAPI {
      */
     public static function getQuestionDetail($qa_id) {
         try {
+            $track_view = isset($_GET['track_view']) ? (int)$_GET['track_view'] : 1;
             $question = Database::getInstance()->fetchOne(
-                'SELECT * FROM q_and_a WHERE qa_id = ?',
+                'SELECT qa.*, u.name AS user_name, u.avatar_path AS user_avatar_path
+                 FROM q_and_a qa
+                 JOIN users u ON qa.user_id = u.user_id
+                 WHERE qa.qa_id = ?',
                 [$qa_id]
             );
             
@@ -140,14 +287,14 @@ class QandAAPI {
                 Helper::error('提問不存在', 404);
             }
             
-            // 隱藏實名信息
-            if ($question['is_anonymous']) {
-                $question['display_name'] = $question['display_name'] ?: '匿名用戶';
-                unset($question['user_id']);
+            $question['author_name'] = !empty($question['is_anonymous'])
+                ? ($question['display_name'] ?: '匿名用戶')
+                : ($question['user_name'] ?: '匿名用戶');
+
+            if ($track_view === 1) {
+                dbUpdate('q_and_a', ['views_count' => $question['views_count'] + 1], 'qa_id = ?', [$qa_id]);
+                $question['views_count'] = (int)$question['views_count'] + 1;
             }
-            
-            // 更新瀏覽次數
-            dbUpdate('q_and_a', ['views_count' => $question['views_count'] + 1], 'qa_id = ?', [$qa_id]);
             
             // 取得標籤
             $tags = Database::getInstance()->fetchAll(
@@ -167,11 +314,20 @@ class QandAAPI {
             
             $helpful_count = Database::getInstance()->fetchOne(
                 'SELECT COUNT(*) as count FROM qa_replies qr 
-                 JOIN qa_reply_helpful qrh ON qr.reply_id = qrh.reply_id 
+                 JOIN qa_reply_helpful qrh ON qr.reply_id = qrh.reply_id AND qrh.vote_type = "helpful"
                  WHERE qr.qa_id = ?',
                 [$qa_id]
             );
             $question['helpful_count'] = $helpful_count['count'];
+            $not_helpful_count = Database::getInstance()->fetchOne(
+                'SELECT COUNT(*) as count FROM qa_replies qr 
+                 JOIN qa_reply_helpful qrh ON qr.reply_id = qrh.reply_id AND qrh.vote_type = "not_helpful"
+                 WHERE qr.qa_id = ?',
+                [$qa_id]
+            );
+            $question['not_helpful_count'] = $not_helpful_count['count'];
+            $question['is_solved'] = ($question['status'] ?? '') === 'closed' ? 1 : 0;
+            $question['urgency_label'] = self::getUrgencyLabel($question['urgency_level'] ?? 'normal');
             
             Helper::success('取得提問詳情成功', $question);
             
@@ -194,12 +350,20 @@ class QandAAPI {
             if (!empty($errors)) {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
+
+            $questionText = trim(($data['question_title'] ?? '') . ' ' . ($data['question_content'] ?? ''));
+            if (self::containsRestrictedLanguage($questionText)) {
+                Helper::error('提問內容包含不適當字眼，請修改後再送出', 400);
+            }
             
             $qa_id = dbInsert('q_and_a', [
                 'club_id' => $data['club_id'],
                 'user_id' => Auth::getCurrentUserId(),
                 'question_title' => $data['question_title'],
                 'question_content' => $data['question_content'],
+                'urgency_level' => in_array(($data['urgency_level'] ?? 'normal'), ['normal', 'important', 'urgent'], true)
+                    ? $data['urgency_level']
+                    : 'normal',
                 'is_anonymous' => $data['is_anonymous'] ?? false,
                 'display_name' => $data['display_name'] ?? '',
                 'status' => 'open'
@@ -248,12 +412,16 @@ class QandAAPI {
             if (!empty($errors)) {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
+
+            if (self::containsRestrictedLanguage($data['content'] ?? '')) {
+                Helper::error('回覆內容包含不適當字眼，請修改後再送出', 400);
+            }
             
             $reply_id = dbInsert('qa_replies', [
                 'qa_id' => $qa_id,
                 'user_id' => Auth::getCurrentUserId(),
-                'content' => $data['content'],
-                'is_official' => $data['is_official'] ?? false
+                'reply_content' => $data['content'],
+                'is_official_answer' => $data['is_official'] ?? false
             ]);
             
             if (!$reply_id) {
@@ -279,7 +447,19 @@ class QandAAPI {
 
         try {
             $replies = Database::getInstance()->fetchAll(
-                'SELECT qr.*, u.name as user_name FROM qa_replies qr
+                'SELECT
+                    qr.reply_id,
+                    qr.qa_id,
+                    qr.user_id,
+                    qr.reply_content AS content,
+                    qr.is_official_answer AS is_official,
+                    qr.is_anonymous,
+                    qr.display_name,
+                    qr.created_at,
+                    qr.updated_at,
+                    u.name as user_name,
+                    u.avatar_path AS user_avatar_path
+                 FROM qa_replies qr
                  JOIN users u ON qr.user_id = u.user_id
                  WHERE qr.qa_id = ?
                  ORDER BY qr.created_at ASC',
@@ -289,21 +469,32 @@ class QandAAPI {
             // 取得每條回覆的有幫助數量
             foreach ($replies as &$reply) {
                 $helpful_count = Database::getInstance()->fetchOne(
-                    'SELECT COUNT(*) as count FROM qa_reply_helpful WHERE reply_id = ?',
+                    'SELECT COUNT(*) as count FROM qa_reply_helpful WHERE reply_id = ? AND vote_type = "helpful"',
                     [$reply['reply_id']]
                 );
                 $reply['helpful_count'] = $helpful_count['count'];
+                $not_helpful_count = Database::getInstance()->fetchOne(
+                    'SELECT COUNT(*) as count FROM qa_reply_helpful WHERE reply_id = ? AND vote_type = "not_helpful"',
+                    [$reply['reply_id']]
+                );
+                $reply['not_helpful_count'] = $not_helpful_count['count'];
+
+                $reply['author_name'] = !empty($reply['is_anonymous'])
+                    ? ($reply['display_name'] ?: '匿名用戶')
+                    : ($reply['user_name'] ?: '匿名用戶');
 
                 // 檢查當前用戶是否可以標記為有幫助
                 if (Auth::isLoggedIn()) {
                     $user_id = Auth::getCurrentUserId();
-                    $helpful = Database::getInstance()->fetchOne(
-                        'SELECT * FROM qa_reply_helpful WHERE reply_id = ? AND user_id = ?',
+                    $vote = Database::getInstance()->fetchOne(
+                        'SELECT vote_type FROM qa_reply_helpful WHERE reply_id = ? AND user_id = ?',
                         [$reply['reply_id'], $user_id]
                     );
-                    $reply['can_mark_helpful'] = !$helpful;
+                    $reply['my_vote'] = $vote['vote_type'] ?? null;
+                    $reply['can_vote'] = (int)$reply['user_id'] !== (int)$user_id;
                 } else {
-                    $reply['can_mark_helpful'] = false;
+                    $reply['my_vote'] = null;
+                    $reply['can_vote'] = false;
                 }
             }
 
@@ -329,11 +520,15 @@ class QandAAPI {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
 
+            if (self::containsRestrictedLanguage($data['content'] ?? '')) {
+                Helper::error('回覆內容包含不適當字眼，請修改後再送出', 400);
+            }
+
             $reply_id = dbInsert('qa_replies', [
                 'qa_id' => $data['question_id'],
                 'user_id' => Auth::getCurrentUserId(),
-                'content' => $data['content'],
-                'is_official' => $data['is_official'] ?? false
+                'reply_content' => $data['content'],
+                'is_official_answer' => $data['is_official'] ?? false
             ]);
 
             if (!$reply_id) {
@@ -348,6 +543,67 @@ class QandAAPI {
     }
 
     /**
+     * 標記回覆回饋
+     */
+    public static function voteReply($data, $vote_type) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        try {
+            $errors = Helper::validateRequired($data, ['reply_id']);
+            if (!empty($errors)) {
+                Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+            }
+
+            if (!in_array($vote_type, ['helpful', 'not_helpful'], true)) {
+                Helper::error('無效的回饋類型', 400);
+            }
+
+            $reply = Database::getInstance()->fetchOne(
+                'SELECT reply_id, user_id FROM qa_replies WHERE reply_id = ?',
+                [$data['reply_id']]
+            );
+
+            if (!$reply) {
+                Helper::error('回覆不存在', 404);
+            }
+
+            if ((int)$reply['user_id'] === (int)Auth::getCurrentUserId()) {
+                Helper::error('不能評價自己的回覆', 403);
+            }
+
+            $existing = Database::getInstance()->fetchOne(
+                'SELECT vote_type FROM qa_reply_helpful WHERE reply_id = ? AND user_id = ?',
+                [$data['reply_id'], Auth::getCurrentUserId()]
+            );
+
+            if ($existing) {
+                dbUpdate('qa_reply_helpful', [
+                    'vote_type' => $vote_type
+                ], 'reply_id = ? AND user_id = ?', [$data['reply_id'], Auth::getCurrentUserId()]);
+            } else {
+                $insert = Database::getInstance()->prepare(
+                    'INSERT INTO qa_reply_helpful (reply_id, user_id, vote_type) VALUES (?, ?, ?)'
+                );
+                if ($insert === false) {
+                    throw new Exception('建立回饋失敗: ' . Database::getInstance()->error);
+                }
+                $reply_id = $data['reply_id'];
+                $user_id = Auth::getCurrentUserId();
+                $insert->bind_param('iis', $reply_id, $user_id, $vote_type);
+                $insert->execute();
+                $insert->close();
+            }
+
+            Helper::success('回饋已更新');
+
+        } catch (Exception $e) {
+            Helper::error('更新回饋失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * 取得用戶的提問
      * GET /api/qa.php?action=my_questions
      */
@@ -358,7 +614,9 @@ class QandAAPI {
 
         try {
             $questions = Database::getInstance()->fetchAll(
-                'SELECT qa.*, c.club_name FROM q_and_a qa
+                'SELECT qa.*, qa.question_title AS title, c.club_name,
+                        CASE WHEN qa.status = "closed" THEN 1 ELSE 0 END AS is_solved
+                 FROM q_and_a qa
                  JOIN clubs c ON qa.club_id = c.club_id
                  WHERE qa.user_id = ?
                  ORDER BY qa.created_at DESC',
@@ -396,7 +654,7 @@ class QandAAPI {
                 Helper::error('只有提問者才能標記為已解決', 403);
             }
 
-            $result = dbUpdate('q_and_a', ['is_solved' => 1], 'qa_id = ?', [$data['question_id']]);
+            $result = dbUpdate('q_and_a', ['status' => 'closed'], 'qa_id = ?', [$data['question_id']]);
 
             if (!$result) {
                 Helper::error('標記失敗', 500);
@@ -422,6 +680,8 @@ $data = ($method === 'POST' || $method === 'PUT')
 if ($method === 'GET') {
     if ($action === 'list') {
         QandAAPI::getQuestions();
+    } elseif ($action === 'tags') {
+        QandAAPI::getTags();
     } elseif ($action === 'detail' && $qa_id) {
         QandAAPI::getQuestionDetail($qa_id);
     } elseif ($action === 'replies') {
@@ -438,6 +698,10 @@ if ($method === 'POST') {
         QandAAPI::replyQuestion($qa_id, $data);
     } elseif ($action === 'add_reply') {
         QandAAPI::addReply($data);
+    } elseif ($action === 'mark_helpful') {
+        QandAAPI::voteReply($data, 'helpful');
+    } elseif ($action === 'mark_not_helpful') {
+        QandAAPI::voteReply($data, 'not_helpful');
     } elseif ($action === 'mark_solved') {
         QandAAPI::markSolved($data);
     }

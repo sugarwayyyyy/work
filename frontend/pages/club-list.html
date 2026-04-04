@@ -51,6 +51,7 @@
             </div>
             <div style="margin-top: 1rem;">
                 <label>熱門標籤</label>
+                <div style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.25rem;">多選標籤採 OR 邏輯（符合任一標籤就會顯示）。</div>
                 <div id="popular-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;"></div>
             </div>
         </div>
@@ -144,6 +145,7 @@
                 if (categoryId) url += `&category_id=${categoryId}`;
                 if (search) url += `&search=${encodeURIComponent(search)}`;
                 if (selectedTagIds.length > 0) url += `&tags=${selectedTagIds.join(',')}`;
+                if (selectedTagIds.length > 0) url += '&tag_match_mode=or';
 
                 const response = await APIClient.get(url);
                 if (response.success) {
@@ -173,7 +175,7 @@
                     <div class="card">
                         <div class="card-header" style="display: flex; justify-content: space-between; align-items: start;">
                             <div style="flex: 1;">
-                                <h3 style="margin: 0 0 0.5rem 0;">${club.club_name}</h3>
+                                <h3 style="margin: 0 0 0.5rem 0;">${club.club_name || '-'}</h3>
                                 <span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>
                             </div>
                         </div>
@@ -185,7 +187,7 @@
                         </div>
                         <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-light); margin-bottom: 1rem;">
                             <span>👥 ${club.member_count} 成員</span>
-                            <span>⭐ ${(club.average_rating || 0).toFixed(1)}</span>
+                            <span>⭐ ${(club.average_rating || 0).toFixed(1)}（${club.reviews_count || 0} 人評分）</span>
                         </div>
                         <a href="club-detail.html?id=${club.club_id}" class="btn btn-primary btn-sm">查看詳情</a>
                     </div>

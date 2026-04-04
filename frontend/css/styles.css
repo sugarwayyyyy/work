@@ -397,6 +397,29 @@ textarea {
     font-size: 1.25rem;
 }
 
+#rating-stars {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.rating-star {
+    font-size: 2rem;
+    line-height: 1;
+    color: #d1d5db;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.rating-star:hover {
+    color: #fbbf24;
+    transform: translateY(-1px);
+}
+
+.rating-star.selected {
+    color: #fbbf24;
+}
+
 /* 加載中 */
 .loading {
     text-align: center;

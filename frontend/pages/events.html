@@ -104,13 +104,16 @@
 
             events.forEach(event => {
                 const eventDate = PageUtils.formatDate(event.event_date);
-                const html = `
+                   const tagsHtml = event.tags && event.tags.length > 0 
+                       ? event.tags.map(tag => `<span style="display: inline-block; background: #e7f5ff; color: #1971c2; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; margin-right: 0.3rem;">${tag.tag_name}</span>`).join('')
+                       : '';
+                   const html = `
                     <div class="card" style="margin-bottom: 1.5rem;">
                         <div style="display: flex; justify-content: space-between; align-items: start;">
                             <div style="flex: 1;">
-                                <h3 style="margin: 0 0 0.5rem 0;">${event.event_name}</h3>
+                                <h3 style="margin: 0 0 0.5rem 0;">${event.event_name || '未命名活動'}</h3>
                                 <p style="margin: 0; color: var(--text-light); font-size: 0.95rem;">
-                                    <strong>社團：</strong>${event.club_name}
+                                    <strong>社團：</strong>${event.club_name || '-'}
                                 </p>
                             </div>
                             <span class="badge">${event.event_status === 'published' ? '報名中' : '進行中'}</span>
@@ -123,6 +126,7 @@
                                 <div>${event.capacity > 0 ? '容納人數: ' + event.capacity : '無容納限制'}</div>
                             </div>
                         </div>
+                           ${tagsHtml ? `<div style="margin: 0.8rem 0; font-size: 0.9rem;">${tagsHtml}</div>` : ''}
                         <p style="color: var(--text-light); margin: 1rem 0 0 0; height: 50px; overflow: hidden;">
                             ${event.description}
                         </p>

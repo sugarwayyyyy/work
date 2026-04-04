@@ -13,6 +13,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
+// 確保 API 錯誤也以 JSON 形式返回，避免前端解析失敗。
+set_exception_handler(function ($e) {
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: application/json');
+    }
+    echo json_encode([
+        'success' => false,
+        'message' => '上傳服務發生錯誤: ' . $e->getMessage()
+    ]);
+    exit;
+});
+
+set_error_handler(function ($severity, $message, $file, $line) {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
+register_shutdown_function(function () {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: application/json');
+        }
+        echo json_encode([
+            'success' => false,
+            'message' => '上傳服務發生致命錯誤: ' . $error['message']
+        ]);
+    }
+});
+
 class UploadAPI {
     private $db;
     private $uploadDir;
@@ -81,6 +112,28 @@ class UploadAPI {
             return (int)$event['club_id'];
         }
 
+        private function hasColumn($tableName, $columnName) {
+            $row = $this->db->fetchOne(
+                'SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+                [DB_NAME, $tableName, $columnName]
+            );
+            return !empty($row) && (int)($row['cnt'] ?? 0) > 0;
+        }
+
+        private function ensureEventPosterColumn() {
+            if ($this->hasColumn('events', 'poster_path')) {
+                return true;
+            }
+
+            $sql = 'ALTER TABLE events ADD COLUMN poster_path VARCHAR(255) NULL AFTER location';
+            $result = $this->db->query($sql);
+            if (!$result) {
+                return false;
+            }
+
+            return $this->hasColumn('events', 'poster_path');
+        }
+
     private function uploadClubLogo() {
         $clubId = (int)($_POST['club_id'] ?? 0);
         if (!$clubId) {
@@ -143,7 +196,18 @@ class UploadAPI {
 
         $result = $this->processUpload($file, 'event_' . $eventId . '_poster');
         if ($result['success']) {
+            if (!$this->ensureEventPosterColumn()) {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => '資料庫缺少 events.poster_path 欄位，且自動修復失敗']);
+                return;
+            }
+
             $stmt = $this->db->prepare("UPDATE events SET poster_path = ? WHERE event_id = ?");
+            if (!$stmt) {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => '資料庫更新失敗（無法準備 SQL）']);
+                return;
+            }
             $stmt->bind_param("si", $result['path'], $eventId);
             $stmt->execute();
             $stmt->close();

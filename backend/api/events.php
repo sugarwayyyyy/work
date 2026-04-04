@@ -90,10 +90,6 @@ class EventAPI {
                 $conditions[] = 'fee <= ?';
                 $params[] = $max_fee;
             }
-
-            if ($status === 'published') {
-                $conditions[] = 'event_date >= NOW()';
-            }
             
             $where = implode(' AND ', $conditions);
             
@@ -184,6 +180,15 @@ class EventAPI {
             );
             $event['club'] = $club;
             
+            // 取得標籤
+            $tags = Database::getInstance()->fetchAll(
+                'SELECT t.* FROM club_tags t
+                 JOIN event_tag_relations etr ON t.tag_id = etr.tag_id
+                 WHERE etr.event_id = ?',
+                [$event_id]
+            );
+            $event['tags'] = $tags;
+            
             // 取得報名人數
             $registration = Database::getInstance()->fetchOne(
                 'SELECT COUNT(*) as count FROM event_registrations WHERE event_id = ?',
@@ -257,6 +262,15 @@ class EventAPI {
             if (!$event_id) {
                 Helper::error('建立活動失敗', 500);
             }
+
+            // 保存活動標籤
+            $tag_ids = isset($data['tag_ids']) ? array_filter(array_map('intval', (array)$data['tag_ids'])) : [];
+            foreach ($tag_ids as $tag_id) {
+                dbInsert('event_tag_relations', [
+                    'event_id' => $event_id,
+                    'tag_id' => $tag_id
+                ]);
+            }
             
             // 紀錄活動日誌
             dbInsert('activity_logs', [
@@ -323,6 +337,23 @@ class EventAPI {
             }
 
             dbUpdate('events', $update_data, 'event_id = ?', [$event_id]);
+
+            // 更新活動標籤
+            if (isset($data['tag_ids'])) {
+                // 刪除舊標籤關聯
+                Database::getInstance()->prepare(
+                    'DELETE FROM event_tag_relations WHERE event_id = ?'
+                )->bind_param('i', $event_id)->execute();
+
+                // 新增新標籤關聯
+                $tag_ids = array_filter(array_map('intval', (array)$data['tag_ids']));
+                foreach ($tag_ids as $tag_id) {
+                    dbInsert('event_tag_relations', [
+                        'event_id' => $event_id,
+                        'tag_id' => $tag_id
+                    ]);
+                }
+            }
 
             // 紀錄活動日誌
             dbInsert('activity_logs', [
@@ -522,7 +553,7 @@ class EventAPI {
 
         try {
             $comments = Database::getInstance()->fetchAll(
-                'SELECT ec.*, u.name as user_name FROM event_comments ec
+                'SELECT ec.*, u.name as user_name, u.name as author_name FROM event_comments ec
                  JOIN users u ON ec.user_id = u.user_id
                  WHERE ec.event_id = ?
                  ORDER BY ec.created_at DESC',
@@ -572,6 +603,19 @@ class EventAPI {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
 
+            $event = Database::getInstance()->fetchOne(
+                'SELECT event_id, event_date FROM events WHERE event_id = ?',
+                [$data['event_id']]
+            );
+
+            if (!$event) {
+                Helper::error('活動不存在', 404);
+            }
+
+            if (strtotime((string)$event['event_date']) >= time()) {
+                Helper::error('活動尚未結束，需參與完成後才能評論', 403);
+            }
+
             // 檢查用戶是否參加過活動
             $participated = Database::getInstance()->fetchOne(
                 'SELECT * FROM event_registrations WHERE event_id = ? AND user_id = ? AND status = "approved"',
@@ -607,6 +651,68 @@ class EventAPI {
 
         } catch (Exception $e) {
             Helper::error('添加評論失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * 更新活動標籤
+     * POST /api/events.php?action=update_event_tags
+     * Body: { event_id, tag_ids: [1, 2, 3] }
+     */
+    public static function updateEventTags($data) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        $event_id = (int)($data['event_id'] ?? 0);
+        $tag_ids = (array)($data['tag_ids'] ?? []);
+
+        if (!$event_id) {
+            Helper::error('活動 ID 不能為空', 400);
+        }
+
+        try {
+            // 取得活動資料以驗證權限
+            $event = Database::getInstance()->fetchOne(
+                'SELECT * FROM events WHERE event_id = ?',
+                [$event_id]
+            );
+
+            if (!$event) {
+                Helper::error('活動不存在', 404);
+            }
+
+            // 驗證權限：檢查用戶是否為該社團的幹部
+            $member = Database::getInstance()->fetchOne(
+                'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "director", "public_relations")',
+                [$event['club_id'], Auth::getCurrentUserId()]
+            );
+
+            if (!$member && !Auth::isAdmin()) {
+                Helper::error('您沒有權限修改此活動的標籤', 403);
+            }
+
+            // 刪除舊標籤關聯
+            $stmt = Database::getInstance()->prepare('DELETE FROM event_tag_relations WHERE event_id = ?');
+            if ($stmt === false) {
+                throw new Exception('刪除舊活動標籤關聯準備失敗: ' . Database::getInstance()->error);
+            }
+            $stmt->bind_param('i', $event_id);
+            $stmt->execute();
+            $stmt->close();
+
+            // 新增新標籤關聯
+            $tag_ids = array_filter(array_map('intval', $tag_ids));
+            foreach ($tag_ids as $tag_id) {
+                dbInsert('event_tag_relations', [
+                    'event_id' => $event_id,
+                    'tag_id' => $tag_id
+                ]);
+            }
+
+            Helper::success('活動標籤更新成功');
+        } catch (Exception $e) {
+            Helper::error('更新活動標籤失敗: ' . $e->getMessage(), 500);
         }
     }
 }
@@ -645,6 +751,8 @@ if ($method === 'POST') {
         EventAPI::cancelRegistration($data['event_id'] ?? null);
     } elseif ($action === 'add_comment') {
         EventAPI::addComment($data);
+    } elseif ($action === 'update_event_tags') {
+        EventAPI::updateEventTags($data);
     }
 }
 

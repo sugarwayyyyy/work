@@ -82,7 +82,7 @@
                     <div class="card notification-card ${isRead}" onclick="markAsRead(${notification.notification_id})">
                         <div style="display: flex; justify-content: space-between; align-items: start;">
                             <div style="flex: 1;">
-                                <h4 style="margin: 0 0 0.5rem 0;">${notification.title}</h4>
+                                <h4 style="margin: 0 0 0.5rem 0;">${notification.title || '通知'}</h4>
                                 <p style="margin: 0 0 0.5rem 0;">${notification.message}</p>
                                 <small style="color: var(--text-light);">${PageUtils.timeAgo(notification.created_at)}</small>
                             </div>

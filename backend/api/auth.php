@@ -165,14 +165,36 @@ class UserAPI {
             $update_data = [];
             
             if (isset($data['name'])) {
-                $update_data['name'] = $data['name'];
+                $name = trim((string)$data['name']);
+                if ($name === '') {
+                    Helper::error('姓名不可為空', 400);
+                }
+                $update_data['name'] = $name;
+            }
+
+            if (isset($data['student_id'])) {
+                $student_id = trim((string)$data['student_id']);
+                if ($student_id !== '') {
+                    $existing = Database::getInstance()->fetchOne(
+                        'SELECT user_id FROM users WHERE student_id = ? AND user_id <> ?',
+                        [$student_id, $user_id]
+                    );
+                    if ($existing) {
+                        Helper::error('學號已被其他帳號使用', 409);
+                    }
+                    $update_data['student_id'] = $student_id;
+                } else {
+                    // 允許清空學號
+                    $update_data['student_id'] = null;
+                }
             }
             
             if (isset($data['phone'])) {
-                if (!Helper::validatePhone($data['phone'])) {
+                $phone = trim((string)$data['phone']);
+                if ($phone !== '' && !Helper::validatePhone($phone)) {
                     Helper::error('電話格式不正確', 400);
                 }
-                $update_data['phone'] = $data['phone'];
+                $update_data['phone'] = $phone === '' ? null : $phone;
             }
 
             if (isset($data['avatar_path'])) {
