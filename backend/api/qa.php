@@ -4,6 +4,7 @@
  */
 
 require_once '../auth.php';
+require_once '../content_filter.php';
 
 class QandAAPI {
     private static function toLower($text) {
@@ -98,25 +99,7 @@ class QandAAPI {
     }
 
     private static function containsRestrictedLanguage($text) {
-        $normalized = self::normalizeForFilter($text);
-
-        if (self::isWhitelistedContext($normalized)) {
-            return false;
-        }
-
-        if (self::containsProfanity($normalized)) {
-            return true;
-        }
-
-        if (self::containsExtraBadWords($normalized)) {
-            return true;
-        }
-
-        if (self::containsSpamPattern($text, $normalized)) {
-            return true;
-        }
-
-        return false;
+        return ContentFilter::containsRestrictedLanguage($text);
     }
 
     private static function getUrgencyLabel($urgency) {
@@ -674,7 +657,7 @@ $action = $_GET['action'] ?? 'list';
 $qa_id = $_GET['id'] ?? null;
 
 $data = ($method === 'POST' || $method === 'PUT')
-    ? (Helper::getJsonInput() ?? $_POST)
+    ? Helper::getRequestInput()
     : [];
 
 if ($method === 'GET') {

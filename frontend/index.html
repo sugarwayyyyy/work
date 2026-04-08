@@ -231,13 +231,18 @@
 
                     clubs.forEach(club => {
                         const tagHtml = club.tags.map(tag => `<span class="tag tag-primary">#${tag.tag_name}</span>`).join('');
+                        const logoUrl = PageUtils.resolveMediaUrl(club.logo_path);
+                        const logoHtml = logoUrl
+                            ? `<img src="${logoUrl}" alt="${club.club_name || '社團'} logo" style="width: 52px; height: 52px; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.12); border: 1px solid rgba(0,0,0,0.08);">`
+                            : '';
                         const html = `
                             <div class="card">
                                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: start;">
-                                    <div>
+                                    <div style="min-width: 0;">
                                         <h3 style="margin: 0 0 0.5rem 0;">${club.club_name || '-'}</h3>
                                         <span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>
                                     </div>
+                                    ${logoHtml}
                                 </div>
                                 <div style="margin-bottom: 1rem;">
                                     ${tagHtml}
@@ -331,8 +336,9 @@
 
                 container.innerHTML = '';
                 clubs.slice(0, 3).forEach(club => {
-                    const logoHtml = club.logo_path
-                        ? `<img src="${club.logo_path.startsWith('http') ? club.logo_path : club.logo_path}" alt="${club.club_name || '社團'} logo" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover;">`
+                    const logoUrl = PageUtils.resolveMediaUrl(club.logo_path);
+                    const logoHtml = logoUrl
+                        ? `<img src="${logoUrl}" alt="${club.club_name || '社團'} logo" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover;">`
                         : `<div style="width: 48px; height: 48px; border-radius: 10px; background: var(--light-gray);"></div>`;
 
                     const card = document.createElement('div');

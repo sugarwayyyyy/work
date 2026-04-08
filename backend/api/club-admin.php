@@ -4,6 +4,7 @@
  */
 
 require_once '../auth.php';
+require_once '../content_filter.php';
 
 class ClubAdminAPI {
 
@@ -55,6 +56,10 @@ class ClubAdminAPI {
         $errors = Helper::validateRequired($data, ['club_id', 'event_name', 'event_date', 'location']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
+        if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description', 'location'])) {
+            Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
+        }
+
         $club_id = (int)$data['club_id'];
         $isMember = Database::getInstance()->fetchOne(
             'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
@@ -93,6 +98,10 @@ class ClubAdminAPI {
         $target_user_id = (int)$data['target_user_id'];
         $reason = trim($data['reason']);
         $handover_note = trim($data['handover_note'] ?? '');
+
+        if (ContentFilter::hasRestrictedInFields($data, ['reason', 'handover_note'])) {
+            Helper::error('轉讓申請內容包含不適當字眼，請修改後再送出', 400);
+        }
 
         if ($requester_user_id === $target_user_id) {
             Helper::error('轉讓對象不可為本人', 400);
@@ -177,7 +186,7 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
-    $data = Helper::getJsonInput() ?? $_POST;
+    $data = Helper::getRequestInput();
     if ($action === 'create_event') {
         ClubAdminAPI::createClubEvent($data);
     } elseif ($action === 'submit_transfer_request') {

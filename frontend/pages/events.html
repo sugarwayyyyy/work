@@ -104,6 +104,16 @@
 
             events.forEach(event => {
                 const eventDate = PageUtils.formatDate(event.event_date);
+                const eventDateObj = new Date(event.event_date);
+                const now = new Date();
+                let statusBadgeText = '進行中';
+                if (!Number.isNaN(eventDateObj.getTime()) && eventDateObj < now) {
+                    statusBadgeText = '已結束';
+                } else if (Number(event.is_registration_open) === 1) {
+                    statusBadgeText = '報名中';
+                } else {
+                    statusBadgeText = '報名截止';
+                }
                    const tagsHtml = event.tags && event.tags.length > 0 
                        ? event.tags.map(tag => `<span style="display: inline-block; background: #e7f5ff; color: #1971c2; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; margin-right: 0.3rem;">${tag.tag_name}</span>`).join('')
                        : '';
@@ -116,7 +126,7 @@
                                     <strong>社團：</strong>${event.club_name || '-'}
                                 </p>
                             </div>
-                            <span class="badge">${event.event_status === 'published' ? '報名中' : '進行中'}</span>
+                            <span class="badge">${statusBadgeText}</span>
                         </div>
                         <div style="margin: 1rem 0;">
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; font-size: 0.95rem;">

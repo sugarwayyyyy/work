@@ -4,6 +4,7 @@
  */
 
 require_once '../auth.php';
+require_once '../content_filter.php';
 
 class ClubAPI {
     
@@ -28,6 +29,9 @@ class ClubAPI {
             $categoryCondition = null;
             $tagCondition = null;
             $tagConditionParams = [];
+            $selectColumns = 'clubs.*';
+            $orderBy = 'last_updated DESC';
+            $selectTagScoreParams = [];
             
             if ($category_id) {
                 $categoryCondition = 'category_id = ?';
@@ -64,15 +68,17 @@ class ClubAPI {
                     }
                     $tagConditionParams[] = count($tag_ids);
                 } else {
-                    // 預設 OR：只要社團符合任一標籤即可
+                    // OR 模式改為排序優先：符合越多標籤越前面，未符合者仍保留在列表。
                     $placeholders = implode(',', array_fill(0, count($tag_ids), '?'));
-                    $tagCondition = 'club_id IN (
-                        SELECT DISTINCT ctr.club_id
+                    $selectColumns .= ', (
+                        SELECT COUNT(DISTINCT ctr.tag_id)
                         FROM club_tag_relations ctr
-                        WHERE ctr.tag_id IN (' . $placeholders . ')
-                    )';
+                        WHERE ctr.club_id = clubs.club_id
+                          AND ctr.tag_id IN (' . $placeholders . ')
+                    ) AS matched_tag_count';
+                    $orderBy = 'matched_tag_count DESC, last_updated DESC';
                     foreach ($tag_ids as $tag_id) {
-                        $tagConditionParams[] = $tag_id;
+                        $selectTagScoreParams[] = $tag_id;
                     }
                 }
             }
@@ -93,13 +99,13 @@ class ClubAPI {
             $where = implode(' AND ', $where_conditions);
             
             // 取得社團列表
-            $sql = "SELECT * FROM clubs WHERE $where ORDER BY last_updated DESC LIMIT ? OFFSET ?";
+            $sql = "SELECT $selectColumns FROM clubs WHERE $where ORDER BY $orderBy LIMIT ? OFFSET ?";
             $stmt = Database::getInstance()->prepare($sql);
             if ($stmt === false) {
                 throw new Exception('查詢準備失敗: ' . Database::getInstance()->error);
             }
 
-            $queryParams = $params;
+            $queryParams = array_merge($selectTagScoreParams, $params);
             if (!empty($queryParams)) {
                 $types = str_repeat('s', count($queryParams)) . 'ii';
                 $queryParams[] = $per_page;
@@ -353,6 +359,10 @@ class ClubAPI {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
 
+            if (ContentFilter::hasRestrictedInFields($data, ['club_name', 'description', 'meeting_location'])) {
+                Helper::error('社團資料包含不適當字眼，請修改後再送出', 400);
+            }
+
             $club_code = trim($data['club_code'] ?? '');
             if ($club_code === '') {
                 $club_code = 'CLB' . date('YmdHis') . rand(10, 99);
@@ -419,6 +429,10 @@ class ClubAPI {
             $requiredErrors = Helper::validateRequired($data, $requiredFields);
             if (!empty($requiredErrors)) {
                 Helper::error('驗證失敗: ' . implode(', ', $requiredErrors), 400);
+            }
+
+            if (ContentFilter::hasRestrictedInFields($data, ['club_name', 'description', 'meeting_location'])) {
+                Helper::error('社團資料包含不適當字眼，請修改後再送出', 400);
             }
 
             if (!Helper::validateEmail($data['contact_email'])) {
@@ -553,6 +567,10 @@ class ClubAPI {
             Helper::error('標籤名稱不能為空', 400);
         }
 
+        if (ContentFilter::hasRestrictedInFields($data, ['tag_name', 'description'])) {
+            Helper::error('標籤內容包含不適當字眼，請修改後再送出', 400);
+        }
+
         if (!in_array($tag_type, ['experience', 'fee', 'time', 'other'])) {
             $tag_type = 'other';
         }
@@ -663,7 +681,7 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
-    $data = Helper::getJsonInput() ?? $_POST;
+    $data = Helper::getRequestInput();
     if ($action === 'create') {
         ClubAPI::createClub($data);
     } elseif ($action === 'create_tag') {
@@ -676,7 +694,7 @@ if ($method === 'POST') {
 }
 
 if ($method === 'PUT') {
-    $data = Helper::getJsonInput();
+    $data = Helper::getRequestInput();
     if ($action === 'update' && $club_id) {
         ClubAPI::updateClub($club_id, $data);
     }

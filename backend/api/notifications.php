@@ -155,7 +155,7 @@ $method = Helper::getRequestMethod();
 $action = $_GET['action'] ?? 'list';
 
 $data = ($method === 'POST' || $method === 'PUT')
-    ? (Helper::getJsonInput() ?? $_POST)
+    ? Helper::getRequestInput()
     : [];
 
 if ($method === 'GET') {

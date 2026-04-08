@@ -292,8 +292,18 @@
         // 檢查報名狀態
         async function checkRegistrationStatus(eventId) {
             const user = StorageUtils.getUser();
+            const registerBtn = document.getElementById('register-btn');
+            const unregisterBtn = document.getElementById('unregister-btn');
+            const messageEl = document.getElementById('registration-message');
+
+            // 每次刷新狀態先重置按鈕，避免殘留上一次顯示狀態。
+            registerBtn.style.display = 'none';
+            unregisterBtn.style.display = 'none';
+
             if (!user) {
-                document.getElementById('registration-message').textContent = '請先登入以報名活動';
+                messageEl.textContent = eventHasEnded
+                    ? '活動已結束，無法報名'
+                    : '請先登入以報名活動';
                 userRegisteredForEvent = false;
                 renderCommentFormAccess();
                 return;
@@ -303,18 +313,23 @@
                 const response = await APIClient.get(`events.php?action=check_registration&event_id=${eventId}`);
                 if (response.success) {
                     userRegisteredForEvent = !!response.data.registered;
-                    if (response.data.registered) {
-                        document.getElementById('unregister-btn').style.display = 'inline-block';
-                        document.getElementById('registration-message').textContent = '您已報名此活動';
+                    if (eventHasEnded) {
+                        messageEl.textContent = response.data.registered
+                            ? '活動已結束，您的報名已鎖定，無法取消或重新報名'
+                            : '活動已結束，無法報名';
+                    } else if (response.data.registered) {
+                        unregisterBtn.style.display = 'inline-block';
+                        messageEl.textContent = '您已報名此活動';
                     } else {
-                        document.getElementById('register-btn').style.display = 'inline-block';
-                        document.getElementById('registration-message').textContent = '';
+                        registerBtn.style.display = 'inline-block';
+                        messageEl.textContent = '';
                     }
                     renderCommentFormAccess();
                 }
             } catch (error) {
                 console.error('Error checking registration:', error);
                 userRegisteredForEvent = false;
+                messageEl.textContent = '目前無法取得報名狀態，請稍後再試';
                 renderCommentFormAccess();
             }
         }

@@ -5,6 +5,7 @@
 
 require_once 'config.php';
 require_once 'db.php';
+require_once 'content_filter.php';
 
 class Helper {
     // 返回JSON格式響應
@@ -109,7 +110,37 @@ class Helper {
     // 取得JSON POST數據
     public static function getJsonInput() {
         $input = file_get_contents('php://input');
-        return json_decode($input, true);
+        if ($input === false || trim($input) === '') {
+            return null;
+        }
+
+        $decoded = json_decode($input, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return null;
+        }
+
+        return $decoded;
+    }
+
+    // 取得請求內容並做基本安全攔截
+    public static function getRequestInput() {
+        $jsonInput = self::getJsonInput();
+        if (is_array($jsonInput)) {
+            $data = $jsonInput;
+        } elseif (is_array($_POST) && !empty($_POST)) {
+            $data = $_POST;
+        } else {
+            $data = [];
+        }
+
+        self::rejectDangerousCommandPayload($data);
+        return $data;
+    }
+
+    public static function rejectDangerousCommandPayload($data) {
+        if (ContentFilter::hasDangerousCommandPayload($data)) {
+            self::error('請求內容包含疑似危險指令片段，已拒絕處理', 400);
+        }
     }
     
     // 格式化日期時間

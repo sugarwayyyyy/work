@@ -120,6 +120,30 @@ class PageUtils {
 
         return html;
     }
+
+    static resolveMediaUrl(path) {
+        if (!path) return '';
+
+        const raw = String(path).trim();
+        if (!raw) return '';
+
+        if (/^(https?:)?\/\//i.test(raw) || raw.startsWith('data:')) {
+            return raw;
+        }
+
+        let normalized = raw.replace(/\\/g, '/').replace(/^\.?\//, '');
+
+        if (normalized.startsWith('社團活動資訊統整平台/')) {
+            return `/${normalized}`;
+        }
+
+        // 上傳 API 目前回傳 assets/uploads/*，實際檔案位於 frontend/assets/uploads/*。
+        if (normalized.startsWith('assets/uploads/')) {
+            normalized = `frontend/${normalized}`;
+        }
+
+        return `/社團活動資訊統整平台/${normalized}`;
+    }
 }
 
 class Validator {
@@ -228,9 +252,7 @@ function updateNavigation() {
     const userDropdown = document.getElementById('user-dropdown');
 
     const avatarUrl = user && user.avatar_path
-        ? (user.avatar_path.startsWith('http')
-            ? user.avatar_path
-            : `/社團活動資訊統整平台/${user.avatar_path.replace(/^\.\//, '')}`)
+        ? PageUtils.resolveMediaUrl(user.avatar_path)
         : null;
 
     if (user) {

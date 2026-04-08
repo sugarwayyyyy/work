@@ -4,6 +4,7 @@
  */
 
 require_once '../auth.php';
+require_once '../content_filter.php';
 
 class UserAPI {
     
@@ -20,6 +21,10 @@ class UserAPI {
             
             if (!Helper::validateEmail($data['email'])) {
                 Helper::error('郵箱格式不正確', 400);
+            }
+
+            if (ContentFilter::hasRestrictedInFields($data, ['name'])) {
+                Helper::error('姓名包含不適當字眼，請修改後再送出', 400);
             }
             
             // 檢查郵箱是否已存在
@@ -169,6 +174,9 @@ class UserAPI {
                 if ($name === '') {
                     Helper::error('姓名不可為空', 400);
                 }
+                if (ContentFilter::containsRestrictedLanguage($name)) {
+                    Helper::error('姓名包含不適當字眼，請修改後再送出', 400);
+                }
                 $update_data['name'] = $name;
             }
 
@@ -254,7 +262,7 @@ $method = Helper::getRequestMethod();
 $action = $_GET['action'] ?? 'current';
 
 $data = ($method === 'POST' || $method === 'PUT') 
-    ? (Helper::getJsonInput() ?? $_POST) 
+    ? Helper::getRequestInput() 
     : [];
 
 switch ($action) {

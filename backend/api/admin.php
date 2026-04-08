@@ -4,6 +4,7 @@
  */
 
 require_once '../auth.php';
+require_once '../content_filter.php';
 
 class AdminAPI {
 
@@ -166,6 +167,10 @@ class AdminAPI {
         $errors = Helper::validateRequired($data, ['club_code', 'club_name', 'category_id']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
+        if (ContentFilter::hasRestrictedInFields($data, ['club_name', 'description'])) {
+            Helper::error('社團資料包含不適當字眼，請修改後再送出', 400);
+        }
+
         $club_id = dbInsert('clubs', [
             'club_code' => trim($data['club_code']),
             'club_name' => trim($data['club_name']),
@@ -186,6 +191,10 @@ class AdminAPI {
         self::requireAdmin();
         $errors = Helper::validateRequired($data, ['club_id', 'club_code', 'club_name', 'category_id']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        if (ContentFilter::hasRestrictedInFields($data, ['club_name'])) {
+            Helper::error('社團名稱包含不適當字眼，請修改後再送出', 400);
+        }
 
         $club_id = (int)$data['club_id'];
         $result = dbUpdate('clubs', [
@@ -286,6 +295,10 @@ class AdminAPI {
         $errors = Helper::validateRequired($data, ['title', 'content', 'type']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
+        if (ContentFilter::hasRestrictedInFields($data, ['title', 'content'])) {
+            Helper::error('公告內容包含不適當字眼，請修改後再送出', 400);
+        }
+
         $announcement = [
             'title' => trim($data['title']),
             'content' => trim($data['content']),
@@ -350,6 +363,10 @@ class AdminAPI {
         $decision = trim($data['decision']);
         $review_note = trim($data['review_note'] ?? '');
         $admin_user_id = Auth::getCurrentUser()['user_id'];
+
+        if (ContentFilter::hasRestrictedInFields($data, ['review_note'])) {
+            Helper::error('審核意見包含不適當字眼，請修改後再送出', 400);
+        }
 
         if (!in_array($decision, ['approved', 'rejected'], true)) {
             Helper::error('decision 必須為 approved 或 rejected', 400);
@@ -508,7 +525,7 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
-    $data = Helper::getJsonInput() ?? $_POST;
+    $data = Helper::getRequestInput();
     if ($action === 'update_user_role') {
         AdminAPI::updateUserRole($data);
     } elseif ($action === 'upsert_club_admin_assignment') {

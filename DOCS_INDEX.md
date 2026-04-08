@@ -22,6 +22,7 @@
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | 目前進度與後續工作重點 |
 | [COMPLETION_REPORT.md](COMPLETION_REPORT.md) | 完成內容與交付摘要 |
 | [RELEASE_NOTES_2026-04-04.md](RELEASE_NOTES_2026-04-04.md) | 最新版本變更與影響範圍 |
+| [NEXT_FIRESTORE_GO_TO_MARKET_PLAN.md](NEXT_FIRESTORE_GO_TO_MARKET_PLAN.md) | Next.js + Firestore 上市與遷移計畫書 |
 
 ## 測試與驗收
 

@@ -51,7 +51,7 @@
             </div>
             <div style="margin-top: 1rem;">
                 <label>熱門標籤</label>
-                <div style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.25rem;">多選標籤採 OR 邏輯（符合任一標籤就會顯示）。</div>
+                <div style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.25rem;">多選標籤採 OR 排序：符合較多標籤的社團會排前面，未符合的社團仍會保留在列表。</div>
                 <div id="popular-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;"></div>
             </div>
         </div>
@@ -171,13 +171,18 @@
 
             clubs.forEach(club => {
                 const tagHtml = club.tags.map(tag => `<span class="tag tag-primary">#${tag.tag_name}</span>`).join('');
+                const logoUrl = PageUtils.resolveMediaUrl(club.logo_path);
+                const logoHtml = logoUrl
+                    ? `<img src="${logoUrl}" alt="${club.club_name || '社團'} logo" style="width: 52px; height: 52px; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.12); border: 1px solid rgba(0,0,0,0.08);">`
+                    : '';
                 const html = `
                     <div class="card">
                         <div class="card-header" style="display: flex; justify-content: space-between; align-items: start;">
-                            <div style="flex: 1;">
+                            <div style="flex: 1; min-width: 0;">
                                 <h3 style="margin: 0 0 0.5rem 0;">${club.club_name || '-'}</h3>
                                 <span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>
                             </div>
+                            ${logoHtml}
                         </div>
                         <div style="margin-bottom: 1rem;">
                             ${tagHtml}

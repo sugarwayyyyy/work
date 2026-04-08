@@ -4,6 +4,7 @@
  */
 
 require_once '../auth.php';
+require_once '../content_filter.php';
 
 class EventAPI {
 
@@ -234,6 +235,10 @@ class EventAPI {
             if (!empty($errors)) {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
+
+            if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description', 'location'])) {
+                Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
+            }
             
             // 檢查用戶權限
             $member = Database::getInstance()->fetchOne(
@@ -319,6 +324,10 @@ class EventAPI {
                 Helper::error('您無權限編輯此活動', 403);
             }
 
+            if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description', 'location'])) {
+                Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
+            }
+
             // 更新活動信息
             $update_data = [
                 'event_name' => $data['event_name'] ?? $event['event_name'],
@@ -393,6 +402,10 @@ class EventAPI {
             if (!$event) {
                 Helper::error('活動不存在', 404);
             }
+
+            if (strtotime((string)$event['event_date']) <= time()) {
+                Helper::error('活動已結束，無法報名', 400);
+            }
             
             if (!$event['is_registration_open']) {
                 Helper::error('此活動不開放報名', 400);
@@ -451,12 +464,16 @@ class EventAPI {
 
         try {
             $event = Database::getInstance()->fetchOne(
-                'SELECT event_id FROM events WHERE event_id = ?',
+                'SELECT event_id, event_date FROM events WHERE event_id = ?',
                 [$event_id]
             );
 
             if (!$event) {
                 Helper::error('活動不存在', 404);
+            }
+
+            if (strtotime((string)$event['event_date']) <= time()) {
+                Helper::error('活動已結束，無法取消報名', 400);
             }
 
             $existing = Database::getInstance()->fetchOne(
@@ -636,6 +653,10 @@ class EventAPI {
                 Helper::error('您已經評論過此活動', 409);
             }
 
+            if (ContentFilter::hasRestrictedInFields($data, ['comment'])) {
+                Helper::error('評論內容包含不適當字眼，請修改後再送出', 400);
+            }
+
             $comment_id = dbInsert('event_comments', [
                 'event_id' => $data['event_id'],
                 'user_id' => Auth::getCurrentUserId(),
@@ -723,7 +744,7 @@ $action = $_GET['action'] ?? 'list';
 $event_id = $_GET['id'] ?? null;
 
 $data = ($method === 'POST' || $method === 'PUT')
-    ? (Helper::getJsonInput() ?? $_POST)
+    ? Helper::getRequestInput()
     : [];
 
 if ($method === 'GET') {
