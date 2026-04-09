@@ -345,21 +345,45 @@
             if (pagination.total_pages <= 1) return;
 
             let html = '<div class="pagination">';
+            const totalPages = Number(pagination.total_pages) || 0;
+            const currentPageNum = Number(pagination.current_page) || 1;
             
-            if (pagination.current_page > 1) {
-                html += `<a onclick="changePage(${pagination.current_page - 1})">← 上一頁</a>`;
+            if (currentPageNum > 1) {
+                html += `<a onclick="changePage(${currentPageNum - 1})">← 上一頁</a>`;
             }
 
-            for (let i = 1; i <= pagination.total_pages; i++) {
-                if (i === pagination.current_page) {
-                    html += `<span class="active">${i}</span>`;
-                } else if (i <= pagination.current_page + 2 && i >= pagination.current_page - 2) {
-                    html += `<a onclick="changePage(${i})">${i}</a>`;
+            // 頁數不多時顯示完整頁碼，避免 6 頁只看見 3 頁的體感問題。
+            if (totalPages <= 10) {
+                for (let i = 1; i <= totalPages; i++) {
+                    if (i === currentPageNum) {
+                        html += `<span class="active">${i}</span>`;
+                    } else {
+                        html += `<a onclick="changePage(${i})">${i}</a>`;
+                    }
                 }
+            } else {
+                const pages = new Set([1, totalPages, currentPageNum - 1, currentPageNum, currentPageNum + 1]);
+                const validPages = Array.from(pages)
+                    .filter(page => page >= 1 && page <= totalPages)
+                    .sort((a, b) => a - b);
+
+                let prevPage = 0;
+                validPages.forEach(page => {
+                    if (prevPage && page - prevPage > 1) {
+                        html += '<span>...</span>';
+                    }
+
+                    if (page === currentPageNum) {
+                        html += `<span class="active">${page}</span>`;
+                    } else {
+                        html += `<a onclick="changePage(${page})">${page}</a>`;
+                    }
+                    prevPage = page;
+                });
             }
 
-            if (pagination.current_page < pagination.total_pages) {
-                html += `<a onclick="changePage(${pagination.current_page + 1})">下一頁 →</a>`;
+            if (currentPageNum < totalPages) {
+                html += `<a onclick="changePage(${currentPageNum + 1})">下一頁 →</a>`;
             }
 
             html += '</div>';

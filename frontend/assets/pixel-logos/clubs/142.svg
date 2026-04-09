@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad142" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#1f578f"/>
+      <stop offset="100%" stop-color="#082843"/>
+    </radialGradient>
+    <linearGradient id="pageGrad142" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fcff"/>
+      <stop offset="100%" stop-color="#d4e6f9"/>
+    </linearGradient>
+    <radialGradient id="goldGrad142" cx="50%" cy="45%" r="72%">
+      <stop offset="0%" stop-color="#ffe5b2"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad142)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 光暈 -->
+  <circle cx="162.000" cy="114.000" r="44.000" fill="#f8dca6" opacity="0.180"/>
+
+  <!-- 十字書籤 -->
+  <rect x="158.500" y="56.000" width="7.000" height="68.000" rx="2.000" fill="url(#goldGrad142)"/>
+  <rect x="146.000" y="71.000" width="32.000" height="8.000" rx="2.000" fill="url(#goldGrad142)"/>
+  <path d="M158.500,124.000 L165.500,124.000 L162.000,134.000 Z" fill="#f59e0b"/>
+
+  <!-- 打開的聖經 -->
+  <path d="M86.000,154.000 C112.000,139.000 136.500,140.000 162.000,154.000 L162.000,250.000 C139.500,236.500 115.000,235.500 92.000,250.000 Z" fill="url(#pageGrad142)" stroke="#f59e0b" stroke-width="2.400"/>
+  <path d="M238.000,154.000 C212.000,139.000 187.500,140.000 162.000,154.000 L162.000,250.000 C184.500,236.500 209.000,235.500 232.000,250.000 Z" fill="url(#pageGrad142)" stroke="#f59e0b" stroke-width="2.400"/>
+  <path d="M162.000,154.000 L162.000,250.000" stroke="#c3dbf3" stroke-width="1.300"/>
+
+  <!-- 經文線條 -->
+  <g stroke="#c3dbf3" stroke-width="1.150" stroke-linecap="round" fill="none">
+    <path d="M102.000,172.000 C118.000,166.500 133.500,166.500 149.000,171.500"/>
+    <path d="M102.000,184.000 C118.000,178.500 133.500,178.500 149.000,183.500"/>
+    <path d="M102.000,196.000 C118.000,190.500 133.500,190.500 149.000,195.500"/>
+    <path d="M102.000,208.000 C118.000,202.500 133.500,202.500 149.000,207.500"/>
+    <path d="M175.000,171.500 C190.500,166.500 206.000,166.500 222.000,172.000"/>
+    <path d="M175.000,183.500 C190.500,178.500 206.000,178.500 222.000,184.000"/>
+    <path d="M175.000,195.500 C190.500,190.500 206.000,190.500 222.000,196.000"/>
+    <path d="M175.000,207.500 C190.500,202.500 206.000,202.500 222.000,208.000"/>
+  </g>
+
+  <!-- 研究意象：放大鏡 -->
+  <circle cx="223.000" cy="242.000" r="15.000" fill="none" stroke="#f59e0b" stroke-width="3.200"/>
+  <path d="M233.500,252.500 L247.500,266.500" stroke="#f59e0b" stroke-width="3.500" stroke-linecap="round"/>
+  <circle cx="223.000" cy="242.000" r="8.000" fill="#f8dca6" opacity="0.450"/>
+
+  <!-- 點描 -->
+  <g fill="#f59e0b">
+    <circle cx="74.250" cy="88.500" r="1.700"/>
+    <circle cx="90.750" cy="72.750" r="1.500"/>
+    <circle cx="235.250" cy="84.125" r="1.850"/>
+    <circle cx="251.500" cy="98.000" r="1.500"/>
+    <circle cx="78.750" cy="241.750" r="1.650"/>
+    <circle cx="94.500" cy="258.250" r="1.450"/>
+    <circle cx="230.500" cy="246.250" r="1.750"/>
+    <circle cx="246.250" cy="262.750" r="1.500"/>
+    <circle cx="162.000" cy="53.250" r="1.850"/>
+    <circle cx="162.000" cy="298.000" r="1.850"/>
+  </g>
+</svg>

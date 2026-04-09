@@ -132,6 +132,7 @@
                             <div id="club-logo-placeholder-label" style="color: var(--text-light); font-size: 0.9rem;">預設社團頭像</div>
                         </div>
                     </div>
+                    <p id="club-logo-note" style="display: none; margin-top: 0.75rem; color: var(--text-light); font-size: 0.85rem; line-height: 1.5;"></p>
                 </div>
 
                 <div class="card" style="margin-bottom: 2rem;">
@@ -317,15 +318,33 @@
             const logoPlaceholder = document.getElementById('club-logo-placeholder');
             const logoPlaceholderAvatar = document.getElementById('club-logo-placeholder-avatar');
             const logoPlaceholderLabel = document.getElementById('club-logo-placeholder-label');
-            if (club.logo_path) {
-                const logoPath = club.logo_path.replace(/^\.\//, '');
-                logoImg.src = logoPath.startsWith('http') ? logoPath : `../${logoPath}`;
+            const logoNote = document.getElementById('club-logo-note');
+            const uploadedLogoUrl = PageUtils.resolveMediaUrl(club.logo_path);
+            const pixelLogoUrl = PageUtils.getClubPixelAvatarUrl(club);
+
+            if (uploadedLogoUrl) {
+                logoImg.src = uploadedLogoUrl;
+                logoImg.style.imageRendering = 'auto';
                 logoImg.style.display = 'block';
                 if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+                if (logoNote) {
+                    logoNote.style.display = 'none';
+                    logoNote.textContent = '';
+                }
+            } else if (pixelLogoUrl) {
+                logoImg.src = pixelLogoUrl;
+                logoImg.style.imageRendering = 'pixelated';
+                logoImg.style.display = 'block';
+                if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+                if (logoNote) {
+                    logoNote.style.display = 'block';
+                    logoNote.textContent = '提醒：此為系統生成示意 Logo，非社團官方提供的實際 Logo。';
+                }
             } else {
                 const avatarEmoji = PageUtils.getClubAvatarEmoji(club.club_name || '', club.category_name || '', club.description || '');
                 const avatarText = avatarEmoji || PageUtils.getInitial(club.club_name || '');
                 logoImg.removeAttribute('src');
+                logoImg.style.imageRendering = 'auto';
                 logoImg.style.display = 'none';
                 if (logoPlaceholderAvatar) {
                     logoPlaceholderAvatar.textContent = avatarText;
@@ -336,6 +355,10 @@
                     logoPlaceholderLabel.textContent = avatarEmoji ? '預設貼圖頭像' : '預設首字頭像';
                 }
                 if (logoPlaceholder) logoPlaceholder.style.display = 'flex';
+                if (logoNote) {
+                    logoNote.style.display = 'block';
+                    logoNote.textContent = '提醒：此為系統預設頭像，非社團官方提供的實際 Logo。';
+                }
             }
 
             const followBtn = document.getElementById('follow-btn');
@@ -462,6 +485,7 @@
                 const response = await APIClient.post(`clubs.php?action=toggle_follow&id=${clubId}`, {});
                 if (response.success) {
                     const btn = document.getElementById('follow-btn');
+                    const memberCountEl = document.getElementById('member-count');
                     if (response.data.is_following) {
                         btn.textContent = '已追蹤';
                         btn.classList.remove('btn-primary');
@@ -472,6 +496,10 @@
                         btn.classList.add('btn-primary');
                         btn.classList.remove('btn-secondary');
                         PageUtils.showAlert('已取消追蹤', 'success');
+                    }
+
+                    if (memberCountEl && Number.isFinite(Number(response.data?.member_count))) {
+                        memberCountEl.textContent = String(Number(response.data.member_count));
                     }
                 } else {
                     PageUtils.showAlert(response.message, 'error');

@@ -334,9 +334,9 @@ class ClubAPI {
             $club['reviews_count'] = $rating_result['count'] ?? 0;
             $club['reviews'] = $reviews;
             
-            // 取得成員數
+            // 取得追蹤人數（前端顯示成員數會隨追蹤變動）
             $member_count = Database::getInstance()->fetchOne(
-                'SELECT COUNT(*) as count FROM club_members WHERE club_id = ?',
+                'SELECT COUNT(*) as count FROM club_followers WHERE club_id = ?',
                 [$club_id]
             );
             $club['member_count'] = $member_count['count'];
@@ -567,8 +567,17 @@ class ClubAPI {
                 ]);
                 $is_following = true;
             }
+
+            $member_count = Database::getInstance()->fetchOne(
+                'SELECT COUNT(*) as count FROM club_followers WHERE club_id = ?',
+                [$club_id]
+            );
+            $current_member_count = (int)($member_count['count'] ?? 0);
             
-            Helper::success('操作成功', ['is_following' => $is_following]);
+            Helper::success('操作成功', [
+                'is_following' => $is_following,
+                'member_count' => $current_member_count
+            ]);
             
         } catch (Exception $e) {
             Helper::error('操作失敗: ' . $e->getMessage(), 500);

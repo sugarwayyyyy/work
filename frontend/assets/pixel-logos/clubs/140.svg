@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad140" cx="50%" cy="38%" r="80%">
+      <stop offset="0%" stop-color="#1f568f"/>
+      <stop offset="100%" stop-color="#082843"/>
+    </radialGradient>
+    <linearGradient id="chapelGrad140" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f6fbff"/>
+      <stop offset="100%" stop-color="#d5e7fa"/>
+    </linearGradient>
+    <radialGradient id="windowGrad140" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#ffe7b8"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </radialGradient>
+    <radialGradient id="haloGrad140" cx="50%" cy="40%" r="72%">
+      <stop offset="0%" stop-color="#fff6de" stop-opacity="0.960"/>
+      <stop offset="100%" stop-color="#f3cb80" stop-opacity="0.180"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad140)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 上方光環 -->
+  <circle cx="162.000" cy="94.000" r="44.000" fill="url(#haloGrad140)"/>
+
+  <!-- 十字與光束 -->
+  <rect x="156.500" y="44.000" width="11.000" height="48.000" rx="2.500" fill="#f59e0b"/>
+  <rect x="143.000" y="57.500" width="38.000" height="11.000" rx="2.500" fill="#f59e0b"/>
+  <g stroke="#f59e0b" stroke-linecap="round" fill="none">
+    <path d="M162.000,97.000 L162.000,116.000" stroke-width="1.900"/>
+    <path d="M146.250,101.750 L152.250,114.500" stroke-width="1.300"/>
+    <path d="M177.750,101.750 L171.750,114.500" stroke-width="1.300"/>
+  </g>
+
+  <!-- 教堂主體 -->
+  <path d="M102.000,150.000 L162.000,104.000 L222.000,150.000 L222.000,236.000 L102.000,236.000 Z" fill="url(#chapelGrad140)" stroke="#f59e0b" stroke-width="2.400"/>
+  <path d="M114.000,150.000 L162.000,114.000 L210.000,150.000" fill="none" stroke="#c3daf2" stroke-width="1.400"/>
+
+  <!-- 彩窗 -->
+  <path d="M162.000,136.000 C151.500,136.000 143.000,144.500 143.000,155.000 L143.000,188.000 L181.000,188.000 L181.000,155.000 C181.000,144.500 172.500,136.000 162.000,136.000 Z" fill="url(#windowGrad140)" stroke="#f59e0b" stroke-width="1.600"/>
+  <path d="M162.000,136.000 L162.000,188.000" stroke="#fff0cf" stroke-width="1.200"/>
+  <path d="M143.000,162.000 L181.000,162.000" stroke="#fff0cf" stroke-width="1.200"/>
+
+  <!-- 大門 -->
+  <path d="M162.000,188.000 C150.500,188.000 141.000,197.500 141.000,209.000 L141.000,236.000 L183.000,236.000 L183.000,209.000 C183.000,197.500 173.500,188.000 162.000,188.000 Z" fill="#f2c472" stroke="#f59e0b" stroke-width="1.700"/>
+  <circle cx="169.250" cy="213.500" r="1.550" fill="#fff1d2"/>
+
+  <!-- 團契人物環 -->
+  <g fill="#f59e0b">
+    <circle cx="111.000" cy="258.000" r="6.000"/>
+    <circle cx="136.500" cy="272.000" r="5.600"/>
+    <circle cx="162.000" cy="278.000" r="6.200"/>
+    <circle cx="187.500" cy="272.000" r="5.600"/>
+    <circle cx="213.000" cy="258.000" r="6.000"/>
+  </g>
+  <g stroke="#f59e0b" stroke-width="2.000" fill="none" stroke-linecap="round">
+    <path d="M111.000,266.500 C118.500,273.500 126.000,277.000 136.500,279.500"/>
+    <path d="M136.500,279.500 C145.000,282.000 154.000,283.000 162.000,283.000"/>
+    <path d="M162.000,283.000 C170.000,283.000 179.000,282.000 187.500,279.500"/>
+    <path d="M187.500,279.500 C198.000,277.000 205.500,273.500 213.000,266.500"/>
+  </g>
+
+  <!-- 點描星點 -->
+  <g fill="#f59e0b">
+    <circle cx="74.500" cy="84.250" r="1.700"/>
+    <circle cx="90.625" cy="68.875" r="1.500"/>
+    <circle cx="232.000" cy="82.625" r="1.850"/>
+    <circle cx="248.250" cy="96.125" r="1.500"/>
+    <circle cx="79.250" cy="241.500" r="1.650"/>
+    <circle cx="93.625" cy="257.750" r="1.450"/>
+    <circle cx="230.875" cy="246.500" r="1.750"/>
+    <circle cx="246.500" cy="262.250" r="1.500"/>
+    <circle cx="162.000" cy="305.000" r="1.850"/>
+  </g>
+</svg>

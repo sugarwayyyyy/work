@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad192" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#215b93"/>
+      <stop offset="100%" stop-color="#082a45"/>
+    </radialGradient>
+    <linearGradient id="rocketGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff3d3"/>
+      <stop offset="100%" stop-color="#f5b74a"/>
+    </linearGradient>
+    <radialGradient id="bulbGrad192" cx="50%" cy="40%" r="72%">
+      <stop offset="0%" stop-color="#fff4da"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad192)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 火箭（創業） -->
+  <path d="M162.000,86.000 C182.000,101.000 198.000,128.000 198.000,154.000 C198.000,188.000 182.000,213.000 162.000,232.000 C142.000,213.000 126.000,188.000 126.000,154.000 C126.000,128.000 142.000,101.000 162.000,86.000 Z" fill="url(#rocketGrad192)" stroke="#f59e0b" stroke-width="2.400"/>
+  <circle cx="162.000" cy="145.000" r="14.500" fill="#fff0cf" stroke="#f59e0b" stroke-width="1.700"/>
+  <path d="M126.000,174.000 L108.000,190.000 L123.000,194.000" fill="#f4c779" stroke="#f59e0b" stroke-width="1.600"/>
+  <path d="M198.000,174.000 L216.000,190.000 L201.000,194.000" fill="#f4c779" stroke="#f59e0b" stroke-width="1.600"/>
+  <path d="M152.000,232.000 L162.000,257.000 L172.000,232.000" fill="#f59e0b"/>
+
+  <!-- 燈泡（創新） -->
+  <circle cx="86.000" cy="92.000" r="18.000" fill="url(#bulbGrad192)" stroke="#f59e0b" stroke-width="1.900"/>
+  <rect x="80.500" y="108.000" width="11.000" height="9.500" rx="2.200" fill="#f59e0b"/>
+  <path d="M86.000,80.500 L86.000,70.500" stroke="#f59e0b" stroke-width="1.500" stroke-linecap="round"/>
+  <path d="M76.000,84.000 L69.000,79.000" stroke="#f59e0b" stroke-width="1.300" stroke-linecap="round"/>
+  <path d="M96.000,84.000 L103.000,79.000" stroke="#f59e0b" stroke-width="1.300" stroke-linecap="round"/>
+
+  <!-- 成長曲線 -->
+  <path d="M86.000,258.000 C108.000,244.000 126.000,238.000 146.000,228.000 C168.000,217.000 190.000,202.000 215.000,175.000" fill="none" stroke="#f59e0b" stroke-width="4.000" stroke-linecap="round"/>
+  <path d="M215.000,175.000 L205.000,177.000 L210.000,167.000 Z" fill="#f59e0b"/>
+
+  <!-- 點描 -->
+  <g fill="#f59e0b">
+    <circle cx="74.250" cy="88.250" r="1.700"/>
+    <circle cx="90.500" cy="72.750" r="1.500"/>
+    <circle cx="235.250" cy="84.000" r="1.850"/>
+    <circle cx="251.500" cy="98.000" r="1.500"/>
+    <circle cx="80.000" cy="242.000" r="1.650"/>
+    <circle cx="94.750" cy="258.250" r="1.450"/>
+    <circle cx="229.750" cy="246.500" r="1.750"/>
+    <circle cx="245.500" cy="262.750" r="1.500"/>
+  </g>
+</svg>

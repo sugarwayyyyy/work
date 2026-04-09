@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad196" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#205992"/>
+      <stop offset="100%" stop-color="#082943"/>
+    </radialGradient>
+    <linearGradient id="docGrad196" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fcff"/>
+      <stop offset="100%" stop-color="#d2e5f9"/>
+    </linearGradient>
+    <radialGradient id="coinGrad196" cx="40%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#fff2cf"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad196)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 稅務文件 -->
+  <path d="M98.000,92.000 L198.000,92.000 L226.000,120.000 L226.000,242.000 L98.000,242.000 Z" fill="url(#docGrad196)" stroke="#f59e0b" stroke-width="2.300"/>
+  <path d="M198.000,92.000 L198.000,120.000 L226.000,120.000" fill="#e8f4ff" stroke="#f59e0b" stroke-width="1.600"/>
+  <g stroke="#c2daf3" stroke-width="1.200" stroke-linecap="round" fill="none">
+    <path d="M114.000,132.000 H209.000"/>
+    <path d="M114.000,145.000 H209.000"/>
+    <path d="M114.000,158.000 H209.000"/>
+    <path d="M114.000,171.000 H209.000"/>
+    <path d="M114.000,184.000 H209.000"/>
+  </g>
+
+  <!-- 天平（租稅公平） -->
+  <path d="M162.000,114.000 L162.000,196.000" stroke="#f59e0b" stroke-width="4.000" stroke-linecap="round"/>
+  <path d="M134.000,124.000 H190.000" stroke="#f59e0b" stroke-width="3.200" stroke-linecap="round"/>
+  <path d="M140.000,124.000 L128.000,152.000 L152.000,152.000 Z" fill="#f2c471" stroke="#f59e0b" stroke-width="1.500"/>
+  <path d="M184.000,124.000 L172.000,152.000 L196.000,152.000 Z" fill="#f2c471" stroke="#f59e0b" stroke-width="1.500"/>
+
+  <!-- 金幣 -->
+  <circle cx="236.000" cy="214.000" r="20.000" fill="url(#coinGrad196)" stroke="#f59e0b" stroke-width="1.800"/>
+  <path d="M236.000,203.000 L236.000,225.000" stroke="#fff0cf" stroke-width="2.000" stroke-linecap="round"/>
+  <path d="M228.000,208.000 C231.000,205.000 241.000,205.000 244.000,208.000 C246.000,210.000 246.000,213.000 243.500,214.500 C241.000,216.000 231.000,216.000 228.500,217.500 C226.000,219.000 226.000,222.500 229.000,224.000 C232.000,225.500 240.000,225.500 243.000,222.500" stroke="#fff0cf" stroke-width="1.600" fill="none" stroke-linecap="round"/>
+
+  <!-- 點描 -->
+  <g fill="#f59e0b">
+    <circle cx="74.250" cy="88.500" r="1.700"/>
+    <circle cx="90.500" cy="72.750" r="1.500"/>
+    <circle cx="235.250" cy="84.250" r="1.850"/>
+    <circle cx="251.500" cy="98.000" r="1.500"/>
+    <circle cx="80.000" cy="242.000" r="1.650"/>
+    <circle cx="94.750" cy="258.250" r="1.450"/>
+    <circle cx="229.750" cy="246.500" r="1.750"/>
+    <circle cx="245.500" cy="262.750" r="1.500"/>
+  </g>
+</svg>

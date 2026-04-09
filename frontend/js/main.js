@@ -152,15 +152,24 @@ class PageUtils {
 
     static renderClubAvatar(club, size = 52) {
         const clubName = club?.club_name || club?.name || '';
-        const clubCategory = club?.category_name || '';
+        const clubCategory = club?.category_name || club?.category || club?.category_id || '';
         const clubDescription = club?.description || '';
         const logoUrl = PageUtils.resolveMediaUrl(club?.logo_path);
+        const pixelLogoUrl = PageUtils.getClubPixelAvatarUrl(club);
         const emoji = PageUtils.getClubAvatarEmoji(clubName, clubCategory, clubDescription);
         const initials = PageUtils.getInitial(clubName);
         const dimension = `${size}px`;
 
         if (logoUrl) {
-            return `<span class="club-avatar" style="width: ${dimension}; height: ${dimension};"><img src="${logoUrl}" alt="${clubName || '社團'} logo" class="club-avatar__img"></span>`;
+            const pixelLogoForAttr = pixelLogoUrl.replace(/'/g, '&#39;');
+            const fallbackAttr = pixelLogoUrl
+                ? ` onerror="this.onerror=null;this.src='${pixelLogoForAttr}';this.style.imageRendering='pixelated';"`
+                : '';
+            return `<span class="club-avatar" style="width: ${dimension}; height: ${dimension};"><img src="${logoUrl}" alt="${clubName || '社團'} logo" class="club-avatar__img"${fallbackAttr}></span>`;
+        }
+
+        if (pixelLogoUrl) {
+            return `<span class="club-avatar" style="width: ${dimension}; height: ${dimension};"><img src="${pixelLogoUrl}" alt="${clubName || '社團'} 像素 logo" class="club-avatar__img" style="image-rendering: pixelated;"></span>`;
         }
 
         const fallbackContent = emoji || initials;
@@ -168,23 +177,84 @@ class PageUtils {
         return `<span class="club-avatar ${fallbackClass}" aria-hidden="true" style="width: ${dimension}; height: ${dimension};">${fallbackContent}</span>`;
     }
 
+    static getClubPixelAvatarUrl(club) {
+        const code = String(club?.club_code || '').trim();
+        if (!/^\d{3}$/.test(code)) return '';
+        // Bump this version when bulk-updating logos to avoid stale browser cache.
+        const logoVersion = '20260410';
+        return PageUtils.resolveMediaUrl(`frontend/assets/pixel-logos/clubs/${code}.svg?v=${logoVersion}`);
+    }
+
     static getClubAvatarEmoji(clubName = '', clubCategory = '', clubDescription = '') {
-        const source = `${clubName} ${clubCategory} ${clubDescription}`.toLowerCase();
-        const emojiRules = [
-            { keywords: ['吉他', '音樂', '樂團', '合唱', '聲樂', '爵士', 'band'], emoji: '🎵' },
-            { keywords: ['舞', '舞蹈', '熱舞', '啦啦', '街舞'], emoji: '💃' },
-            { keywords: ['籃球', '排球', '羽球', '桌球', '足球', '運動', '體育'], emoji: '🏀' },
-            { keywords: ['攝影', '拍照', '相機', '影像', '影片'], emoji: '📷' },
-            { keywords: ['程式', '資訊', '電腦', '軟體', 'ai', 'robot'], emoji: '💻' },
-            { keywords: ['設計', '美術', '繪畫', '插畫', '視覺'], emoji: '🎨' },
-            { keywords: ['服務', '志工', '公益', '社會'], emoji: '🤝' },
-            { keywords: ['烹飪', '料理', '美食', '烘焙', '甜點'], emoji: '🍰' },
-            { keywords: ['英文', '外語', '日文', '韓文', '語言'], emoji: '🗣️' },
-            { keywords: ['旅行', '地理', '登山', '戶外'], emoji: '🧭' }
+        const normalizedName = String(clubName || '').toLowerCase();
+        const normalizedCategory = String(clubCategory || '').toLowerCase();
+        const normalizedDescription = String(clubDescription || '').toLowerCase();
+
+        const strictKeywordMatch = (source, keyword) => {
+            if (!keyword) return false;
+            if (/^[a-z0-9_]+$/i.test(keyword)) {
+                const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const pattern = new RegExp(`(^|[^a-z0-9_])${escaped}([^a-z0-9_]|$)`, 'i');
+                return pattern.test(source);
+            }
+            return source.includes(keyword);
+        };
+
+        // 名稱優先，避免分類過粗導致「看起來不對題」。
+        const nameRules = [
+            { keywords: ['吉他', '烏克麗麗', '爵士', '鋼琴', '音樂', '國樂', '管弦', 'band'], emoji: '🎵' },
+            { keywords: ['舞蹈', '熱舞', '街舞', '標準舞'], emoji: '💃' },
+            { keywords: ['籃球', '排球', '羽球', '桌球', '足球', '網球', '跆拳', '柔道', '劍道', '射箭', '武術', '潛水', '登山', '跑步', '袋棍'], emoji: '🏀' },
+            { keywords: ['攝影', '影片', '影像', '相機', '廣播演藝'], emoji: '📷' },
+            { keywords: ['程式', '資訊', '電腦', '軟體', '人工智慧', '機器人', 'robot'], emoji: '💻' },
+            { keywords: ['設計', '美術', '繪畫', '插畫', '花藝', '書法'], emoji: '🎨' },
+            { keywords: ['服務', '志工', '公益', '慈濟', '同舟共濟'], emoji: '🤝' },
+            { keywords: ['飲料', '咖啡', '料理', '烘焙', '甜點', '美食'], emoji: '🍰' },
+            { keywords: ['英文', '外語', '日文', '韓文', '語言', '僑生', '國際'], emoji: '🗣️' },
+            { keywords: ['棋', '桌遊', '遊戲', '電競', '魔術', '動漫', '二輪'], emoji: '🎯' },
+            { keywords: ['金融', '經濟', '投資', '商管', '租稅'], emoji: '📈' },
+            { keywords: ['宗教', '聖經', '團契', '光鹽', '福智', '禪學', '信望愛'], emoji: '🕊️' }
         ];
 
-        for (const rule of emojiRules) {
-            if (rule.keywords.some(keyword => source.includes(keyword))) {
+        for (const rule of nameRules) {
+            if (rule.keywords.some(keyword => strictKeywordMatch(normalizedName, keyword))) {
+                return rule.emoji;
+            }
+        }
+
+        for (const rule of nameRules) {
+            if (rule.keywords.some(keyword => strictKeywordMatch(normalizedDescription, keyword))) {
+                return rule.emoji;
+            }
+        }
+
+        // 名稱無法辨識時，再用分類兜底；支援 category_id 與 category_name。
+        const categoryId = Number(clubCategory);
+        const categoryEmojiById = {
+            1: '🏀',
+            2: '📚',
+            3: '🎭',
+            4: '🤝',
+            5: '🎯',
+            6: '🕊️',
+            7: '✨'
+        };
+        if (Number.isInteger(categoryId) && categoryEmojiById[categoryId]) {
+            return categoryEmojiById[categoryId];
+        }
+
+        const categoryRules = [
+            { keywords: ['體育', '運動'], emoji: '🏀' },
+            { keywords: ['藝文', '音樂', '表演'], emoji: '🎭' },
+            { keywords: ['服務', '公益'], emoji: '🤝' },
+            { keywords: ['學術', '研究'], emoji: '📚' },
+            { keywords: ['休閒', '聯誼'], emoji: '🎯' },
+            { keywords: ['宗教'], emoji: '🕊️' },
+            { keywords: ['綜合'], emoji: '✨' }
+        ];
+
+        for (const rule of categoryRules) {
+            if (rule.keywords.some(keyword => normalizedCategory.includes(keyword))) {
                 return rule.emoji;
             }
         }

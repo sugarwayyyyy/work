@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad051" cx="50%" cy="40%" r="76%">
+      <stop offset="0%" stop-color="#164a82"/>
+      <stop offset="100%" stop-color="#07233e"/>
+    </radialGradient>
+    <radialGradient id="moonGrad051" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#f4f8ff"/>
+      <stop offset="100%" stop-color="#c9d9ee"/>
+    </radialGradient>
+    <radialGradient id="lensGlow051" cx="45%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.30"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad051)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 月面 -->
+  <circle cx="250.000" cy="74.000" r="26.000" fill="url(#moonGrad051)"/>
+  <circle cx="242.500" cy="68.500" r="4.250" fill="#b7cbe3"/>
+  <circle cx="257.750" cy="81.250" r="3.750" fill="#b7cbe3"/>
+  <circle cx="247.250" cy="88.000" r="2.750" fill="#b7cbe3"/>
+
+  <!-- 星座點描與連線 -->
+  <g stroke="#f59e0b" stroke-width="1.200" fill="#f59e0b" stroke-linecap="round">
+    <line x1="74.125" y1="82.250" x2="92.875" y2="64.500"/>
+    <line x1="92.875" y1="64.500" x2="116.250" y2="78.875"/>
+    <line x1="116.250" y1="78.875" x2="136.625" y2="59.500"/>
+    <line x1="136.625" y1="59.500" x2="157.250" y2="73.000"/>
+    <circle cx="74.125" cy="82.250" r="2.100"/>
+    <circle cx="92.875" cy="64.500" r="2.450"/>
+    <circle cx="116.250" cy="78.875" r="1.850"/>
+    <circle cx="136.625" cy="59.500" r="2.050"/>
+    <circle cx="157.250" cy="73.000" r="1.900"/>
+    <circle cx="214.750" cy="95.375" r="1.700"/>
+    <circle cx="226.500" cy="83.625" r="1.550"/>
+  </g>
+
+  <!-- 望遠鏡鏡筒 -->
+  <path d="M92.000,203.000 L221.000,125.000 L238.000,151.500 L109.000,229.500 Z" fill="#e8f4ff" stroke="#f59e0b" stroke-width="2.700"/>
+  <path d="M104.000,208.000 L226.000,134.500" fill="none" stroke="#c2d9f1" stroke-width="1.600"/>
+  <circle cx="228.500" cy="138.000" r="10.500" fill="url(#lensGlow051)" stroke="#f59e0b" stroke-width="1.600"/>
+  <circle cx="104.250" cy="214.250" r="7.000" fill="#f59e0b"/>
+
+  <!-- 雲台 -->
+  <ellipse cx="164.000" cy="208.500" rx="10.500" ry="8.500" fill="#f59e0b"/>
+  <circle cx="164.000" cy="208.500" r="2.200" fill="#ffffff"/>
+
+  <!-- 三腳架 -->
+  <g stroke="#f59e0b" stroke-width="5.200" stroke-linecap="round" fill="none">
+    <path d="M164.000,216.000 L146.500,283.000"/>
+    <path d="M164.000,216.000 L164.000,292.000"/>
+    <path d="M164.000,216.000 L182.000,283.000"/>
+    <path d="M134.000,292.000 H194.000"/>
+  </g>
+</svg>

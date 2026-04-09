@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad080" cx="50%" cy="42%" r="80%">
+      <stop offset="0%" stop-color="#1d693c"/>
+      <stop offset="100%" stop-color="#0d3f24"/>
+    </radialGradient>
+    <linearGradient id="hatGrad080" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff5cc"/>
+      <stop offset="100%" stop-color="#fde047"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad080)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#fde047" stroke-width="3.000"/>
+
+  <!-- 魔術帽 -->
+  <ellipse cx="162.000" cy="220.000" rx="64.000" ry="14.000" fill="#f7d86f" stroke="#fde047" stroke-width="2.000"/>
+  <path d="M118.000,138.000 L206.000,138.000 L192.000,220.000 L132.000,220.000 Z" fill="url(#hatGrad080)" stroke="#fde047" stroke-width="2.200"/>
+  <path d="M128.000,168.000 L196.000,168.000" stroke="#fde047" stroke-width="2.400"/>
+
+  <!-- 魔杖 -->
+  <path d="M92.000,244.000 L142.000,194.000" stroke="#fde047" stroke-width="4.200" stroke-linecap="round"/>
+  <circle cx="90.000" cy="246.000" r="5.200" fill="#fde047"/>
+
+  <!-- 星光 -->
+  <path d="M162.000,86.000 L166.500,99.500 L180.000,99.500 L168.500,108.000 L173.000,121.500 L162.000,113.500 L151.000,121.500 L155.500,108.000 L144.000,99.500 L157.500,99.500 Z" fill="#fde047"/>
+  <path d="M214.000,104.000 L217.000,113.000 L226.000,113.000 L218.500,118.500 L221.500,127.500 L214.000,122.000 L206.500,127.500 L209.500,118.500 L202.000,113.000 L211.000,113.000 Z" fill="#fde047"/>
+  <path d="M112.000,104.000 L115.000,113.000 L124.000,113.000 L116.500,118.500 L119.500,127.500 L112.000,122.000 L104.500,127.500 L107.500,118.500 L100.000,113.000 L109.000,113.000 Z" fill="#fde047"/>
+
+  <g fill="#fde047">
+    <circle cx="76.250" cy="92.500" r="1.700"/>
+    <circle cx="93.500" cy="76.750" r="1.500"/>
+    <circle cx="231.250" cy="82.750" r="1.850"/>
+    <circle cx="248.500" cy="97.500" r="1.500"/>
+    <circle cx="79.750" cy="242.250" r="1.650"/>
+    <circle cx="95.250" cy="258.250" r="1.450"/>
+    <circle cx="228.750" cy="246.000" r="1.750"/>
+    <circle cx="244.750" cy="262.500" r="1.500"/>
+  </g>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad083" cx="50%" cy="42%" r="80%">
+      <stop offset="0%" stop-color="#1d693c"/>
+      <stop offset="100%" stop-color="#0d3f24"/>
+    </radialGradient>
+    <linearGradient id="drinkGrad083" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff5cc"/>
+      <stop offset="100%" stop-color="#fde047"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad083)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#fde047" stroke-width="3.000"/>
+
+  <path d="M112.000,96.000 L212.000,96.000 L180.000,186.000 L144.000,186.000 Z" fill="url(#drinkGrad083)" stroke="#fde047" stroke-width="2.200"/>
+  <path d="M146.000,186.000 L178.000,186.000 L170.000,236.000 L154.000,236.000 Z" fill="#f6d978" stroke="#fde047" stroke-width="1.600"/>
+  <ellipse cx="162.000" cy="246.000" rx="28.000" ry="7.500" fill="#fde047" opacity="0.550"/>
+
+  <path d="M188.000,84.000 L216.000,60.000" stroke="#fde047" stroke-width="3.200" stroke-linecap="round"/>
+  <circle cx="216.000" cy="60.000" r="10.500" fill="#f7dd84" stroke="#fde047" stroke-width="1.600"/>
+  <path d="M216.000,49.500 L216.000,70.500" stroke="#fde047" stroke-width="1.200"/>
+
+  <g fill="none" stroke="#fde047" stroke-width="1.600">
+    <circle cx="128.000" cy="128.000" r="5.500"/>
+    <circle cx="144.000" cy="118.000" r="4.000"/>
+    <circle cx="176.000" cy="124.000" r="4.800"/>
+    <circle cx="194.000" cy="134.000" r="3.800"/>
+  </g>
+
+  <g fill="#fde047">
+    <circle cx="76.250" cy="92.500" r="1.700"/>
+    <circle cx="93.500" cy="76.750" r="1.500"/>
+    <circle cx="231.250" cy="82.750" r="1.850"/>
+    <circle cx="248.500" cy="97.500" r="1.500"/>
+    <circle cx="79.750" cy="242.250" r="1.650"/>
+    <circle cx="95.250" cy="258.250" r="1.450"/>
+    <circle cx="228.750" cy="246.000" r="1.750"/>
+    <circle cx="244.750" cy="262.500" r="1.500"/>
+  </g>
+</svg>

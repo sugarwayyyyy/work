@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad070" cx="50%" cy="42%" r="82%">
+      <stop offset="0%" stop-color="#7c2d12"/>
+      <stop offset="100%" stop-color="#431407"/>
+    </radialGradient>
+    <radialGradient id="glow070" cx="50%" cy="44%" r="62%">
+      <stop offset="0%" stop-color="#fef3c7" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#fef3c7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad070)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#fef08a" stroke-width="3.000"/>
+  <circle cx="162.000" cy="144.000" r="112.000" fill="url(#glow070)"/>
+
+  <path d="M104.000,124.000 C126.000,108.000 152.000,108.000 174.000,124.000 L174.000,176.000 C152.000,194.000 126.000,194.000 104.000,176.000 Z" fill="none" stroke="#fef08a" stroke-width="4.000" stroke-linejoin="round"/>
+  <circle cx="126.000" cy="142.000" r="5.000" fill="#fef08a"/>
+  <circle cx="152.000" cy="142.000" r="5.000" fill="#fef08a"/>
+  <path d="M120.000,164.000 C130.000,174.000 148.000,174.000 158.000,164.000" fill="none" stroke="#fef08a" stroke-width="2.600" stroke-linecap="round"/>
+
+  <path d="M150.000,112.000 C176.000,96.000 202.000,100.000 220.000,122.000 L214.000,176.000 C194.000,192.000 170.000,188.000 152.000,168.000 Z" fill="none" stroke="#ffffff" stroke-width="3.000" stroke-linejoin="round" opacity="0.88"/>
+  <circle cx="176.000" cy="136.000" r="4.500" fill="#ffffff" opacity="0.92"/>
+  <circle cx="198.000" cy="140.000" r="4.500" fill="#ffffff" opacity="0.92"/>
+  <path d="M172.000,164.000 C184.000,156.000 198.000,156.000 208.000,164.000" fill="none" stroke="#ffffff" stroke-width="2.200" stroke-linecap="round" opacity="0.92"/>
+
+  <path d="M96.000,238.000 C116.000,224.000 138.000,218.000 162.000,218.000 C186.000,218.000 208.000,224.000 228.000,238.000" fill="none" stroke="#fef08a" stroke-width="2.000" stroke-linecap="round"/>
+
+  <g fill="#fef08a">
+    <circle cx="76.250" cy="92.500" r="1.700"/>
+    <circle cx="93.500" cy="76.750" r="1.500"/>
+    <circle cx="231.250" cy="82.750" r="1.850"/>
+    <circle cx="248.500" cy="97.500" r="1.500"/>
+    <circle cx="79.750" cy="242.250" r="1.650"/>
+    <circle cx="95.250" cy="258.250" r="1.450"/>
+    <circle cx="228.750" cy="246.000" r="1.750"/>
+    <circle cx="244.750" cy="262.500" r="1.500"/>
+  </g>
+</svg>

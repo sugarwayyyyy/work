@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad159" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#1f578f"/>
+      <stop offset="100%" stop-color="#082843"/>
+    </radialGradient>
+    <linearGradient id="capGrad159" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff0cd"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <linearGradient id="bookGrad159" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fcff"/>
+      <stop offset="100%" stop-color="#d2e5f9"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad159)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 學士帽 -->
+  <path d="M72.000,122.000 L162.000,80.000 L252.000,122.000 L162.000,164.000 Z" fill="url(#capGrad159)" stroke="#f59e0b" stroke-width="2.200"/>
+  <path d="M102.000,136.000 C129.000,148.000 195.000,148.000 222.000,136.000 L222.000,158.000 C196.000,170.000 128.000,170.000 102.000,158.000 Z" fill="#f6d089" stroke="#f59e0b" stroke-width="1.800"/>
+  <path d="M226.000,124.000 L226.000,170.000" stroke="#f59e0b" stroke-width="2.200" stroke-linecap="round"/>
+  <circle cx="226.000" cy="174.500" r="3.800" fill="#f59e0b"/>
+
+  <!-- 開書 -->
+  <path d="M88.000,190.000 C113.000,176.000 137.000,176.000 162.000,190.000 L162.000,256.000 C140.000,243.000 116.000,243.000 94.000,256.000 Z" fill="url(#bookGrad159)" stroke="#f59e0b" stroke-width="2.200"/>
+  <path d="M236.000,190.000 C211.000,176.000 187.000,176.000 162.000,190.000 L162.000,256.000 C184.000,243.000 208.000,243.000 230.000,256.000 Z" fill="url(#bookGrad159)" stroke="#f59e0b" stroke-width="2.200"/>
+  <path d="M162.000,190.000 L162.000,256.000" stroke="#c2daf3" stroke-width="1.250"/>
+
+  <!-- 書頁線 -->
+  <g stroke="#c2daf3" stroke-width="1.100" stroke-linecap="round" fill="none">
+    <path d="M103.000,206.000 C117.500,201.000 131.500,201.000 145.000,205.500"/>
+    <path d="M103.000,217.000 C117.500,212.000 131.500,212.000 145.000,216.500"/>
+    <path d="M103.000,228.000 C117.500,223.000 131.500,223.000 145.000,227.500"/>
+    <path d="M179.000,205.500 C192.500,201.000 206.500,201.000 221.000,206.000"/>
+    <path d="M179.000,216.500 C192.500,212.000 206.500,212.000 221.000,217.000"/>
+    <path d="M179.000,227.500 C192.500,223.000 206.500,223.000 221.000,228.000"/>
+  </g>
+
+  <!-- 桂冠 -->
+  <g stroke="#f59e0b" stroke-width="1.700" fill="none" stroke-linecap="round">
+    <path d="M74.000,192.000 C74.000,227.000 88.000,256.000 113.000,276.000"/>
+    <path d="M250.000,192.000 C250.000,227.000 236.000,256.000 211.000,276.000"/>
+  </g>
+  <g fill="#f59e0b">
+    <ellipse cx="90.000" cy="210.000" rx="4.000" ry="2.300" transform="rotate(-28 90 210)"/>
+    <ellipse cx="99.500" cy="224.000" rx="4.000" ry="2.300" transform="rotate(-18 99.5 224)"/>
+    <ellipse cx="110.500" cy="237.000" rx="4.000" ry="2.300" transform="rotate(-6 110.5 237)"/>
+    <ellipse cx="234.000" cy="210.000" rx="4.000" ry="2.300" transform="rotate(28 234 210)"/>
+    <ellipse cx="224.500" cy="224.000" rx="4.000" ry="2.300" transform="rotate(18 224.5 224)"/>
+    <ellipse cx="213.500" cy="237.000" rx="4.000" ry="2.300" transform="rotate(6 213.5 237)"/>
+  </g>
+
+  <!-- 點描 -->
+  <g fill="#f59e0b">
+    <circle cx="74.000" cy="88.250" r="1.700"/>
+    <circle cx="90.500" cy="72.750" r="1.500"/>
+    <circle cx="235.000" cy="84.000" r="1.850"/>
+    <circle cx="251.250" cy="98.000" r="1.500"/>
+    <circle cx="80.000" cy="242.000" r="1.650"/>
+    <circle cx="94.750" cy="258.250" r="1.450"/>
+    <circle cx="229.750" cy="246.250" r="1.750"/>
+    <circle cx="245.500" cy="262.500" r="1.500"/>
+  </g>
+</svg>

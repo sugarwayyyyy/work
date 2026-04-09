@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad184" cx="50%" cy="42%" r="80%">
+      <stop offset="0%" stop-color="#1d693c"/>
+      <stop offset="100%" stop-color="#0d3f24"/>
+    </radialGradient>
+    <linearGradient id="padGrad184" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff4ca"/>
+      <stop offset="100%" stop-color="#fde047"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad184)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#fde047" stroke-width="3.000"/>
+
+  <path d="M92.000,194.000 C92.000,160.000 116.000,136.000 150.000,136.000 L174.000,136.000 C208.000,136.000 232.000,160.000 232.000,194.000 C232.000,208.000 223.000,218.000 210.000,218.000 C198.000,218.000 190.000,211.000 183.000,202.000 L141.000,202.000 C134.000,211.000 126.000,218.000 114.000,218.000 C101.000,218.000 92.000,208.000 92.000,194.000 Z" fill="url(#padGrad184)" stroke="#fde047" stroke-width="2.300"/>
+  <path d="M118.000,176.000 H138.000" stroke="#fde047" stroke-width="4.000" stroke-linecap="round"/>
+  <path d="M128.000,166.000 V186.000" stroke="#fde047" stroke-width="4.000" stroke-linecap="round"/>
+  <circle cx="188.000" cy="174.000" r="5.000" fill="#fde047"/>
+  <circle cx="206.000" cy="186.000" r="5.000" fill="#fde047"/>
+  <circle cx="170.000" cy="186.000" r="4.400" fill="#fde047"/>
+
+  <path d="M112.000,122.000 C132.000,106.000 150.000,100.000 162.000,100.000 C174.000,100.000 192.000,106.000 212.000,122.000" fill="none" stroke="#fde047" stroke-width="2.400" stroke-linecap="round"/>
+  <path d="M160.000,84.000 L176.000,84.000 L166.000,108.000 L180.000,108.000 L152.000,146.000 L160.000,120.000 L146.000,120.000 Z" fill="#fde047"/>
+
+  <g fill="#fde047">
+    <circle cx="76.250" cy="92.500" r="1.700"/>
+    <circle cx="93.500" cy="76.750" r="1.500"/>
+    <circle cx="231.250" cy="82.750" r="1.850"/>
+    <circle cx="248.500" cy="97.500" r="1.500"/>
+    <circle cx="79.750" cy="242.250" r="1.650"/>
+    <circle cx="95.250" cy="258.250" r="1.450"/>
+    <circle cx="228.750" cy="246.000" r="1.750"/>
+    <circle cx="244.750" cy="262.500" r="1.500"/>
+  </g>
+</svg>

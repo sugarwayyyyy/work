@@ -267,7 +267,10 @@
             document.getElementById('event-last-updated').textContent = `最新上傳時間：${formatDateTime(latestEventTime)}`;
             document.getElementById('event-description').textContent = event.description;
             document.getElementById('registered-count').textContent = event.registered_count;
-            document.getElementById('max-participants').textContent = event.max_participants || '無上限';
+            const capacity = Number(event.capacity ?? event.max_participants ?? 0);
+            document.getElementById('max-participants').textContent = Number.isFinite(capacity) && capacity > 0
+                ? String(capacity)
+                : '無上限';
             document.getElementById('event-datetime-detail').textContent = PageUtils.formatDate(event.event_date);
             document.getElementById('event-location-detail').textContent = event.location;
             document.getElementById('event-club-detail').textContent = event.club_name;

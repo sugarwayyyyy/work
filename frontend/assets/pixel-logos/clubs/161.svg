@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad161" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#1e568e"/>
+      <stop offset="100%" stop-color="#082741"/>
+    </radialGradient>
+    <radialGradient id="leafGrad161" cx="40%" cy="35%" r="78%">
+      <stop offset="0%" stop-color="#fff0ca"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </radialGradient>
+    <radialGradient id="sunGrad161" cx="50%" cy="50%" r="72%">
+      <stop offset="0%" stop-color="#ffecc8"/>
+      <stop offset="100%" stop-color="#f7c66e"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad161)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 朝陽 -->
+  <circle cx="162.000" cy="94.000" r="28.000" fill="url(#sunGrad161)"/>
+  <g stroke="#f59e0b" stroke-width="1.400" stroke-linecap="round" fill="none">
+    <path d="M162.000,56.000 L162.000,66.000"/>
+    <path d="M138.000,62.000 L143.500,70.000"/>
+    <path d="M186.000,62.000 L180.500,70.000"/>
+    <path d="M124.000,84.000 L133.000,86.500"/>
+    <path d="M200.000,84.000 L191.000,86.500"/>
+  </g>
+
+  <!-- 葉片主體 -->
+  <path d="M96.000,174.000 C96.000,123.500 132.000,92.000 176.000,92.000 C217.000,92.000 244.000,126.000 244.000,168.500 C244.000,213.000 212.500,248.000 170.000,253.000 C128.000,258.000 96.000,224.000 96.000,174.000 Z" fill="url(#leafGrad161)" stroke="#f59e0b" stroke-width="2.400"/>
+  <path d="M117.000,206.000 C137.500,184.500 159.000,165.000 190.000,146.500" stroke="#fff0cf" stroke-width="2.200" fill="none" stroke-linecap="round"/>
+  <path d="M145.500,174.500 C143.000,164.500 140.000,157.500 134.000,149.500" stroke="#fff0cf" stroke-width="1.450" fill="none" stroke-linecap="round"/>
+  <path d="M169.000,154.500 C169.000,145.500 171.000,137.000 176.000,128.500" stroke="#fff0cf" stroke-width="1.450" fill="none" stroke-linecap="round"/>
+  <path d="M188.000,186.000 C195.500,181.000 204.000,177.500 214.000,175.000" stroke="#fff0cf" stroke-width="1.450" fill="none" stroke-linecap="round"/>
+
+  <!-- 青年扶持之手 -->
+  <path d="M76.000,238.000 C92.000,225.000 111.000,219.000 131.500,220.500 C120.000,229.000 111.000,238.500 104.500,251.000 C93.000,250.500 83.500,246.000 76.000,238.000 Z" fill="#f2c472" stroke="#f59e0b" stroke-width="1.900"/>
+  <path d="M248.000,238.000 C232.000,225.000 213.000,219.000 192.500,220.500 C204.000,229.000 213.000,238.500 219.500,251.000 C231.000,250.500 240.500,246.000 248.000,238.000 Z" fill="#f2c472" stroke="#f59e0b" stroke-width="1.900"/>
+
+  <!-- 點描 -->
+  <g fill="#f59e0b">
+    <circle cx="74.250" cy="88.750" r="1.700"/>
+    <circle cx="90.750" cy="72.750" r="1.500"/>
+    <circle cx="235.250" cy="84.250" r="1.850"/>
+    <circle cx="251.500" cy="98.000" r="1.500"/>
+    <circle cx="80.000" cy="242.000" r="1.650"/>
+    <circle cx="94.750" cy="258.500" r="1.450"/>
+    <circle cx="229.750" cy="246.500" r="1.750"/>
+    <circle cx="245.500" cy="262.750" r="1.500"/>
+  </g>
+</svg>

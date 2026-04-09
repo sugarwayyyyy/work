@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad084" cx="50%" cy="42%" r="82%">
+      <stop offset="0%" stop-color="#934016"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </radialGradient>
+    <radialGradient id="glow084" cx="50%" cy="48%" r="62%">
+      <stop offset="0%" stop-color="#dbeafe" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#dbeafe" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad084)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#93c5fd" stroke-width="3.000"/>
+  <circle cx="162.000" cy="166.000" r="108.000" fill="url(#glow084)"/>
+
+  <circle cx="162.000" cy="160.000" r="64.000" fill="none" stroke="#93c5fd" stroke-width="2.400"/>
+  <circle cx="162.000" cy="160.000" r="52.000" fill="none" stroke="#93c5fd" stroke-width="1.400" opacity="0.85"/>
+
+  <circle cx="142.000" cy="122.000" r="9.600" fill="none" stroke="#93c5fd" stroke-width="2.200"/>
+  <path d="M142.000,134.000 L146.000,170.000" stroke="#93c5fd" stroke-width="2.400" stroke-linecap="round"/>
+  <path d="M146.000,149.000 L126.000,162.000" stroke="#93c5fd" stroke-width="2.200" stroke-linecap="round"/>
+  <path d="M146.000,149.000 L166.000,160.000" stroke="#93c5fd" stroke-width="2.200" stroke-linecap="round"/>
+  <path d="M146.000,170.000 L131.000,198.000" stroke="#93c5fd" stroke-width="2.300" stroke-linecap="round"/>
+  <path d="M146.000,170.000 L168.000,191.000" stroke="#93c5fd" stroke-width="2.300" stroke-linecap="round"/>
+
+  <circle cx="184.000" cy="128.000" r="9.400" fill="none" stroke="#93c5fd" stroke-width="2.200"/>
+  <path d="M184.000,140.000 L178.000,172.000" stroke="#93c5fd" stroke-width="2.400" stroke-linecap="round"/>
+  <path d="M178.000,153.000 L197.000,165.000" stroke="#93c5fd" stroke-width="2.200" stroke-linecap="round"/>
+  <path d="M178.000,153.000 L160.000,161.000" stroke="#93c5fd" stroke-width="2.200" stroke-linecap="round"/>
+  <path d="M178.000,172.000 L162.000,194.000" stroke="#93c5fd" stroke-width="2.300" stroke-linecap="round"/>
+  <path d="M178.000,172.000 L196.000,196.000" stroke="#93c5fd" stroke-width="2.300" stroke-linecap="round"/>
+
+  <path d="M168.000,160.000 C171.000,155.000 174.000,152.000 178.000,151.000" fill="none" stroke="#93c5fd" stroke-width="1.900" stroke-linecap="round"/>
+  <path d="M114.000,232.000 C133.000,220.000 191.000,220.000 210.000,232.000" fill="none" stroke="#93c5fd" stroke-width="2.100" stroke-linecap="round"/>
+  <path d="M104.000,120.000 C118.000,102.000 138.000,90.000 162.000,88.000" fill="none" stroke="#93c5fd" stroke-width="1.700" stroke-linecap="round"/>
+  <path d="M220.000,120.000 C206.000,102.000 186.000,90.000 162.000,88.000" fill="none" stroke="#93c5fd" stroke-width="1.700" stroke-linecap="round"/>
+
+  <g fill="#93c5fd">
+    <circle cx="76.250" cy="92.500" r="1.700"/>
+    <circle cx="93.500" cy="76.750" r="1.500"/>
+    <circle cx="231.250" cy="82.750" r="1.850"/>
+    <circle cx="248.500" cy="97.500" r="1.500"/>
+    <circle cx="79.750" cy="242.250" r="1.650"/>
+    <circle cx="95.250" cy="258.250" r="1.450"/>
+    <circle cx="228.750" cy="246.000" r="1.750"/>
+    <circle cx="244.750" cy="262.500" r="1.500"/>
+  </g>
+</svg>

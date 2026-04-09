@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad141" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#1d548b"/>
+      <stop offset="100%" stop-color="#072640"/>
+    </radialGradient>
+    <radialGradient id="haloGrad141" cx="50%" cy="45%" r="72%">
+      <stop offset="0%" stop-color="#fff5dc" stop-opacity="0.940"/>
+      <stop offset="100%" stop-color="#f2c878" stop-opacity="0.160"/>
+    </radialGradient>
+    <linearGradient id="mountGrad141" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e8f4ff"/>
+      <stop offset="100%" stop-color="#bfd6ef"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad141)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 禪圓 Enso -->
+  <path d="M93.000,174.000 C93.000,124.000 132.000,86.000 182.000,86.000 C223.500,86.000 255.000,113.500 259.000,151.000" fill="none" stroke="#f59e0b" stroke-width="11.500" stroke-linecap="round"/>
+  <path d="M259.000,151.000 C263.000,194.000 234.000,231.000 191.500,239.500 C157.000,246.500 123.000,233.500 103.500,207.000" fill="none" stroke="#f59e0b" stroke-width="8.000" stroke-linecap="round" opacity="0.820"/>
+
+  <!-- 圓內光暈 -->
+  <circle cx="176.000" cy="163.000" r="60.000" fill="url(#haloGrad141)"/>
+
+  <!-- 山形與地平 -->
+  <path d="M102.000,222.000 L138.000,170.000 L170.000,214.000 L196.000,182.000 L236.000,236.000 L102.000,236.000 Z" fill="url(#mountGrad141)" stroke="#f59e0b" stroke-width="1.900"/>
+  <path d="M112.000,236.000 C136.000,230.000 158.000,230.000 182.000,236.000 C202.000,241.000 219.000,241.000 236.000,236.000" fill="none" stroke="#c4dbf3" stroke-width="1.250"/>
+
+  <!-- 冥想剪影 -->
+  <ellipse cx="166.000" cy="205.000" rx="18.000" ry="10.000" fill="#f59e0b"/>
+  <circle cx="166.000" cy="182.500" r="8.500" fill="#f59e0b"/>
+  <path d="M148.000,214.000 C154.500,208.500 158.500,206.500 166.000,206.500 C173.500,206.500 177.500,208.500 184.000,214.000" fill="none" stroke="#f59e0b" stroke-width="3.100" stroke-linecap="round"/>
+  <path d="M152.500,220.500 C156.500,223.500 160.750,224.500 166.000,224.500 C171.250,224.500 175.500,223.500 179.500,220.500" fill="none" stroke="#f59e0b" stroke-width="2.200" stroke-linecap="round"/>
+
+  <!-- 竹葉意象 -->
+  <g stroke="#f59e0b" stroke-linecap="round" fill="none">
+    <path d="M88.000,166.000 C95.500,160.500 103.000,158.000 111.000,158.000" stroke-width="1.600"/>
+    <path d="M88.000,176.000 C96.500,172.000 104.000,171.000 111.000,172.000" stroke-width="1.300"/>
+    <path d="M242.000,148.000 C233.500,145.500 226.000,146.000 218.500,149.000" stroke-width="1.600"/>
+    <path d="M244.000,158.000 C235.500,156.500 228.500,157.500 221.000,161.000" stroke-width="1.300"/>
+  </g>
+
+  <!-- 點描 -->
+  <g fill="#f59e0b">
+    <circle cx="75.000" cy="88.750" r="1.700"/>
+    <circle cx="90.250" cy="72.625" r="1.450"/>
+    <circle cx="233.750" cy="83.250" r="1.850"/>
+    <circle cx="249.500" cy="97.500" r="1.450"/>
+    <circle cx="79.500" cy="242.250" r="1.600"/>
+    <circle cx="95.250" cy="258.500" r="1.450"/>
+    <circle cx="228.750" cy="246.750" r="1.700"/>
+    <circle cx="244.500" cy="262.250" r="1.500"/>
+    <circle cx="166.000" cy="53.750" r="1.850"/>
+    <circle cx="166.000" cy="297.250" r="1.850"/>
+  </g>
+</svg>
