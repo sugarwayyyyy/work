@@ -7,6 +7,20 @@ require_once '../auth.php';
 require_once '../content_filter.php';
 
 class ClubAPI {
+    private static function validateMeetingLocationIfProvided($meetingLocation) {
+        $value = trim((string)$meetingLocation);
+        if ($value === '') {
+            return;
+        }
+
+        if (preg_match('/https?:\/\/|www\./i', $value) && !ContentFilter::isGoogleMapsUrl($value)) {
+            Helper::error('社課地點僅接受 Google 地圖分享連結或純文字地點', 400);
+        }
+
+        if (ContentFilter::containsRestrictedLanguageAllowingUrls($value)) {
+            Helper::error('社課地點包含不適當字眼，請修改後再送出', 400);
+        }
+    }
     
     /**
      * 取得所有社團列表（帶過濾）
@@ -15,6 +29,7 @@ class ClubAPI {
     public static function getClubs() {
         try {
             $category_id = $_GET['category_id'] ?? null;
+            $club_id = $_GET['club_id'] ?? null;
             $tags = isset($_GET['tags']) ? explode(',', $_GET['tags']) : [];
             $search = $_GET['search'] ?? '';
             $tag_match_mode = strtolower((string)($_GET['tag_match_mode'] ?? 'or'));
@@ -27,6 +42,7 @@ class ClubAPI {
             $where_conditions = ['activity_status = "active"', 'deleted_at IS NULL'];
             $params = [];
             $categoryCondition = null;
+            $clubCondition = null;
             $tagCondition = null;
             $tagConditionParams = [];
             $selectColumns = 'clubs.*';
@@ -35,6 +51,10 @@ class ClubAPI {
             
             if ($category_id) {
                 $categoryCondition = 'category_id = ?';
+            }
+
+            if ($club_id) {
+                $clubCondition = 'club_id = ?';
             }
             
             if ($search) {
@@ -81,6 +101,11 @@ class ClubAPI {
                         $selectTagScoreParams[] = $tag_id;
                     }
                 }
+            }
+
+            if ($clubCondition) {
+                $where_conditions[] = $clubCondition;
+                $params[] = $club_id;
             }
 
             // 依新需求改為 OR：同時選分類與標籤時，符合其一即可
@@ -247,7 +272,10 @@ class ClubAPI {
     public static function getClubDetail($club_id) {
         try {
             $club = Database::getInstance()->fetchOne(
-                'SELECT * FROM clubs WHERE club_id = ?',
+                'SELECT c.*, cc.category_name
+                 FROM clubs c
+                 LEFT JOIN club_categories cc ON cc.category_id = c.category_id
+                 WHERE c.club_id = ?',
                 [$club_id]
             );
             
@@ -359,8 +387,12 @@ class ClubAPI {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
 
-            if (ContentFilter::hasRestrictedInFields($data, ['club_name', 'description', 'meeting_location'])) {
+            if (ContentFilter::hasRestrictedInFields($data, ['club_name', 'description'])) {
                 Helper::error('社團資料包含不適當字眼，請修改後再送出', 400);
+            }
+
+            if (isset($data['meeting_location'])) {
+                self::validateMeetingLocationIfProvided($data['meeting_location']);
             }
 
             $club_code = trim($data['club_code'] ?? '');
@@ -431,8 +463,12 @@ class ClubAPI {
                 Helper::error('驗證失敗: ' . implode(', ', $requiredErrors), 400);
             }
 
-            if (ContentFilter::hasRestrictedInFields($data, ['club_name', 'description', 'meeting_location'])) {
+            if (ContentFilter::hasRestrictedInFields($data, ['club_name', 'description'])) {
                 Helper::error('社團資料包含不適當字眼，請修改後再送出', 400);
+            }
+
+            if (isset($data['meeting_location'])) {
+                self::validateMeetingLocationIfProvided($data['meeting_location']);
             }
 
             if (!Helper::validateEmail($data['contact_email'])) {

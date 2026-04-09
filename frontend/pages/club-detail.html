@@ -73,7 +73,10 @@
                         </div>
                         <div>
                             <strong>社課地點：</strong>
-                            <span id="meeting-location">-</span>
+                            <div id="meeting-location-box" style="margin-top: 0.35rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div id="meeting-location" style="line-height: 1.6;">-</div>
+                                <div id="meeting-location-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+                            </div>
                         </div>
                         <div>
                             <strong>聯絡郵箱：</strong>
@@ -122,8 +125,12 @@
             <div>
                 <div class="card" style="margin-bottom: 2rem;">
                     <h3>社團 Logo</h3>
-                    <div style="display: flex; justify-content: center; align-items: center; min-height: 160px;">
-                        <img id="club-logo" src="" alt="社團 Logo" style="display: none; max-width: 100%; max-height: 220px; border-radius: 12px; object-fit: contain;">
+                    <div id="club-logo-wrapper" style="display: flex; justify-content: center; align-items: center; min-height: 160px;">
+                        <img id="club-logo-img" src="" alt="社團 Logo" style="display: none; max-width: 100%; max-height: 220px; border-radius: 12px; object-fit: contain;">
+                        <div id="club-logo-placeholder" style="display: none; flex-direction: column; align-items: center; justify-content: center; gap: 0.7rem; width: 100%; min-height: 160px;">
+                            <span id="club-logo-placeholder-avatar" class="club-avatar club-avatar--emoji" aria-hidden="true" style="width: 120px; height: 120px; font-size: 3rem;"></span>
+                            <div id="club-logo-placeholder-label" style="color: var(--text-light); font-size: 0.9rem;">預設社團頭像</div>
+                        </div>
                     </div>
                 </div>
 
@@ -239,11 +246,56 @@
                 return `${y}-${m}-${day} ${hh}:${mm}`;
             };
 
+            const buildGoogleMapsUrl = (locationValue) => {
+                if (!locationValue) return '';
+
+                const rawValue = String(locationValue).trim();
+                if (!rawValue) return '';
+
+                if (/^https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[\/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)$/i.test(rawValue)) {
+                    return rawValue.startsWith('http') ? rawValue : `https://${rawValue}`;
+                }
+
+                return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rawValue)}`;
+            };
+
+            const isGoogleMapsUrl = (value) => /^https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[\/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)$/i.test(String(value || '').trim());
+
+            const renderLocationActions = (locationValue) => {
+                const actions = document.getElementById('meeting-location-actions');
+                if (!actions) return;
+
+                const rawValue = String(locationValue || '').trim();
+                if (!rawValue) {
+                    actions.innerHTML = '';
+                    return;
+                }
+
+                const googleMapsUrl = buildGoogleMapsUrl(rawValue);
+                const buttonLabel = isGoogleMapsUrl(rawValue) ? '開啟地圖連結' : '在 Google 地圖搜尋';
+                actions.innerHTML = '';
+                const link = document.createElement('a');
+                link.className = 'btn btn-primary btn-sm';
+                link.href = googleMapsUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = buttonLabel;
+                actions.appendChild(link);
+            };
+
+            const formatMeetingLocation = (locationValue) => {
+                const rawValue = String(locationValue || '').trim();
+                if (!rawValue) return '-';
+                if (isGoogleMapsUrl(rawValue)) return '幹部提供的 Google 地圖連結';
+                return rawValue;
+            };
+
             document.getElementById('club-name').textContent = club.club_name;
-            document.getElementById('club-category').textContent = club.category_id || '-';
+            document.getElementById('club-category').textContent = club.category_name || '-';
             document.getElementById('club-fee').textContent = club.club_fee > 0 ? `$${club.club_fee}` : '免費';
             document.getElementById('meeting-time').textContent = club.meeting_time || '-';
-            document.getElementById('meeting-location').textContent = club.meeting_location || '-';
+            document.getElementById('meeting-location').textContent = formatMeetingLocation(club.meeting_location);
+            renderLocationActions(club.meeting_location);
             document.getElementById('contact-email').textContent = club.contact_email || '-';
             document.getElementById('contact-phone').textContent = club.contact_phone || '-';
             document.getElementById('last-updated').textContent = formatDateTime(club.last_updated);
@@ -261,14 +313,29 @@
             const badgesHtml = `<span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>`;
             document.getElementById('club-badges').innerHTML = badgesHtml;
 
-            const logoImg = document.getElementById('club-logo');
+            const logoImg = document.getElementById('club-logo-img');
+            const logoPlaceholder = document.getElementById('club-logo-placeholder');
+            const logoPlaceholderAvatar = document.getElementById('club-logo-placeholder-avatar');
+            const logoPlaceholderLabel = document.getElementById('club-logo-placeholder-label');
             if (club.logo_path) {
                 const logoPath = club.logo_path.replace(/^\.\//, '');
                 logoImg.src = logoPath.startsWith('http') ? logoPath : `../${logoPath}`;
                 logoImg.style.display = 'block';
+                if (logoPlaceholder) logoPlaceholder.style.display = 'none';
             } else {
+                const avatarEmoji = PageUtils.getClubAvatarEmoji(club.club_name || '', club.category_name || '', club.description || '');
+                const avatarText = avatarEmoji || PageUtils.getInitial(club.club_name || '');
                 logoImg.removeAttribute('src');
                 logoImg.style.display = 'none';
+                if (logoPlaceholderAvatar) {
+                    logoPlaceholderAvatar.textContent = avatarText;
+                    logoPlaceholderAvatar.classList.toggle('club-avatar--emoji', !!avatarEmoji);
+                    logoPlaceholderAvatar.classList.toggle('club-avatar--fallback', !avatarEmoji);
+                }
+                if (logoPlaceholderLabel) {
+                    logoPlaceholderLabel.textContent = avatarEmoji ? '預設貼圖頭像' : '預設首字頭像';
+                }
+                if (logoPlaceholder) logoPlaceholder.style.display = 'flex';
             }
 
             const followBtn = document.getElementById('follow-btn');

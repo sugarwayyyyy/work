@@ -31,6 +31,27 @@
     <div class="container">
         <h1>提問留言板</h1>
 
+        <div class="card" style="margin-bottom: 2rem;">
+            <div style="display: grid; grid-template-columns: 1.6fr 1fr auto; gap: 1rem; align-items: end;">
+                <div>
+                    <label for="qa-search">提問關鍵字</label>
+                    <input type="text" id="qa-search" placeholder="搜尋標題或內容...">
+                </div>
+                <div>
+                    <label for="qa-status-filter">提問狀態</label>
+                    <select id="qa-status-filter">
+                        <option value="">全部</option>
+                        <option value="open">開放中</option>
+                        <option value="closed">已關閉</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button id="qa-search-btn" class="btn btn-primary" type="button">搜尋</button>
+                    <button id="qa-reset-btn" class="btn btn-secondary" type="button">重製</button>
+                </div>
+            </div>
+        </div>
+
         <div style="margin-bottom: 2rem;">
             <button id="ask-btn" class="btn btn-primary" onclick="openAskModal()">發布新提問</button>
         </div>
@@ -111,6 +132,14 @@
         let qaTags = [];
         let selectedQATagIds = new Set();
 
+        function getQAUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                search: params.get('search') || '',
+                status: params.get('status') || ''
+            };
+        }
+
         function normalizeKeyword(text) {
             return String(text || '').toLowerCase().replace(/[\s\p{P}\p{S}]+/gu, '');
         }
@@ -174,7 +203,17 @@
 
         async function loadQA() {
             try {
-                const response = await APIClient.get('qa.php');
+                const search = document.getElementById('qa-search').value.trim();
+                const status = document.getElementById('qa-status-filter').value;
+                let url = 'qa.php';
+                const params = new URLSearchParams();
+                if (search) params.append('search', search);
+                if (status) params.append('status', status);
+                if ([...params.keys()].length > 0) {
+                    url += `?${params.toString()}`;
+                }
+
+                const response = await APIClient.get(url);
                 if (response.success) {
                     renderQA(response.data.questions);
                 } else {
@@ -375,6 +414,10 @@
         });
 
         window.addEventListener('DOMContentLoaded', function() {
+            const params = getQAUrlParams();
+            document.getElementById('qa-search').value = params.search;
+            document.getElementById('qa-status-filter').value = params.status;
+
             loadQA();
             loadCategoriesForModal();
             loadQATags();
@@ -409,6 +452,27 @@
                 button.addEventListener('click', () => setUrgencyLevel(button.dataset.urgency));
             });
             setUrgencyLevel('normal');
+
+            document.getElementById('qa-search-btn').addEventListener('click', () => {
+                loadQA();
+            });
+
+            document.getElementById('qa-reset-btn').addEventListener('click', () => {
+                document.getElementById('qa-search').value = '';
+                document.getElementById('qa-status-filter').value = '';
+                loadQA();
+            });
+
+            document.getElementById('qa-search').addEventListener('keydown', event => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    loadQA();
+                }
+            });
+
+            document.getElementById('qa-status-filter').addEventListener('change', () => {
+                loadQA();
+            });
         });
     </script>
 </body>

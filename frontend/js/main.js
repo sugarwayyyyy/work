@@ -144,6 +144,53 @@ class PageUtils {
 
         return `/社團活動資訊統整平台/${normalized}`;
     }
+
+    static getInitial(text) {
+        const value = String(text || '').trim();
+        return value ? value.charAt(0).toUpperCase() : '?';
+    }
+
+    static renderClubAvatar(club, size = 52) {
+        const clubName = club?.club_name || club?.name || '';
+        const clubCategory = club?.category_name || '';
+        const clubDescription = club?.description || '';
+        const logoUrl = PageUtils.resolveMediaUrl(club?.logo_path);
+        const emoji = PageUtils.getClubAvatarEmoji(clubName, clubCategory, clubDescription);
+        const initials = PageUtils.getInitial(clubName);
+        const dimension = `${size}px`;
+
+        if (logoUrl) {
+            return `<span class="club-avatar" style="width: ${dimension}; height: ${dimension};"><img src="${logoUrl}" alt="${clubName || '社團'} logo" class="club-avatar__img"></span>`;
+        }
+
+        const fallbackContent = emoji || initials;
+        const fallbackClass = emoji ? 'club-avatar--emoji' : 'club-avatar--fallback';
+        return `<span class="club-avatar ${fallbackClass}" aria-hidden="true" style="width: ${dimension}; height: ${dimension};">${fallbackContent}</span>`;
+    }
+
+    static getClubAvatarEmoji(clubName = '', clubCategory = '', clubDescription = '') {
+        const source = `${clubName} ${clubCategory} ${clubDescription}`.toLowerCase();
+        const emojiRules = [
+            { keywords: ['吉他', '音樂', '樂團', '合唱', '聲樂', '爵士', 'band'], emoji: '🎵' },
+            { keywords: ['舞', '舞蹈', '熱舞', '啦啦', '街舞'], emoji: '💃' },
+            { keywords: ['籃球', '排球', '羽球', '桌球', '足球', '運動', '體育'], emoji: '🏀' },
+            { keywords: ['攝影', '拍照', '相機', '影像', '影片'], emoji: '📷' },
+            { keywords: ['程式', '資訊', '電腦', '軟體', 'ai', 'robot'], emoji: '💻' },
+            { keywords: ['設計', '美術', '繪畫', '插畫', '視覺'], emoji: '🎨' },
+            { keywords: ['服務', '志工', '公益', '社會'], emoji: '🤝' },
+            { keywords: ['烹飪', '料理', '美食', '烘焙', '甜點'], emoji: '🍰' },
+            { keywords: ['英文', '外語', '日文', '韓文', '語言'], emoji: '🗣️' },
+            { keywords: ['旅行', '地理', '登山', '戶外'], emoji: '🧭' }
+        ];
+
+        for (const rule of emojiRules) {
+            if (rule.keywords.some(keyword => source.includes(keyword))) {
+                return rule.emoji;
+            }
+        }
+
+        return '';
+    }
 }
 
 class Validator {
@@ -195,6 +242,63 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initializePage() {
     await hydrateUserFromSession();
     updateNavigation();
+    renderAuthPromoBanner();
+}
+
+function shouldRenderAuthPromoBanner() {
+    const path = window.location.pathname;
+    return !path.endsWith('/login.html') && !path.endsWith('/register.html');
+}
+
+function isAuthPromoBannerDismissed() {
+    try {
+        const dismissedAt = Number(localStorage.getItem('auth-promo-banner-dismissed-at') || 0);
+        if (!dismissedAt) return false;
+
+        const cooldownMs = 5 * 60 * 1000;
+        const now = Date.now();
+        return (now - dismissedAt) < cooldownMs;
+    } catch (error) {
+        return false;
+    }
+}
+
+function dismissAuthPromoBanner() {
+    try {
+        localStorage.setItem('auth-promo-banner-dismissed-at', String(Date.now()));
+    } catch (error) {
+    }
+
+    const banner = document.getElementById('auth-promo-banner');
+    if (banner) banner.remove();
+}
+
+function renderAuthPromoBanner() {
+    if (!shouldRenderAuthPromoBanner() || StorageUtils.isLoggedIn() || isAuthPromoBannerDismissed()) return;
+
+    if (document.getElementById('auth-promo-banner')) return;
+
+    const banner = document.createElement('section');
+    banner.id = 'auth-promo-banner';
+    banner.className = 'auth-promo-banner';
+    banner.innerHTML = `
+        <div class="auth-promo-banner__mark">D</div>
+        <div class="auth-promo-banner__body">
+            <div class="auth-promo-banner__title">從校園到社群，都能找到共鳴</div>
+            <div class="auth-promo-banner__text">登入後可以追蹤社團、收藏標籤、查看活動提醒，也能參與評價與提問。</div>
+        </div>
+        <div class="auth-promo-banner__actions">
+            <a class="btn btn-primary btn-sm auth-promo-banner__login" href="${getPageLink('login.html')}">登入</a>
+            <a class="btn btn-secondary btn-sm auth-promo-banner__register" href="${getPageLink('register.html')}">註冊</a>
+            <button type="button" class="auth-promo-banner__close" aria-label="關閉提示" title="關閉提示">×</button>
+        </div>
+    `;
+
+    const closeButton = banner.querySelector('.auth-promo-banner__close');
+    if (closeButton) {
+        closeButton.addEventListener('click', dismissAuthPromoBanner);
+    }
+    document.body.appendChild(banner);
 }
 
 async function hydrateUserFromSession() {
@@ -232,6 +336,10 @@ function isAdminDashboardPage() {
 
 function isClubAdminDashboardPage() {
     return window.location.pathname.endsWith('/frontend/pages/club-admin-dashboard.html');
+}
+
+function isUserProfilePage() {
+    return window.location.pathname.endsWith('/frontend/pages/user-profile.html');
 }
 
 function setRestrictedDashboardNav(role) {
@@ -279,6 +387,10 @@ function updateNavigation() {
         const navLinks = document.querySelector('.nav-links');
         if (navLinks) {
             if (isAdminDashboardPage()) {
+                navLinks.innerHTML = `<li id="admin-dashboard-link"><a href="${getPageLink('admin-dashboard.html')}">管理員</a></li>`;
+            }
+
+            if (isUserProfilePage() && user.role === 'platform_admin') {
                 navLinks.innerHTML = `<li id="admin-dashboard-link"><a href="${getPageLink('admin-dashboard.html')}">管理員</a></li>`;
             }
 

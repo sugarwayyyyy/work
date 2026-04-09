@@ -230,6 +230,7 @@ CREATE TABLE qa_tag_relations (
 CREATE TABLE qa_replies (
     reply_id INT PRIMARY KEY AUTO_INCREMENT,
     qa_id INT NOT NULL,
+    parent_reply_id INT DEFAULT NULL,
     user_id INT NOT NULL,
     reply_content TEXT NOT NULL,
     is_official_answer BOOLEAN DEFAULT FALSE,
@@ -239,6 +240,7 @@ CREATE TABLE qa_replies (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (qa_id) REFERENCES q_and_a(qa_id),
+    FOREIGN KEY (parent_reply_id) REFERENCES qa_replies(reply_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 

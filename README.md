@@ -92,29 +92,12 @@
 
 ## 安裝與初始化
 
-### 1. 建立資料庫
-先匯入基礎結構，再套用遷移與測試資料。
+避免文件重複維護，完整步驟集中於 [QUICKSTART.md](QUICKSTART.md)。
 
-```bash
-mysql -u root -p < database/schema.sql
-mysql -u root -p club_platform < database/migrations/2026_04_01_user_stories_core.sql
-mysql -u root -p club_platform < database/migrations/2026_04_03_event_tags.sql
-mysql -u root -p club_platform < database/migrations/2026_04_03_qa_urgency.sql
-mysql -u root -p club_platform < database/migrations/2026_04_04_event_poster_path.sql
-mysql -u root -p club_platform < database/migrations/2026_04_04_qa_reply_helpful.sql
-mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
-```
-
-若要一次性執行遷移流程，可使用 `run_migration.php`（依專案環境設定後執行）。
-
-### 2. 設定後端連線
-編輯 `backend/config.php`，確認資料庫名稱、帳號、密碼與連接埠。
-
-### 3. 檢查上傳目錄
-確認以下資料夾可寫入：
-- `frontend/assets/uploads`
-- `backend/uploads`
-- `logs`
+快速摘要：
+1. 匯入 `database/schema.sql` 與 `database/migrations/*`。
+2. 編輯 `backend/config.php` 設定資料庫連線。
+3. 確認 `frontend/assets/uploads`、`backend/uploads`、`logs` 可寫入。
 
 ## 執行方式
 
@@ -133,14 +116,7 @@ php -S localhost:8000
 
 ## 測試資料
 
-### 預設測試帳號
-- 管理員：admin@univ.edu / Test123456
-- 幹部：clubadmin@univ.edu / Test123456
-- 學生：student@univ.edu / Test123456
-
-### 常用初始化資料
-- 社團基礎資料：`database/seeds/`
-- 功能遷移資料：`database/migrations/`
+避免重複維護，測試帳號與初始化資料請以 [QUICKSTART.md](QUICKSTART.md) 為準。
 
 ## 測試與驗收
 

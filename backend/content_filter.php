@@ -170,6 +170,31 @@ class ContentFilter {
         return false;
     }
 
+    public static function containsRestrictedLanguageAllowingUrls($text) {
+        $raw = (string)$text;
+        if (trim($raw) === '') {
+            return false;
+        }
+
+        $withoutUrls = preg_replace('/https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[\/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)/i', ' ', $raw);
+        $withoutUrls = $withoutUrls === null ? $raw : $withoutUrls;
+
+        if (preg_match('/https?:\/\/|www\./i', $withoutUrls) === 1) {
+            return true;
+        }
+
+        return self::containsRestrictedLanguage($withoutUrls);
+    }
+
+    public static function isGoogleMapsUrl($text) {
+        $raw = trim((string)$text);
+        if ($raw === '') {
+            return false;
+        }
+
+        return preg_match('/^https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[\/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)$/i', $raw) === 1;
+    }
+
     public static function hasDangerousCommandPayload($value) {
         if (is_array($value)) {
             foreach ($value as $item) {

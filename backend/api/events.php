@@ -8,6 +8,50 @@ require_once '../content_filter.php';
 
 class EventAPI {
 
+    private static function normalizeDatetimeInput($value, $endOfDay = false) {
+        $raw = trim((string)$value);
+        if ($raw === '') {
+            return null;
+        }
+
+        $normalized = str_replace('T', ' ', $raw);
+        if (strlen($raw) <= 10) {
+            $normalized .= $endOfDay ? ' 23:59:59' : ' 00:00:00';
+        } elseif (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $normalized)) {
+            $normalized .= ':00';
+        }
+
+        return $normalized;
+    }
+
+    private static function isHalfHourAligned($value) {
+        $raw = trim((string)$value);
+        if ($raw === '') {
+            return false;
+        }
+
+        $timestamp = strtotime(str_replace('T', ' ', $raw));
+        if ($timestamp === false) {
+            return false;
+        }
+
+        return (int)date('i', $timestamp) % 30 === 0 && date('s', $timestamp) === '00';
+    }
+
+    private static function validateHalfHourField($value, $message, $required = false) {
+        $raw = trim((string)$value);
+        if ($raw === '') {
+            if ($required) {
+                Helper::error($message, 400);
+            }
+            return;
+        }
+
+        if (!self::isHalfHourAligned($raw)) {
+            Helper::error($message, 400);
+        }
+    }
+
     private static function notifyFollowersForNewEvent($event_id, $club_id, $event_name) {
         $followers = Database::getInstance()->fetchAll(
             'SELECT user_id FROM club_followers WHERE club_id = ? AND is_subscribing_notifications = 1',
@@ -46,8 +90,12 @@ class EventAPI {
             }
             $status = $_GET['status'] ?? 'published';
             $search = $_GET['search'] ?? '';
-            $date_from = $_GET['date_from'] ?? null;
-            $date_to = $_GET['date_to'] ?? null;
+            $filter = strtolower($_GET['filter'] ?? 'open');
+            $event_start_from = $_GET['event_start_from'] ?? ($_GET['date_from'] ?? null);
+            $deadline_to = $_GET['deadline_to'] ?? ($_GET['date_to'] ?? null);
+            $min_remaining = isset($_GET['min_remaining']) && $_GET['min_remaining'] !== ''
+                ? (int)$_GET['min_remaining']
+                : null;
             $min_fee = $_GET['min_fee'] ?? null;
             $max_fee = $_GET['max_fee'] ?? null;
             $page = (int)($_GET['page'] ?? 1);
@@ -72,14 +120,27 @@ class EventAPI {
                 $params[] = "%$search%";
             }
 
-            if ($date_from) {
+            if ($event_start_from) {
+                self::validateHalfHourField($event_start_from, '開始時間只能選整點或半點', true);
                 $conditions[] = 'event_date >= ?';
-                $params[] = $date_from . ' 00:00:00';
+                $params[] = self::normalizeDatetimeInput($event_start_from, false);
             }
 
-            if ($date_to) {
-                $conditions[] = 'event_date <= ?';
-                $params[] = $date_to . ' 23:59:59';
+            if ($deadline_to) {
+                self::validateHalfHourField($deadline_to, '截止時間只能選整點或半點', true);
+                $conditions[] = 'registration_deadline <= ?';
+                $params[] = self::normalizeDatetimeInput($deadline_to, true);
+            }
+
+            if ($min_remaining !== null) {
+                $conditions[] = "(capacity = 0 OR (capacity - (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = events.event_id)) >= ?)";
+                $params[] = $min_remaining;
+            }
+
+            if ($filter === 'open') {
+                $conditions[] = '(is_registration_open = 1 AND (registration_deadline IS NULL OR registration_deadline >= NOW()) AND event_date >= NOW())';
+            } elseif ($filter === 'closed') {
+                $conditions[] = '(is_registration_open = 0 OR (registration_deadline IS NOT NULL AND registration_deadline < NOW()) OR event_date < NOW())';
             }
 
             if ($min_fee !== null) {
@@ -93,14 +154,28 @@ class EventAPI {
             }
             
             $where = implode(' AND ', $conditions);
-            
-            $sql = "SELECT * FROM events WHERE $where ORDER BY event_date ASC LIMIT ? OFFSET ?";
+
+            $orderParts = [];
+            $orderParams = [];
+            if ($event_start_from) {
+                $orderParts[] = 'ABS(TIMESTAMPDIFF(SECOND, event_date, ?)) ASC';
+                $orderParams[] = str_replace('T', ' ', $event_start_from) . (strlen($event_start_from) <= 10 ? ' 00:00:00' : ':00');
+            }
+
+            if ($deadline_to) {
+                $orderParts[] = 'ABS(TIMESTAMPDIFF(SECOND, COALESCE(registration_deadline, event_date), ?)) ASC';
+                $orderParams[] = str_replace('T', ' ', $deadline_to) . (strlen($deadline_to) <= 10 ? ' 23:59:59' : ':59');
+            }
+
+            $orderParts[] = $filter === 'closed' ? 'event_date DESC' : 'event_date ASC';
+
+            $sql = "SELECT * FROM events WHERE $where ORDER BY " . implode(', ', $orderParts) . " LIMIT ? OFFSET ?";
             $stmt = Database::getInstance()->prepare($sql);
             if ($stmt === false) {
                 throw new Exception('查詢準備失敗: ' . Database::getInstance()->error);
             }
 
-            $queryParams = $params; // 複製原始條件，避免後面影響
+            $queryParams = array_merge($params, $orderParams);
             $types = str_repeat('s', count($queryParams)) . 'ii';
             $queryParams[] = $per_page;
             $queryParams[] = $offset;
@@ -127,6 +202,15 @@ class EventAPI {
                     [$event['club_id']]
                 );
                 $event['club_name'] = $club['club_name'] ?? '';
+
+                $tags = Database::getInstance()->fetchAll(
+                    'SELECT t.* FROM club_tags t
+                     JOIN event_tag_relations etr ON t.tag_id = etr.tag_id
+                     WHERE etr.event_id = ?
+                     ORDER BY t.tag_name ASC',
+                    [$event['event_id']]
+                );
+                $event['tags'] = $tags;
             }
             
             // 取得總數
@@ -240,6 +324,8 @@ class EventAPI {
                 Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
             }
             
+            self::validateHalfHourField($data['event_date'] ?? '', '舉辦日期與時間只能選整點或半點', true);
+            self::validateHalfHourField($data['registration_deadline'] ?? '', '報名截止只能選整點或半點', false);
             // 檢查用戶權限
             $member = Database::getInstance()->fetchOne(
                 'SELECT * FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "director", "public_relations")',
@@ -326,6 +412,14 @@ class EventAPI {
 
             if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description', 'location'])) {
                 Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
+            }
+
+            if (isset($data['event_date'])) {
+                self::validateHalfHourField($data['event_date'], '日期只能選整點或半點', true);
+            }
+
+            if (isset($data['registration_deadline'])) {
+                self::validateHalfHourField($data['registration_deadline'], '報名截止只能選整點或半點', false);
             }
 
             // 更新活動信息

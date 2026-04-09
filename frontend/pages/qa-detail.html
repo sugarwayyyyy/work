@@ -100,6 +100,7 @@
 
                     <div id="reply-form" style="display: none;">
                         <form id="add-reply-form">
+                            <input type="hidden" id="reply-parent-id" value="">
                             <div class="form-group">
                                 <label for="reply-content">回覆內容</label>
                                 <textarea id="reply-content" rows="6" placeholder="提供您的解答或建議..." required></textarea>
@@ -133,11 +134,18 @@
 
         // 載入提問詳情
         function shouldTrackView(questionId) {
+            if (!questionId) return false;
+
             const key = `qa-viewed-${questionId}`;
-            if (sessionStorage.getItem(key) === '1') {
+            const now = Date.now();
+            const cooldownMs = 30 * 60 * 1000; // 30 分鐘內重整不重複計數
+
+            const lastViewedAt = Number(localStorage.getItem(key) || 0);
+            if (Number.isFinite(lastViewedAt) && lastViewedAt > 0 && (now - lastViewedAt) < cooldownMs) {
                 return false;
             }
-            sessionStorage.setItem(key, '1');
+
+            localStorage.setItem(key, String(now));
             return true;
         }
 
@@ -149,7 +157,8 @@
             }
 
             try {
-                const response = await APIClient.get(`qa.php?action=detail&id=${questionId}&track_view=${trackView && shouldTrackView(questionId) ? 1 : 0}`);
+                const shouldCount = trackView && shouldTrackView(questionId);
+                const response = await APIClient.get(`qa.php?action=detail&id=${questionId}&track_view=${shouldCount ? 1 : 0}`);
                 if (response.success) {
                     currentQuestion = response.data;
                     displayQuestionDetail(currentQuestion);
@@ -212,7 +221,7 @@
             try {
                 const response = await APIClient.get(`qa.php?action=replies&question_id=${questionId}`);
                 if (response.success) {
-                    const replies = response.data.replies;
+                    const replies = Array.isArray(response.data.replies) ? response.data.replies : [];
                     const container = document.getElementById('replies-list');
 
                     if (replies.length === 0) {
@@ -220,44 +229,201 @@
                         return;
                     }
 
-                    let html = '';
+                    const childMap = new Map();
+                    const replyMap = new Map();
                     replies.forEach(reply => {
-                        const isOfficial = reply.is_official ? '<span class="badge badge-primary">官方回覆</span>' : '';
-                        const author = reply.author_name || reply.user_name || '匿名用戶';
-                        const helpfulActive = reply.my_vote === 'helpful';
-                        const notHelpfulActive = reply.my_vote === 'not_helpful';
-                        const helpfulBtn = reply.can_vote ?
-                            `<button class="btn btn-sm ${helpfulActive ? 'btn-success' : ''}" onclick="markReplyVote(${reply.reply_id}, 'helpful')">👍 有幫助 (${reply.helpful_count})</button>` :
-                            `<span style="color: var(--text-light);">👍 有幫助 (${reply.helpful_count})</span>`;
-                        const notHelpfulBtn = reply.can_vote ?
-                            `<button class="btn btn-sm ${notHelpfulActive ? 'btn-danger' : ''}" onclick="markReplyVote(${reply.reply_id}, 'not_helpful')">👎 沒有幫助 (${reply.not_helpful_count})</button>` :
-                            `<span style="color: var(--text-light);">👎 沒有幫助 (${reply.not_helpful_count})</span>`;
+                        const parentId = Number(reply.parent_reply_id);
+                        const hasParent = Number.isInteger(parentId) && parentId > 0;
+                        const parentKey = hasParent ? String(parentId) : 'root';
+                        replyMap.set(String(reply.reply_id), reply);
+                        if (!childMap.has(parentKey)) {
+                            childMap.set(parentKey, []);
+                        }
+                        childMap.get(parentKey).push(reply);
+                    });
 
-                        html += `
-                            <div class="card reply-card" style="margin-bottom: 1rem; ${reply.is_official ? 'border-left: 4px solid var(--primary-color);' : ''}">
-                                <div class="card-header" style="padding-bottom: 0.5rem;">
-                                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                                        <div>
-                                            <strong>${author}</strong>
-                                            ${isOfficial}
-                                            <div style="color: var(--text-light); font-size: 0.875rem; margin-top: 0.25rem;">
-                                                ${PageUtils.timeAgo(reply.created_at)}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            ${helpfulBtn}
-                                            <span style="display: inline-block; width: 0.5rem;"></span>
-                                            ${notHelpfulBtn}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-body" style="padding-top: 0;">
-                                    <p style="margin: 0; line-height: 1.6;">${reply.content}</p>
-                                </div>
+                    const createInlineReplyForm = (parentReplyId) => {
+                        const form = document.createElement('form');
+                        form.className = 'reply-inline-form dcard-inline-form';
+                        form.dataset.parentReplyId = String(parentReplyId);
+                        form.innerHTML = `
+                            <div class="form-group" style="margin-bottom: 0.6rem;">
+                                <label>回覆內容</label>
+                                <textarea rows="3" placeholder="回覆這則留言..." required></textarea>
+                            </div>
+                            <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+                                <button type="submit" class="btn btn-primary btn-sm">送出回覆</button>
+                                <button type="button" class="btn btn-secondary btn-sm reply-inline-cancel">取消</button>
                             </div>
                         `;
+                        form.addEventListener('submit', handleReplySubmit);
+                        form.querySelector('.reply-inline-cancel').addEventListener('click', () => form.remove());
+                        return form;
+                    };
+
+                    const renderReplyNode = (reply, depth = 0, floorLabel = '') => {
+                        const user = StorageUtils.getUser();
+                        const node = document.createElement('div');
+                        node.className = depth === 0 ? 'dcard-reply-root' : 'dcard-reply-child';
+
+                        const shell = document.createElement('div');
+                        shell.className = depth === 0 ? 'dcard-reply-shell' : 'dcard-reply-child-shell';
+
+                        const top = document.createElement('div');
+                        top.className = 'dcard-reply-top';
+
+                        const identity = document.createElement('div');
+                        identity.className = 'dcard-reply-identity';
+
+                        const floor = document.createElement('span');
+                        floor.className = 'dcard-floor-badge';
+                        floor.textContent = `${floorLabel}樓`;
+                        identity.appendChild(floor);
+
+                        const author = document.createElement('strong');
+                        author.textContent = reply.author_name || reply.user_name || '匿名用戶';
+                        identity.appendChild(author);
+
+                        if (reply.is_official) {
+                            const official = document.createElement('span');
+                            official.className = 'badge badge-primary';
+                            official.textContent = '官方回覆';
+                            identity.appendChild(official);
+                        }
+
+                        const time = document.createElement('span');
+                        time.className = 'dcard-reply-time';
+                        time.textContent = PageUtils.timeAgo(reply.created_at);
+
+                        const stats = document.createElement('div');
+                        stats.className = 'dcard-reply-stats';
+                        stats.textContent = `👍 ${reply.helpful_count} ・ 👎 ${reply.not_helpful_count}`;
+
+                        top.appendChild(identity);
+                        top.appendChild(time);
+                        top.appendChild(stats);
+
+                        const content = document.createElement('div');
+                        content.className = 'dcard-reply-content';
+                        content.textContent = reply.content || '';
+
+                        const currentParentId = Number(reply.parent_reply_id);
+                        if (Number.isInteger(currentParentId) && currentParentId > 0) {
+                            const parentReply = replyMap.get(String(currentParentId));
+                            const parentTag = document.createElement('div');
+                            parentTag.className = 'dcard-reply-parent-tag';
+                            parentTag.textContent = parentReply
+                                ? `回覆 ${parentReply.author_name || parentReply.user_name || '匿名用戶'}`
+                                : '回覆上一則留言';
+                            content.prepend(parentTag);
+                        }
+
+                        const actions = document.createElement('div');
+                        actions.className = 'dcard-reply-actions';
+
+                        if (reply.can_vote) {
+                            const helpfulBtn = document.createElement('button');
+                            helpfulBtn.type = 'button';
+                            helpfulBtn.className = `dcard-action-btn ${reply.my_vote === 'helpful' ? 'is-active' : ''}`;
+                            helpfulBtn.textContent = '有幫助';
+                            helpfulBtn.addEventListener('click', () => markReplyVote(reply.reply_id, 'helpful'));
+
+                            const notHelpfulBtn = document.createElement('button');
+                            notHelpfulBtn.type = 'button';
+                            notHelpfulBtn.className = `dcard-action-btn ${reply.my_vote === 'not_helpful' ? 'is-active-danger' : ''}`;
+                            notHelpfulBtn.textContent = '沒有幫助';
+                            notHelpfulBtn.addEventListener('click', () => markReplyVote(reply.reply_id, 'not_helpful'));
+
+                            actions.appendChild(helpfulBtn);
+                            actions.appendChild(notHelpfulBtn);
+                        }
+
+                        if (user) {
+                            const replyBtn = document.createElement('button');
+                            replyBtn.type = 'button';
+                            replyBtn.className = 'dcard-action-btn';
+                            replyBtn.textContent = '回覆';
+                            replyBtn.addEventListener('click', () => {
+                                const existing = node.querySelector('.reply-inline-form');
+                                if (existing) {
+                                    existing.remove();
+                                    return;
+                                }
+                                node.appendChild(createInlineReplyForm(reply.reply_id));
+                                const textarea = node.querySelector('.reply-inline-form textarea');
+                                if (textarea) textarea.focus();
+                            });
+                            actions.appendChild(replyBtn);
+                        }
+
+                        shell.appendChild(top);
+                        shell.appendChild(content);
+                        shell.appendChild(actions);
+                        node.appendChild(shell);
+
+                        return node;
+                    };
+
+                    const collectThreadReplies = (rootReplyId) => {
+                        const collected = [];
+                        const visited = new Set();
+                        const queue = [...(childMap.get(String(rootReplyId)) || [])];
+
+                        while (queue.length > 0) {
+                            const current = queue.shift();
+                            if (!current) continue;
+                            const currentKey = String(current.reply_id);
+                            if (visited.has(currentKey)) continue;
+                            visited.add(currentKey);
+                            collected.push(current);
+                            const children = childMap.get(String(current.reply_id)) || [];
+                            children.forEach(child => queue.push(child));
+                        }
+
+                        collected.sort((a, b) => {
+                            const t1 = new Date(a.created_at || 0).getTime();
+                            const t2 = new Date(b.created_at || 0).getTime();
+                            if (t1 !== t2) return t1 - t2;
+                            return Number(a.reply_id) - Number(b.reply_id);
+                        });
+
+                        return collected;
+                    };
+
+                    const roots = childMap.get('root') || [];
+                    const fragment = document.createDocumentFragment();
+                    roots.forEach((reply, index) => {
+                        const rootFloor = String(index + 1);
+                        const replyBlock = document.createElement('div');
+                        replyBlock.style.display = 'flex';
+                        replyBlock.style.flexDirection = 'column';
+                        replyBlock.style.gap = '0.8rem';
+                        replyBlock.style.marginBottom = '1rem';
+
+                        replyBlock.appendChild(renderReplyNode(reply, 0, rootFloor));
+
+                        const threadReplies = collectThreadReplies(reply.reply_id);
+                        if (threadReplies.length > 0) {
+                            const childrenWrap = document.createElement('div');
+                            childrenWrap.className = 'dcard-children-wrap';
+
+                            const label = document.createElement('div');
+                            label.className = 'dcard-children-label';
+                            label.textContent = `查看其他 ${threadReplies.length} 則留言`;
+                            childrenWrap.appendChild(label);
+
+                            threadReplies.forEach((childReply, childIndex) => {
+                                const childFloor = `${rootFloor}-${childIndex + 1}`;
+                                childrenWrap.appendChild(renderReplyNode(childReply, 1, childFloor));
+                            });
+
+                            replyBlock.appendChild(childrenWrap);
+                        }
+
+                        fragment.appendChild(replyBlock);
                     });
-                    container.innerHTML = html;
+                    container.innerHTML = '';
+                    container.appendChild(fragment);
                 }
             } catch (error) {
                 console.error('Error loading replies:', error);
@@ -308,25 +474,37 @@
         async function handleReplySubmit(e) {
             e.preventDefault();
 
-            const content = document.getElementById('reply-content').value.trim();
+            const form = e.currentTarget;
+            const isInlineForm = form.classList.contains('reply-inline-form');
+            const contentInput = isInlineForm ? form.querySelector('textarea') : document.getElementById('reply-content');
+            const parentReplyIdInput = document.getElementById('reply-parent-id');
+            const content = contentInput ? contentInput.value.trim() : '';
+
             if (!content) {
                 PageUtils.showAlert('請輸入回覆內容', 'error');
                 return;
             }
 
             const questionId = getQuestionId();
-            const isOfficial = document.getElementById('is-official-reply').checked;
+            const isOfficial = isInlineForm ? false : document.getElementById('is-official-reply').checked;
+            const parentReplyId = isInlineForm ? (form.dataset.parentReplyId || '') : (parentReplyIdInput ? parentReplyIdInput.value : '');
 
             try {
                 const response = await APIClient.post('qa.php?action=add_reply', {
                     question_id: questionId,
                     content: content,
-                    is_official: isOfficial
+                    is_official: isOfficial,
+                    parent_reply_id: parentReplyId
                 });
 
                 if (response.success) {
                     PageUtils.showAlert('回覆提交成功', 'success');
-                    document.getElementById('add-reply-form').reset();
+                    if (isInlineForm) {
+                        form.remove();
+                    } else {
+                        document.getElementById('add-reply-form').reset();
+                        if (parentReplyIdInput) parentReplyIdInput.value = '';
+                    }
                     loadReplies(questionId);
                     loadQuestionDetail(false); // 更新回覆數
                 } else {
@@ -362,6 +540,8 @@
                 } else {
                     document.getElementById('is-official-reply').parentElement.style.display = 'none';
                 }
+
+                document.getElementById('add-reply-form').dataset.parentReplyId = '';
             }
         });
     </script>

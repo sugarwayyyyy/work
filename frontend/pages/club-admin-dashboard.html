@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>社團幹部儀表板</title>
     <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../css/admin.css" />
+    <link rel="stylesheet" href="../css/club-admin-dashboard.css" />
 </head>
 <body class="club-admin-page">
     <header>
@@ -16,11 +18,10 @@
                 <li><a href="events.html">活動</a></li>
                 <li><a href="qa.html">提問</a></li>
                 <li><a href="club-admin-dashboard.html">幹部</a></li>
-                <li style="margin-left: auto;"><a href="#club-management-section" class="nav-admin-link" style="background-color: #ff6b6b; color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-weight: 600;">📋 社團管理</a></li>
             </ul>
             <div class="nav-right">
                 <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()">登出</button>
-                <span id="user-dropdown" style="display: none;"></span>
+                <span id="user-dropdown" class="u-hidden"></span>
             </div>
         </nav>
     </header>
@@ -58,19 +59,20 @@
                 <div id="my-clubs-container" class="club-admin-clubs"></div>
             </section>
 
-            <section class="card admin-panel reveal-up" id="club-action-selector" style="display: none;">
+            <section class="card admin-panel reveal-up is-hidden" id="club-action-selector">
                 <div class="admin-panel-head">
                     <h2>管理功能</h2>
                     <span class="admin-panel-subtext" id="club-action-subtitle">請選擇要開啟的管理項目</span>
                 </div>
-                <div class="admin-form-wrapper" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <div class="admin-form-wrapper cad-actions-wrap">
                     <button type="button" class="btn btn-primary" onclick="showManagementPanel('club')">社團管理</button>
                     <button type="button" class="btn btn-primary" onclick="showManagementPanel('event')">建立活動</button>
                     <button type="button" class="btn btn-primary" onclick="showManagementPanel('transfer')">帳戶轉讓申請</button>
+                    <button type="button" class="btn btn-primary" onclick="showManagementPanel('events')">社團活動列表</button>
                 </div>
             </section>
 
-            <section class="card admin-panel reveal-up" id="transfer-request-section" style="display: none;">
+            <section class="card admin-panel reveal-up is-hidden" id="transfer-request-section">
                 <div class="admin-panel-head">
                     <h2>帳戶轉讓申請</h2>
                     <span class="admin-panel-subtext" id="transfer-request-subtitle">由社團幹部提出，送行政端審核</span>
@@ -88,12 +90,12 @@
                         </div>
                         <div class="form-field admin-span-2">
                             <label for="transfer-request-reason">轉讓原因 <span class="required">*</span></label>
-                            <textarea id="transfer-request-reason" required style="min-height: 100px;"></textarea>
+                            <textarea id="transfer-request-reason" class="cad-textarea-lg" required></textarea>
                             <div id="err-transfer-request-reason" class="field-error"></div>
                         </div>
                         <div class="form-field admin-span-2">
                             <label for="transfer-request-note">補充說明（選填）</label>
-                            <textarea id="transfer-request-note" style="min-height: 80px;" placeholder="例如：交接時間、附件位置、備註事項"></textarea>
+                            <textarea id="transfer-request-note" class="cad-textarea-md" placeholder="例如：交接時間、附件位置、備註事項"></textarea>
                         </div>
                         <div class="form-actions admin-span-2">
                             <button type="submit" class="btn btn-primary">送出轉讓申請</button>
@@ -103,7 +105,7 @@
                 <div id="my-transfer-requests" class="admin-list"></div>
             </section>
 
-            <section class="card admin-panel reveal-up" id="club-management-section" style="display: none;">
+            <section class="card admin-panel reveal-up is-hidden" id="club-management-section">
                 <div class="admin-panel-head">
                     <h2>社團管理</h2>
                     <span class="admin-panel-subtext" id="club-subtitle"></span>
@@ -126,8 +128,9 @@
                             <div id="err-update-club-email" class="field-error"></div>
                         </div>
                         <div class="form-field">
-                            <label for="update-club-location">地點 <span class="required">*</span></label>
-                            <input type="text" id="update-club-location" required>
+                            <label for="update-club-location">社課地點 <span class="required">*</span></label>
+                            <input type="text" id="update-club-location" required placeholder="例：第一教學大樓 3 樓 305 教室，或貼上 Google 地圖分享連結">
+                            <small class="cad-help-text">可輸入教室、樓層、建築名稱等文字地點；若填連結，僅接受 Google 地圖分享連結。</small>
                             <div id="err-update-club-location" class="field-error"></div>
                         </div>
                         <div class="form-field">
@@ -136,7 +139,45 @@
                         </div>
                         <div class="form-field">
                             <label for="update-club-meeting-time">社課時間 <span class="required">*</span></label>
-                            <input type="text" id="update-club-meeting-time" required placeholder="例如：每週三 19:00-21:00">
+                            <input type="hidden" id="update-club-meeting-time">
+                            <div class="cad-stack">
+                                <div>
+                                    <div class="cad-field-caption">上課日</div>
+                                    <select id="update-club-meeting-day">
+                                        <option value="每週一">每週一</option>
+                                        <option value="每週二">每週二</option>
+                                        <option value="每週三">每週三</option>
+                                        <option value="每週四">每週四</option>
+                                        <option value="每週五">每週五</option>
+                                        <option value="每週六">每週六</option>
+                                        <option value="每週日">每週日</option>
+                                    </select>
+                                </div>
+                                <div class="cad-time-range">
+                                    <div>
+                                        <div class="cad-field-caption">開始</div>
+                                        <div class="cad-time-split">
+                                            <select id="update-club-meeting-start-hour"></select>
+                                            <select id="update-club-meeting-start-minute">
+                                                <option value="00">00</option>
+                                                <option value="30">30</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <span class="cad-time-divider">~</span>
+                                    <div>
+                                        <div class="cad-field-caption">結束</div>
+                                        <div class="cad-time-split">
+                                            <select id="update-club-meeting-end-hour"></select>
+                                            <select id="update-club-meeting-end-minute">
+                                                <option value="00">00</option>
+                                                <option value="30">30</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點，例：每週三 19:00~21:30。</small>
                             <div id="err-update-club-meeting-time" class="field-error"></div>
                         </div>
                         <div class="form-field">
@@ -145,27 +186,27 @@
                         </div>
                         <div class="form-field admin-span-2">
                             <label for="update-club-description">介紹內文 <span class="required">*</span></label>
-                            <textarea id="update-club-description" required style="min-height: 120px;" onchange="detectTagsFromDescription()"></textarea>
+                            <textarea id="update-club-description" class="cad-textarea-xl" required onchange="detectTagsFromDescription()"></textarea>
                             <div id="err-update-club-description" class="field-error"></div>
                         </div>
                         <div class="form-field admin-span-2">
                             <label>標籤管理</label>
-                            <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px;">
-                                <div style="margin-bottom: 1rem;">
-                                    <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">📌 推薦標籤（自動偵測）</p>
-                                    <div id="suggested-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                            <div class="cad-panel-box">
+                                <div class="cad-block-gap">
+                                    <p class="cad-label-title">📌 推薦標籤（自動偵測）</p>
+                                    <div id="suggested-tags" class="cad-tag-list"></div>
                                 </div>
-                                <div style="margin-bottom: 1rem; border-top: 1px solid #ddd; padding-top: 1rem;">
-                                    <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">✅ 已選標籤</p>
-                                    <div id="selected-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                                <div class="cad-block-divider">
+                                    <p class="cad-label-title">✅ 已選標籤</p>
+                                    <div id="selected-tags" class="cad-tag-list"></div>
                                 </div>
-                                <div style="border-top: 1px solid #ddd; padding-top: 1rem;">
-                                    <label style="font-size: 0.9rem; color: #666;">新增或搜尋標籤</label>
-                                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                                        <input type="text" id="tag-search-input" placeholder="輸入標籤名稱..." style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                                <div class="cad-divider-top">
+                                    <label class="cad-label-muted">新增或搜尋標籤</label>
+                                    <div class="cad-search-row">
+                                        <input type="text" id="tag-search-input" class="cad-input-inline" placeholder="輸入標籤名稱...">
                                         <button type="button" onclick="searchOrCreateTag()" class="btn btn-primary btn-sm">搜尋/新增</button>
                                     </div>
-                                    <div id="tag-search-results" style="margin-top: 0.5rem; max-height: 200px; overflow-y: auto;"></div>
+                                    <div id="tag-search-results" class="cad-scroll-200"></div>
                                 </div>
                             </div>
                         </div>
@@ -173,7 +214,7 @@
                             <label for="club-logo-upload">Logo 圖片（選填）</label>
                             <input type="file" id="club-logo-upload" accept="image/*" onchange="previewClubLogo(event)">
                             <div id="club-logo-preview" class="image-preview-container">
-                                <img id="club-logo-img" src="" alt="Logo 預覽" style="display: none;">
+                                <img id="club-logo-img" src="" alt="Logo 預覽" class="cad-preview-image">
                             </div>
                         </div>
                         <div class="form-actions admin-span-2">
@@ -183,7 +224,7 @@
                 </div>
             </section>
 
-            <section class="card admin-panel reveal-up" id="create-event-section" style="display: none;">
+            <section class="card admin-panel reveal-up is-hidden" id="create-event-section">
                 <div class="admin-panel-head">
                     <h2>建立活動</h2>
                     <span class="admin-panel-subtext" id="create-event-hint">請先在「我的社團」選擇要管理的社團</span>
@@ -196,9 +237,35 @@
                             <input type="text" id="event-name" required>
                             <div id="err-event-name" class="field-error"></div>
                         </div>
-                        <div class="form-field">
-                            <label for="event-date">舉辦日期與時間 <span class="required">*</span></label>
-                            <input type="datetime-local" id="event-date" required>
+                        <div class="form-field admin-span-2">
+                            <label>活動時間區間 <span class="required">*</span></label>
+                            <div class="cad-date-time-grid">
+                                <div>
+                                    <div class="cad-time-caption">開始時間</div>
+                                    <input type="hidden" id="event-date">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="event-date-date" required>
+                                        <select id="event-date-hour"></select>
+                                        <select id="event-date-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="cad-time-caption">結束時間（目前作為報名截止）</div>
+                                    <input type="hidden" id="event-deadline">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="event-deadline-date">
+                                        <select id="event-deadline-hour"></select>
+                                        <select id="event-deadline-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點。</small>
                             <div id="err-event-date" class="field-error"></div>
                         </div>
                         <div class="form-field">
@@ -211,42 +278,38 @@
                             <input type="number" id="event-capacity" min="0">
                         </div>
                         <div class="form-field">
-                            <label for="event-deadline">報名截止</label>
-                            <input type="datetime-local" id="event-deadline">
-                        </div>
-                        <div class="form-field">
                             <label for="event-fee">費用</label>
                             <input type="number" id="event-fee" min="0">
                         </div>
                         <div class="form-field admin-span-2">
                             <label for="event-description">活動內容說明 <span class="required">*</span></label>
-                            <textarea id="event-description" required style="min-height: 120px;" oninput="detectEventTagsFromDescription()"></textarea>
+                            <textarea id="event-description" class="cad-textarea-xl" required oninput="detectEventTagsFromDescription()"></textarea>
                             <div id="err-event-description" class="field-error"></div>
                         </div>
                         <div class="form-field admin-span-2">
                             <label for="event-poster-upload">海報上傳</label>
                             <input type="file" id="event-poster-upload" accept="image/*" onchange="previewEventPoster(event)">
-                            <small style="color:#666;display:block;margin-top:0.35rem;">檔案限制：僅支援 JPG/PNG/GIF，大小上限 5MB。</small>
+                            <small class="cad-help-text">檔案限制：僅支援 JPG/PNG/GIF，大小上限 5MB。</small>
                             <div id="event-poster-preview" class="image-preview-container">
-                                <img id="event-poster-img" src="" alt="海報預覽" style="display: none;">
+                                <img id="event-poster-img" src="" alt="海報預覽" class="cad-preview-image">
                             </div>
                         </div>
                         <div class="form-field admin-span-2">
                             <label>活動標籤（選填）</label>
-                            <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px;">
-                                <div style="margin-bottom: 1rem;">
-                                    <label style="font-size: 0.9rem; color: #666;">📌 推薦標籤（自動偵測）</label>
-                                    <div id="create-event-suggested-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;"></div>
+                            <div class="cad-panel-box">
+                                <div class="cad-block-gap">
+                                    <label class="cad-label-muted">📌 推薦標籤（自動偵測）</label>
+                                    <div id="create-event-suggested-tags" class="cad-tag-list-with-top-gap"></div>
                                 </div>
-                                <div style="margin-bottom: 0.5rem;">
-                                    <label style="font-size: 0.9rem; color: #666;">已選標籤</label>
-                                    <div id="create-event-selected-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;"></div>
+                                <div class="cad-block-gap">
+                                    <label class="cad-label-muted">已選標籤</label>
+                                    <div id="create-event-selected-tags" class="cad-tag-list-with-top-gap"></div>
                                 </div>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <input type="text" id="create-event-tag-search" placeholder="搜尋或建立標籤..." style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                                <div class="cad-search-row">
+                                    <input type="text" id="create-event-tag-search" class="cad-input-inline" placeholder="搜尋或建立標籤...">
                                     <button type="button" onclick="searchEventTags('create')" class="btn btn-primary btn-sm">搜尋</button>
                                 </div>
-                                <div id="create-event-tag-results" style="margin-top: 0.5rem; max-height: 150px; overflow-y: auto;"></div>
+                                <div id="create-event-tag-results" class="cad-scroll-150"></div>
                             </div>
                         </div>
                         <div class="form-actions admin-span-2">
@@ -256,7 +319,7 @@
                 </div>
             </section>
 
-            <section class="card admin-panel reveal-up" id="event-management-section" style="display: none;">
+            <section class="card admin-panel reveal-up is-hidden" id="event-management-section">
                 <div class="admin-panel-head">
                     <h2>活動管理</h2>
                     <span class="admin-panel-subtext" id="event-manage-title"></span>
@@ -268,9 +331,35 @@
                             <label for="update-event-name">活動名稱 <span class="required">*</span></label>
                             <input type="text" id="update-event-name" required>
                         </div>
-                        <div class="form-field">
-                            <label for="update-event-date">日期 <span class="required">*</span></label>
-                            <input type="datetime-local" id="update-event-date" required>
+                        <div class="form-field admin-span-2">
+                            <label>活動時間區間 <span class="required">*</span></label>
+                            <div class="cad-date-time-grid">
+                                <div>
+                                    <div class="cad-time-caption">開始時間</div>
+                                    <input type="hidden" id="update-event-date">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="update-event-date-date" required>
+                                        <select id="update-event-date-hour"></select>
+                                        <select id="update-event-date-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="cad-time-caption">結束時間（目前作為報名截止）</div>
+                                    <input type="hidden" id="update-event-deadline">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="update-event-deadline-date">
+                                        <select id="update-event-deadline-hour"></select>
+                                        <select id="update-event-deadline-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點。</small>
                         </div>
                         <div class="form-field">
                             <label for="update-event-location">地點 <span class="required">*</span></label>
@@ -281,37 +370,33 @@
                             <input type="number" id="update-event-capacity" min="0">
                         </div>
                         <div class="form-field">
-                            <label for="update-event-deadline">報名截止</label>
-                            <input type="datetime-local" id="update-event-deadline">
-                        </div>
-                        <div class="form-field">
                             <label for="update-event-fee">費用</label>
                             <input type="number" id="update-event-fee" min="0">
                         </div>
                         <div class="form-field admin-span-2">
                             <label for="update-event-description">描述 <span class="required">*</span></label>
-                            <textarea id="update-event-description" required style="min-height: 120px;"></textarea>
+                            <textarea id="update-event-description" class="cad-textarea-xl" required></textarea>
                         </div>
                         <div class="form-field admin-span-2">
                             <label for="update-event-poster-upload">海報上傳</label>
                             <input type="file" id="update-event-poster-upload" accept="image/*" onchange="previewUpdateEventPoster(event)">
-                            <small style="color:#666;display:block;margin-top:0.35rem;">檔案限制：僅支援 JPG/PNG/GIF，大小上限 5MB。</small>
+                            <small class="cad-help-text">檔案限制：僅支援 JPG/PNG/GIF，大小上限 5MB。</small>
                             <div id="update-event-poster-preview" class="image-preview-container">
-                                <img id="update-event-poster-img" src="" alt="海報預覽" style="display: none;">
+                                <img id="update-event-poster-img" src="" alt="海報預覽" class="cad-preview-image">
                             </div>
                         </div>
                         <div class="form-field admin-span-2">
                             <label>活動標籤（選填）</label>
-                            <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px;">
-                                <div style="margin-bottom: 0.5rem;">
-                                    <label style="font-size: 0.9rem; color: #666;">已選標籤</label>
-                                    <div id="update-event-selected-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;"></div>
+                            <div class="cad-panel-box">
+                                <div class="cad-block-gap">
+                                    <label class="cad-label-muted">已選標籤</label>
+                                    <div id="update-event-selected-tags" class="cad-tag-list-with-top-gap"></div>
                                 </div>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <input type="text" id="update-event-tag-search" placeholder="搜尋或建立標籤..." style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                                <div class="cad-search-row">
+                                    <input type="text" id="update-event-tag-search" class="cad-input-inline" placeholder="搜尋或建立標籤...">
                                     <button type="button" onclick="searchEventTags('update')" class="btn btn-primary btn-sm">搜尋</button>
                                 </div>
-                                <div id="update-event-tag-results" style="margin-top: 0.5rem; max-height: 150px; overflow-y: auto;"></div>
+                                <div id="update-event-tag-results" class="cad-scroll-150"></div>
                             </div>
                         </div>
                         <div class="form-actions admin-span-2">
@@ -321,10 +406,10 @@
                 </div>
             </section>
 
-            <section class="card admin-panel reveal-up">
+            <section class="card admin-panel reveal-up is-hidden" id="club-events-section">
                 <div class="admin-panel-head">
                     <h2>社團活動列表</h2>
-                    <span class="admin-panel-subtext">管理所屬社團的活動</span>
+                    <span class="admin-panel-subtext" id="club-events-subtitle">管理所屬社團的活動</span>
                 </div>
                 <div id="club-events-container" class="admin-list"></div>
             </section>
@@ -332,1012 +417,6 @@
     </div>
 
     <script src="../js/main.js"></script>
-    <script>
-        let currentClubId = null;
-        let currentEventId = null;
-        let currentClubName = '';
-        let currentClubLastUpdated = null;
-        
-        // 標籤管理全局變量
-        let selectedTagIds = new Set();
-        let allTags = [];
-        let suggestedTagIds = new Set();
-        
-        // 活動標籤管理
-        let eventSelectedTagIds = new Set();
-        let createEventSelectedTagIds = new Set();
-
-        function setFieldError(inputId, message) {
-            const input = document.getElementById(inputId);
-            const err = document.getElementById(`err-${inputId}`);
-            if (!input || !err) return;
-            input.classList.toggle('input-error', !!message);
-            err.textContent = message || '';
-        }
-
-        function formatDateTime(value) {
-            if (!value) return '-';
-            if (window.PageUtils && typeof PageUtils.formatDate === 'function') return PageUtils.formatDate(value);
-            return new Intl.DateTimeFormat('zh-TW', {
-                year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-            }).format(new Date(value));
-        }
-
-        function hideManagementPanels() {
-            document.getElementById('club-management-section').style.display = 'none';
-            document.getElementById('create-event-section').style.display = 'none';
-            document.getElementById('transfer-request-section').style.display = 'none';
-        }
-
-        function showManagementPanel(panel) {
-            hideManagementPanels();
-            if (panel === 'club') {
-                document.getElementById('club-management-section').style.display = 'block';
-            } else if (panel === 'event') {
-                document.getElementById('create-event-section').style.display = 'block';
-            } else if (panel === 'transfer') {
-                document.getElementById('transfer-request-section').style.display = 'block';
-            }
-        }
-
-        function setDefaultCreateEventDate() {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(14, 0, 0, 0);
-            document.getElementById('event-date').value = tomorrow.toISOString().slice(0, 16);
-        }
-
-        function toDatetimeLocal(value) {
-            if (!value) return '';
-            return value.includes('T') ? value.slice(0, 16) : value.replace(' ', 'T').slice(0, 16);
-        }
-
-        // ========== 標籤管理函數 ==========
-        const TAG_KEYWORDS = {
-            date: ['每週', '週一', '週二', '週三', '週四', '週五', '週六', '週日', '星期', '平日', '假日', '本週', '下週', '日期'],
-            time: ['早上', '上午', '中午', '下午', '晚上', '凌晨', '時間', '時段', '點', ':'],
-            experience: ['新手', '初心者', '初學', '新人', '無經驗', '經驗', '高手', '進階', '基礎'],
-            fee: ['社費', '免費', '年費', '月費', '費用', '收費', '元', '塊錢', '不用錢', '無需', '需付費']
-        };
-
-        function getTagTypeKeywords(tagType) {
-            // 目前後端 tag_type 仍使用 time，這裡將日期與時間關鍵字合併比對。
-            if (tagType === 'time') {
-                return Array.from(new Set([...(TAG_KEYWORDS.date || []), ...(TAG_KEYWORDS.time || [])]));
-            }
-            return TAG_KEYWORDS[tagType] || [];
-        }
-
-        function detectTagsFromDescription() {
-            const description = document.getElementById('update-club-description').value.trim().toLowerCase();
-            suggestedTagIds.clear();
-            const suggestionContainer = document.getElementById('suggested-tags');
-            suggestionContainer.innerHTML = '';
-            
-            // 根據標籤類型和關鍵字進行匹配
-            allTags.forEach(tag => {
-                const tagTypeKeywords = getTagTypeKeywords(tag.tag_type);
-                const hasMatch = tagTypeKeywords.some(keyword => 
-                    description.includes(keyword.toLowerCase())
-                );
-                if (hasMatch) {
-                    suggestedTagIds.add(tag.tag_id);
-                }
-            });
-
-            // 渲染推薦標籤（但不自動選中）
-            suggestedTagIds.forEach(tagId => {
-                const tag = allTags.find(t => t.tag_id === tagId);
-                if (tag) {
-                    const badge = createTagBadge(tag, 'suggested');
-                    suggestionContainer.appendChild(badge);
-                }
-            });
-            
-            if (suggestedTagIds.size === 0) {
-                suggestionContainer.innerHTML = '<span style="color: #999; font-size: 0.9rem;">掃描後無推薦標籤</span>';
-            }
-        }
-
-        function createTagBadge(tag, mode = 'selected') {
-            const span = document.createElement('span');
-            span.style.cssText = `
-                padding: 0.3rem 0.8rem;
-                border-radius: 20px;
-                font-size: 0.85rem;
-                display: inline-flex;
-                align-items: center;
-                gap: 0.4rem;
-                cursor: pointer;
-                border: 1px solid #ddd;
-                background: white;
-                transition: all 0.2s;
-            `;
-            span.setAttribute('role', 'button');
-            span.tabIndex = 0;
-
-            const handleToggle = () => toggleTag(tag.tag_id, tag.tag_name);
-            span.addEventListener('click', handleToggle);
-            span.addEventListener('keydown', event => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    handleToggle();
-                }
-            });
-
-            if (mode === 'suggested') {
-                span.style.background = '#e7f5ff';
-                span.style.borderColor = '#74c0fc';
-                span.style.color = '#1971c2';
-                span.innerHTML = `
-                    <span>${tag.tag_name}</span>
-                    <span style="font-size: 1.1rem; color: #1971c2; pointer-events: none;">+</span>
-                `;
-            } else if (mode === 'selected') {
-                span.style.background = '#d3f9d8';
-                span.style.borderColor = '#51cf66';
-                span.style.color = '#2f8f2f';
-                span.innerHTML = `
-                    <span>${tag.tag_name}</span>
-                    <span style="font-size: 1.1rem; color: #2f8f2f; pointer-events: none;">✕</span>
-                `;
-            } else if (mode === 'search') {
-                span.style.background = '#fff3bf';
-                span.style.borderColor = '#ffd43b';
-                span.style.color = '#994d00';
-                span.innerHTML = `
-                    <span>${tag.tag_name}</span>
-                    <span style="font-size: 1.1rem; color: #994d00; pointer-events: none;">+</span>
-                `;
-            }
-            return span;
-        }
-
-        function toggleTag(tagId, tagName) {
-            if (selectedTagIds.has(tagId)) {
-                selectedTagIds.delete(tagId);
-            } else {
-                selectedTagIds.add(tagId);
-            }
-            renderSelectedTags();
-            clearTagSearch();
-        }
-
-        function renderSelectedTags() {
-            const container = document.getElementById('selected-tags');
-            container.innerHTML = '';
-            
-            if (selectedTagIds.size === 0) {
-                container.innerHTML = '<span style="color: #999; font-size: 0.9rem;">未選擇任何標籤</span>';
-                return;
-            }
-
-            selectedTagIds.forEach(tagId => {
-                const tag = allTags.find(t => t.tag_id === tagId);
-                if (tag) {
-                    const badge = createTagBadge(tag, 'selected');
-                    container.appendChild(badge);
-                }
-            });
-        }
-
-        function clearTagSearch() {
-            document.getElementById('tag-search-input').value = '';
-            document.getElementById('tag-search-results').innerHTML = '';
-        }
-
-        async function loadAllTags() {
-            try {
-                const response = await APIClient.get('clubs.php?action=get_all_tags');
-                if (response.success) {
-                    allTags = response.data || [];
-                } else {
-                    console.error('載入標籤失敗:', response.message);
-                }
-            } catch (error) {
-                console.error('載入標籤時發生錯誤:', error);
-            }
-        }
-
-        async function searchOrCreateTag() {
-            const input = document.getElementById('tag-search-input').value.trim();
-            if (!input) {
-                PageUtils.showAlert('請輸入標籤名稱', 'error');
-                return;
-            }
-
-            const resultsContainer = document.getElementById('tag-search-results');
-            resultsContainer.innerHTML = '<div class="loading"><p>搜尋中...</p></div>';
-
-            try {
-                // 先從現有標籤中搜尋
-                const matchingTags = allTags.filter(t => 
-                    t.tag_name.toLowerCase().includes(input.toLowerCase())
-                );
-
-                resultsContainer.innerHTML = '';
-
-                if (matchingTags.length > 0) {
-                    matchingTags.forEach(tag => {
-                        const badge = createTagBadge(tag, 'search');
-                        resultsContainer.appendChild(badge);
-                    });
-                } else {
-                    // 沒有找到，提示建立新標籤
-                    const createBtn = document.createElement('button');
-                    createBtn.type = 'button';
-                    createBtn.textContent = `✚ 建立新標籤「${input}」`;
-                    createBtn.className = 'btn btn-primary btn-sm';
-                    createBtn.style.marginTop = '0.5rem';
-                    createBtn.onclick = async () => {
-                        await createNewTag(input);
-                    };
-                    resultsContainer.appendChild(createBtn);
-                }
-            } catch (error) {
-                console.error('搜尋標籤失敗:', error);
-                PageUtils.showAlert('搜尋標籤失敗', 'error');
-            }
-        }
-
-        async function createNewTag(tagName) {
-            try {
-                const response = await APIClient.post('clubs.php?action=create_tag', {
-                    tag_name: tagName,
-                    tag_type: 'other',
-                    description: ''
-                });
-
-                if (response.success) {
-                    const newTag = response.data;
-                    allTags.push(newTag);
-                    toggleTag(newTag.tag_id, newTag.tag_name);
-                    PageUtils.showAlert('標籤已建立並選中', 'success');
-                } else {
-                    PageUtils.showAlert('建立標籤失敗：' + response.message, 'error');
-                }
-            } catch (error) {
-                console.error('建立標籤失敗:', error);
-                PageUtils.showAlert('建立標籤失敗', 'error');
-            }
-        }
-
-        async function saveClubTags(clubId) {
-            try {
-                const response = await APIClient.post('clubs.php?action=update_tags', {
-                    club_id: clubId,
-                    tag_ids: Array.from(selectedTagIds)
-                });
-
-                if (!response.success) {
-                    console.error('保存標籤失敗:', response.message);
-                }
-            } catch (error) {
-                console.error('保存標籤時發生錯誤:', error);
-            }
-        }
-
-        // ========== 活動標籤管理函數 ==========
-        function toggleEventTag(tagId, tagName, mode = 'create') {
-            const selectedSet = mode === 'create' ? createEventSelectedTagIds : eventSelectedTagIds;
-            
-            if (selectedSet.has(tagId)) {
-                selectedSet.delete(tagId);
-            } else {
-                selectedSet.add(tagId);
-            }
-            
-            renderEventSelectedTags(mode);
-            if (mode === 'create') {
-                document.getElementById('create-event-tag-search').value = '';
-                document.getElementById('create-event-tag-results').innerHTML = '';
-                detectEventTagsFromDescription();
-            } else {
-                document.getElementById('update-event-tag-search').value = '';
-                document.getElementById('update-event-tag-results').innerHTML = '';
-            }
-        }
-
-        function createEventTagBadge(tag, mode = 'selected', formMode = 'create') {
-            const span = document.createElement('span');
-            span.style.cssText = `
-                padding: 0.3rem 0.8rem;
-                border-radius: 20px;
-                font-size: 0.85rem;
-                display: inline-flex;
-                align-items: center;
-                gap: 0.4rem;
-                cursor: pointer;
-                border: 1px solid #ddd;
-                background: white;
-                transition: all 0.2s;
-            `;
-            span.setAttribute('role', 'button');
-            span.tabIndex = 0;
-
-            const handleToggle = () => toggleEventTag(tag.tag_id, tag.tag_name, formMode);
-            span.addEventListener('click', handleToggle);
-            span.addEventListener('keydown', event => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    handleToggle();
-                }
-            });
-
-            if (mode === 'selected') {
-                span.style.background = '#d3f9d8';
-                span.style.borderColor = '#51cf66';
-                span.style.color = '#2f8f2f';
-                span.innerHTML = `<span>${tag.tag_name}</span><span style="font-size: 1.1rem; color: #2f8f2f; pointer-events: none;">✕</span>`;
-            } else if (mode === 'suggested') {
-                span.style.background = '#e7f5ff';
-                span.style.borderColor = '#74c0fc';
-                span.style.color = '#1971c2';
-                span.innerHTML = `<span>${tag.tag_name}</span><span style="font-size: 1.1rem; color: #1971c2; pointer-events: none;">+</span>`;
-            } else if (mode === 'search') {
-                span.style.background = '#fff3bf';
-                span.style.borderColor = '#ffd43b';
-                span.style.color = '#994d00';
-                span.innerHTML = `<span>${tag.tag_name}</span><span style="font-size: 1.1rem; color: #994d00; pointer-events: none;">+</span>`;
-            }
-            return span;
-        }
-
-        function detectEventTagsFromDescription() {
-            const textarea = document.getElementById('event-description');
-            const container = document.getElementById('create-event-suggested-tags');
-            if (!textarea || !container) return;
-
-            const description = textarea.value.trim().toLowerCase();
-            container.innerHTML = '';
-
-            if (!description) {
-                container.innerHTML = '<span style="color: #999; font-size: 0.9rem;">輸入活動內容後會自動推薦</span>';
-                return;
-            }
-
-            const suggestions = [];
-            allTags.forEach(tag => {
-                const tagTypeKeywords = getTagTypeKeywords(tag.tag_type);
-                const hasMatch = tagTypeKeywords.some(keyword => description.includes(keyword.toLowerCase()));
-                if (hasMatch && !createEventSelectedTagIds.has(tag.tag_id)) {
-                    suggestions.push(tag);
-                }
-            });
-
-            if (suggestions.length === 0) {
-                container.innerHTML = '<span style="color: #999; font-size: 0.9rem;">掃描後無推薦標籤</span>';
-                return;
-            }
-
-            suggestions.forEach(tag => {
-                const badge = createEventTagBadge(tag, 'suggested', 'create');
-                container.appendChild(badge);
-            });
-        }
-
-        function renderEventSelectedTags(mode = 'create') {
-            const selectedSet = mode === 'create' ? createEventSelectedTagIds : eventSelectedTagIds;
-            const container = document.getElementById(`${mode}-event-selected-tags`);
-            container.innerHTML = '';
-            
-            if (selectedSet.size === 0) {
-                container.innerHTML = '<span style="color: #999; font-size: 0.9rem;">未選擇任何標籤</span>';
-                return;
-            }
-
-            selectedSet.forEach(tagId => {
-                const tag = allTags.find(t => t.tag_id === tagId);
-                if (tag) {
-                    const badge = createEventTagBadge(tag, 'selected', mode);
-                    container.appendChild(badge);
-                }
-            });
-        }
-
-        async function searchEventTags(mode = 'create') {
-            const input = document.getElementById(`${mode}-event-tag-search`).value.trim();
-            if (!input) {
-                PageUtils.showAlert('請輸入標籤名稱', 'error');
-                return;
-            }
-
-            const resultsContainer = document.getElementById(`${mode}-event-tag-results`);
-            resultsContainer.innerHTML = '<div class="loading"><p>搜尋中...</p></div>';
-
-            try {
-                const matchingTags = allTags.filter(t => 
-                    t.tag_name.toLowerCase().includes(input.toLowerCase())
-                );
-
-                resultsContainer.innerHTML = '';
-
-                if (matchingTags.length > 0) {
-                    matchingTags.forEach(tag => {
-                        const badge = createEventTagBadge(tag, 'search', mode);
-                        resultsContainer.appendChild(badge);
-                    });
-                } else {
-                    const createBtn = document.createElement('button');
-                    createBtn.type = 'button';
-                    createBtn.textContent = `✚ 建立新標籤「${input}」`;
-                    createBtn.className = 'btn btn-primary btn-sm';
-                    createBtn.style.marginTop = '0.5rem';
-                    createBtn.onclick = async () => {
-                        await createNewEventTag(input, mode);
-                    };
-                    resultsContainer.appendChild(createBtn);
-                }
-            } catch (error) {
-                console.error('搜尋標籤失敗:', error);
-                PageUtils.showAlert('搜尋標籤失敗', 'error');
-            }
-        }
-
-        async function createNewEventTag(tagName, mode) {
-            try {
-                const response = await APIClient.post('clubs.php?action=create_tag', {
-                    tag_name: tagName,
-                    tag_type: 'other',
-                    description: ''
-                });
-
-                if (response.success) {
-                    const newTag = response.data;
-                    allTags.push(newTag);
-                    toggleEventTag(newTag.tag_id, newTag.tag_name, mode);
-                    PageUtils.showAlert('標籤已建立並選中', 'success');
-                } else {
-                    PageUtils.showAlert('建立標籤失敗：' + response.message, 'error');
-                }
-            } catch (error) {
-                console.error('建立標籤失敗:', error);
-                PageUtils.showAlert('建立標籤失敗', 'error');
-            }
-        }
-
-        function validateClubForm() {
-            let ok = true;
-            ['update-club-name', 'update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'].forEach(id => {
-                const value = document.getElementById(id).value.trim();
-                if (!value) {
-                    setFieldError(id, '此為必填欄位');
-                    ok = false;
-                } else {
-                    setFieldError(id, '');
-                }
-            });
-            return ok;
-        }
-
-        function validateEventForm(prefix = '') {
-            let ok = true;
-            const required = [`${prefix}event-name`, `${prefix}event-description`, `${prefix}event-date`, `${prefix}event-location`];
-            required.forEach(id => {
-                const value = document.getElementById(id).value.trim();
-                if (!value) {
-                    setFieldError(id, '此為必填欄位');
-                    ok = false;
-                } else {
-                    setFieldError(id, '');
-                }
-            });
-            return ok;
-        }
-
-        function refreshClubPreview() {
-            const name = document.getElementById('update-club-name').value.trim() || '未填寫';
-            const desc = document.getElementById('update-club-description').value.trim() || '未填寫';
-            const time = document.getElementById('update-club-meeting-time').value.trim() || '未填寫';
-            const loc = document.getElementById('update-club-location').value.trim() || '未填寫';
-            const mail = document.getElementById('update-club-email').value.trim() || '未填寫';
-            document.getElementById('club-preview-text').textContent = `社團：${name}｜社課時間：${time}｜地點：${loc}｜信箱：${mail}｜介紹：${desc.slice(0, 40)}${desc.length > 40 ? '...' : ''}`;
-        }
-
-        function translateStatus(status) {
-            const statusMap = {
-                'active': '進行中',
-                'published': '已發布',
-                'ongoing': '進行中',
-                'draft': '草稿',
-                'completed': '已結束',
-                'archived': '已歸檔',
-                'inactive': '停止中'
-            };
-            return statusMap[status] || status || '-';
-        }
-
-        function renderEmptyState(container, title, description) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-illustration"></div>
-                    <h4>${title}</h4>
-                    <p>${description}</p>
-                </div>
-            `;
-        }
-
-        function transferStatusLabel(status) {
-            const map = {
-                pending: '待審核',
-                approved: '已核准',
-                rejected: '已退回',
-                cancelled: '已取消'
-            };
-            return map[status] || status || '-';
-        }
-
-        async function loadMyTransferRequests() {
-            const response = await APIClient.get('club-admin.php?action=my_transfer_requests');
-            if (!response.success) return console.error(response.message);
-            const container = document.getElementById('my-transfer-requests');
-            if (!container) return;
-            container.innerHTML = '';
-            const rows = response.data.requests || [];
-            if (rows.length === 0) {
-                renderEmptyState(container, '尚未送出轉讓申請', '送出後，行政端審核進度會顯示在這裡。');
-                return;
-            }
-            rows.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'admin-item-card';
-                card.innerHTML = `
-                    <div class="admin-item-head">
-                        <h4>${item.club_name || '-'}（${item.club_code || '-'}）</h4>
-                        <span class="status-chip">${transferStatusLabel(item.request_status)}</span>
-                    </div>
-                    <p class="admin-item-content">目標對象：${item.target_user_name || '-'}（ID:${item.target_user_id} / 學號:${item.target_student_id || '-' }）</p>
-                    <p class="admin-item-content">原因：${item.reason || '-'}</p>
-                    ${item.review_note ? `<p class="admin-item-content">審核意見：${item.review_note}</p>` : ''}
-                    <div class="admin-item-footer">
-                        <span class="admin-item-time">送出時間：${formatDateTime(item.requested_at)}</span>
-                        <span class="admin-item-time">審核時間：${formatDateTime(item.reviewed_at)}</span>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        async function loadMyClubs() {
-            const response = await APIClient.get('club-admin.php?action=my_clubs');
-            if (!response.success) return console.error(response.message);
-            const container = document.getElementById('my-clubs-container');
-            container.innerHTML = '';
-            (response.data.clubs || []).forEach(club => {
-                const card = document.createElement('div');
-                card.className = 'admin-item-card';
-                card.innerHTML = `
-                    <div class="admin-item-head">
-                        <div>
-                            <h4>${club.club_name || '-'}</h4>
-                            <span class="status-chip">${translateStatus(club.activity_status)}</span>
-                        </div>
-                        <button class="btn btn-primary btn-sm" onclick="loadClubDetails(${club.club_id})">管理社團</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-            if (container.children.length === 0) {
-                renderEmptyState(container, '目前沒有可管理的社團', '如果你預期應該看到社團，請先確認帳號權限是否正確。');
-            }
-        }
-
-        async function loadClubDetails(clubId) {
-            currentClubId = clubId;
-            const response = await APIClient.get('clubs.php?action=detail&id=' + clubId);
-            if (!response.success) return console.error(response.message);
-
-            const club = response.data;
-            currentClubName = club.club_name || '';
-            currentClubLastUpdated = club.last_updated || null;
-            document.getElementById('club-action-selector').style.display = 'block';
-            document.getElementById('club-action-subtitle').textContent = `目前管理社團：${club.club_name || ''}`;
-            hideManagementPanels();
-            document.getElementById('club-subtitle').textContent = club.club_name || '';
-            document.getElementById('update-club-id').value = club.club_id;
-            document.getElementById('event-club-id').value = club.club_id;
-            document.getElementById('update-club-name').value = club.club_name || '';
-            document.getElementById('update-club-description').value = club.description || '';
-            document.getElementById('update-club-meeting-time').value = club.meeting_time || '';
-            document.getElementById('update-club-location').value = club.meeting_location || '';
-            document.getElementById('update-club-email').value = club.contact_email || '';
-            document.getElementById('update-club-phone').value = club.contact_phone || '';
-            document.getElementById('update-club-fee').value = club.club_fee || '';
-            document.getElementById('create-event-submit').disabled = false;
-            document.getElementById('create-event-hint').textContent = `目前建立活動目標社團：${club.club_name || ''}`;
-            document.getElementById('transfer-request-subtitle').textContent = `目前申請社團：${club.club_name || ''}（${club.club_code || '-'}）`;
-            setDefaultCreateEventDate();
-            refreshClubPreview();
-
-            const logoImg = document.getElementById('club-logo-img');
-            if (club.logo_path) {
-                logoImg.src = club.logo_path.startsWith('http') ? club.logo_path : '../' + club.logo_path.replace(/^\.\//, '');
-                logoImg.style.display = 'block';
-            } else {
-                logoImg.style.display = 'none';
-            }
-
-            // 加載標籤
-            selectedTagIds.clear();
-            if (club.tags && club.tags.length > 0) {
-                club.tags.forEach(tag => selectedTagIds.add(tag.tag_id));
-            }
-            renderSelectedTags();
-            detectTagsFromDescription();
-
-            loadClubEvents(clubId);
-        }
-
-        async function loadClubEvents(clubId) {
-            const response = await APIClient.get('club-admin.php?action=club_events&id=' + clubId);
-            if (!response.success) return console.error(response.message);
-            const container = document.getElementById('club-events-container');
-            container.innerHTML = '';
-            const events = response.data.events || [];
-            if (events.length === 0) {
-                renderEmptyState(container, '目前沒有活動', '建立第一場活動後，這裡就會顯示列表。');
-                return;
-            }
-            events.forEach(event => {
-                const card = document.createElement('div');
-                card.className = 'admin-item-card';
-                card.innerHTML = `
-                    <div class="admin-item-head">
-                        <div>
-                            <h4>${event.event_name || '未命名活動'}</h4>
-                            <div class="admin-item-badges">
-                                <span class="status-chip">${translateStatus(event.event_status)}</span>
-                            </div>
-                        </div>
-                        <button class="btn btn-secondary btn-sm" onclick="editEvent(${event.event_id})">編輯</button>
-                    </div>
-                    <p class="admin-item-content">${formatDateTime(event.event_date)}${event.location ? '｜' + event.location : ''}</p>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        async function editEvent(eventId) {
-            currentEventId = eventId;
-            const response = await APIClient.get('events.php?action=detail&id=' + eventId);
-            if (!response.success) return console.error(response.message);
-
-            const event = response.data;
-            document.getElementById('event-management-section').style.display = 'block';
-            document.getElementById('event-manage-title').textContent = event.event_name || '';
-            document.getElementById('update-event-id').value = event.event_id;
-            document.getElementById('update-event-name').value = event.event_name || '';
-            document.getElementById('update-event-description').value = event.description || '';
-            document.getElementById('update-event-date').value = toDatetimeLocal(event.event_date);
-            document.getElementById('update-event-location').value = event.location || '';
-            document.getElementById('update-event-capacity').value = event.capacity || '';
-            document.getElementById('update-event-fee').value = event.fee || '';
-            document.getElementById('update-event-deadline').value = toDatetimeLocal(event.registration_deadline);
-
-            // 加載標籤
-            eventSelectedTagIds.clear();
-            if (event.tags && event.tags.length > 0) {
-                event.tags.forEach(tag => eventSelectedTagIds.add(tag.tag_id));
-            }
-            renderEventSelectedTags('update');
-
-            const posterImg = document.getElementById('update-event-poster-img');
-            if (event.poster_path) {
-                posterImg.src = event.poster_path.startsWith('http') ? event.poster_path : '../' + event.poster_path.replace(/^\.\//, '');
-                posterImg.style.display = 'block';
-            } else {
-                posterImg.style.display = 'none';
-            }
-        }
-
-        function previewClubLogo(event) {
-            const file = event.target.files[0];
-            const img = document.getElementById('club-logo-img');
-            if (!file) {
-                img.style.display = 'none';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = e => {
-                img.src = e.target.result;
-                img.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function previewEventPoster(event) {
-            const file = event.target.files[0];
-            const img = document.getElementById('event-poster-img');
-            if (!file) {
-                img.style.display = 'none';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = e => {
-                img.src = e.target.result;
-                img.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function previewUpdateEventPoster(event) {
-            const file = event.target.files[0];
-            const img = document.getElementById('update-event-poster-img');
-            if (!file) {
-                img.style.display = 'none';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = e => {
-                img.src = e.target.result;
-                img.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        document.getElementById('update-club-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            if (!validateClubForm()) return;
-
-            const submitButton = event.currentTarget.querySelector('button[type="submit"]');
-            if (submitButton) submitButton.disabled = true;
-
-            try {
-                if (!currentClubId) {
-                    PageUtils.showAlert('請先選擇要管理的社團', 'error');
-                    return;
-                }
-
-                const formData = new FormData();
-                formData.append('club_name', document.getElementById('update-club-name').value);
-                formData.append('description', document.getElementById('update-club-description').value);
-                formData.append('meeting_time', document.getElementById('update-club-meeting-time').value);
-                formData.append('meeting_location', document.getElementById('update-club-location').value);
-                formData.append('contact_email', document.getElementById('update-club-email').value);
-                formData.append('contact_phone', document.getElementById('update-club-phone').value);
-                formData.append('club_fee', document.getElementById('update-club-fee').value);
-                formData.append('last_updated', currentClubLastUpdated || '');
-
-                const logoFile = document.getElementById('club-logo-upload').files[0];
-                if (logoFile) {
-                    const uploadFormData = new FormData();
-                    uploadFormData.append('logo', logoFile);
-                    uploadFormData.append('club_id', currentClubId);
-
-                    const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_club_logo', {
-                        method: 'POST',
-                        body: uploadFormData,
-                        credentials: 'same-origin',
-                        headers: APIClient.getAuthHeaders()
-                    });
-
-                    const uploadRawText = await uploadResponse.text();
-                    let uploadResult = null;
-                    try {
-                        uploadResult = JSON.parse(uploadRawText);
-                    } catch (parseError) {
-                        throw new Error(`Logo 上傳回應格式錯誤（HTTP ${uploadResponse.status}）：${uploadRawText.slice(0, 300)}`);
-                    }
-
-                    if (!uploadResponse.ok || !uploadResult.success) {
-                        throw new Error(uploadResult.message || 'Logo 上傳失敗');
-                    }
-
-                    formData.append('logo_path', uploadResult.path);
-                }
-
-                const response = await APIClient.put('clubs.php?action=update&id=' + currentClubId, Object.fromEntries(formData));
-                if (response.success) {
-                    PageUtils.showAlert('社團更新成功', 'success');
-                    // 保存標籤
-                    await saveClubTags(currentClubId);
-                    loadClubDetails(currentClubId);
-                } else {
-                    PageUtils.showAlert('更新社團失敗：' + (response.message || '未知錯誤'), 'error');
-                }
-            } catch (error) {
-                console.error('更新社團失敗:', error);
-                PageUtils.showAlert('更新社團失敗：' + error.message, 'error');
-            } finally {
-                if (submitButton) submitButton.disabled = false;
-            }
-        });
-
-        document.getElementById('create-event-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            
-            if (!currentClubId) {
-                PageUtils.showAlert('請先從「我的社團」選擇要管理的社團', 'error');
-                return;
-            }
-            
-            if (!validateEventForm()) {
-                return;
-            }
-            
-            if (!confirm(`即將以「${currentClubName}」幹部身份發布活動，是否確認？`)) {
-                return;
-            }
-
-            try {
-                const formData = new FormData();
-                formData.append('club_id', currentClubId);
-                formData.append('event_name', document.getElementById('event-name').value);
-                formData.append('description', document.getElementById('event-description').value);
-                formData.append('event_date', document.getElementById('event-date').value);
-                formData.append('location', document.getElementById('event-location').value);
-                formData.append('capacity', document.getElementById('event-capacity').value);
-                formData.append('fee', document.getElementById('event-fee').value);
-                formData.append('registration_deadline', document.getElementById('event-deadline').value);
-                formData.append('event_status', 'published');
-                formData.append('is_registration_open', '1');
-                const response = await APIClient.post('events.php?action=create', Object.fromEntries(formData));
-                
-                if (response.success) {
-                    const createdEventId = response?.data?.event_id;
-
-                    const posterFile = document.getElementById('event-poster-upload').files[0];
-                    if (posterFile && createdEventId) {
-                        const uploadFormData = new FormData();
-                        uploadFormData.append('poster', posterFile);
-                        uploadFormData.append('event_id', String(createdEventId));
-                        const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_event_poster', {
-                            method: 'POST',
-                            body: uploadFormData,
-                            credentials: 'same-origin',
-                            headers: APIClient.getAuthHeaders()
-                        });
-
-                        const uploadRawText = await uploadResponse.text();
-                        let uploadResult = null;
-                        try {
-                            uploadResult = JSON.parse(uploadRawText);
-                        } catch (parseError) {
-                            throw new Error(`活動海報上傳回應格式錯誤（HTTP ${uploadResponse.status}）：${uploadRawText.slice(0, 300)}`);
-                        }
-
-                        if (!uploadResponse.ok || !uploadResult.success) {
-                            throw new Error(uploadResult.message || '活動海報上傳失敗');
-                        }
-                    }
-
-                    // 保存活動標籤
-                    if (createEventSelectedTagIds.size > 0 && createdEventId) {
-                        try {
-                            await APIClient.post('events.php?action=update_event_tags', {
-                                event_id: createdEventId,
-                                tag_ids: Array.from(createEventSelectedTagIds)
-                            });
-                        } catch (error) {
-                            console.error('保存活動標籤失敗:', error);
-                        }
-                    }
-                    
-                    PageUtils.showAlert('活動建立成功', 'success');
-                    loadClubEvents(currentClubId);
-                    event.target.reset();
-                    document.getElementById('event-poster-img').style.display = 'none';
-                    createEventSelectedTagIds.clear();
-                    renderEventSelectedTags('create');
-                    setDefaultCreateEventDate();
-                    detectEventTagsFromDescription();
-                } else {
-                    PageUtils.showAlert('建立活動失敗：' + response.message, 'error');
-                }
-            } catch (error) {
-                console.error('建立活動出現異常:', error);
-                PageUtils.showAlert('建立活動錯誤：' + error.message, 'error');
-            }
-        });
-
-        document.getElementById('update-event-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            if (!validateEventForm('update-')) return;
-
-            const formData = new FormData();
-            formData.append('event_name', document.getElementById('update-event-name').value);
-            formData.append('description', document.getElementById('update-event-description').value);
-            formData.append('event_date', document.getElementById('update-event-date').value);
-            formData.append('location', document.getElementById('update-event-location').value);
-            formData.append('capacity', document.getElementById('update-event-capacity').value);
-            formData.append('fee', document.getElementById('update-event-fee').value);
-            formData.append('registration_deadline', document.getElementById('update-event-deadline').value);
-
-            const posterFile = document.getElementById('update-event-poster-upload').files[0];
-            if (posterFile) {
-                const uploadFormData = new FormData();
-                uploadFormData.append('poster', posterFile);
-                uploadFormData.append('event_id', currentEventId);
-                const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_event_poster', {
-                    method: 'POST',
-                    body: uploadFormData,
-                    credentials: 'same-origin',
-                    headers: APIClient.getAuthHeaders()
-                });
-
-                const uploadRawText = await uploadResponse.text();
-                let uploadResult = null;
-                try {
-                    uploadResult = JSON.parse(uploadRawText);
-                } catch (parseError) {
-                    throw new Error(`活動海報上傳回應格式錯誤（HTTP ${uploadResponse.status}）：${uploadRawText.slice(0, 300)}`);
-                }
-
-                if (!uploadResponse.ok || !uploadResult.success) {
-                    throw new Error(uploadResult.message || '活動海報上傳失敗');
-                }
-
-                formData.append('poster_path', uploadResult.path);
-            }
-
-            const response = await APIClient.put('events.php?action=update&id=' + currentEventId, Object.fromEntries(formData));
-            if (response.success) {
-                // 保存活動標籤
-                if (eventSelectedTagIds.size > 0 || eventSelectedTagIds.size === 0) {
-                    try {
-                        await APIClient.post('events.php?action=update_event_tags', {
-                            event_id: currentEventId,
-                            tag_ids: Array.from(eventSelectedTagIds)
-                        });
-                    } catch (error) {
-                        console.error('保存活動標籤失敗:', error);
-                    }
-                }
-                
-                PageUtils.showAlert('活動更新成功', 'success');
-                loadClubEvents(currentClubId);
-                document.getElementById('event-management-section').style.display = 'none';
-                eventSelectedTagIds.clear();
-                renderEventSelectedTags('update');
-            } else {
-                PageUtils.showAlert('更新活動失敗：' + response.message, 'error');
-            }
-        });
-
-        document.getElementById('transfer-request-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            if (!currentClubId) {
-                PageUtils.showAlert('請先選擇要管理的社團', 'error');
-                return;
-            }
-
-            const targetUserId = document.getElementById('transfer-target-user-id').value.trim();
-            const reason = document.getElementById('transfer-request-reason').value.trim();
-            const studentId = document.getElementById('transfer-target-student-id').value.trim();
-            const note = document.getElementById('transfer-request-note').value.trim();
-
-            setFieldError('transfer-target-user-id', targetUserId ? '' : '此為必填欄位');
-            setFieldError('transfer-request-reason', reason ? '' : '此為必填欄位');
-            if (!targetUserId || !reason) return;
-
-            const payload = {
-                club_id: currentClubId,
-                target_user_id: Number(targetUserId),
-                reason,
-                handover_note: [studentId ? `目標學號：${studentId}` : '', note].filter(Boolean).join('｜')
-            };
-
-            const response = await APIClient.post('club-admin.php?action=submit_transfer_request', payload);
-            if (response.success) {
-                PageUtils.showAlert('轉讓申請已送出，請等待行政端審核', 'success');
-                event.target.reset();
-                loadMyTransferRequests();
-            } else {
-                PageUtils.showAlert('送出申請失敗：' + response.message, 'error');
-            }
-        });
-
-        ['update-club-name', 'update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('input', refreshClubPreview);
-        });
-
-        loadAllTags().then(() => {
-            renderEventSelectedTags('create');
-            detectEventTagsFromDescription();
-        });
-        loadMyClubs();
-        loadMyTransferRequests();
-    </script>
+    <script src="../js/club-admin-dashboard.js"></script>
 </body>
 </html>

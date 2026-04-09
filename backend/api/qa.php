@@ -7,6 +7,53 @@ require_once '../auth.php';
 require_once '../content_filter.php';
 
 class QandAAPI {
+    private static $replyParentColumnExists = null;
+
+    private static function validateReplyParent($qa_id, $parent_reply_id) {
+        if (!$parent_reply_id || !self::hasReplyParentColumn()) {
+            return;
+        }
+
+        $parentReply = Database::getInstance()->fetchOne(
+            'SELECT reply_id, qa_id FROM qa_replies WHERE reply_id = ?',
+            [$parent_reply_id]
+        );
+
+        if (!$parentReply) {
+            Helper::error('父回覆不存在', 404);
+        }
+
+        if ((int)$parentReply['qa_id'] !== (int)$qa_id) {
+            Helper::error('父回覆不屬於此提問', 400);
+        }
+    }
+
+    private static function createReplyRecord($qa_id, $data) {
+        $parent_reply_id = isset($data['parent_reply_id']) && $data['parent_reply_id'] !== ''
+            ? (int)$data['parent_reply_id']
+            : null;
+
+        self::validateReplyParent($qa_id, $parent_reply_id);
+
+        $replyData = [
+            'qa_id' => (int)$qa_id,
+            'user_id' => Auth::getCurrentUserId(),
+            'reply_content' => $data['content'],
+            'is_official_answer' => $data['is_official'] ?? false
+        ];
+
+        if (self::hasReplyParentColumn() && $parent_reply_id) {
+            $replyData['parent_reply_id'] = $parent_reply_id;
+        }
+
+        $reply_id = dbInsert('qa_replies', $replyData);
+        if (!$reply_id) {
+            Helper::error('回覆失敗', 500);
+        }
+
+        return $reply_id;
+    }
+
     private static function toLower($text) {
         $value = (string)$text;
         if (function_exists('mb_strtolower')) {
@@ -100,6 +147,20 @@ class QandAAPI {
 
     private static function containsRestrictedLanguage($text) {
         return ContentFilter::containsRestrictedLanguage($text);
+    }
+
+    private static function hasReplyParentColumn() {
+        if (self::$replyParentColumnExists !== null) {
+            return self::$replyParentColumnExists;
+        }
+
+        $row = Database::getInstance()->fetchOne(
+            'SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+            [DB_NAME, 'qa_replies', 'parent_reply_id']
+        );
+
+        self::$replyParentColumnExists = !empty($row) && (int)($row['cnt'] ?? 0) > 0;
+        return self::$replyParentColumnExists;
     }
 
     private static function getUrgencyLabel($urgency) {
@@ -400,16 +461,7 @@ class QandAAPI {
                 Helper::error('回覆內容包含不適當字眼，請修改後再送出', 400);
             }
             
-            $reply_id = dbInsert('qa_replies', [
-                'qa_id' => $qa_id,
-                'user_id' => Auth::getCurrentUserId(),
-                'reply_content' => $data['content'],
-                'is_official_answer' => $data['is_official'] ?? false
-            ]);
-            
-            if (!$reply_id) {
-                Helper::error('回覆失敗', 500);
-            }
+            $reply_id = self::createReplyRecord($qa_id, $data);
             
             Helper::success('回覆成功', ['reply_id' => $reply_id]);
             
@@ -429,19 +481,26 @@ class QandAAPI {
         }
 
         try {
+            $replyColumns = [
+                'qr.reply_id',
+                'qr.qa_id',
+                'qr.user_id',
+                'qr.reply_content AS content',
+                'qr.is_official_answer AS is_official',
+                'qr.is_anonymous',
+                'qr.display_name',
+                'qr.created_at',
+                'qr.updated_at',
+                'u.name as user_name',
+                'u.avatar_path AS user_avatar_path'
+            ];
+
+            if (self::hasReplyParentColumn()) {
+                $replyColumns[] = 'qr.parent_reply_id';
+            }
+
             $replies = Database::getInstance()->fetchAll(
-                'SELECT
-                    qr.reply_id,
-                    qr.qa_id,
-                    qr.user_id,
-                    qr.reply_content AS content,
-                    qr.is_official_answer AS is_official,
-                    qr.is_anonymous,
-                    qr.display_name,
-                    qr.created_at,
-                    qr.updated_at,
-                    u.name as user_name,
-                    u.avatar_path AS user_avatar_path
+                'SELECT ' . implode(', ', $replyColumns) . '
                  FROM qa_replies qr
                  JOIN users u ON qr.user_id = u.user_id
                  WHERE qr.qa_id = ?
@@ -451,22 +510,22 @@ class QandAAPI {
 
             // 取得每條回覆的有幫助數量
             foreach ($replies as &$reply) {
-                $helpful_count = Database::getInstance()->fetchOne(
-                    'SELECT COUNT(*) as count FROM qa_reply_helpful WHERE reply_id = ? AND vote_type = "helpful"',
+                $voteStats = Database::getInstance()->fetchOne(
+                    'SELECT 
+                        SUM(CASE WHEN vote_type = "helpful" THEN 1 ELSE 0 END) AS helpful_count,
+                        SUM(CASE WHEN vote_type = "not_helpful" THEN 1 ELSE 0 END) AS not_helpful_count
+                     FROM qa_reply_helpful
+                     WHERE reply_id = ?',
                     [$reply['reply_id']]
                 );
-                $reply['helpful_count'] = $helpful_count['count'];
-                $not_helpful_count = Database::getInstance()->fetchOne(
-                    'SELECT COUNT(*) as count FROM qa_reply_helpful WHERE reply_id = ? AND vote_type = "not_helpful"',
-                    [$reply['reply_id']]
-                );
-                $reply['not_helpful_count'] = $not_helpful_count['count'];
+                $reply['helpful_count'] = (int)($voteStats['helpful_count'] ?? 0);
+                $reply['not_helpful_count'] = (int)($voteStats['not_helpful_count'] ?? 0);
 
                 $reply['author_name'] = !empty($reply['is_anonymous'])
                     ? ($reply['display_name'] ?: '匿名用戶')
                     : ($reply['user_name'] ?: '匿名用戶');
 
-                // 檢查當前用戶是否可以標記為有幫助
+                // 只要登入即可投票（含自己的留言）
                 if (Auth::isLoggedIn()) {
                     $user_id = Auth::getCurrentUserId();
                     $vote = Database::getInstance()->fetchOne(
@@ -474,7 +533,7 @@ class QandAAPI {
                         [$reply['reply_id'], $user_id]
                     );
                     $reply['my_vote'] = $vote['vote_type'] ?? null;
-                    $reply['can_vote'] = (int)$reply['user_id'] !== (int)$user_id;
+                    $reply['can_vote'] = true;
                 } else {
                     $reply['my_vote'] = null;
                     $reply['can_vote'] = false;
@@ -507,16 +566,7 @@ class QandAAPI {
                 Helper::error('回覆內容包含不適當字眼，請修改後再送出', 400);
             }
 
-            $reply_id = dbInsert('qa_replies', [
-                'qa_id' => $data['question_id'],
-                'user_id' => Auth::getCurrentUserId(),
-                'reply_content' => $data['content'],
-                'is_official_answer' => $data['is_official'] ?? false
-            ]);
-
-            if (!$reply_id) {
-                Helper::error('回覆失敗', 500);
-            }
+            $reply_id = self::createReplyRecord($data['question_id'], $data);
 
             Helper::success('回覆成功', ['reply_id' => $reply_id]);
 
@@ -550,10 +600,6 @@ class QandAAPI {
 
             if (!$reply) {
                 Helper::error('回覆不存在', 404);
-            }
-
-            if ((int)$reply['user_id'] === (int)Auth::getCurrentUserId()) {
-                Helper::error('不能評價自己的回覆', 403);
             }
 
             $existing = Database::getInstance()->fetchOne(
