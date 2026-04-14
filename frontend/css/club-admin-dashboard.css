@@ -1,0 +1,151 @@
+/* 社團幹部頁專用：逐步取代 inline style */
+.is-hidden {
+    display: none;
+}
+
+.cad-help-text {
+    color: #666;
+    display: block;
+    margin-top: 0.35rem;
+}
+
+.cad-textarea-lg {
+    min-height: 100px;
+}
+
+.cad-textarea-md {
+    min-height: 80px;
+}
+
+.cad-textarea-xl {
+    min-height: 120px;
+}
+
+.cad-actions-wrap {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.cad-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cad-time-range {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.5rem;
+    align-items: end;
+}
+
+.cad-time-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+}
+
+.cad-time-divider {
+    text-align: center;
+    color: var(--text-light);
+    padding-bottom: 0.35rem;
+}
+
+.cad-field-caption {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    margin-bottom: 0.2rem;
+}
+
+.cad-time-caption {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 0.25rem;
+}
+
+.cad-date-time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.cad-datetime-split {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.cad-panel-box {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.cad-block-gap {
+    margin-bottom: 1rem;
+}
+
+.cad-block-divider {
+    margin-bottom: 1rem;
+    border-top: 1px solid #ddd;
+    padding-top: 1rem;
+}
+
+.cad-divider-top {
+    border-top: 1px solid #ddd;
+    padding-top: 1rem;
+}
+
+.cad-label-muted {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.cad-label-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.cad-tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.cad-tag-list-with-top-gap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.cad-search-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.cad-input-inline {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.cad-scroll-200 {
+    margin-top: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.cad-scroll-150 {
+    margin-top: 0.5rem;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.cad-preview-image {
+    display: none;
+}

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad148" cx="50%" cy="42%" r="80%">
+      <stop offset="0%" stop-color="#a12828"/>
+      <stop offset="100%" stop-color="#671515"/>
+    </radialGradient>
+    <radialGradient id="glow148" cx="50%" cy="52%" r="62%">
+      <stop offset="0%" stop-color="#fef3c7" stop-opacity="0.40"/>
+      <stop offset="100%" stop-color="#fef3c7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad148)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#fef08a" stroke-width="3.000"/>
+  <circle cx="162.000" cy="170.000" r="112.000" fill="url(#glow148)"/>
+
+  <path d="M92.000,102.000 H154.000 C164.000,102.000 170.000,109.000 170.000,118.000 V226.000 H109.000 C99.000,226.000 92.000,219.000 92.000,209.000 Z" fill="none" stroke="#fef08a" stroke-width="3.000"/>
+  <path d="M232.000,102.000 H170.000 C160.000,102.000 154.000,109.000 154.000,118.000 V226.000 H215.000 C225.000,226.000 232.000,219.000 232.000,209.000 Z" fill="none" stroke="#fef08a" stroke-width="3.000"/>
+  <path d="M162.000,103.000 V226.000" stroke="#fef08a" stroke-width="2.000"/>
+
+  <path d="M108.000,132.000 C122.000,123.000 136.000,123.000 150.000,132.000" fill="none" stroke="#fef08a" stroke-width="1.900"/>
+  <path d="M108.000,150.000 C122.000,141.000 136.000,141.000 150.000,150.000" fill="none" stroke="#fef08a" stroke-width="1.900"/>
+  <path d="M108.000,168.000 C122.000,159.000 136.000,159.000 150.000,168.000" fill="none" stroke="#fef08a" stroke-width="1.900"/>
+  <path d="M216.000,132.000 C202.000,123.000 188.000,123.000 174.000,132.000" fill="none" stroke="#fef08a" stroke-width="1.900"/>
+  <path d="M216.000,150.000 C202.000,141.000 188.000,141.000 174.000,150.000" fill="none" stroke="#fef08a" stroke-width="1.900"/>
+  <path d="M216.000,168.000 C202.000,159.000 188.000,159.000 174.000,168.000" fill="none" stroke="#fef08a" stroke-width="1.900"/>
+
+  <path d="M162.000,200.000 C162.000,200.000 147.000,189.000 147.000,177.000 C147.000,169.000 152.000,164.000 159.000,164.000 C161.000,164.000 163.000,165.000 165.000,167.000 C167.000,165.000 169.000,164.000 171.000,164.000 C178.000,164.000 183.000,169.000 183.000,177.000 C183.000,189.000 168.000,200.000 168.000,200.000 Z" fill="none" stroke="#fef08a" stroke-width="2.300"/>
+  <path d="M176.000,102.000 L188.000,102.000 L188.000,129.000 L182.000,136.000 L176.000,129.000 Z" fill="none" stroke="#fef08a" stroke-width="2.000"/>
+
+  <path d="M106.000,236.000 C123.000,226.000 141.000,226.000 158.000,236.000" fill="none" stroke="#fef08a" stroke-width="2.100" stroke-linecap="round"/>
+  <path d="M166.000,236.000 C183.000,226.000 201.000,226.000 218.000,236.000" fill="none" stroke="#fef08a" stroke-width="2.100" stroke-linecap="round"/>
+
+  <g fill="#fef08a">
+    <circle cx="76.250" cy="92.500" r="1.700"/>
+    <circle cx="93.500" cy="76.750" r="1.500"/>
+    <circle cx="231.250" cy="82.750" r="1.850"/>
+    <circle cx="248.500" cy="97.500" r="1.500"/>
+    <circle cx="79.750" cy="242.250" r="1.650"/>
+    <circle cx="95.250" cy="258.250" r="1.450"/>
+    <circle cx="228.750" cy="246.000" r="1.750"/>
+    <circle cx="244.750" cy="262.500" r="1.500"/>
+  </g>
+</svg>

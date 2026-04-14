@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad074" cx="50%" cy="42%" r="82%">
+      <stop offset="0%" stop-color="#312e81"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </radialGradient>
+    <radialGradient id="glow074" cx="50%" cy="44%" r="62%">
+      <stop offset="0%" stop-color="#fecdd3" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#fecdd3" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad074)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#fca5a5" stroke-width="3.000"/>
+  <circle cx="162.000" cy="144.000" r="112.000" fill="url(#glow074)"/>
+
+  <path d="M118.000,210.000 C132.000,200.000 150.000,198.000 166.000,204.000 L214.000,156.000 C220.000,150.000 228.000,150.000 234.000,156.000 C240.000,162.000 240.000,170.000 234.000,176.000 L186.000,224.000 C192.000,240.000 190.000,258.000 180.000,272.000 C166.000,292.000 138.000,296.000 118.000,282.000 C98.000,268.000 94.000,240.000 108.000,220.000 Z" fill="none" stroke="#fca5a5" stroke-width="4.000" stroke-linejoin="round"/>
+  <circle cx="136.000" cy="252.000" r="14.000" fill="none" stroke="#fca5a5" stroke-width="3.000"/>
+  <path d="M198.000,172.000 L218.000,192.000" stroke="#fca5a5" stroke-width="3.000" stroke-linecap="round"/>
+  <path d="M204.000,154.000 L222.000,136.000" stroke="#fca5a5" stroke-width="3.000" stroke-linecap="round"/>
+
+  <g fill="#fca5a5">
+    <circle cx="76.250" cy="92.500" r="1.700"/>
+    <circle cx="93.500" cy="76.750" r="1.500"/>
+    <circle cx="231.250" cy="82.750" r="1.850"/>
+    <circle cx="248.500" cy="97.500" r="1.500"/>
+    <circle cx="79.750" cy="242.250" r="1.650"/>
+    <circle cx="95.250" cy="258.250" r="1.450"/>
+    <circle cx="228.750" cy="246.000" r="1.750"/>
+    <circle cx="244.750" cy="262.500" r="1.500"/>
+  </g>
+</svg>

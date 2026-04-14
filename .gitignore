@@ -1,0 +1,20 @@
+# Runtime uploads (do not commit generated files)
+frontend/assets/uploads/*
+!frontend/assets/uploads/.gitkeep
+
+# Accidental legacy upload path from old config
+backend/frontend/
+
+# Local logs
+logs/*.log
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm
+
+# Playwright
+test-results/
+playwright-report/
+.auth/

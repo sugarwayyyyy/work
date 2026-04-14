@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社團詳情 - 社團平台</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">首頁</a></li>
+                <li><a href="club-list.html">社團</a></li>
+                <li><a href="events.html">活動</a></li>
+                <li><a href="qa.html">提問</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href = 'login.html'">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container">
+        <div id="club-header" class="card" style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div style="flex: 1;">
+                    <h1 id="club-name" style="margin: 0 0 1rem 0;"></h1>
+                    <div id="club-last-updated-banner" style="margin: -0.25rem 0 0.85rem 0; color: var(--text-light); font-size: 0.92rem;">最後更新時間：-</div>
+                    <div id="club-badges" style="margin-bottom: 1rem;"></div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin: 1rem 0;">
+                        <div>
+                            <div style="color: var(--text-light); font-size: 0.9rem;">👥 成員數</div>
+                            <div style="font-size: 1.5rem; font-weight: bold;" id="member-count">-</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-light); font-size: 0.9rem;">⭐ 平均評分</div>
+                            <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                                <div id="avg-rating-stars" style="font-size: 1.1rem;">-</div>
+                                <div style="font-size: 1.1rem; font-weight: bold;" id="avg-rating-value">-</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-light); font-size: 0.9rem;">💬 評價數</div>
+                            <div style="font-size: 1.5rem; font-weight: bold;" id="review-count">-</div>
+                        </div>
+                    </div>
+                </div>
+                <button id="follow-btn" class="btn btn-primary" onclick="toggleFollow()">追蹤社團</button>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+            <div>
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3>基本信息</h3>
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div>
+                            <strong>社團分類：</strong>
+                            <span id="club-category">-</span>
+                        </div>
+                        <div>
+                            <strong>社費：</strong>
+                            <span id="club-fee">-</span>
+                        </div>
+                        <div>
+                            <strong>社課時間：</strong>
+                            <span id="meeting-time">-</span>
+                        </div>
+                        <div>
+                            <strong>社課地點：</strong>
+                            <div id="meeting-location-box" style="margin-top: 0.35rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div id="meeting-location" style="line-height: 1.6;">-</div>
+                                <div id="meeting-location-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <strong>聯絡郵箱：</strong>
+                            <span id="contact-email">-</span>
+                        </div>
+                        <div>
+                            <strong>聯絡電話：</strong>
+                            <span id="contact-phone">-</span>
+                        </div>
+                        <div>
+                            <strong>最後更新時間：</strong>
+                            <span id="last-updated">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3>社團簡介</h3>
+                    <p id="club-description">-</p>
+                </div>
+
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3>社團標籤</h3>
+                    <div id="club-tags">-</div>
+                </div>
+
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3>近期活動</h3>
+                    <div id="upcoming-events">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>用戶評價</h3>
+                    <div id="reviews-section">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3>社團 Logo</h3>
+                    <div id="club-logo-wrapper" style="display: flex; justify-content: center; align-items: center; min-height: 160px;">
+                        <img id="club-logo-img" src="" alt="社團 Logo" style="display: none; max-width: 100%; max-height: 220px; border-radius: 12px; object-fit: contain;">
+                        <div id="club-logo-placeholder" style="display: none; flex-direction: column; align-items: center; justify-content: center; gap: 0.7rem; width: 100%; min-height: 160px;">
+                            <span id="club-logo-placeholder-avatar" class="club-avatar club-avatar--emoji" aria-hidden="true" style="width: 120px; height: 120px; font-size: 3rem;"></span>
+                            <div id="club-logo-placeholder-label" style="color: var(--text-light); font-size: 0.9rem;">預設社團頭像</div>
+                        </div>
+                    </div>
+                    <p id="club-logo-note" style="display: none; margin-top: 0.75rem; color: var(--text-light); font-size: 0.85rem; line-height: 1.5;"></p>
+                </div>
+
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3>主要幹部</h3>
+                    <div id="club-admins">-</div>
+                </div>
+
+                <div class="card">
+                    <h3>評價此社團</h3>
+                    <button id="review-btn" class="btn btn-primary" style="width: 100%;" onclick="openReviewModal()">發布評價</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="review-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="card" style="max-width: 600px; width: 90%;">
+            <h2>發布評價</h2>
+            <form id="review-form">
+                <div class="form-group">
+                    <label for="review-rating">評分</label>
+                    <div style="display: flex; gap: 0.5rem; font-size: 2rem;">
+                        <button type="button" class="star-btn" data-rating="1">★</button>
+                        <button type="button" class="star-btn" data-rating="2">★</button>
+                        <button type="button" class="star-btn" data-rating="3">★</button>
+                        <button type="button" class="star-btn" data-rating="4">★</button>
+                        <button type="button" class="star-btn" data-rating="5">★</button>
+                    </div>
+                    <input type="hidden" id="review-rating" name="rating" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="review-title">標題（選填）</label>
+                    <input type="text" id="review-title">
+                </div>
+
+                <div class="form-group">
+                    <label for="review-content">評價內容</label>
+                    <textarea id="review-content" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="review-anonymous">
+                        匿名評價
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary">發布</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeReviewModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 社團活動資訊統整平台</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        const clubId = new URLSearchParams(window.location.search).get('id');
+        let selectedRating = 0;
+        let hasReviewedClub = false;
+
+        function updateReviewActionState() {
+            const reviewBtn = document.getElementById('review-btn');
+            if (!reviewBtn) return;
+
+            if (hasReviewedClub) {
+                reviewBtn.textContent = '您已評價過此社團';
+                reviewBtn.disabled = true;
+                reviewBtn.classList.remove('btn-primary');
+                reviewBtn.classList.add('btn-secondary');
+                reviewBtn.title = '每位使用者對同一社團僅能評價一次';
+                return;
+            }
+
+            reviewBtn.textContent = '發布評價';
+            reviewBtn.disabled = false;
+            reviewBtn.classList.remove('btn-secondary');
+            reviewBtn.classList.add('btn-primary');
+            reviewBtn.title = '';
+        }
+
+        async function loadClubDetail() {
+            try {
+                const response = await APIClient.get(`clubs.php?action=detail&id=${clubId}`);
+                if (response.success) {
+                    const club = response.data;
+                    renderClubDetail(club);
+                } else {
+                    document.querySelector('.container').innerHTML = '<p>無法載入社團資訊</p>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.querySelector('.container').innerHTML = '<p>發生錯誤</p>';
+            }
+        }
+
+        function renderClubDetail(club) {
+            const formatDateTime = (dateString) => {
+                if (!dateString) return '-';
+                const d = new Date(dateString);
+                if (Number.isNaN(d.getTime())) return '-';
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hh = String(d.getHours()).padStart(2, '0');
+                const mm = String(d.getMinutes()).padStart(2, '0');
+                return `${y}-${m}-${day} ${hh}:${mm}`;
+            };
+
+            const buildGoogleMapsUrl = (locationValue) => {
+                if (!locationValue) return '';
+
+                const rawValue = String(locationValue).trim();
+                if (!rawValue) return '';
+
+                if (/^https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[\/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)$/i.test(rawValue)) {
+                    return rawValue.startsWith('http') ? rawValue : `https://${rawValue}`;
+                }
+
+                return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rawValue)}`;
+            };
+
+            const isGoogleMapsUrl = (value) => /^https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[\/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)$/i.test(String(value || '').trim());
+
+            const renderLocationActions = (locationValue) => {
+                const actions = document.getElementById('meeting-location-actions');
+                if (!actions) return;
+
+                const rawValue = String(locationValue || '').trim();
+                if (!rawValue) {
+                    actions.innerHTML = '';
+                    return;
+                }
+
+                // 只有在是 Google Maps 連結時才顯示按鈕，純文字不顯示
+                if (!isGoogleMapsUrl(rawValue)) {
+                    actions.innerHTML = '';
+                    return;
+                }
+
+                const googleMapsUrl = buildGoogleMapsUrl(rawValue);
+                actions.innerHTML = '';
+                const link = document.createElement('a');
+                link.className = 'btn btn-primary btn-sm';
+                link.href = googleMapsUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = '開啟地圖連結';
+                actions.appendChild(link);
+            };
+
+            const formatMeetingLocation = (locationValue) => {
+                const rawValue = String(locationValue || '').trim();
+                if (!rawValue) return '-';
+                if (isGoogleMapsUrl(rawValue)) return '幹部提供的 Google 地圖連結';
+                return rawValue;
+            };
+
+            document.getElementById('club-name').textContent = club.club_name;
+            document.getElementById('club-category').textContent = club.category_name || '-';
+            document.getElementById('club-fee').textContent = club.club_fee > 0 ? `$${club.club_fee}` : '免費';
+            document.getElementById('meeting-time').textContent = club.meeting_time || '-';
+            document.getElementById('meeting-location').textContent = formatMeetingLocation(club.meeting_location);
+            renderLocationActions(club.meeting_location);
+            document.getElementById('contact-email').textContent = club.contact_email || '-';
+            document.getElementById('contact-phone').textContent = club.contact_phone || '-';
+            document.getElementById('last-updated').textContent = formatDateTime(club.last_updated);
+            document.getElementById('club-last-updated-banner').textContent = `最後更新時間：${formatDateTime(club.last_updated)}`;
+            document.getElementById('club-description').textContent = club.description || '-';
+            document.getElementById('member-count').textContent = club.member_count || 0;
+            const avgRating = Number(club.average_rating || 0);
+            const starsHtml = PageUtils.renderStars(avgRating);
+            document.getElementById('avg-rating-stars').innerHTML = starsHtml;
+            document.getElementById('avg-rating-value').textContent = Number.isFinite(avgRating) ? avgRating.toFixed(1) : '0.0';
+            document.getElementById('review-count').textContent = club.reviews_count || 0;
+
+            const tags = Array.isArray(club.tags) ? club.tags : [];
+            const tagsHtml = tags.map(tag => `<span class="tag tag-primary">#${tag.tag_name}</span>`).join('');
+            document.getElementById('club-tags').innerHTML = tagsHtml || '暫無標籤';
+
+            const badgesHtml = `<span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>`;
+            document.getElementById('club-badges').innerHTML = badgesHtml;
+
+            const logoImg = document.getElementById('club-logo-img');
+            const logoPlaceholder = document.getElementById('club-logo-placeholder');
+            const logoPlaceholderAvatar = document.getElementById('club-logo-placeholder-avatar');
+            const logoPlaceholderLabel = document.getElementById('club-logo-placeholder-label');
+            const logoNote = document.getElementById('club-logo-note');
+            const uploadedLogoUrl = PageUtils.resolveMediaUrl(club.logo_path);
+            const pixelLogoUrl = PageUtils.getClubPixelAvatarUrl(club);
+
+            if (uploadedLogoUrl) {
+                logoImg.src = uploadedLogoUrl;
+                logoImg.style.imageRendering = 'auto';
+                logoImg.style.display = 'block';
+                if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+                if (logoNote) {
+                    logoNote.style.display = 'none';
+                    logoNote.textContent = '';
+                }
+            } else if (pixelLogoUrl) {
+                logoImg.src = pixelLogoUrl;
+                logoImg.style.imageRendering = 'pixelated';
+                logoImg.style.display = 'block';
+                if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+                if (logoNote) {
+                    logoNote.style.display = 'block';
+                    logoNote.textContent = '提醒：此為系統生成示意 Logo，非社團官方提供的實際 Logo。';
+                }
+            } else {
+                const avatarEmoji = PageUtils.getClubAvatarEmoji(club.club_name || '', club.category_name || '', club.description || '');
+                const avatarText = avatarEmoji || PageUtils.getInitial(club.club_name || '');
+                logoImg.removeAttribute('src');
+                logoImg.style.imageRendering = 'auto';
+                logoImg.style.display = 'none';
+                if (logoPlaceholderAvatar) {
+                    logoPlaceholderAvatar.textContent = avatarText;
+                    logoPlaceholderAvatar.classList.toggle('club-avatar--emoji', !!avatarEmoji);
+                    logoPlaceholderAvatar.classList.toggle('club-avatar--fallback', !avatarEmoji);
+                }
+                if (logoPlaceholderLabel) {
+                    logoPlaceholderLabel.textContent = avatarEmoji ? '預設貼圖頭像' : '預設首字頭像';
+                }
+                if (logoPlaceholder) logoPlaceholder.style.display = 'flex';
+                if (logoNote) {
+                    logoNote.style.display = 'block';
+                    logoNote.textContent = '提醒：此為系統預設頭像，非社團官方提供的實際 Logo。';
+                }
+            }
+
+            const followBtn = document.getElementById('follow-btn');
+            if (club.is_following) {
+                followBtn.textContent = '已追蹤';
+                followBtn.classList.remove('btn-primary');
+                followBtn.classList.add('btn-secondary');
+            }
+
+            renderUpcomingEvents(club.upcoming_events || []);
+
+            renderReviews(club.reviews || []);
+
+            renderAdmins(club.members || []);
+
+            hasReviewedClub = !!club.user_has_reviewed;
+            updateReviewActionState();
+        }
+
+        function renderUpcomingEvents(events) {
+            const container = document.getElementById('upcoming-events');
+            if (events.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light);">暫無近期活動</p>';
+                return;
+            }
+
+            let html = '';
+            events.forEach(event => {
+                const eventDate = PageUtils.formatDate(event.event_date);
+                html += `
+                    <div style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                                <h4 style="margin: 0 0 0.5rem 0;">${event.event_name || '未命名活動'}</h4>
+                        <p style="margin: 0.5rem 0; color: var(--text-light); font-size: 0.9rem;">
+                            <strong>時間：</strong>${eventDate}
+                        </p>
+                        <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">
+                            <strong>地點：</strong>${event.location}
+                        </p>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderReviews(reviews) {
+            const container = document.getElementById('reviews-section');
+            if (reviews.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light);">暫無評價</p>';
+                return;
+            }
+
+            const formatDateOnly = (dateString) => {
+                if (!dateString) return '-';
+                const d = new Date(dateString);
+                if (Number.isNaN(d.getTime())) return '-';
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            };
+
+            let html = '';
+            reviews.forEach(review => {
+                const stars = PageUtils.renderStars(review.rating);
+                const author = review.author_name || review.display_name || '匿名用戶';
+                const relativeTime = PageUtils.timeAgo(review.created_at);
+                const absoluteDate = formatDateOnly(review.created_at);
+                html += `
+                    <div style="padding: 1.5rem 0; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <div>
+                                <strong>${review.review_title || author}</strong>
+                                <div style="color: var(--text-light); font-size: 0.9rem;">
+                                    ${author} • ${relativeTime}（${absoluteDate}）
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div>${stars}</div>
+                                <div style="color: var(--text-light); font-size: 0.8rem;">${review.rating}/5 分</div>
+                            </div>
+                        </div>
+                        <p style="margin: 0.5rem 0; color: var(--text-light);">${review.review_content}</p>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderAdmins(members) {
+            const container = document.getElementById('club-admins');
+            const admins = members.filter(m => ['president', 'vice_president', 'director'].includes(m.role));
+
+            if (admins.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-light);">暫無幹部信息</p>';
+                return;
+            }
+
+            let html = '';
+            admins.forEach(admin => {
+                const roleText = {
+                    'president': '社長',
+                    'vice_president': '副社長',
+                    'director': '常務理事'
+                }[admin.role] || admin.role;
+
+                html += `
+                    <div style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                        <div style="font-weight: 500;">${admin.name || '未命名幹部'}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-light);">${roleText}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        async function toggleFollow() {
+            if (!StorageUtils.isLoggedIn()) {
+                PageUtils.showAlert('請先登入', 'warning');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await APIClient.post(`clubs.php?action=toggle_follow&id=${clubId}`, {});
+                if (response.success) {
+                    const btn = document.getElementById('follow-btn');
+                    const memberCountEl = document.getElementById('member-count');
+                    if (response.data.is_following) {
+                        btn.textContent = '已追蹤';
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-secondary');
+                        PageUtils.showAlert('已追蹤此社團', 'success');
+                    } else {
+                        btn.textContent = '追蹤社團';
+                        btn.classList.add('btn-primary');
+                        btn.classList.remove('btn-secondary');
+                        PageUtils.showAlert('已取消追蹤', 'success');
+                    }
+
+                    if (memberCountEl && Number.isFinite(Number(response.data?.member_count))) {
+                        memberCountEl.textContent = String(Number(response.data.member_count));
+                    }
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('操作失敗', 'error');
+            }
+        }
+
+        function openReviewModal() {
+            if (!StorageUtils.isLoggedIn()) {
+                PageUtils.showAlert('請先登入', 'warning');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            if (hasReviewedClub) {
+                PageUtils.showAlert('您已評價過此社團，每位使用者僅能評價一次', 'warning');
+                return;
+            }
+
+            document.getElementById('review-modal').style.display = 'flex';
+        }
+
+        function closeReviewModal() {
+            document.getElementById('review-modal').style.display = 'none';
+        }
+
+        // 星號評分
+        document.querySelectorAll('.star-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                selectedRating = parseInt(btn.dataset.rating);
+                document.getElementById('review-rating').value = selectedRating;
+                
+                document.querySelectorAll('.star-btn').forEach((b, idx) => {
+                    if (idx < selectedRating) {
+                        b.style.color = '#fbbf24';
+                    } else {
+                        b.style.color = '#d1d5db';
+                    }
+                });
+            });
+        });
+
+        document.getElementById('review-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (hasReviewedClub) {
+                PageUtils.showAlert('您已評價過此社團，每位使用者僅能評價一次', 'warning');
+                return;
+            }
+
+            if (selectedRating === 0) {
+                PageUtils.showAlert('請選擇評分', 'warning');
+                return;
+            }
+
+            try {
+                const response = await APIClient.post('reviews.php?action=create', {
+                    club_id: clubId,
+                    rating: selectedRating,
+                    review_title: document.getElementById('review-title').value,
+                    review_content: document.getElementById('review-content').value,
+                    is_anonymous: document.getElementById('review-anonymous').checked
+                });
+
+                if (response.success) {
+                    PageUtils.showAlert('評價已發布', 'success');
+                    closeReviewModal();
+                    document.getElementById('review-form').reset();
+                    selectedRating = 0;
+                    hasReviewedClub = true;
+                    updateReviewActionState();
+                    loadClubDetail();
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('提交失敗', 'error');
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', function() {
+            if (!clubId) {
+                document.querySelector('.container').innerHTML = '<p>無效的社團ID</p>';
+                return;
+            }
+            loadClubDetail();
+        });
+    </script>
+</body>
+
+</html>

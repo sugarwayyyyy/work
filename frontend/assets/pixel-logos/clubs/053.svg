@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad053" cx="50%" cy="42%" r="74%">
+      <stop offset="0%" stop-color="#164a82"/>
+      <stop offset="100%" stop-color="#082744"/>
+    </radialGradient>
+    <radialGradient id="pillGrad053" cx="30%" cy="35%" r="80%">
+      <stop offset="0%" stop-color="#fff5d8"/>
+      <stop offset="100%" stop-color="#f1c76a"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad053)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 中華醫藥研習社：醫療十字（柔化邊緣） -->
+  <rect x="132.000" y="72.000" width="60.000" height="132.000" rx="9.000" fill="#e8f4ff"/>
+  <rect x="96.000" y="108.000" width="132.000" height="60.000" rx="9.000" fill="#e8f4ff"/>
+  <rect x="153.000" y="84.000" width="18.000" height="108.000" fill="#0f3a63"/>
+  <rect x="108.000" y="129.000" width="108.000" height="18.000" fill="#0f3a63"/>
+
+  <!-- 膠囊（點描感） -->
+  <rect x="78.000" y="222.000" width="72.000" height="36.000" rx="18.000" fill="url(#pillGrad053)" stroke="#f59e0b" stroke-width="2.200"/>
+  <rect x="150.000" y="222.000" width="96.000" height="36.000" rx="18.000" fill="#e8f4ff" stroke="#f59e0b" stroke-width="2.200"/>
+  <path d="M150.000,222.000 V258.000" fill="none" stroke="#0f3a63" stroke-width="2.000"/>
+
+  <!-- 小十字點描 -->
+  <g fill="#f59e0b">
+    <circle cx="252.375" cy="75.250" r="2.050"/>
+    <circle cx="252.375" cy="85.250" r="2.050"/>
+    <circle cx="242.375" cy="85.250" r="2.050"/>
+    <circle cx="262.375" cy="85.250" r="2.050"/>
+    <circle cx="252.375" cy="95.250" r="2.050"/>
+  </g>
+
+  <!-- 點描高光 -->
+  <g fill="#ffffff" fill-opacity="0.75">
+    <circle cx="105.125" cy="231.500" r="1.550"/>
+    <circle cx="116.500" cy="238.750" r="1.350"/>
+    <circle cx="178.625" cy="232.125" r="1.250"/>
+    <circle cx="196.250" cy="240.000" r="1.150"/>
+  </g>
+</svg>

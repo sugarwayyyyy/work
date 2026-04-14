@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad054" cx="50%" cy="42%" r="74%">
+      <stop offset="0%" stop-color="#15467b"/>
+      <stop offset="100%" stop-color="#07243f"/>
+    </radialGradient>
+    <linearGradient id="barGrad054" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f2f8ff"/>
+      <stop offset="100%" stop-color="#d3e4f6"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad054)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 長條圖（經管） -->
+  <rect x="72.000" y="210.000" width="27.000" height="54.000" rx="3.500" fill="url(#barGrad054)"/>
+  <rect x="117.000" y="183.000" width="27.000" height="81.000" rx="3.500" fill="url(#barGrad054)"/>
+  <rect x="162.000" y="147.000" width="27.000" height="117.000" rx="3.500" fill="url(#barGrad054)"/>
+  <rect x="207.000" y="108.000" width="27.000" height="156.000" rx="3.500" fill="url(#barGrad054)"/>
+
+  <!-- 成長箭頭 -->
+  <path d="M72.000,228.000 C102.000,212.000 128.000,194.000 153.000,172.000 C178.000,151.000 202.000,130.000 228.000,108.000" fill="none" stroke="#f59e0b" stroke-width="4.200" stroke-linecap="round"/>
+  <path d="M228.000,108.000 L218.000,110.000 L222.000,100.000 Z" fill="#f59e0b"/>
+
+  <!-- 國際語意：小地球 -->
+  <circle cx="248.000" cy="72.000" r="22.000" fill="none" stroke="#e8f4ff" stroke-width="2.400"/>
+  <ellipse cx="248.000" cy="72.000" rx="12.000" ry="22.000" fill="none" stroke="#e8f4ff" stroke-width="1.600"/>
+  <ellipse cx="248.000" cy="72.000" rx="22.000" ry="8.000" fill="none" stroke="#e8f4ff" stroke-width="1.600"/>
+
+  <!-- 點描高光 -->
+  <g fill="#f59e0b">
+    <circle cx="66.250" cy="112.500" r="1.700"/>
+    <circle cx="86.750" cy="95.250" r="1.550"/>
+    <circle cx="106.250" cy="88.750" r="1.350"/>
+  </g>
+</svg>

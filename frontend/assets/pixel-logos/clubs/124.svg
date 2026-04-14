@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad124" cx="50%" cy="42%" r="82%">
+      <stop offset="0%" stop-color="#312e81"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </radialGradient>
+    <radialGradient id="glow124" cx="50%" cy="44%" r="62%">
+      <stop offset="0%" stop-color="#fecdd3" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#fecdd3" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad124)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#fca5a5" stroke-width="3.000"/>
+  <circle cx="162.000" cy="144.000" r="112.000" fill="url(#glow124)"/>
+
+  <rect x="92.000" y="124.000" width="140.000" height="84.000" rx="12.000" fill="none" stroke="#fca5a5" stroke-width="4.000"/>
+  <path d="M112.000,170.000 L130.000,156.000" stroke="#fca5a5" stroke-width="3.000" stroke-linecap="round"/>
+  <path d="M130.000,156.000 L146.000,166.000" stroke="#fca5a5" stroke-width="3.000" stroke-linecap="round"/>
+  <path d="M146.000,166.000 L170.000,142.000" stroke="#fca5a5" stroke-width="3.000" stroke-linecap="round"/>
+  <path d="M170.000,142.000 L188.000,152.000" stroke="#fca5a5" stroke-width="3.000" stroke-linecap="round"/>
+  <path d="M188.000,152.000 L212.000,136.000" stroke="#fca5a5" stroke-width="3.000" stroke-linecap="round"/>
+  <circle cx="112.000" cy="170.000" r="4.500" fill="#fca5a5"/>
+  <circle cx="130.000" cy="156.000" r="4.500" fill="#fca5a5"/>
+  <circle cx="146.000" cy="166.000" r="4.500" fill="#fca5a5"/>
+  <circle cx="170.000" cy="142.000" r="4.500" fill="#fca5a5"/>
+  <circle cx="188.000" cy="152.000" r="4.500" fill="#fca5a5"/>
+  <circle cx="212.000" cy="136.000" r="4.500" fill="#fca5a5"/>
+  <path d="M106.000,228.000 C124.000,218.000 146.000,214.000 162.000,214.000 C178.000,214.000 200.000,218.000 218.000,228.000" fill="none" stroke="#fca5a5" stroke-width="2.000" stroke-linecap="round"/>
+
+  <g fill="#fca5a5">
+    <circle cx="76.250" cy="92.500" r="1.700"/>
+    <circle cx="93.500" cy="76.750" r="1.500"/>
+    <circle cx="231.250" cy="82.750" r="1.850"/>
+    <circle cx="248.500" cy="97.500" r="1.500"/>
+    <circle cx="79.750" cy="242.250" r="1.650"/>
+    <circle cx="95.250" cy="258.250" r="1.450"/>
+    <circle cx="228.750" cy="246.000" r="1.750"/>
+    <circle cx="244.750" cy="262.500" r="1.500"/>
+  </g>
+</svg>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad403" cx="50%" cy="42%" r="82%">
+      <stop offset="0%" stop-color="#934016"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </radialGradient>
+    <radialGradient id="glow403" cx="50%" cy="45%" r="62%">
+      <stop offset="0%" stop-color="#dbeafe" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#dbeafe" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad403)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#93c5fd" stroke-width="3.000"/>
+  <circle cx="162.000" cy="144.000" r="112.000" fill="url(#glow403)"/>
+
+  <path d="M104.000,228.000 C124.000,206.000 138.000,182.000 146.000,156.000" fill="none" stroke="#93c5fd" stroke-width="4.000" stroke-linecap="round"/>
+  <path d="M112.000,220.000 C130.000,200.000 142.000,178.000 150.000,154.000" fill="none" stroke="#ffffff" stroke-width="1.900" stroke-linecap="round" opacity="0.88"/>
+  <path d="M146.000,156.000 C152.000,136.000 152.000,116.000 146.000,96.000" fill="none" stroke="#93c5fd" stroke-width="4.000" stroke-linecap="round"/>
+  <path d="M146.000,96.000 L164.000,98.000 L154.000,112.000 Z" fill="#93c5fd"/>
+
+  <path d="M154.000,148.000 C176.000,154.000 196.000,166.000 214.000,184.000" fill="none" stroke="#93c5fd" stroke-width="3.000" stroke-linecap="round"/>
+  <path d="M214.000,184.000 L232.000,194.000" stroke="#93c5fd" stroke-width="4.000" stroke-linecap="round"/>
+  <path d="M232.000,194.000 L246.000,188.000 L240.000,202.000 Z" fill="#93c5fd"/>
+  <circle cx="236.000" cy="154.000" r="9.000" fill="#fef3c7" stroke="#93c5fd" stroke-width="2.000"/>
+
+  <path d="M100.000,238.000 C122.000,224.000 142.000,218.000 162.000,218.000 C182.000,218.000 202.000,224.000 226.000,238.000" fill="none" stroke="#93c5fd" stroke-width="2.000" stroke-linecap="round"/>
+
+  <g fill="#93c5fd">
+    <circle cx="76.250" cy="92.500" r="1.700"/>
+    <circle cx="93.500" cy="76.750" r="1.500"/>
+    <circle cx="231.250" cy="82.750" r="1.850"/>
+    <circle cx="248.500" cy="97.500" r="1.500"/>
+    <circle cx="79.750" cy="242.250" r="1.650"/>
+    <circle cx="95.250" cy="258.250" r="1.450"/>
+    <circle cx="228.750" cy="246.000" r="1.750"/>
+    <circle cx="244.750" cy="262.500" r="1.500"/>
+  </g>
+</svg>

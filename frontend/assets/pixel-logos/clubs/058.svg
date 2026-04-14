@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad058" cx="50%" cy="39%" r="78%">
+      <stop offset="0%" stop-color="#1f558d"/>
+      <stop offset="100%" stop-color="#082741"/>
+    </radialGradient>
+    <radialGradient id="haloGrad058" cx="50%" cy="45%" r="68%">
+      <stop offset="0%" stop-color="#fff7de" stop-opacity="0.980"/>
+      <stop offset="100%" stop-color="#f3cd84" stop-opacity="0.180"/>
+    </radialGradient>
+    <linearGradient id="crossGrad058" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffe7b8"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <radialGradient id="heartGrad058" cx="50%" cy="35%" r="72%">
+      <stop offset="0%" stop-color="#ffd6b0"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </radialGradient>
+    <linearGradient id="bookGrad058" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f6fbff"/>
+      <stop offset="100%" stop-color="#d4e5f8"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad058)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 中央光暈 -->
+  <circle cx="162.000" cy="158.000" r="84.000" fill="url(#haloGrad058)"/>
+
+  <!-- 光線與星點（望） -->
+  <g stroke="#f59e0b" stroke-linecap="round" fill="#f59e0b">
+    <path d="M162.000,58.000 L162.000,82.000" stroke-width="2.100"/>
+    <path d="M128.750,68.500 L138.250,86.250" stroke-width="1.650"/>
+    <path d="M195.250,68.500 L185.750,86.250" stroke-width="1.650"/>
+    <circle cx="162.000" cy="52.250" r="2.450"/>
+    <circle cx="120.500" cy="62.750" r="1.650"/>
+    <circle cx="203.750" cy="62.750" r="1.650"/>
+  </g>
+
+  <!-- 十字（信） -->
+  <rect x="152.000" y="86.000" width="20.000" height="108.000" rx="5.000" fill="url(#crossGrad058)"/>
+  <rect x="124.000" y="115.000" width="76.000" height="20.000" rx="5.000" fill="url(#crossGrad058)"/>
+  <path d="M152.000,194.000 L172.000,194.000" stroke="#ffd99a" stroke-width="1.500"/>
+
+  <!-- 開書（信仰） -->
+  <path d="M98.000,214.000 C119.500,203.000 140.000,204.500 162.000,214.000 L162.000,253.000 C142.500,243.750 122.500,242.250 102.000,252.000 Z" fill="url(#bookGrad058)" stroke="#f59e0b" stroke-width="2.200"/>
+  <path d="M226.000,214.000 C204.500,203.000 184.000,204.500 162.000,214.000 L162.000,253.000 C181.500,243.750 201.500,242.250 222.000,252.000 Z" fill="url(#bookGrad058)" stroke="#f59e0b" stroke-width="2.200"/>
+  <path d="M162.000,214.000 L162.000,253.000" stroke="#c2d9f2" stroke-width="1.300"/>
+  <path d="M113.000,225.000 C127.000,219.500 140.000,219.500 153.000,224.500" stroke="#c2d9f2" stroke-width="1.100" fill="none"/>
+  <path d="M171.000,224.500 C184.000,219.500 197.000,219.500 211.000,225.000" stroke="#c2d9f2" stroke-width="1.100" fill="none"/>
+
+  <!-- 愛心（愛） -->
+  <path d="M162.000,286.000 C146.000,271.500 126.500,260.000 126.500,240.500 C126.500,227.500 136.000,218.500 149.000,218.500 C155.000,218.500 159.500,221.500 162.000,225.750 C164.500,221.500 169.000,218.500 175.000,218.500 C188.000,218.500 197.500,227.500 197.500,240.500 C197.500,260.000 178.000,271.500 162.000,286.000 Z" fill="url(#heartGrad058)"/>
+  <path d="M149.500,234.000 C149.500,229.750 152.750,226.500 157.000,226.500" stroke="#ffe8c2" stroke-width="1.500" fill="none" stroke-linecap="round"/>
+
+  <!-- 外圍點描 -->
+  <g fill="#f59e0b">
+    <circle cx="78.250" cy="86.375" r="1.750"/>
+    <circle cx="92.625" cy="71.125" r="1.500"/>
+    <circle cx="230.750" cy="82.625" r="1.850"/>
+    <circle cx="246.250" cy="96.875" r="1.450"/>
+    <circle cx="72.875" cy="241.500" r="1.700"/>
+    <circle cx="88.250" cy="258.000" r="1.450"/>
+    <circle cx="236.125" cy="250.625" r="1.800"/>
+    <circle cx="252.500" cy="265.375" r="1.550"/>
+    <circle cx="162.000" cy="44.750" r="1.900"/>
+    <circle cx="162.000" cy="301.250" r="1.900"/>
+  </g>
+</svg>

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad174" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#205890"/>
+      <stop offset="100%" stop-color="#082943"/>
+    </radialGradient>
+    <linearGradient id="ringGrad174" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe9bf"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad174)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 中央交疊符號 -->
+  <circle cx="140.000" cy="142.000" r="34.000" fill="none" stroke="url(#ringGrad174)" stroke-width="5.500"/>
+  <circle cx="184.000" cy="142.000" r="34.000" fill="none" stroke="url(#ringGrad174)" stroke-width="5.500"/>
+  <path d="M140.000,176.000 L140.000,208.000" stroke="#f59e0b" stroke-width="4.200" stroke-linecap="round"/>
+  <path d="M126.000,194.000 L154.000,194.000" stroke="#f59e0b" stroke-width="4.200" stroke-linecap="round"/>
+  <path d="M184.000,176.000 L205.000,197.000" stroke="#f59e0b" stroke-width="4.200" stroke-linecap="round"/>
+  <path d="M205.000,197.000 L197.500,196.500" stroke="#f59e0b" stroke-width="3.300" stroke-linecap="round"/>
+  <path d="M205.000,197.000 L204.500,189.500" stroke="#f59e0b" stroke-width="3.300" stroke-linecap="round"/>
+
+  <!-- 平等符號 -->
+  <rect x="131.000" y="226.000" width="62.000" height="8.000" rx="3.000" fill="#f59e0b"/>
+  <rect x="131.000" y="241.000" width="62.000" height="8.000" rx="3.000" fill="#f59e0b"/>
+
+  <!-- 多元光譜弧 -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M88.000,118.000 C112.000,92.000 140.000,80.000 172.000,80.000" stroke="#f59e0b" stroke-width="3.000"/>
+    <path d="M95.000,126.000 C117.000,103.000 143.000,92.500 172.000,92.500" stroke="#ffd084" stroke-width="2.400"/>
+    <path d="M102.000,134.000 C122.000,114.000 145.500,105.000 172.000,105.000" stroke="#fff0cf" stroke-width="2.000"/>
+  </g>
+
+  <!-- 對話研究節點 -->
+  <g fill="#f59e0b" stroke="#f59e0b" stroke-width="1.200">
+    <circle cx="90.000" cy="210.000" r="5.200"/>
+    <circle cx="112.500" cy="198.000" r="4.500"/>
+    <circle cx="214.000" cy="198.000" r="4.500"/>
+    <circle cx="236.000" cy="210.000" r="5.200"/>
+    <path d="M95.000,207.500 L108.500,200.500" fill="none"/>
+    <path d="M218.000,200.500 L231.000,207.500" fill="none"/>
+  </g>
+
+  <!-- 點描 -->
+  <g fill="#f59e0b">
+    <circle cx="74.250" cy="88.500" r="1.700"/>
+    <circle cx="90.500" cy="72.750" r="1.500"/>
+    <circle cx="235.250" cy="84.250" r="1.850"/>
+    <circle cx="251.500" cy="98.000" r="1.500"/>
+    <circle cx="80.000" cy="242.000" r="1.650"/>
+    <circle cx="94.750" cy="258.250" r="1.450"/>
+    <circle cx="229.750" cy="246.500" r="1.750"/>
+    <circle cx="245.500" cy="262.750" r="1.500"/>
+  </g>
+</svg>

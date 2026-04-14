@@ -1,0 +1,567 @@
+<?php
+/**
+ * 管理員專用 API
+ */
+
+require_once '../auth.php';
+require_once '../content_filter.php';
+
+// Handle CORS preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header('Access-Control-Allow-Origin: http://localhost:8000');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+    header('Access-Control-Allow-Credentials: true');
+    exit(0);
+}
+
+class AdminAPI {
+
+    private static function syncUserRoleByClubAdminMembership($user_id) {
+        $activeAdminMembership = Database::getInstance()->fetchOne(
+            'SELECT 1
+             FROM club_members
+             WHERE user_id = ?
+               AND is_active = 1
+               AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")
+             LIMIT 1',
+            [$user_id]
+        );
+
+        if ($activeAdminMembership) {
+            dbUpdate('users', ['role' => 'club_admin'], 'user_id = ?', [$user_id]);
+            return;
+        }
+
+        $user = Database::getInstance()->fetchOne('SELECT role FROM users WHERE user_id = ?', [$user_id]);
+        if ($user && $user['role'] !== 'platform_admin') {
+            dbUpdate('users', ['role' => 'student'], 'user_id = ?', [$user_id]);
+        }
+    }
+
+    private static function notifyAllUsersForAnnouncement($announcement_id, $title) {
+        $users = Database::getInstance()->fetchAll('SELECT user_id FROM users WHERE is_active = 1');
+        foreach ($users as $user) {
+            dbInsert('notifications', [
+                'user_id' => $user['user_id'],
+                'title' => '全校公告',
+                'message' => '有新的全校公告：' . $title,
+                'notification_type' => 'announcement',
+                'related_type' => 'announcement',
+                'related_id' => $announcement_id,
+                'is_read' => 0,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+        }
+    }
+
+    public static function requireAdmin() {
+        if (!Auth::isAdmin()) {
+            Helper::error('您無權限執行此操作', 403);
+        }
+    }
+
+    public static function getUsers() {
+        self::requireAdmin();
+        $users = Database::getInstance()->fetchAll('SELECT user_id, name, email, role, created_at, is_active FROM users ORDER BY created_at DESC');
+        Helper::success('取得用戶列表成功', ['users' => $users]);
+    }
+
+    public static function getClubAdminAssignments() {
+        self::requireAdmin();
+        $assignments = Database::getInstance()->fetchAll('
+            SELECT
+                cm.member_id,
+                cm.club_id,
+                c.club_code,
+                c.club_name,
+                cm.user_id,
+                u.name AS user_name,
+                u.email AS user_email,
+                u.student_id AS user_student_id,
+                cm.role,
+                cm.is_active,
+                cm.join_date
+            FROM club_members cm
+            JOIN clubs c ON c.club_id = cm.club_id
+            JOIN users u ON u.user_id = cm.user_id
+            WHERE cm.role IN ("president", "vice_president", "public_relations", "treasurer", "director")
+            ORDER BY c.club_code ASC, u.name ASC
+        ');
+
+        Helper::success('取得社團幹部名單成功', ['assignments' => $assignments]);
+    }
+
+    public static function upsertClubAdminAssignment($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['club_id', 'user_key', 'role']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $club_id = (int)$data['club_id'];
+        $user_key = trim($data['user_key']);
+        $role = in_array($data['role'], ['president', 'vice_president', 'public_relations', 'treasurer', 'director']) ? $data['role'] : 'member';
+        $is_active = isset($data['is_active']) ? (int)$data['is_active'] : 1;
+
+        $club = Database::getInstance()->fetchOne('SELECT club_id FROM clubs WHERE club_id = ?', [$club_id]);
+        if (!$club) Helper::error('社團不存在', 404);
+
+        $user = Database::getInstance()->fetchOne(
+            'SELECT user_id, role, is_active FROM users WHERE user_id = ? OR email = ? OR student_id = ?',
+            [$user_key, $user_key, $user_key]
+        );
+        if (!$user) Helper::error('找不到對應帳號', 404);
+
+        $member = Database::getInstance()->fetchOne(
+            'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ?',
+            [$club_id, $user['user_id']]
+        );
+
+        $memberData = [
+            'club_id' => $club_id,
+            'user_id' => (int)$user['user_id'],
+            'role' => $role,
+            'is_active' => $is_active,
+            'join_date' => date('Y-m-d H:i:s')
+        ];
+
+        if ($member) {
+            $result = dbUpdate('club_members', [
+                'role' => $role,
+                'is_active' => $is_active
+            ], 'member_id = ?', [$member['member_id']]);
+        } else {
+            $result = dbInsert('club_members', $memberData);
+        }
+
+        if (!$result) Helper::error('儲存幹部資格失敗', 500);
+
+        if ($is_active === 1 && in_array($role, ['president', 'vice_president', 'public_relations', 'treasurer', 'director'], true)) {
+            dbUpdate('users', ['role' => 'club_admin'], 'user_id = ?', [$user['user_id']]);
+        }
+
+        Helper::success($member ? '幹部資格已更新' : '幹部資格已新增');
+    }
+
+    public static function revokeClubAdminAssignment($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['member_id']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $member_id = (int)$data['member_id'];
+        $member = Database::getInstance()->fetchOne(
+            'SELECT member_id, club_id, user_id FROM club_members WHERE member_id = ?',
+            [$member_id]
+        );
+        if (!$member) Helper::error('找不到幹部資料', 404);
+
+        $result = dbUpdate('club_members', [
+            'role' => 'member',
+            'is_active' => 1
+        ], 'member_id = ?', [$member_id]);
+        if (!$result) Helper::error('撤銷幹部資格失敗', 500);
+
+        self::syncUserRoleByClubAdminMembership((int)$member['user_id']);
+
+        Helper::success('已撤銷幹部資格');
+    }
+
+    public static function getClubs() {
+        self::requireAdmin();
+        $clubs = Database::getInstance()->fetchAll('SELECT club_id, club_code, club_name, category_id, activity_status, deleted_at, created_at FROM clubs ORDER BY created_at DESC');
+        Helper::success('取得社團清單成功', ['clubs' => $clubs]);
+    }
+
+    public static function createClubBase($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['club_code', 'club_name', 'category_id']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        if (ContentFilter::hasRestrictedInFields($data, ['club_name', 'description'])) {
+            Helper::error('社團資料包含不適當字眼，請修改後再送出', 400);
+        }
+
+        $club_id = dbInsert('clubs', [
+            'club_code' => trim($data['club_code']),
+            'club_name' => trim($data['club_name']),
+            'category_id' => (int)$data['category_id'],
+            'description' => $data['description'] ?? '',
+            'meeting_time' => $data['meeting_time'] ?? '',
+            'contact_email' => $data['contact_email'] ?? '',
+            'activity_status' => $data['activity_status'] ?? 'active',
+            'deleted_at' => null,
+            'last_updated' => date('Y-m-d H:i:s')
+        ]);
+
+        if (!$club_id) Helper::error('新增社團失敗', 500);
+        Helper::success('新增社團成功', ['club_id' => $club_id]);
+    }
+
+    public static function updateClubBase($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['club_id', 'club_code', 'club_name', 'category_id']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        if (ContentFilter::hasRestrictedInFields($data, ['club_name'])) {
+            Helper::error('社團名稱包含不適當字眼，請修改後再送出', 400);
+        }
+
+        $club_id = (int)$data['club_id'];
+        $result = dbUpdate('clubs', [
+            'club_code' => trim($data['club_code']),
+            'club_name' => trim($data['club_name']),
+            'category_id' => (int)$data['category_id'],
+            'last_updated' => date('Y-m-d H:i:s')
+        ], 'club_id = ?', [$club_id]);
+
+        if (!$result) Helper::error('更新社團基礎名單失敗', 500);
+        Helper::success('更新社團基礎名單成功');
+    }
+
+    public static function softDeleteClub($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['club_id']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $club_id = (int)$data['club_id'];
+        $hide = isset($data['hide']) ? (bool)$data['hide'] : true;
+
+        $update = [
+            'activity_status' => $hide ? 'inactive' : 'active',
+            'deleted_at' => $hide ? date('Y-m-d H:i:s') : null,
+            'last_updated' => date('Y-m-d H:i:s')
+        ];
+
+        $result = dbUpdate('clubs', $update, 'club_id = ?', [$club_id]);
+        if (!$result) Helper::error('更新社團隱藏狀態失敗', 500);
+
+        Helper::success($hide ? '社團已停用/隱藏' : '社團已恢復顯示');
+    }
+
+    public static function updateUserRole($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['user_id', 'role']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $user_id = (int)$data['user_id'];
+        $role = in_array($data['role'], ['student', 'club_admin', 'platform_admin']) ? $data['role'] : 'student';
+
+        $result = dbUpdate('users', ['role' => $role], 'user_id = ?', [$user_id]);
+        if (!$result) Helper::error('更新用戶角色失敗', 500);
+
+        Helper::success('用戶角色更新成功');
+    }
+
+    public static function updateClubStatus($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['club_id', 'activity_status']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $club_id = (int)$data['club_id'];
+        $status = in_array($data['activity_status'], ['active', 'inactive', 'suspended', 'pending']) ? $data['activity_status'] : 'inactive';
+
+        $result = dbUpdate('clubs', ['activity_status' => $status], 'club_id = ?', [$club_id]);
+        if (!$result) Helper::error('更新社團狀態失敗', 500);
+
+        Helper::success('社團狀態更新成功');
+    }
+
+    public static function getEventReports() {
+        self::requireAdmin();
+        $reports = Database::getInstance()->fetchAll('
+            SELECT
+                e.event_id,
+                e.event_name,
+                e.event_status,
+                COUNT(er.user_id) as participants_count,
+                AVG(er.rating) as average_rating
+            FROM events e
+            LEFT JOIN event_registrations er ON e.event_id = er.event_id
+            GROUP BY e.event_id, e.event_name, e.event_status
+            ORDER BY e.created_at DESC
+        ');
+        Helper::success('取得活動報告成功', ['reports' => $reports]);
+    }
+
+    public static function getUserFeedback() {
+        self::requireAdmin();
+        $feedback = Database::getInstance()->fetchAll('
+            SELECT
+                f.feedback_id,
+                f.feedback_type,
+                f.content,
+                f.created_at,
+                u.name as user_name,
+                u.email as user_email
+            FROM feedback f
+            JOIN users u ON f.user_id = u.user_id
+            ORDER BY f.created_at DESC
+        ');
+        Helper::success('取得用戶回饋成功', ['feedback' => $feedback]);
+    }
+
+    public static function createAnnouncement($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['title', 'content', 'type']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        if (ContentFilter::hasRestrictedInFields($data, ['title', 'content'])) {
+            Helper::error('公告內容包含不適當字眼，請修改後再送出', 400);
+        }
+
+        $announcement = [
+            'title' => trim($data['title']),
+            'content' => trim($data['content']),
+            'announcement_type' => in_array($data['type'], ['event', 'maintenance', 'update', 'important']) ? $data['type'] : 'important',
+            'is_pinned' => isset($data['is_sticky']) ? (int)$data['is_sticky'] : 0,
+            'created_by' => Auth::getCurrentUser()['user_id'],
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+
+        $announcement_id = dbInsert('system_announcements', $announcement);
+        if (!$announcement_id) Helper::error('創建公告失敗', 500);
+
+        self::notifyAllUsersForAnnouncement($announcement_id, $announcement['title']);
+
+        Helper::success('公告創建成功', ['announcement_id' => $announcement_id]);
+    }
+
+    public static function getAnnouncements() {
+                $announcements = Database::getInstance()->fetchAll(
+                        'SELECT * FROM system_announcements
+                         WHERE (start_date IS NULL OR start_date <= NOW())
+                             AND (end_date IS NULL OR end_date >= NOW())
+                         ORDER BY is_pinned DESC, display_priority DESC, created_at DESC'
+                );
+        Helper::success('取得公告列表成功', ['announcements' => $announcements]);
+    }
+
+    public static function deleteAnnouncement($id) {
+        self::requireAdmin();
+        $result = dbDelete('system_announcements', 'announcement_id = ?', [$id]);
+        if (!$result) Helper::error('刪除公告失敗', 500);
+
+        Helper::success('公告刪除成功');
+    }
+
+    public static function getTransferRequests() {
+        self::requireAdmin();
+        $requests = Database::getInstance()->fetchAll(
+            'SELECT r.request_id, r.club_id, c.club_code, c.club_name,
+                    r.requester_user_id, ru.name AS requester_name, ru.student_id AS requester_student_id, ru.email AS requester_email,
+                    r.target_user_id, tu.name AS target_name, tu.student_id AS target_student_id, tu.email AS target_email,
+                    r.reason, r.handover_note, r.request_status, r.review_note,
+                    r.requested_at, r.reviewed_at,
+                    r.reviewed_by, rv.name AS reviewed_by_name
+             FROM account_transfer_requests r
+             JOIN clubs c ON r.club_id = c.club_id
+             JOIN users ru ON r.requester_user_id = ru.user_id
+             JOIN users tu ON r.target_user_id = tu.user_id
+             LEFT JOIN users rv ON r.reviewed_by = rv.user_id
+             ORDER BY (r.request_status = "pending") DESC, r.requested_at DESC'
+        );
+
+        Helper::success('取得轉讓申請佇列成功', ['requests' => $requests]);
+    }
+
+    public static function reviewTransferRequest($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['request_id', 'decision']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $request_id = (int)$data['request_id'];
+        $decision = trim($data['decision']);
+        $review_note = trim($data['review_note'] ?? '');
+        $admin_user_id = Auth::getCurrentUser()['user_id'];
+
+        if (ContentFilter::hasRestrictedInFields($data, ['review_note'])) {
+            Helper::error('審核意見包含不適當字眼，請修改後再送出', 400);
+        }
+
+        if (!in_array($decision, ['approved', 'rejected'], true)) {
+            Helper::error('decision 必須為 approved 或 rejected', 400);
+        }
+
+        $request = Database::getInstance()->fetchOne(
+            'SELECT request_id, club_id, requester_user_id, target_user_id, reason, handover_note, request_status
+             FROM account_transfer_requests
+             WHERE request_id = ?',
+            [$request_id]
+        );
+        if (!$request) Helper::error('找不到申請單', 404);
+        if ($request['request_status'] !== 'pending') {
+            Helper::error('此申請單已處理，無法重複審核', 409);
+        }
+
+        if ($decision === 'rejected' && $review_note === '') {
+            Helper::error('退回申請時請填寫審核意見', 400);
+        }
+
+        $db = Database::getInstance();
+
+        try {
+            $db->beginTransaction();
+
+            if ($decision === 'approved') {
+                $requesterMember = $db->fetchOne(
+                    'SELECT member_id FROM club_members
+                     WHERE club_id = ? AND user_id = ? AND is_active = 1
+                     LIMIT 1',
+                    [$request['club_id'], $request['requester_user_id']]
+                );
+                if (!$requesterMember) {
+                    throw new Exception('申請者目前已不在該社團幹部名單中，無法核准');
+                }
+
+                $targetMember = $db->fetchOne(
+                    'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? LIMIT 1',
+                    [$request['club_id'], $request['target_user_id']]
+                );
+
+                if ($targetMember) {
+                    dbUpdate('club_members', [
+                        'role' => 'president',
+                        'is_active' => 1
+                    ], 'member_id = ?', [$targetMember['member_id']]);
+                } else {
+                    dbInsert('club_members', [
+                        'club_id' => $request['club_id'],
+                        'user_id' => $request['target_user_id'],
+                        'role' => 'president',
+                        'is_active' => 1,
+                        'join_date' => date('Y-m-d H:i:s')
+                    ]);
+                }
+
+                dbUpdate('club_members', [
+                    'role' => 'member'
+                ], 'club_id = ? AND user_id = ?', [$request['club_id'], $request['requester_user_id']]);
+
+                self::syncUserRoleByClubAdminMembership($request['requester_user_id']);
+                dbUpdate('users', ['role' => 'club_admin'], 'user_id = ?', [$request['target_user_id']]);
+
+                dbInsert('account_transfers', [
+                    'club_id' => $request['club_id'],
+                    'from_user_id' => $request['requester_user_id'],
+                    'to_user_id' => $request['target_user_id'],
+                    'transferred_roles' => json_encode([
+                        'source' => 'request_review',
+                        'request_id' => $request_id,
+                        'handover_note' => $request['handover_note']
+                    ], JSON_UNESCAPED_UNICODE),
+                    'transferred_at' => date('Y-m-d H:i:s'),
+                    'transferred_by' => $admin_user_id,
+                    'reason' => $request['reason']
+                ]);
+            }
+
+            dbUpdate('account_transfer_requests', [
+                'request_status' => $decision,
+                'review_note' => $review_note,
+                'reviewed_by' => $admin_user_id,
+                'reviewed_at' => date('Y-m-d H:i:s')
+            ], 'request_id = ?', [$request_id]);
+
+            dbInsert('notifications', [
+                'user_id' => $request['requester_user_id'],
+                'title' => '帳戶轉讓申請審核結果',
+                'message' => $decision === 'approved' ? '你的社團帳戶轉讓申請已通過。' : '你的社團帳戶轉讓申請被退回：' . $review_note,
+                'notification_type' => 'system',
+                'related_type' => 'club',
+                'related_id' => $request['club_id'],
+                'is_read' => 0,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+
+            if ($decision === 'approved') {
+                dbInsert('notifications', [
+                    'user_id' => $request['target_user_id'],
+                    'title' => '你已成為社團幹部',
+                    'message' => '你的社團幹部權限轉讓申請已核准，請登入後確認社團管理頁。',
+                    'notification_type' => 'system',
+                    'related_type' => 'club',
+                    'related_id' => $request['club_id'],
+                    'is_read' => 0,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            $db->commit();
+        } catch (Exception $e) {
+            $db->rollback();
+            Helper::error('審核失敗：' . $e->getMessage(), 500);
+        }
+
+        Helper::success($decision === 'approved' ? '已核准帳戶轉讓申請' : '已退回帳戶轉讓申請');
+    }
+
+    public static function getTransferHistory() {
+        self::requireAdmin();
+        $transfers = Database::getInstance()->fetchAll('
+            SELECT at.*, c.club_code, c.club_name, u1.name as from_user_name, u2.name as to_user_name, u3.name as admin_name
+            FROM account_transfers at
+            LEFT JOIN clubs c ON at.club_id = c.club_id
+            JOIN users u1 ON at.from_user_id = u1.user_id
+            JOIN users u2 ON at.to_user_id = u2.user_id
+            JOIN users u3 ON at.transferred_by = u3.user_id
+            ORDER BY at.transferred_at DESC
+        ');
+        Helper::success('取得轉讓歷史成功', ['transfers' => $transfers]);
+    }
+
+}
+
+$method = Helper::getRequestMethod();
+$action = $_GET['action'] ?? 'users';
+
+if ($method === 'GET') {
+    if ($action === 'users') {
+        AdminAPI::getUsers();
+    } elseif ($action === 'clubs') {
+        AdminAPI::getClubs();
+    } elseif ($action === 'club_admin_assignments') {
+        AdminAPI::getClubAdminAssignments();
+    } elseif ($action === 'event_reports') {
+        AdminAPI::getEventReports();
+    } elseif ($action === 'user_feedback') {
+        AdminAPI::getUserFeedback();
+    } elseif ($action === 'announcements') {
+        AdminAPI::getAnnouncements();
+    } elseif ($action === 'transfer_history') {
+        AdminAPI::getTransferHistory();
+    } elseif ($action === 'transfer_requests') {
+        AdminAPI::getTransferRequests();
+    }
+}
+
+if ($method === 'POST') {
+    $data = Helper::getRequestInput();
+    if ($action === 'update_user_role') {
+        AdminAPI::updateUserRole($data);
+    } elseif ($action === 'upsert_club_admin_assignment') {
+        AdminAPI::upsertClubAdminAssignment($data);
+    } elseif ($action === 'revoke_club_admin_assignment') {
+        AdminAPI::revokeClubAdminAssignment($data);
+    } elseif ($action === 'update_club_status') {
+        AdminAPI::updateClubStatus($data);
+    } elseif ($action === 'create_club') {
+        AdminAPI::createClubBase($data);
+    } elseif ($action === 'update_club') {
+        AdminAPI::updateClubBase($data);
+    } elseif ($action === 'soft_delete_club') {
+        AdminAPI::softDeleteClub($data);
+    } elseif ($action === 'create_announcement') {
+        AdminAPI::createAnnouncement($data);
+    } elseif ($action === 'review_transfer_request') {
+        AdminAPI::reviewTransferRequest($data);
+    }
+}
+
+if ($method === 'DELETE') {
+    if ($action === 'delete_announcement') {
+        $id = $_GET['id'] ?? null;
+        if (!$id) Helper::error('缺少公告ID', 400);
+        AdminAPI::deleteAnnouncement($id);
+    }
+}
+
+Helper::error('無效請求', 400);

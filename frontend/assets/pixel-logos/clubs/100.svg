@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad100" cx="50%" cy="42%" r="80%">
+      <stop offset="0%" stop-color="#a12828"/>
+      <stop offset="100%" stop-color="#671515"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad100)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#fef08a" stroke-width="3.000"/>
+
+  <rect x="120.000" y="84.000" width="84.000" height="152.000" rx="12.000" fill="none" stroke="#fef08a" stroke-width="3.000"/>
+  <path d="M152.000,112.000 H172.000 V138.000 H198.000 V158.000 H172.000 V184.000 H152.000 V158.000 H126.000 V138.000 H152.000 Z" fill="#fef08a"/>
+  <path d="M132.000,218.000 H192.000" stroke="#fef08a" stroke-width="2.200"/>
+  <path d="M142.000,102.000 C150.000,98.000 155.000,97.000 162.000,97.000 C169.000,97.000 174.000,98.000 182.000,102.000" fill="none" stroke="#fef08a" stroke-width="2.100" stroke-linecap="round"/>
+
+  <g fill="#fef08a">
+    <circle cx="76.250" cy="92.500" r="1.700"/>
+    <circle cx="93.500" cy="76.750" r="1.500"/>
+    <circle cx="231.250" cy="82.750" r="1.850"/>
+    <circle cx="248.500" cy="97.500" r="1.500"/>
+    <circle cx="79.750" cy="242.250" r="1.650"/>
+    <circle cx="95.250" cy="258.250" r="1.450"/>
+    <circle cx="228.750" cy="246.000" r="1.750"/>
+    <circle cx="244.750" cy="262.500" r="1.500"/>
+  </g>
+</svg>

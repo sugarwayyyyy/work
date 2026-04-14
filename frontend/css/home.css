@@ -1,0 +1,203 @@
+/* 首頁專用版型與左側追蹤欄 */
+.home-container {
+    padding-top: 2.5rem;
+}
+
+.home-shell {
+    margin-left: 96px;
+    width: calc(100% - 96px);
+    overflow-x: hidden;
+}
+
+.home-layout {
+    display: block;
+}
+
+.home-sidebar {
+    position: fixed;
+    top: 5.25rem;
+    left: 0;
+    bottom: 0;
+    width: 96px;
+    z-index: 90;
+    overflow: visible;
+}
+
+.home-sidebar-card {
+    height: calc(100vh - 5.25rem);
+    padding: 0.5rem 0.35rem 0.75rem;
+    overflow: visible;
+    border-radius: 0;
+    border: 0;
+    border-right: 1px solid rgba(148, 163, 184, 0.35);
+    background: linear-gradient(180deg, #f4f6fa 0%, #eef2f7 100%);
+    box-shadow: 4px 0 18px rgba(15, 23, 42, 0.06);
+}
+
+.home-sidebar-card__header {
+    display: none;
+}
+
+.home-sidebar-card__header h2 {
+    font-size: 0.8rem;
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+.home-sidebar-card__header p {
+    display: none;
+    color: var(--text-light);
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
+.home-sidebar-card__header .badge {
+    font-size: 0.62rem;
+    padding: 0.14rem 0.35rem;
+    border-radius: 999px;
+}
+
+.home-sidebar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: visible;
+    padding: 0.15rem 0.1rem;
+}
+
+.home-sidebar-item {
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    width: 100%;
+    padding: 0.3rem 0.15rem;
+    border-radius: 0.8rem;
+    text-decoration: none;
+    color: inherit;
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.home-sidebar-list::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+.home-sidebar-item:hover {
+    transform: translateY(-1px);
+    background: rgba(51, 65, 85, 0.1);
+    border-color: rgba(51, 65, 85, 0.18);
+}
+
+.home-sidebar-item__body {
+    display: none;
+}
+
+.home-sidebar-item__title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1.3;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.home-sidebar-item__meta {
+    display: none;
+    margin-top: 0.08rem;
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+.home-sidebar-empty {
+    padding: 0.7rem 0.1rem 0.4rem;
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    text-align: left;
+}
+
+.home-sidebar-empty p {
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .home-shell {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .home-layout {
+        display: block;
+    }
+
+    .home-sidebar {
+        position: static;
+        width: auto;
+        bottom: auto;
+        left: auto;
+        top: auto;
+        overflow: visible;
+    }
+
+    .home-sidebar-list {
+        max-height: none;
+    }
+
+    .home-sidebar-card__header {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .home-sidebar-card__header h2 {
+        font-size: 1.05rem;
+    }
+
+    .home-sidebar-card__header p {
+        display: block;
+        font-size: 0.85rem;
+    }
+
+    .home-sidebar-item {
+        flex-direction: row;
+        justify-content: flex-start;
+        padding: 0.7rem 0.8rem;
+        width: auto;
+    }
+
+    .home-sidebar-item__body {
+        display: block;
+        position: static;
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+        align-items: flex-start;
+        text-align: left;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        white-space: normal;
+    }
+
+    .home-sidebar-item__title {
+        white-space: normal;
+    }
+
+    .home-sidebar-item__meta {
+        display: block;
+    }
+}

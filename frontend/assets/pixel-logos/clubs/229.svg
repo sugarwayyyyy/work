@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="324" height="324" viewBox="0 0 324 324">
+  <defs>
+    <radialGradient id="bgGrad229" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#235c95"/>
+      <stop offset="100%" stop-color="#082a45"/>
+    </radialGradient>
+    <radialGradient id="lightGrad229" cx="50%" cy="40%" r="72%">
+      <stop offset="0%" stop-color="#fff6df"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </radialGradient>
+    <linearGradient id="saltGrad229" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fcff"/>
+      <stop offset="100%" stop-color="#d7e8fb"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.000" y="0.000" width="324.000" height="324.000" fill="url(#bgGrad229)"/>
+  <circle cx="162.000" cy="162.000" r="152.000" fill="none" stroke="#f59e0b" stroke-width="3.000"/>
+
+  <!-- 光（燈） -->
+  <circle cx="162.000" cy="96.000" r="28.000" fill="url(#lightGrad229)"/>
+  <g stroke="#f59e0b" stroke-linecap="round" fill="none">
+    <path d="M162.000,56.000 L162.000,66.000" stroke-width="1.700"/>
+    <path d="M138.000,62.000 L143.500,70.000" stroke-width="1.300"/>
+    <path d="M186.000,62.000 L180.500,70.000" stroke-width="1.300"/>
+    <path d="M124.000,84.000 L133.500,86.500" stroke-width="1.300"/>
+    <path d="M200.000,84.000 L190.500,86.500" stroke-width="1.300"/>
+  </g>
+
+  <!-- 鹽罐 -->
+  <path d="M128.000,132.000 L196.000,132.000 L203.000,214.000 C203.500,222.000 197.500,229.000 189.500,229.000 L134.500,229.000 C126.500,229.000 120.500,222.000 121.000,214.000 Z" fill="url(#saltGrad229)" stroke="#f59e0b" stroke-width="2.200"/>
+  <rect x="134.000" y="116.000" width="56.000" height="16.000" rx="5.000" fill="#f2c573" stroke="#f59e0b" stroke-width="1.600"/>
+  <circle cx="146.000" cy="124.000" r="2.000" fill="#f59e0b"/>
+  <circle cx="162.000" cy="124.000" r="2.000" fill="#f59e0b"/>
+  <circle cx="178.000" cy="124.000" r="2.000" fill="#f59e0b"/>
+
+  <!-- 鹽粒與光鹽之路 -->
+  <g fill="#f59e0b">
+    <circle cx="118.500" cy="244.000" r="2.200"/>
+    <circle cx="132.000" cy="251.500" r="2.000"/>
+    <circle cx="145.500" cy="257.500" r="1.850"/>
+    <circle cx="159.000" cy="261.000" r="1.700"/>
+    <circle cx="172.500" cy="257.500" r="1.850"/>
+    <circle cx="186.000" cy="251.500" r="2.000"/>
+    <circle cx="199.500" cy="244.000" r="2.200"/>
+  </g>
+  <path d="M117.000,266.000 C131.000,274.000 147.000,278.000 162.000,278.000 C177.000,278.000 193.000,274.000 207.000,266.000" fill="none" stroke="#f59e0b" stroke-width="2.500" stroke-linecap="round"/>
+
+  <!-- 點描 -->
+  <g fill="#f59e0b">
+    <circle cx="74.250" cy="88.500" r="1.700"/>
+    <circle cx="90.500" cy="72.750" r="1.500"/>
+    <circle cx="235.250" cy="84.250" r="1.850"/>
+    <circle cx="251.500" cy="98.000" r="1.500"/>
+    <circle cx="80.000" cy="242.000" r="1.650"/>
+    <circle cx="94.750" cy="258.250" r="1.450"/>
+    <circle cx="229.750" cy="246.500" r="1.750"/>
+    <circle cx="245.500" cy="262.750" r="1.500"/>
+  </g>
+</svg>
