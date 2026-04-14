@@ -251,11 +251,34 @@ class UploadAPI {
             return ['success' => false, 'message' => '文件大小超過限制'];
         }
 
-        if (!in_array($file['type'], $this->allowedTypes)) {
+        $normalizedAllowedTypes = array_unique(array_merge($this->allowedTypes, [
+            'image/jpg',
+            'image/webp'
+        ]));
+
+        $detectedType = null;
+        if (!empty($file['tmp_name']) && function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo) {
+                $detectedType = finfo_file($finfo, $file['tmp_name']) ?: null;
+                finfo_close($finfo);
+            }
+        }
+
+        $reportedType = $file['type'] ?? '';
+        $isSupportedType = in_array($reportedType, $normalizedAllowedTypes, true)
+            || in_array($detectedType, $normalizedAllowedTypes, true);
+
+        if (!$isSupportedType) {
             return ['success' => false, 'message' => '不支援的文件類型'];
         }
 
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (!in_array($extension, $allowedExtensions, true)) {
+            return ['success' => false, 'message' => '不支援的副檔名'];
+        }
+
         $filename = $prefix . '_' . time() . '_' . uniqid() . '.' . $extension;
         $filepath = $this->uploadDir . $filename;
 

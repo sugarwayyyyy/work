@@ -636,16 +636,72 @@ class EventAPI {
             Helper::error('缺少活動ID', 400);
         }
 
+        // 權限檢查：只有平台管理員和社團幹部可以查看
+        $user_id = Auth::getCurrentUserId();
+        if (!$user_id) {
+            Helper::error('禁止訪問：請先登入', 403);
+        }
+
         try {
-            $participants = Database::getInstance()->fetchAll(
-                'SELECT u.name, u.student_id FROM event_registrations er
-                 JOIN users u ON er.user_id = u.user_id
-                 WHERE er.event_id = ? AND er.status = "approved"
-                 ORDER BY er.registered_at ASC',
-                [$event_id]
+            $user = Database::getInstance()->fetchOne(
+                'SELECT role FROM users WHERE user_id = ?',
+                [$user_id]
             );
 
-            Helper::success('取得參與者成功', ['participants' => $participants]);
+            if (!$user) {
+                Helper::error('禁止訪問', 403);
+            }
+
+            // 平台管理員可以查看所有參與者
+            if ($user['role'] === 'platform_admin') {
+                $participants = Database::getInstance()->fetchAll(
+                    'SELECT u.name, u.student_id FROM event_registrations er
+                     JOIN users u ON er.user_id = u.user_id
+                     WHERE er.event_id = ? AND er.status = "approved"
+                     ORDER BY er.registered_at ASC',
+                    [$event_id]
+                );
+
+                Helper::success('取得參與者成功', ['participants' => $participants]);
+                return;
+            }
+
+            // 社團幹部只能查看自己社團的活動參與者
+            if ($user['role'] === 'club_admin') {
+                // 檢查該用戶是否是該活動所屬社團的幹部
+                $eventClub = Database::getInstance()->fetchOne(
+                    'SELECT e.club_id FROM events e WHERE e.event_id = ?',
+                    [$event_id]
+                );
+
+                if (!$eventClub) {
+                    Helper::error('找不到該活動', 404);
+                }
+
+                $adminCheck = Database::getInstance()->fetchOne(
+                    'SELECT 1 FROM club_members cm
+                     WHERE cm.user_id = ? AND cm.club_id = ? AND cm.member_role IN ("president", "vice_president", "director")',
+                    [$user_id, $eventClub['club_id']]
+                );
+
+                if (!$adminCheck) {
+                    Helper::error('禁止訪問：您無權查看該社團的參與者列表', 403);
+                }
+
+                $participants = Database::getInstance()->fetchAll(
+                    'SELECT u.name, u.student_id FROM event_registrations er
+                     JOIN users u ON er.user_id = u.user_id
+                     WHERE er.event_id = ? AND er.status = "approved"
+                     ORDER BY er.registered_at ASC',
+                    [$event_id]
+                );
+
+                Helper::success('取得參與者成功', ['participants' => $participants]);
+                return;
+            }
+
+            // 其他用戶（普通學生）無權訪問
+            Helper::error('禁止訪問：只有社團幹部和平台管理員可以查看參與者列表', 403);
 
         } catch (Exception $e) {
             Helper::error('取得參與者失敗: ' . $e->getMessage(), 500);

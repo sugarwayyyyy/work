@@ -42,7 +42,10 @@
                         </div>
                         <div>
                             <div style="color: var(--text-light); font-size: 0.9rem;">⭐ 平均評分</div>
-                            <div style="font-size: 1.5rem; font-weight: bold;" id="avg-rating">-</div>
+                            <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                                <div id="avg-rating-stars" style="font-size: 1.1rem;">-</div>
+                                <div style="font-size: 1.1rem; font-weight: bold;" id="avg-rating-value">-</div>
+                            </div>
                         </div>
                         <div>
                             <div style="color: var(--text-light); font-size: 0.9rem;">💬 評價數</div>
@@ -272,15 +275,20 @@
                     return;
                 }
 
+                // 只有在是 Google Maps 連結時才顯示按鈕，純文字不顯示
+                if (!isGoogleMapsUrl(rawValue)) {
+                    actions.innerHTML = '';
+                    return;
+                }
+
                 const googleMapsUrl = buildGoogleMapsUrl(rawValue);
-                const buttonLabel = isGoogleMapsUrl(rawValue) ? '開啟地圖連結' : '在 Google 地圖搜尋';
                 actions.innerHTML = '';
                 const link = document.createElement('a');
                 link.className = 'btn btn-primary btn-sm';
                 link.href = googleMapsUrl;
                 link.target = '_blank';
                 link.rel = 'noopener noreferrer';
-                link.textContent = buttonLabel;
+                link.textContent = '開啟地圖連結';
                 actions.appendChild(link);
             };
 
@@ -304,7 +312,9 @@
             document.getElementById('club-description').textContent = club.description || '-';
             document.getElementById('member-count').textContent = club.member_count || 0;
             const avgRating = Number(club.average_rating || 0);
-            document.getElementById('avg-rating').textContent = Number.isFinite(avgRating) ? avgRating.toFixed(1) : '0.0';
+            const starsHtml = PageUtils.renderStars(avgRating);
+            document.getElementById('avg-rating-stars').innerHTML = starsHtml;
+            document.getElementById('avg-rating-value').textContent = Number.isFinite(avgRating) ? avgRating.toFixed(1) : '0.0';
             document.getElementById('review-count').textContent = club.reviews_count || 0;
 
             const tags = Array.isArray(club.tags) ? club.tags : [];
@@ -437,7 +447,7 @@
                             </div>
                             <div style="text-align: right;">
                                 <div>${stars}</div>
-                                <div style="color: var(--text-light); font-size: 0.8rem;">1 人評分</div>
+                                <div style="color: var(--text-light); font-size: 0.8rem;">${review.rating}/5 分</div>
                             </div>
                         </div>
                         <p style="margin: 0.5rem 0; color: var(--text-light);">${review.review_content}</p>

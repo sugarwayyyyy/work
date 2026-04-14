@@ -8,19 +8,39 @@
                     return;
                 }
 
-                const announcements = (response.data.announcements || []).filter(a => Number(a.is_pinned) === 1);
-                if (announcements.length === 0) {
-                    container.innerHTML = '<p>目前沒有置頂公告</p>';
+                const allAnnouncements = response.data.announcements || [];
+                
+                // 分離置頂和一般公告
+                const pinnedAnnouncements = allAnnouncements.filter(a => Number(a.is_pinned) === 1);
+                const regularAnnouncements = allAnnouncements.filter(a => Number(a.is_pinned) !== 1);
+                
+                // 按時間排序（新到舊）
+                const sortByTime = (list) => {
+                    return list.sort((a, b) => {
+                        const timeA = new Date(a.created_at || 0).getTime();
+                        const timeB = new Date(b.created_at || 0).getTime();
+                        return timeB - timeA;
+                    });
+                };
+                
+                const sortedPinned = sortByTime(pinnedAnnouncements);
+                const sortedRegular = sortByTime(regularAnnouncements);
+                
+                // 合併：置頂公告在前，一般公告在後
+                const allSorted = [...sortedPinned, ...sortedRegular];
+                
+                if (allSorted.length === 0) {
+                    container.innerHTML = '<p>目前沒有公告</p>';
                     return;
                 }
 
                 container.innerHTML = '';
-                announcements.forEach(item => {
+                allSorted.forEach(item => {
                     const card = document.createElement('div');
-                    card.className = 'announcement-card announcement-card-pinned';
+                    card.className = `announcement-card ${Number(item.is_pinned) === 1 ? 'announcement-card-pinned' : 'announcement-card-regular'}`;
                     card.innerHTML = `
                         <div class="announcement-head">
-                            <span class="announcement-badge">置頂公告</span>
+                            <span class="announcement-badge">${Number(item.is_pinned) === 1 ? '置頂公告' : '一般公告'}</span>
                             <span class="announcement-time">${PageUtils.formatDate(item.created_at)}</span>
                         </div>
                         <h3>${item.title || '公告'}</h3>

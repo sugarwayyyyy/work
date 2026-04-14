@@ -143,8 +143,34 @@ class ClubAPI {
             $stmt->execute();
             $result = $stmt->get_result();
             $clubs = [];
+            $club_ids = [];
+            $rows_temp = [];
             
+            // 先收集所有 club_id
             while ($row = $result->fetch_assoc()) {
+                $club_ids[] = $row['club_id'];
+                $rows_temp[] = $row;
+            }
+            $stmt->close();
+            
+            // 一次性查詢所有評分
+            $ratings_map = [];
+            if (!empty($club_ids)) {
+                $placeholders = implode(',', array_fill(0, count($club_ids), '?'));
+                $ratings_result = Database::getInstance()->fetchAll(
+                    "SELECT club_id, AVG(rating) as avg_rating, COUNT(*) as count 
+                     FROM reviews 
+                     WHERE club_id IN ($placeholders) AND review_status = 'approved'
+                     GROUP BY club_id",
+                    $club_ids
+                );
+                foreach ($ratings_result as $rating) {
+                    $ratings_map[$rating['club_id']] = $rating;
+                }
+            }
+            
+            // 處理每個社團
+            foreach ($rows_temp as $row) {
                 // 取得標籤
                 $tags_result = Database::getInstance()->fetchAll(
                     'SELECT t.* FROM club_tags t 
@@ -161,9 +187,18 @@ class ClubAPI {
                 );
                 $row['member_count'] = $member_count['count'];
                 
+                // 取得平均評分和評價數
+                if (isset($ratings_map[$row['club_id']])) {
+                    $rating = $ratings_map[$row['club_id']];
+                    $row['average_rating'] = (float)($rating['avg_rating'] ?? 0);
+                    $row['reviews_count'] = (int)($rating['count'] ?? 0);
+                } else {
+                    $row['average_rating'] = 0;
+                    $row['reviews_count'] = 0;
+                }
+                
                 $clubs[] = $row;
             }
-            $stmt->close();
             
             // 取得總數
             $count_sql = "SELECT COUNT(*) as total FROM clubs WHERE $where";
@@ -236,6 +271,27 @@ class ClubAPI {
             Helper::success('取得分類社團成功', ['clubs' => $clubs]);
         } catch (Exception $e) {
             Helper::error('取得分類社團失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * 取得所有可用社團（供篩選下拉）
+     * GET /api/clubs.php?action=all_for_filter
+     */
+    public static function getAllClubsForFilter() {
+        try {
+            $clubs = Database::getInstance()->fetchAll(
+                'SELECT c.club_id, c.club_name, c.club_code, cc.category_name
+                 FROM clubs c
+                 LEFT JOIN club_categories cc ON cc.category_id = c.category_id
+                 WHERE c.activity_status = "active"
+                   AND c.deleted_at IS NULL
+                 ORDER BY c.club_name ASC'
+            );
+
+            Helper::success('取得社團篩選清單成功', ['clubs' => $clubs]);
+        } catch (Exception $e) {
+            Helper::error('取得社團篩選清單失敗: ' . $e->getMessage(), 500);
         }
     }
 
@@ -330,8 +386,8 @@ class ClubAPI {
                  WHERE club_id = ? AND review_status = "approved"',
                 [$club_id]
             );
-            $club['average_rating'] = $rating_result['avg_rating'] ?? 0;
-            $club['reviews_count'] = $rating_result['count'] ?? 0;
+            $club['average_rating'] = (float)($rating_result['avg_rating'] ?? 0);
+            $club['reviews_count'] = (int)($rating_result['count'] ?? 0);
             $club['reviews'] = $reviews;
             
             // 取得追蹤人數（前端顯示成員數會隨追蹤變動）
@@ -714,6 +770,8 @@ if ($method === 'GET') {
         ClubAPI::getCategories();
     } elseif ($action === 'by_category') {
         ClubAPI::getClubsByCategory();
+    } elseif ($action === 'all_for_filter') {
+        ClubAPI::getAllClubsForFilter();
     } elseif ($action === 'popular_tags') {
         ClubAPI::getPopularTags();
     } elseif ($action === 'get_all_tags') {

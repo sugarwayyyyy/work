@@ -219,7 +219,21 @@ class QandAAPI {
             }
 
             if ($search) {
-                $conditions[] = '(qa.question_title LIKE ? OR qa.question_content LIKE ?)';
+                $conditions[] = '(
+                    qa.question_title LIKE ?
+                    OR qa.question_content LIKE ?
+                    OR qa.club_id IN (
+                        SELECT c.club_id
+                        FROM clubs c
+                        LEFT JOIN club_categories cc ON cc.category_id = c.category_id
+                        WHERE c.club_name LIKE ?
+                           OR c.club_code LIKE ?
+                           OR cc.category_name LIKE ?
+                    )
+                )';
+                $params[] = "%$search%";
+                $params[] = "%$search%";
+                $params[] = "%$search%";
                 $params[] = "%$search%";
                 $params[] = "%$search%";
             }
@@ -232,9 +246,12 @@ class QandAAPI {
             $where = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
             
             // 取得提問列表
-            $sql = "SELECT qa.*, u.name AS user_name, u.avatar_path AS user_avatar_path
+                $sql = "SELECT qa.*, u.name AS user_name, u.avatar_path AS user_avatar_path,
+                       c.club_name, cc.category_name
                     FROM q_and_a qa
                     JOIN users u ON qa.user_id = u.user_id
+                    LEFT JOIN clubs c ON qa.club_id = c.club_id
+                    LEFT JOIN club_categories cc ON c.category_id = cc.category_id
                     $where ORDER BY qa.created_at DESC LIMIT ? OFFSET ?";
             $stmt = Database::getInstance()->prepare($sql);
             if ($stmt === false) {
@@ -320,9 +337,12 @@ class QandAAPI {
         try {
             $track_view = isset($_GET['track_view']) ? (int)$_GET['track_view'] : 1;
             $question = Database::getInstance()->fetchOne(
-                'SELECT qa.*, u.name AS user_name, u.avatar_path AS user_avatar_path
+                'SELECT qa.*, u.name AS user_name, u.avatar_path AS user_avatar_path,
+                        c.club_name, cc.category_name
                  FROM q_and_a qa
                  JOIN users u ON qa.user_id = u.user_id
+                 LEFT JOIN clubs c ON qa.club_id = c.club_id
+                 LEFT JOIN club_categories cc ON c.category_id = cc.category_id
                  WHERE qa.qa_id = ?',
                 [$qa_id]
             );

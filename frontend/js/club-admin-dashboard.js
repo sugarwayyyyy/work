@@ -12,6 +12,13 @@
         let eventSelectedTagIds = new Set();
         let createEventSelectedTagIds = new Set();
 
+        function getUploadApiUrl(action) {
+            const base = (typeof API_URL === 'string' && API_URL)
+                ? API_URL
+                : '/社團活動資訊統整平台/backend/api';
+            return `${base}/upload.php?action=${encodeURIComponent(action)}`;
+        }
+
         function setFieldError(inputId, message) {
             const input = document.getElementById(inputId);
             const err = document.getElementById(`err-${inputId}`);
@@ -929,7 +936,7 @@
                     uploadFormData.append('logo', logoFile);
                     uploadFormData.append('club_id', currentClubId);
 
-                    const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_club_logo', {
+                    const uploadResponse = await fetch(getUploadApiUrl('upload_club_logo'), {
                         method: 'POST',
                         body: uploadFormData,
                         credentials: 'same-origin',
@@ -1006,7 +1013,7 @@
                         const uploadFormData = new FormData();
                         uploadFormData.append('poster', posterFile);
                         uploadFormData.append('event_id', String(createdEventId));
-                        const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_event_poster', {
+                        const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
                             method: 'POST',
                             body: uploadFormData,
                             credentials: 'same-origin',
@@ -1073,7 +1080,7 @@
                 const uploadFormData = new FormData();
                 uploadFormData.append('poster', posterFile);
                 uploadFormData.append('event_id', currentEventId);
-                const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_event_poster', {
+                const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
                     method: 'POST',
                     body: uploadFormData,
                     credentials: 'same-origin',

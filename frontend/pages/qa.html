@@ -32,10 +32,16 @@
         <h1>提問留言板</h1>
 
         <div class="card" style="margin-bottom: 2rem;">
-            <div style="display: grid; grid-template-columns: 1.6fr 1fr auto; gap: 1rem; align-items: end;">
+            <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr auto; gap: 1rem; align-items: end;">
                 <div>
                     <label for="qa-search">提問關鍵字</label>
-                    <input type="text" id="qa-search" placeholder="搜尋標題或內容...">
+                    <input type="text" id="qa-search" placeholder="搜尋標題、內容、社團名稱或類別...">
+                </div>
+                <div>
+                    <label for="qa-club-filter">社團篩選</label>
+                    <select id="qa-club-filter">
+                        <option value="">全部社團</option>
+                    </select>
                 </div>
                 <div>
                     <label for="qa-status-filter">提問狀態</label>
@@ -136,8 +142,36 @@
             const params = new URLSearchParams(window.location.search);
             return {
                 search: params.get('search') || '',
+                club_id: params.get('club_id') || '',
                 status: params.get('status') || ''
             };
+        }
+
+        async function loadClubFilterOptions() {
+            const clubSelect = document.getElementById('qa-club-filter');
+            if (!clubSelect) return;
+
+            try {
+                const response = await APIClient.get('clubs.php?action=all_for_filter');
+                if (!response.success) return;
+
+                const clubs = response.data.clubs || [];
+                const currentValue = clubSelect.value;
+                clubSelect.innerHTML = '<option value="">全部社團</option>';
+
+                clubs.forEach(club => {
+                    const option = document.createElement('option');
+                    option.value = club.club_id;
+                    option.textContent = `${club.club_name || '-'}${club.category_name ? `（${club.category_name}）` : ''}`;
+                    clubSelect.appendChild(option);
+                });
+
+                if (currentValue) {
+                    clubSelect.value = currentValue;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
         }
 
         function normalizeKeyword(text) {
@@ -204,10 +238,12 @@
         async function loadQA() {
             try {
                 const search = document.getElementById('qa-search').value.trim();
+                const club_id = document.getElementById('qa-club-filter').value;
                 const status = document.getElementById('qa-status-filter').value;
                 let url = 'qa.php';
                 const params = new URLSearchParams();
                 if (search) params.append('search', search);
+                if (club_id) params.append('club_id', club_id);
                 if (status) params.append('status', status);
                 if ([...params.keys()].length > 0) {
                     url += `?${params.toString()}`;
@@ -243,6 +279,9 @@
                     : (question.urgency_level === 'important'
                         ? 'background: #f08c00; color: white;'
                         : 'background: #868e96; color: white;');
+                const clubMeta = question.club_name
+                    ? `社團：${question.club_name}${question.category_name ? `（${question.category_name}）` : ''}`
+                    : '社團：未指定';
                 const html = `
                     <div class="card" style="margin-bottom: 1.5rem;">
                         <div style="display: flex; justify-content: space-between; align-items: start;">
@@ -250,6 +289,9 @@
                                 <h3 style="margin: 0 0 0.5rem 0;">${question.question_title || '未命名提問'}</h3>
                                 <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">
                                     提問者：${author} • ${PageUtils.timeAgo(question.created_at)}
+                                </p>
+                                <p style="margin: 0.35rem 0 0 0; color: var(--text-light); font-size: 0.9rem;">
+                                    ${clubMeta}
                                 </p>
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end;">
@@ -416,8 +458,10 @@
         window.addEventListener('DOMContentLoaded', function() {
             const params = getQAUrlParams();
             document.getElementById('qa-search').value = params.search;
+            document.getElementById('qa-club-filter').value = params.club_id;
             document.getElementById('qa-status-filter').value = params.status;
 
+            loadClubFilterOptions();
             loadQA();
             loadCategoriesForModal();
             loadQATags();
@@ -459,6 +503,7 @@
 
             document.getElementById('qa-reset-btn').addEventListener('click', () => {
                 document.getElementById('qa-search').value = '';
+                document.getElementById('qa-club-filter').value = '';
                 document.getElementById('qa-status-filter').value = '';
                 loadQA();
             });
@@ -471,6 +516,10 @@
             });
 
             document.getElementById('qa-status-filter').addEventListener('change', () => {
+                loadQA();
+            });
+
+            document.getElementById('qa-club-filter').addEventListener('change', () => {
                 loadQA();
             });
         });

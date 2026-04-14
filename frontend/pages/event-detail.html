@@ -73,6 +73,11 @@
                                 <button id="unregister-btn" class="btn btn-secondary" style="display: none;">取消報名</button>
                                 <p id="registration-message" style="color: var(--text-light); margin-top: 0.5rem;"></p>
                             </div>
+
+                            <div id="event-poster-section" style="display: none; margin-bottom: 2rem; margin-top: 0.5rem;">
+                                <h3>活動海報</h3>
+                                <img id="event-poster" src="" alt="活動海報" style="width: 100%; max-width: 720px; border-radius: 12px; border: 1px solid #e5e7eb; object-fit: cover;">
+                            </div>
                         </div>
 
                         <!-- 側邊欄 -->
@@ -122,7 +127,7 @@
                 </div>
             </div>
 
-            <div class="card" style="margin-top: 2rem;">
+            <div class="card" style="margin-top: 2rem; display: none;" id="participants-card">
                 <div class="card-header">
                     <h3>參與者列表</h3>
                 </div>
@@ -266,6 +271,16 @@
             const latestEventTime = event.updated_at || event.published_at || event.created_at || null;
             document.getElementById('event-last-updated').textContent = `最新上傳時間：${formatDateTime(latestEventTime)}`;
             document.getElementById('event-description').textContent = event.description;
+            const posterSection = document.getElementById('event-poster-section');
+            const posterImage = document.getElementById('event-poster');
+            const posterUrl = PageUtils.resolveMediaUrl(event.poster_path);
+            if (posterSection && posterImage && posterUrl) {
+                posterImage.src = posterUrl;
+                posterSection.style.display = 'block';
+            } else if (posterSection && posterImage) {
+                posterImage.src = '';
+                posterSection.style.display = 'none';
+            }
             document.getElementById('registered-count').textContent = event.registered_count;
             const capacity = Number(event.capacity ?? event.max_participants ?? 0);
             document.getElementById('max-participants').textContent = Number.isFinite(capacity) && capacity > 0
@@ -339,6 +354,22 @@
 
         // 載入參與者列表
         async function loadParticipants(eventId) {
+            const user = StorageUtils.getUser();
+            const participantsCard = document.getElementById('participants-card');
+
+            // 只有社團幹部（club_admin）和平台管理員（platform_admin）才能看到參與者列表
+            if (!user || (user.role !== 'club_admin' && user.role !== 'platform_admin')) {
+                if (participantsCard) {
+                    participantsCard.style.display = 'none';
+                }
+                return;
+            }
+
+            // 顯示卡片
+            if (participantsCard) {
+                participantsCard.style.display = 'block';
+            }
+
             try {
                 const response = await APIClient.get(`events.php?action=participants&event_id=${eventId}`);
                 if (response.success) {
@@ -361,6 +392,8 @@
                     });
                     html += '</div>';
                     container.innerHTML = html;
+                } else {
+                    document.getElementById('participants-list').innerHTML = '<p>載入失敗</p>';
                 }
             } catch (error) {
                 console.error('Error loading participants:', error);
