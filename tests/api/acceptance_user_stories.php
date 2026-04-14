@@ -368,7 +368,7 @@ try {
         'club_id' => $ownClubId,
         'event_name' => 'Should Be Rejected',
         'description' => 'student cannot publish',
-        'event_date' => date('Y-m-d H:i:s', strtotime('+10 days')),
+        'event_date' => date('Y-m-d H:i:s', strtotime('+10 days 14:00:00')),
         'location' => 'Test',
     ], $cookieStudent);
     assertFailed($studentPost, 'US2.2 AC1 一般學生不可發布活動');
@@ -379,8 +379,9 @@ try {
         'club_id' => $ownClubId,
         'event_name' => $futureEventName,
         'description' => 'US22 活動內容',
-        'event_date' => date('Y-m-d H:i:s', strtotime('+9 days')),
+        'event_date' => date('Y-m-d H:i:s', strtotime('+9 days 15:00:00')),
         'location' => 'R201',
+        'is_registration_open' => true,
     ], $cookieClubAdmin);
     assertSuccess($newEvent, 'US2.2 AC1 幹部可發布活動');
     pass($stats, 'US2.2 AC1 幹部可成功發布活動');

@@ -12,6 +12,10 @@ class Helper {
     public static function response($success, $message = '', $data = null, $http_code = 200) {
         http_response_code($http_code);
         header('Content-Type: application/json; charset=utf-8');
+        header('Access-Control-Allow-Origin: http://localhost:8000');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+        header('Access-Control-Allow-Credentials: true');
         
         $response = [
             'success' => $success,

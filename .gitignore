@@ -7,3 +7,14 @@ backend/frontend/
 
 # Local logs
 logs/*.log
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm
+
+# Playwright
+test-results/
+playwright-report/
+.auth/

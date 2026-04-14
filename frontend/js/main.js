@@ -1,6 +1,6 @@
 // 共用 JavaScript 工具與 API 入口。
-const API_URL = '/社團活動資訊統整平台/backend/api';
-const FRONTEND_HOME_URL = '/社團活動資訊統整平台/frontend/index.html';
+const API_URL = 'http://127.0.0.1:8080/api';
+const FRONTEND_HOME_URL = 'http://localhost:8000';
 
 class APIClient {
     static async request(endpoint, options = {}) {
@@ -14,7 +14,7 @@ class APIClient {
         const response = await fetch(`${API_URL}/${endpoint}`, {
             method,
             headers,
-            credentials: 'same-origin',
+            credentials: 'include',
             body: method !== 'GET' ? JSON.stringify(options.data || {}) : undefined
         });
 
