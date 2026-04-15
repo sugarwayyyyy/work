@@ -1,6 +1,6 @@
 // 共用 JavaScript 工具與 API 入口。
-const API_URL = 'http://127.0.0.1:8080/api';
-const FRONTEND_HOME_URL = 'http://localhost:8000';
+const API_URL = 'http://localhost/work-main/backend/api';
+const FRONTEND_HOME_URL = 'http://localhost/work-main/frontend';
 
 class APIClient {
     static async request(endpoint, options = {}) {
@@ -278,6 +278,33 @@ class Validator {
     }
 }
 
+class FormUtils {
+    static bindPasswordToggles(scope = document) {
+        const toggles = scope.querySelectorAll('[data-toggle-password]');
+        toggles.forEach((toggle) => {
+            if (toggle.dataset.passwordToggleBound === 'true') return;
+
+            const targetId = toggle.getAttribute('data-toggle-password');
+            const input = targetId ? document.getElementById(targetId) : null;
+            if (!input) return;
+
+            const syncLabel = () => {
+                const isHidden = input.type === 'password';
+                toggle.textContent = isHidden ? 'Show' : 'Hide';
+                toggle.setAttribute('aria-label', isHidden ? 'Show password' : 'Hide password');
+            };
+
+            toggle.addEventListener('click', () => {
+                input.type = input.type === 'password' ? 'text' : 'password';
+                syncLabel();
+            });
+
+            toggle.dataset.passwordToggleBound = 'true';
+            syncLabel();
+        });
+    }
+}
+
 class StorageUtils {
     static setUser(user) {
         localStorage.setItem('user', JSON.stringify(user));
@@ -521,17 +548,18 @@ async function handleLogout() {
         const response = await APIClient.get('auth.php?action=logout');
         if (response.success) {
             StorageUtils.clearUser();
-            window.location.href = '/社團活動資訊統整平台/frontend/index.html';
+            window.location.href = `${FRONTEND_HOME_URL}/index.html`;
             return;
         }
     } catch (e) {
     }
 
     StorageUtils.clearUser();
-    window.location.href = '/社團活動資訊統整平台/frontend/index.html';
+    window.location.href = `${FRONTEND_HOME_URL}/index.html`;
 }
 
 window.APIClient = APIClient;
 window.PageUtils = PageUtils;
 window.Validator = Validator;
+window.FormUtils = FormUtils;
 window.StorageUtils = StorageUtils;

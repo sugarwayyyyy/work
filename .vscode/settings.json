@@ -12,6 +12,10 @@
         "/^\\$m='c:\\\\AppServ\\\\www\\\\社團活動資訊統整平台\\\\frontend\\\\assets\\\\pixel-logos\\\\clubs\\\\manifest\\.json';\n\\$manifest=Get-Content \\$m -Raw \\| ConvertFrom-Json;\nforeach\\(\\$item in \\$manifest\\)\\{\n  if\\(\\$item\\.club_code -eq '053'\\)\\{\n    \\$item\\.redraw_order=4;\n    \\$item\\.resolution='324x324';\n    \\$item\\.detail_level='9x-from-36';\n    \\$item\\.redraw_batch='single-review-flow-4';\n    \\$item\\.motif='cross\\+capsule';\n  \\}\n\\}\n\\$manifest \\| ConvertTo-Json -Depth 8 \\| Set-Content -Path \\$m -Encoding UTF8;\n'updated_manifest_053'$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^Set-Location -Path 'D:\\\\app\\\\appserv\\\\www\\\\work-main'; git checkout main; git pull origin main$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

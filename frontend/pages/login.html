@@ -39,7 +39,10 @@
 
                     <div class="form-group">
                         <label for="password">密碼</label>
-                        <input type="password" id="password" name="password" required>
+                        <div class="password-field">
+                            <input type="password" id="password" name="password" required>
+                            <button type="button" class="password-toggle" data-toggle-password="password" aria-label="Show password">Show</button>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary" style="width: 100%;">登入</button>
@@ -54,6 +57,8 @@
 
     <script src="../js/main.js"></script>
     <script>
+        FormUtils.bindPasswordToggles();
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 

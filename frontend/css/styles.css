@@ -158,6 +158,39 @@ nav {
     margin-bottom: 1.5rem;
 }
 
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    padding-right: 4.6rem;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.65rem;
+    transform: translateY(-50%);
+    border: 0;
+    background: transparent;
+    color: var(--primary-color);
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0.2rem 0.35rem;
+    line-height: 1;
+}
+
+.password-toggle:hover {
+    color: #4f46e5;
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.35);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+
 label {
     display: block;
     margin-bottom: 0.5rem;
