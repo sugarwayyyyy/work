@@ -178,6 +178,19 @@ CREATE TABLE event_attendance (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
+-- 活動評論表
+CREATE TABLE event_comments (
+    comment_id INT PRIMARY KEY AUTO_INCREMENT,
+    event_id INT NOT NULL,
+    user_id INT NOT NULL,
+    rating INT NOT NULL,
+    comment TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_event_user_comment (event_id, user_id)
+);
+
 -- 校園地點表
 CREATE TABLE campus_locations (
     location_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -422,6 +435,7 @@ CREATE INDEX idx_events_date ON events(event_date);
 CREATE INDEX idx_events_status ON events(event_status);
 CREATE INDEX idx_registrations_event ON event_registrations(event_id);
 CREATE INDEX idx_registrations_user ON event_registrations(user_id);
+CREATE INDEX idx_event_comments_event ON event_comments(event_id);
 CREATE INDEX idx_qa_club ON q_and_a(club_id);
 CREATE INDEX idx_qa_user ON q_and_a(user_id);
 CREATE INDEX idx_reviews_club ON reviews(club_id);

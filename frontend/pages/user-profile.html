@@ -226,7 +226,7 @@
 
             try {
                 const token = StorageUtils.getToken();
-                const base = APIClient.baseUrl || 'http://localhost/backend/api';
+                const base = APIClient.getBaseUrl();
                 const url = `${base}/events.php?action=participation_proof`;
                 const response = await fetch(url, {
                     method: 'GET',
@@ -381,12 +381,16 @@
                 if (avatarFile) {
                     const formData = new FormData();
                     formData.append('avatar', avatarFile);
+                    const csrfHeaders = await APIClient.getCSRFHeaders();
 
                     const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_user_avatar', {
                         method: 'POST',
                         body: formData,
                         credentials: 'same-origin',
-                        headers: APIClient.getAuthHeaders()
+                        headers: {
+                            ...APIClient.getAuthHeaders(),
+                            ...csrfHeaders
+                        }
                     });
 
                     let uploadResult = null;

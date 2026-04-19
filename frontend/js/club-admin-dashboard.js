@@ -694,11 +694,13 @@
         }
 
         function renderEmptyState(container, title, description) {
+            const safeTitle = PageUtils.escapeHtml(title || '');
+            const safeDescription = PageUtils.escapeHtml(description || '');
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-illustration"></div>
-                    <h4>${title}</h4>
-                    <p>${description}</p>
+                    <h4>${safeTitle}</h4>
+                    <p>${safeDescription}</p>
                 </div>
             `;
         }
@@ -725,16 +727,23 @@
                 return;
             }
             rows.forEach(item => {
+                const safeClubName = PageUtils.escapeHtml(item.club_name || '-');
+                const safeClubCode = PageUtils.escapeHtml(item.club_code || '-');
+                const safeTargetName = PageUtils.escapeHtml(item.target_user_name || '-');
+                const safeTargetStudentId = PageUtils.escapeHtml(item.target_student_id || '-');
+                const safeReason = PageUtils.escapeHtml(item.reason || '-');
+                const safeReviewNote = PageUtils.escapeHtml(item.review_note || '');
+                const safeStatus = PageUtils.escapeHtml(transferStatusLabel(item.request_status));
                 const card = document.createElement('div');
                 card.className = 'admin-item-card';
                 card.innerHTML = `
                     <div class="admin-item-head">
-                        <h4>${item.club_name || '-'}（${item.club_code || '-'}）</h4>
-                        <span class="status-chip">${transferStatusLabel(item.request_status)}</span>
+                        <h4>${safeClubName}（${safeClubCode}）</h4>
+                        <span class="status-chip">${safeStatus}</span>
                     </div>
-                    <p class="admin-item-content">目標對象：${item.target_user_name || '-'}（ID:${item.target_user_id} / 學號:${item.target_student_id || '-' }）</p>
-                    <p class="admin-item-content">原因：${item.reason || '-'}</p>
-                    ${item.review_note ? `<p class="admin-item-content">審核意見：${item.review_note}</p>` : ''}
+                    <p class="admin-item-content">目標對象：${safeTargetName}（ID:${Number(item.target_user_id || 0)} / 學號:${safeTargetStudentId}）</p>
+                    <p class="admin-item-content">原因：${safeReason}</p>
+                    ${safeReviewNote ? `<p class="admin-item-content">審核意見：${safeReviewNote}</p>` : ''}
                     <div class="admin-item-footer">
                         <span class="admin-item-time">送出時間：${formatDateTime(item.requested_at)}</span>
                         <span class="admin-item-time">審核時間：${formatDateTime(item.reviewed_at)}</span>
@@ -754,13 +763,15 @@
                 clubEventsSection.style.display = 'none';
             }
             (response.data.clubs || []).forEach(club => {
+                const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
+                const safeStatus = PageUtils.escapeHtml(translateStatus(club.activity_status));
                 const card = document.createElement('div');
                 card.className = 'admin-item-card';
                 card.innerHTML = `
                     <div class="admin-item-head">
                         <div>
-                            <h4>${club.club_name || '-'}</h4>
-                            <span class="status-chip">${translateStatus(club.activity_status)}</span>
+                            <h4>${safeClubName}</h4>
+                            <span class="status-chip">${safeStatus}</span>
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="loadClubDetails(${club.club_id})">管理社團</button>
                     </div>
@@ -870,14 +881,17 @@
             }
             events.forEach(event => {
                 const coHostNames = (event.co_host_clubs || []).map(club => PageUtils.escapeHtml(club.club_name || '')).filter(Boolean);
+                const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
+                const safeStatus = PageUtils.escapeHtml(translateStatus(event.event_status));
+                const safeLocation = PageUtils.escapeHtml(event.location || '');
                 const card = document.createElement('div');
                 card.className = 'admin-item-card';
                 card.innerHTML = `
                     <div class="admin-item-head">
                         <div>
-                            <h4>${event.event_name || '未命名活動'}</h4>
+                            <h4>${safeEventName}</h4>
                             <div class="admin-item-badges">
-                                <span class="status-chip">${translateStatus(event.event_status)}</span>
+                                <span class="status-chip">${safeStatus}</span>
                             </div>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
@@ -888,7 +902,7 @@
                                 : `<button class="btn btn-secondary btn-sm" onclick="archiveEvent(${event.event_id})">歸檔</button>`}
                         </div>
                     </div>
-                    <p class="admin-item-content">${formatDateTime(event.event_date)}${event.location ? '｜' + event.location : ''}</p>
+                    <p class="admin-item-content">${formatDateTime(event.event_date)}${safeLocation ? '｜' + safeLocation : ''}</p>
                     <p class="admin-item-content">目前報名人數：${Number(event.registered_count || 0)} 人</p>
                     ${coHostNames.length > 0 ? `<p class="admin-item-content">協辦社團：${coHostNames.join('、')}</p>` : ''}
                 `;
@@ -921,7 +935,7 @@
 
         function exportRegistrations(eventId) {
             const token = StorageUtils.getToken();
-            const base = APIClient.baseUrl || 'http://localhost/backend/api';
+            const base = APIClient.getBaseUrl();
             const url = `${base}/events.php?action=export_registrations&id=${eventId}`;
 
             fetch(url, {
@@ -1072,12 +1086,16 @@
                     const uploadFormData = new FormData();
                     uploadFormData.append('logo', logoFile);
                     uploadFormData.append('club_id', currentClubId);
+                    const csrfHeaders = await APIClient.getCSRFHeaders();
 
                     const uploadResponse = await fetch(getUploadApiUrl('upload_club_logo'), {
                         method: 'POST',
                         body: uploadFormData,
                         credentials: 'same-origin',
-                        headers: APIClient.getAuthHeaders()
+                        headers: {
+                            ...APIClient.getAuthHeaders(),
+                            ...csrfHeaders
+                        }
                     });
 
                     const uploadRawText = await uploadResponse.text();
@@ -1152,11 +1170,15 @@
                         const uploadFormData = new FormData();
                         uploadFormData.append('poster', posterFile);
                         uploadFormData.append('event_id', String(createdEventId));
+                        const csrfHeaders = await APIClient.getCSRFHeaders();
                         const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
                             method: 'POST',
                             body: uploadFormData,
                             credentials: 'same-origin',
-                            headers: APIClient.getAuthHeaders()
+                            headers: {
+                                ...APIClient.getAuthHeaders(),
+                                ...csrfHeaders
+                            }
                         });
 
                         const uploadRawText = await uploadResponse.text();
@@ -1220,11 +1242,15 @@
                 const uploadFormData = new FormData();
                 uploadFormData.append('poster', posterFile);
                 uploadFormData.append('event_id', currentEventId);
+                const csrfHeaders = await APIClient.getCSRFHeaders();
                 const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
                     method: 'POST',
                     body: uploadFormData,
                     credentials: 'same-origin',
-                    headers: APIClient.getAuthHeaders()
+                    headers: {
+                        ...APIClient.getAuthHeaders(),
+                        ...csrfHeaders
+                    }
                 });
 
                 const uploadRawText = await uploadResponse.text();

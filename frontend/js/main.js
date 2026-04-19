@@ -35,15 +35,60 @@ function resolveApiBaseCandidates() {
 const API_BASE_CANDIDATES = resolveApiBaseCandidates();
 const API_URL = API_BASE_CANDIDATES[0];
 const FRONTEND_HOME_URL = `${window.location.origin}${APP_BASE_PATH}/frontend/index.html`;
+let csrfTokenCache = null;
+let csrfTokenPromise = null;
 
 class APIClient {
+    static getBaseUrl() {
+        return API_BASE_CANDIDATES[0] || API_URL;
+    }
+
+    static async ensureCSRFToken() {
+        if (csrfTokenCache) {
+            return csrfTokenCache;
+        }
+
+        if (csrfTokenPromise) {
+            return csrfTokenPromise;
+        }
+
+        csrfTokenPromise = (async () => {
+            const response = await this.request('auth.php?action=csrf_token', {
+                method: 'GET',
+                skipCSRF: true
+            });
+
+            const token = response?.data?.csrf_token || null;
+            csrfTokenCache = token;
+            csrfTokenPromise = null;
+            return token;
+        })();
+
+        return csrfTokenPromise;
+    }
+
+    static async getCSRFHeaders() {
+        const token = await this.ensureCSRFToken();
+        return token ? { 'X-CSRF-Token': token } : {};
+    }
+
     static async request(endpoint, options = {}) {
         const method = options.method || 'GET';
+        const shouldAttachCSRF = !options.skipCSRF && method !== 'GET';
+
+        if (shouldAttachCSRF && !csrfTokenCache) {
+            await this.ensureCSRFToken();
+        }
+
         const headers = {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             ...options.headers
         };
+
+        if (shouldAttachCSRF && csrfTokenCache) {
+            headers['X-CSRF-Token'] = csrfTokenCache;
+        }
 
         const requestBody = method !== 'GET' ? JSON.stringify(options.data || {}) : undefined;
         let lastError = null;
@@ -140,9 +185,23 @@ class PageUtils {
         return PageUtils.escapeHtml(String(value ?? '')).replace(/`/g, '&#96;');
     }
 
+    static ensureAlertContainer() {
+        let alertContainer = document.getElementById('alert-container');
+        if (!alertContainer) {
+            alertContainer = document.createElement('div');
+            alertContainer.id = 'alert-container';
+        }
+
+        if (alertContainer.parentElement !== document.body) {
+            document.body.appendChild(alertContainer);
+        }
+
+        alertContainer.classList.add('global-alert-container');
+        return alertContainer;
+    }
+
     static showAlert(message, type = 'success') {
-        const alertContainer = document.getElementById('alert-container');
-        if (!alertContainer) return;
+        const alertContainer = PageUtils.ensureAlertContainer();
 
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type}`;
@@ -572,6 +631,10 @@ function ensureGlobalFollowSidebarStyles() {
     const style = document.createElement('style');
     style.id = 'global-follow-sidebar-style';
     style.textContent = `
+        body.has-global-follow-sidebar {
+            --global-follow-sidebar-width: 96px;
+        }
+
         body.has-global-follow-sidebar #followed-clubs-section {
             position: fixed;
             top: 5.25rem;
@@ -656,6 +719,10 @@ function ensureGlobalFollowSidebarStyles() {
             text-align: left;
         }
 
+        body.has-global-follow-sidebar .container {
+            padding-left: calc(2rem + var(--global-follow-sidebar-width));
+        }
+
         body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-empty a {
             display: inline-block;
             font-size: 0.78rem;
@@ -664,6 +731,10 @@ function ensureGlobalFollowSidebarStyles() {
         @media (max-width: 1024px) {
             body.has-global-follow-sidebar #followed-clubs-section {
                 display: none;
+            }
+
+            body.has-global-follow-sidebar .container {
+                padding-left: 1rem;
             }
         }
     `;
@@ -890,9 +961,10 @@ function updateNavigation() {
 
 async function handleLogout() {
     try {
-        const response = await APIClient.get('auth.php?action=logout');
+        const response = await APIClient.post('auth.php?action=logout', {});
         if (response.success) {
             StorageUtils.clearUser();
+            csrfTokenCache = null;
             window.location.href = FRONTEND_HOME_URL;
             return;
         }
@@ -900,6 +972,7 @@ async function handleLogout() {
     }
 
     StorageUtils.clearUser();
+    csrfTokenCache = null;
     window.location.href = FRONTEND_HOME_URL;
 }
 

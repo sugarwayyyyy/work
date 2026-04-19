@@ -10,7 +10,7 @@ require_once '../content_filter.php';
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Origin: http://localhost:8000');
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
     header('Access-Control-Allow-Credentials: true');
     exit(0);
 }
@@ -23,30 +23,21 @@ class EventAPI {
             return;
         }
 
-        $sql = 'CREATE TABLE IF NOT EXISTS event_comments (
-            comment_id INT PRIMARY KEY AUTO_INCREMENT,
-            event_id INT NOT NULL,
-            user_id INT NOT NULL,
-            rating INT NOT NULL,
-            comment TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE,
-            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-            UNIQUE KEY unique_event_user_comment (event_id, user_id)
-        )';
+        $row = Database::getInstance()->fetchOne(
+            'SELECT COUNT(*) AS cnt FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1',
+            ['event_comments']
+        );
 
-        $stmt = Database::getInstance()->prepare($sql);
-        if ($stmt === false) {
-            Helper::error('評論功能初始化失敗，請稍後再試', 500);
-        }
-
-        $ok = $stmt->execute();
-        $stmt->close();
-        if (!$ok) {
-            Helper::error('評論功能初始化失敗，請稍後再試', 500);
+        if ((int)($row['cnt'] ?? 0) < 1) {
+            Helper::error('評論功能未初始化，請先執行 migration', 500);
         }
 
         $checked = true;
+    }
+
+    private static function handleInternalError($publicMessage, Exception $e) {
+        Helper::logError($publicMessage . ': ' . $e->getMessage());
+        Helper::error($publicMessage, 500);
     }
 
     private static function sanitizeCollaborativeClubIds($rawIds, $ownerClubId) {
@@ -297,7 +288,7 @@ class EventAPI {
             $sql = "SELECT * FROM events WHERE $where ORDER BY " . implode(', ', $orderParts) . " LIMIT ? OFFSET ?";
             $stmt = Database::getInstance()->prepare($sql);
             if ($stmt === false) {
-                throw new Exception('查詢準備失敗: ' . Database::getInstance()->error);
+                throw new Exception('查詢準備失敗');
             }
 
             $queryParams = array_merge($params, $orderParams);
@@ -353,7 +344,7 @@ class EventAPI {
                 "SELECT COUNT(*) as total FROM events WHERE $where"
             );
             if ($count_stmt === false) {
-                throw new Exception('計數查詢準備失敗: ' . Database::getInstance()->error);
+                throw new Exception('計數查詢準備失敗');
             }
             if (!empty($params)) {
                 $count_stmt->bind_param(str_repeat('s', count($params)), ...$params);
@@ -374,7 +365,7 @@ class EventAPI {
             ]);
             
         } catch (Exception $e) {
-            Helper::error('取得活動列表失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('取得活動列表失敗', $e);
         }
     }
     
@@ -461,7 +452,7 @@ class EventAPI {
             Helper::success('取得活動詳情成功', $event);
             
         } catch (Exception $e) {
-            Helper::error('取得活動詳情失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('取得活動詳情失敗', $e);
         }
     }
     
@@ -488,7 +479,7 @@ class EventAPI {
             self::validateHalfHourField($data['registration_deadline'] ?? '', '報名截止只能選整點或半點', false);
             // 檢查用戶權限
             $member = Database::getInstance()->fetchOne(
-                'SELECT * FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "director", "public_relations")',
+                'SELECT * FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "director", "public_relations", "treasurer")',
                 [$data['club_id'], Auth::getCurrentUserId()]
             );
             
@@ -547,7 +538,7 @@ class EventAPI {
             Helper::success('活動建立成功', ['event_id' => $event_id]);
             
         } catch (Exception $e) {
-            Helper::error('建立活動失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('建立活動失敗', $e);
         }
     }
 
@@ -568,7 +559,7 @@ class EventAPI {
             }
 
             $member = Database::getInstance()->fetchOne(
-                'SELECT * FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "director", "public_relations")',
+                'SELECT * FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "director", "public_relations", "treasurer")',
                 [$event['club_id'], Auth::getCurrentUserId()]
             );
 
@@ -610,9 +601,15 @@ class EventAPI {
             // 更新活動標籤
             if (isset($data['tag_ids'])) {
                 // 刪除舊標籤關聯
-                Database::getInstance()->prepare(
+                $deleteStmt = Database::getInstance()->prepare(
                     'DELETE FROM event_tag_relations WHERE event_id = ?'
-                )->bind_param('i', $event_id)->execute();
+                );
+                if ($deleteStmt === false) {
+                    throw new Exception('刪除舊活動標籤關聯失敗');
+                }
+                $deleteStmt->bind_param('i', $event_id);
+                $deleteStmt->execute();
+                $deleteStmt->close();
 
                 // 新增新標籤關聯
                 $tag_ids = array_filter(array_map('intval', (array)$data['tag_ids']));
@@ -648,7 +645,7 @@ class EventAPI {
             Helper::success('活動更新成功');
 
         } catch (Exception $e) {
-            Helper::error('更新活動失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('更新活動失敗', $e);
         }
     }
     
@@ -713,7 +710,7 @@ class EventAPI {
             Helper::success('報名成功', ['registration_id' => $registration_id]);
             
         } catch (Exception $e) {
-            Helper::error('報名失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('報名失敗', $e);
         }
     }
 
@@ -766,7 +763,7 @@ class EventAPI {
             Helper::success('取消報名成功');
 
         } catch (Exception $e) {
-            Helper::error('取消報名失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('取消報名失敗', $e);
         }
     }
     
@@ -796,7 +793,7 @@ class EventAPI {
             ]);
 
         } catch (Exception $e) {
-            Helper::error('檢查報名狀態失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('檢查報名狀態失敗', $e);
         }
     }
 
@@ -878,7 +875,7 @@ class EventAPI {
             Helper::error('禁止訪問：只有社團幹部和平台管理員可以查看參與者列表', 403);
 
         } catch (Exception $e) {
-            Helper::error('取得參與者失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('取得參與者失敗', $e);
         }
     }
 
@@ -906,7 +903,7 @@ class EventAPI {
             Helper::success('取得評論成功', ['comments' => $comments]);
 
         } catch (Exception $e) {
-            Helper::error('取得評論失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('取得評論失敗', $e);
         }
     }
 
@@ -921,7 +918,7 @@ class EventAPI {
 
         try {
             $events = Database::getInstance()->fetchAll(
-                'SELECT e.*, c.club_name, er.registration_status FROM events e
+                'SELECT e.*, c.club_name, er.status AS registration_status FROM events e
                  JOIN event_registrations er ON e.event_id = er.event_id
                  JOIN clubs c ON e.club_id = c.club_id
                  WHERE er.user_id = ? AND er.status = "approved"
@@ -932,7 +929,7 @@ class EventAPI {
             Helper::success('取得我的活動成功', ['events' => $events]);
 
         } catch (Exception $e) {
-            Helper::error('取得我的活動失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('取得我的活動失敗', $e);
         }
     }
     public static function addComment($data) {
@@ -999,7 +996,7 @@ class EventAPI {
             Helper::success('評論添加成功', ['comment_id' => $comment_id]);
 
         } catch (Exception $e) {
-            Helper::error('添加評論失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('添加評論失敗', $e);
         }
     }
 
@@ -1033,7 +1030,7 @@ class EventAPI {
 
             // 驗證權限：檢查用戶是否為該社團的幹部
             $member = Database::getInstance()->fetchOne(
-                'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "director", "public_relations")',
+                'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "director", "public_relations", "treasurer")',
                 [$event['club_id'], Auth::getCurrentUserId()]
             );
 
@@ -1044,7 +1041,7 @@ class EventAPI {
             // 刪除舊標籤關聯
             $stmt = Database::getInstance()->prepare('DELETE FROM event_tag_relations WHERE event_id = ?');
             if ($stmt === false) {
-                throw new Exception('刪除舊活動標籤關聯準備失敗: ' . Database::getInstance()->error);
+                throw new Exception('刪除舊活動標籤關聯準備失敗');
             }
             $stmt->bind_param('i', $event_id);
             $stmt->execute();
@@ -1061,7 +1058,7 @@ class EventAPI {
 
             Helper::success('活動標籤更新成功');
         } catch (Exception $e) {
-            Helper::error('更新活動標籤失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('更新活動標籤失敗', $e);
         }
     }
 
@@ -1088,7 +1085,7 @@ class EventAPI {
 
             Helper::success($archive ? '活動已歸檔' : '活動已還原');
         } catch (Exception $e) {
-            Helper::error('更新活動狀態失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('更新活動狀態失敗', $e);
         }
     }
 
@@ -1136,7 +1133,7 @@ class EventAPI {
             fclose($out);
             exit;
         } catch (Exception $e) {
-            Helper::error('匯出報名名單失敗: ' . $e->getMessage(), 500);
+            self::handleInternalError('匯出報名名單失敗', $e);
         }
     }
 

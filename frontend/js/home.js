@@ -225,10 +225,17 @@
             }
         }
 
-        // 頁面載入時加載數據
-        window.addEventListener('DOMContentLoaded', function() {
+        // 頁面載入時先同步登入狀態，再載入追蹤社團，避免硬重新整理造成暫時誤判。
+        window.addEventListener('DOMContentLoaded', async function() {
+            if (typeof hydrateUserFromSession === 'function') {
+                await hydrateUserFromSession();
+            }
+            if (typeof updateNavigation === 'function') {
+                updateNavigation();
+            }
+
             loadPinnedAnnouncements();
-            loadFollowedClubs();
+            await loadFollowedClubs();
             loadFeaturedClubs();
             loadFeaturedEvents();
             loadClubCategories();

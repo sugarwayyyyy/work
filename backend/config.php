@@ -1,14 +1,14 @@
 <?php
 // 共用設定：資料庫、上傳、會話與錯誤記錄。
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASSWORD', '12345678'); // 根據您的MySQL Workbench設置修改
-define('DB_NAME', 'club_platform');
-define('DB_PORT', 3306);
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASSWORD', getenv('DB_PASSWORD') ?: '12345678');
+define('DB_NAME', getenv('DB_NAME') ?: 'club_platform');
+define('DB_PORT', (int)(getenv('DB_PORT') ?: 3306));
 
 define('APP_NAME', '社團活動資訊統整平台');
 define('APP_URL', 'http://localhost');
-define('APP_ENV', 'development'); // development 或 production
+define('APP_ENV', getenv('APP_ENV') ?: 'development'); // development 或 production
 
 define('SESSION_TIMEOUT', 3600); // 秒
 define('CSRF_TOKEN_LENGTH', 32);
@@ -35,4 +35,4 @@ ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
 
 define('ERROR_LOG_FILE', PROJECT_ROOT . '/logs/error.log');
-define('DEBUG_MODE', true);
+define('DEBUG_MODE', APP_ENV !== 'production');

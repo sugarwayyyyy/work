@@ -7,7 +7,7 @@ require_once '../auth.php';
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: http://localhost:8000');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-CSRF-Token');
 header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -16,13 +16,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // 確保 API 錯誤也以 JSON 形式返回，避免前端解析失敗。
 set_exception_handler(function ($e) {
+    Helper::logError('upload.php exception: ' . $e->getMessage());
     if (!headers_sent()) {
         http_response_code(500);
         header('Content-Type: application/json');
     }
     echo json_encode([
         'success' => false,
-        'message' => '上傳服務發生錯誤: ' . $e->getMessage()
+        'message' => '上傳服務發生錯誤，請稍後再試'
     ]);
     exit;
 });
@@ -34,13 +35,14 @@ set_error_handler(function ($severity, $message, $file, $line) {
 register_shutdown_function(function () {
     $error = error_get_last();
     if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        Helper::logError('upload.php fatal: ' . $error['message']);
         if (!headers_sent()) {
             http_response_code(500);
             header('Content-Type: application/json');
         }
         echo json_encode([
             'success' => false,
-            'message' => '上傳服務發生致命錯誤: ' . $error['message']
+            'message' => '上傳服務發生致命錯誤，請稍後再試'
         ]);
     }
 });
@@ -66,6 +68,13 @@ class UploadAPI {
         if (!Auth::isLoggedIn()) {
             http_response_code(401);
             echo json_encode(['success' => false, 'message' => '未授權訪問']);
+            return;
+        }
+
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        if (!Helper::verifyCSRFToken($token)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'CSRF 驗證失敗，請重新整理後再試']);
             return;
         }
 
@@ -122,16 +131,6 @@ class UploadAPI {
         }
 
         private function ensureEventPosterColumn() {
-            if ($this->hasColumn('events', 'poster_path')) {
-                return true;
-            }
-
-            $sql = 'ALTER TABLE events ADD COLUMN poster_path VARCHAR(255) NULL AFTER location';
-            $result = $this->db->query($sql);
-            if (!$result) {
-                return false;
-            }
-
             return $this->hasColumn('events', 'poster_path');
         }
 
@@ -199,7 +198,7 @@ class UploadAPI {
         if ($result['success']) {
             if (!$this->ensureEventPosterColumn()) {
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => '資料庫缺少 events.poster_path 欄位，且自動修復失敗']);
+                echo json_encode(['success' => false, 'message' => '資料庫缺少 events.poster_path 欄位，請先執行 migration']);
                 return;
             }
 

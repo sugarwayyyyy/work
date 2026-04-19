@@ -10,7 +10,7 @@ require_once '../content_filter.php';
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Origin: http://localhost:8000');
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
     header('Access-Control-Allow-Credentials: true');
     exit(0);
 }
@@ -81,7 +81,8 @@ class UserAPI {
             Helper::success('註冊成功', ['user_id' => $user_id]);
             
         } catch (Exception $e) {
-            Helper::error('註冊失敗: ' . $e->getMessage(), 500);
+            Helper::logError('註冊失敗: ' . $e->getMessage());
+            Helper::error('註冊失敗', 500);
         }
     }
     
@@ -133,21 +134,32 @@ class UserAPI {
                 'user_id' => $user['user_id'],
                 'name' => $user['name'],
                 'email' => $user['email'],
-                'role' => $user['role']
+                'role' => $user['role'],
+                'csrf_token' => Helper::generateCSRFToken()
             ]);
             
         } catch (Exception $e) {
-            Helper::error('登入失敗: ' . $e->getMessage(), 500);
+            Helper::logError('登入失敗: ' . $e->getMessage());
+            Helper::error('登入失敗', 500);
         }
     }
     
     /**
      * 用戶登出
-     * GET /api/auth.php?action=logout
+     * POST /api/auth.php?action=logout
      */
     public static function logout() {
+        if (Helper::getRequestMethod() !== 'POST') {
+            Helper::error('登出僅支援 POST', 405);
+        }
         Auth::logout();
         Helper::success('登出成功');
+    }
+
+    public static function getCSRFToken() {
+        Helper::success('取得 CSRF Token 成功', [
+            'csrf_token' => Helper::generateCSRFToken()
+        ]);
     }
     
     /**
@@ -225,7 +237,8 @@ class UserAPI {
             Helper::success('更新成功');
             
         } catch (Exception $e) {
-            Helper::error('更新失敗: ' . $e->getMessage(), 500);
+            Helper::logError('更新失敗: ' . $e->getMessage());
+            Helper::error('更新失敗', 500);
         }
     }
     
@@ -261,7 +274,8 @@ class UserAPI {
             Helper::success('密碼變更成功');
             
         } catch (Exception $e) {
-            Helper::error('變更失敗: ' . $e->getMessage(), 500);
+            Helper::logError('變更失敗: ' . $e->getMessage());
+            Helper::error('變更失敗', 500);
         }
     }
 }
@@ -283,6 +297,9 @@ switch ($action) {
         break;
     case 'logout':
         UserAPI::logout();
+        break;
+    case 'csrf_token':
+        UserAPI::getCSRFToken();
         break;
     case 'current':
         UserAPI::getCurrentUserInfo();

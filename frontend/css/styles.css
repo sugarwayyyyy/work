@@ -1092,11 +1092,30 @@ textarea {
     border-color: var(--danger-color) !important;
 }
 
+#alert-container.global-alert-container {
+    position: fixed;
+    top: 5.5rem;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(560px, calc(100vw - 1.5rem));
+    z-index: 1400;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    #alert-container.global-alert-container {
+        top: 4.75rem;
+        width: calc(100vw - 1rem);
+    }
+}
+
 /* 警告/成功消息 */
 .alert {
     padding: 1rem;
     border-radius: 0.5rem;
     margin-bottom: 1.5rem;
+    pointer-events: auto;
 }
 
 .alert-success {

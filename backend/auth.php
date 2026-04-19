@@ -14,7 +14,7 @@ class Helper {
         header('Content-Type: application/json; charset=utf-8');
         header('Access-Control-Allow-Origin: http://localhost:8000');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+        header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
         header('Access-Control-Allow-Credentials: true');
         
         $response = [
@@ -80,6 +80,37 @@ class Helper {
     public static function verifyCSRFToken($token) {
         return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
     }
+
+    private static function shouldSkipCSRFFCheck() {
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        if (strpos($uri, '/api/auth.php') !== false) {
+            $action = $_GET['action'] ?? '';
+            if (in_array($action, ['login', 'register', 'csrf_token'], true)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static function enforceCSRFIfNeeded($requestData = null) {
+        $method = strtoupper(self::getRequestMethod());
+        if (!in_array($method, ['POST', 'PUT', 'DELETE', 'PATCH'], true)) {
+            return;
+        }
+
+        if (self::shouldSkipCSRFFCheck()) {
+            return;
+        }
+
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+        if (!$token && is_array($requestData) && isset($requestData['csrf_token'])) {
+            $token = $requestData['csrf_token'];
+        }
+
+        if (!is_string($token) || !self::verifyCSRFToken($token)) {
+            self::error('CSRF 驗證失敗，請重新整理後再試', 403);
+        }
+    }
     
     // 清理用戶輸入
     public static function sanitize($input) {
@@ -137,6 +168,7 @@ class Helper {
             $data = [];
         }
 
+        self::enforceCSRFIfNeeded($data);
         self::rejectDangerousCommandPayload($data);
         return $data;
     }
@@ -170,11 +202,48 @@ class Helper {
 }
 
 class Auth {
+    private static $currentRoleCache = null;
+
+    private static function syncCSRFCookie() {
+        $token = Helper::generateCSRFToken();
+        $isHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        setcookie('csrf_token', $token, [
+            'expires' => 0,
+            'path' => '/',
+            'secure' => $isHttps,
+            'httponly' => false,
+            'samesite' => 'Lax'
+        ]);
+    }
+
+    private static function getCurrentRole() {
+        if (!self::isLoggedIn()) {
+            self::$currentRoleCache = null;
+            return null;
+        }
+
+        if (self::$currentRoleCache !== null) {
+            return self::$currentRoleCache;
+        }
+
+        $row = Database::getInstance()->fetchOne(
+            'SELECT role FROM users WHERE user_id = ?',
+            [self::getCurrentUserId()]
+        );
+
+        $role = $row['role'] ?? ($_SESSION['role'] ?? null);
+        $_SESSION['role'] = $role;
+        self::$currentRoleCache = $role;
+
+        return $role;
+    }
+
     // 開始會話
     public static function startSession() {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
+        self::syncCSRFCookie();
     }
     
     // 檢查用戶是否登入
@@ -207,15 +276,19 @@ class Auth {
     // 設置登入會話
     public static function setLogin($user_id, $user_data = []) {
         self::startSession();
+        session_regenerate_id(true);
         $_SESSION['user_id'] = $user_id;
         $_SESSION['role'] = $user_data['role'] ?? 'student';
         $_SESSION['name'] = $user_data['name'] ?? '';
         $_SESSION['login_time'] = time();
+        self::$currentRoleCache = $_SESSION['role'];
+        self::syncCSRFCookie();
     }
     
     // 登出
     public static function logout() {
         self::startSession();
+        self::$currentRoleCache = null;
         session_destroy();
     }
     
@@ -223,7 +296,7 @@ class Auth {
     public static function hasRole($role) {
         self::startSession();
         if (!self::isLoggedIn()) return false;
-        return ($_SESSION['role'] ?? null) === $role;
+        return self::getCurrentRole() === $role;
     }
     
     // 檢查是否是管理員
