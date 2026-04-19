@@ -192,7 +192,7 @@
                 const style = isSelected
                     ? 'background: var(--primary-color); color: white; border-color: var(--primary-color);'
                     : 'background: rgba(99, 102, 241, 0.08); color: var(--primary-color); border-color: rgba(99, 102, 241, 0.25);';
-                return `<button type="button" class="tag" data-tag-id="${tag.qa_tag_id}" style="margin: 0; border: 1px solid; cursor: pointer; ${style}">#${tag.tag_name}</button>`;
+                return `<button type="button" class="tag" data-tag-id="${Number(tag.qa_tag_id) || 0}" style="margin: 0; border: 1px solid; cursor: pointer; ${style}">#${PageUtils.escapeHtml(tag.tag_name || '')}</button>`;
             }).join('');
         }
 
@@ -271,22 +271,26 @@
             }
 
             questions.forEach(question => {
-                const tagsHtml = question.tags.map(tag => `<span class="tag">#${tag.tag_name}</span>`).join('');
-                const author = question.author_name || question.user_name || question.display_name || '匿名用戶';
+                const tagsHtml = (question.tags || []).map(tag => `<span class="tag">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`).join('');
+                const author = PageUtils.escapeHtml(question.author_name || question.user_name || question.display_name || '匿名用戶');
                 const urgencyLabel = question.urgency_label || '一般';
                 const urgencyStyle = question.urgency_level === 'urgent'
                     ? 'background: #c92a2a; color: white;'
                     : (question.urgency_level === 'important'
                         ? 'background: #f08c00; color: white;'
                         : 'background: #868e96; color: white;');
+                const safeQuestionTitle = PageUtils.escapeHtml(question.question_title || '未命名提問');
+                const safeQuestionContent = PageUtils.escapeHtml(question.question_content || '');
+                const safeUrgencyLabel = PageUtils.escapeHtml(urgencyLabel);
+                const safeQaId = Number(question.qa_id) || 0;
                 const clubMeta = question.club_name
-                    ? `社團：${question.club_name}${question.category_name ? `（${question.category_name}）` : ''}`
+                    ? `社團：${PageUtils.escapeHtml(question.club_name)}${question.category_name ? `（${PageUtils.escapeHtml(question.category_name)}）` : ''}`
                     : '社團：未指定';
                 const html = `
                     <div class="card" style="margin-bottom: 1.5rem;">
                         <div style="display: flex; justify-content: space-between; align-items: start;">
                             <div style="flex: 1;">
-                                <h3 style="margin: 0 0 0.5rem 0;">${question.question_title || '未命名提問'}</h3>
+                                <h3 style="margin: 0 0 0.5rem 0;">${safeQuestionTitle}</h3>
                                 <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">
                                     提問者：${author} • ${PageUtils.timeAgo(question.created_at)}
                                 </p>
@@ -296,18 +300,18 @@
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end;">
                                 <span class="badge">${question.replies_count} 個回覆</span>
-                                <span class="badge" style="${urgencyStyle}">${urgencyLabel}</span>
+                                <span class="badge" style="${urgencyStyle}">${safeUrgencyLabel}</span>
                             </div>
                         </div>
                         <div style="margin: 1rem 0;">
                             ${tagsHtml}
                         </div>
-                        <p style="color: var(--text-light);">${question.question_content}</p>
+                        <p style="color: var(--text-light);">${safeQuestionContent}</p>
                         <div style="display: flex; gap: 1rem; font-size: 0.9rem; color: #999;">
                             <span>👁️ ${question.views_count} 次瀏覽</span>
                             <span>💬 ${question.replies_count} 個回覆</span>
                         </div>
-                        <a href="qa-detail.html?id=${question.qa_id}" class="btn btn-primary btn-sm" style="margin-top: 1rem;">查看詳情</a>
+                        <a href="qa-detail.html?id=${safeQaId}" class="btn btn-primary btn-sm" style="margin-top: 1rem;">查看詳情</a>
                     </div>
                 `;
                 container.innerHTML += html;

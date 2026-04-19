@@ -383,10 +383,12 @@
 
                     let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">';
                     participants.forEach(participant => {
+                        const safeName = PageUtils.escapeHtml(participant.name || '匿名參與者');
+                        const safeStudentId = PageUtils.escapeHtml(participant.student_id || '');
                         html += `
                             <div class="card" style="text-align: center;">
-                                <div style="font-weight: bold;">${participant.name || '匿名參與者'}</div>
-                                <div style="color: var(--text-light); font-size: 0.875rem;">${participant.student_id || ''}</div>
+                                <div style="font-weight: bold;">${safeName}</div>
+                                <div style="color: var(--text-light); font-size: 0.875rem;">${safeStudentId}</div>
                             </div>
                         `;
                     });
@@ -430,7 +432,8 @@
                     let html = '';
                     comments.forEach(comment => {
                         const ratingHtml = PageUtils.renderStars(comment.rating);
-                        const author = comment.author_name || comment.user_name || '匿名用戶';
+                        const author = PageUtils.escapeHtml(comment.author_name || comment.user_name || '匿名用戶');
+                        const safeComment = PageUtils.escapeHtml(comment.comment || '');
                         html += `
                             <div class="card" style="margin-bottom: 1rem;">
                                 <div style="display: flex; justify-content: space-between; align-items: start;">
@@ -445,7 +448,7 @@
                                         <div style="color: var(--text-light); font-size: 0.8rem;">1 人評分</div>
                                     </div>
                                 </div>
-                                <p style="margin-top: 0.5rem;">${comment.comment || ''}</p>
+                                <p style="margin-top: 0.5rem;">${safeComment}</p>
                             </div>
                         `;
                     });
@@ -464,11 +467,14 @@
                 if (response.success) {
                     const club = response.data;
                     const container = document.getElementById('club-info');
+                    const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
+                    const safeDescription = PageUtils.escapeHtml(club.description || '');
+                    const safeClubId = Number(club.club_id) || 0;
                     container.innerHTML = `
-                        <h5>${club.club_name || '-'}</h5>
-                        <p>${club.description}</p>
+                        <h5>${safeClubName}</h5>
+                        <p>${safeDescription}</p>
                         <div style="margin-top: 1rem;">
-                            <a href="club-detail.html?id=${club.club_id}" class="btn btn-primary btn-sm">查看社團詳情</a>
+                            <a href="club-detail.html?id=${safeClubId}" class="btn btn-primary btn-sm">查看社團詳情</a>
                         </div>
                     `;
                 }

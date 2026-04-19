@@ -285,6 +285,15 @@
         const announcementsState = { rows: [], query: '', sort: 'created_desc', page: 1 };
         let clubCategories = [];
 
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function toSearchableText(value) {
             return (value ?? '').toString().trim().toLowerCase();
         }
@@ -332,14 +341,17 @@
         }
 
         function renderEmptyState(container, title, description, colspan = 1) {
+            const safeTitle = escapeHtml(title || '');
+            const safeDescription = escapeHtml(description || '');
+            const safeColspan = Number(colspan) || 1;
             if (container.tagName === 'TBODY') {
                 container.innerHTML = `
                     <tr>
-                        <td colspan="${colspan}">
+                        <td colspan="${safeColspan}">
                             <div class="empty-state">
                                 <div class="empty-state-illustration"></div>
-                                <h4>${title}</h4>
-                                <p>${description}</p>
+                                <h4>${safeTitle}</h4>
+                                <p>${safeDescription}</p>
                             </div>
                         </td>
                     </tr>
@@ -350,8 +362,8 @@
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-illustration"></div>
-                    <h4>${title}</h4>
-                    <p>${description}</p>
+                    <h4>${safeTitle}</h4>
+                    <p>${safeDescription}</p>
                 </div>
             `;
         }
@@ -363,7 +375,7 @@
             const options = clubsState.rows
                 .slice()
                 .sort((a, b) => compareByValue(a.club_code, b.club_code, 'asc'))
-                .map(club => `<option value="${club.club_id}">${club.club_code || '-'} ${club.club_name || '-'}</option>`)
+                .map(club => `<option value="${Number(club.club_id) || 0}">${escapeHtml(club.club_code || '-')} ${escapeHtml(club.club_name || '-')}</option>`)
                 .join('');
             select.innerHTML = `<option value="">請選擇社團</option>${options}`;
             if (previousValue) {
@@ -380,7 +392,7 @@
             select.innerHTML = `<option value="">${selectedClubId ? '請選擇幹部帳號' : '請先選擇社團'}</option>` + clubAdmins
                 .slice()
                 .sort((a, b) => compareByValue(a.user_name, b.user_name, 'asc'))
-                .map(user => `<option value="${user.user_id}">${user.user_name || '-'}｜${user.user_email || '-'}｜${user.user_student_id || '-'}</option>`)
+                .map(user => `<option value="${Number(user.user_id) || 0}">${escapeHtml(user.user_name || '-')}｜${escapeHtml(user.user_email || '-')}｜${escapeHtml(user.user_student_id || '-')}</option>`)
                 .join('');
         }
 
@@ -432,22 +444,34 @@
             }
 
             rows.forEach(item => {
+                const safeClubName = escapeHtml(item.club_name || '-');
+                const safeClubCode = escapeHtml(item.club_code || '-');
+                const safeUserName = escapeHtml(item.user_name || '-');
+                const safeUserEmail = escapeHtml(item.user_email || '-');
+                const safeStudentId = escapeHtml(item.user_student_id || '-');
+                const safeRoleLabel = escapeHtml(clubAdminRoleLabel(item.role));
+                const safeJoinDate = escapeHtml(formatDateTime(item.join_date));
+                const safeMemberId = Number(item.member_id) || 0;
+                const safeClubId = Number(item.club_id) || 0;
+                const safeUserId = Number(item.user_id) || 0;
+                const safeRole = escapeHtml(item.role || 'member');
+                const safeActive = Number(item.is_active) === 1 ? '1' : '0';
                 const card = document.createElement('div');
                 card.className = 'admin-item-card';
                 card.innerHTML = `
                     <div class="admin-item-head">
-                        <h4>${item.club_name || '-'}（${item.club_code || '-'}）</h4>
+                        <h4>${safeClubName}（${safeClubCode}）</h4>
                         <span class="status-chip ${item.is_active == 1 ? 'chip-success' : 'chip-warning'}">${item.is_active == 1 ? '啟用' : '停用'}</span>
                     </div>
-                    <p class="admin-item-content">帳號：${item.user_name || '-'}｜${item.user_email || '-'}｜學號：${item.user_student_id || '-'}</p>
-                    <p class="admin-item-content">職稱：${clubAdminRoleLabel(item.role)}</p>
+                    <p class="admin-item-content">帳號：${safeUserName}｜${safeUserEmail}｜學號：${safeStudentId}</p>
+                    <p class="admin-item-content">職稱：${safeRoleLabel}</p>
                     <div class="admin-item-footer">
-                        <span class="admin-item-time">加入時間：${formatDateTime(item.join_date)}</span>
-                        <span class="admin-item-time">Member ID：${item.member_id}</span>
+                        <span class="admin-item-time">加入時間：${safeJoinDate}</span>
+                        <span class="admin-item-time">Member ID：${safeMemberId}</span>
                     </div>
                     <div class="row-actions" style="margin-top: 12px;">
-                        <button class="btn btn-primary btn-sm" data-admin-edit="${item.member_id}" data-club-id="${item.club_id}" data-user-key="${item.user_id}" data-role="${item.role}" data-active="${item.is_active}">編輯</button>
-                        <button class="btn btn-secondary btn-sm" data-admin-revoke="${item.member_id}">撤銷幹部資格</button>
+                        <button class="btn btn-primary btn-sm" data-admin-edit="${safeMemberId}" data-club-id="${safeClubId}" data-user-key="${safeUserId}" data-role="${safeRole}" data-active="${safeActive}">編輯</button>
+                        <button class="btn btn-secondary btn-sm" data-admin-revoke="${safeMemberId}">撤銷幹部資格</button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -560,18 +584,27 @@
                 return;
             }
             rows.forEach(transfer => {
+                const safeTransferredAt = escapeHtml(formatDateTime(transfer.transferred_at));
+                const safeClubName = escapeHtml(transfer.club_name || '-');
+                const safeClubCode = escapeHtml(transfer.club_code || '-');
+                const safeFromName = escapeHtml(transfer.from_user_name || '-');
+                const safeToName = escapeHtml(transfer.to_user_name || '-');
+                const safeFromId = Number(transfer.from_user_id) || 0;
+                const safeToId = Number(transfer.to_user_id) || 0;
+                const safeAdminName = escapeHtml(transfer.admin_name || '-');
+                const safeReason = escapeHtml(transfer.reason || '未填寫原因');
                 const card = document.createElement('div');
                 card.className = 'admin-item-card';
                 card.innerHTML = `
                     <div class="admin-item-head">
                         <h4>帳戶轉讓紀錄</h4>
-                        <span class="status-chip chip-warning">${formatDateTime(transfer.transferred_at)}</span>
+                        <span class="status-chip chip-warning">${safeTransferredAt}</span>
                     </div>
-                    <p class="admin-item-content">社團：${transfer.club_name || '-'}（${transfer.club_code || '-'}）</p>
-                    <p class="admin-item-content">從用戶 ${transfer.from_user_name} (${transfer.from_user_id}) 轉讓到用戶 ${transfer.to_user_name} (${transfer.to_user_id})</p>
+                    <p class="admin-item-content">社團：${safeClubName}（${safeClubCode}）</p>
+                    <p class="admin-item-content">從用戶 ${safeFromName} (${safeFromId}) 轉讓到用戶 ${safeToName} (${safeToId})</p>
                     <div class="admin-item-footer">
-                        <span class="admin-item-time">操作者：${transfer.admin_name || '-'}</span>
-                        <span class="status-chip">${transfer.reason || '未填寫原因'}</span>
+                        <span class="admin-item-time">操作者：${safeAdminName}</span>
+                        <span class="status-chip">${safeReason}</span>
                     </div>
                 `;
                 container.appendChild(card);
@@ -597,26 +630,41 @@
 
             rows.forEach(item => {
                 const isPending = item.request_status === 'pending';
+                const safeClubName = escapeHtml(item.club_name || '-');
+                const safeClubCode = escapeHtml(item.club_code || '-');
+                const safeStatus = escapeHtml(transferRequestStatusLabel(item.request_status));
+                const safeRequesterName = escapeHtml(item.requester_name || '-');
+                const safeRequesterId = Number(item.requester_user_id) || 0;
+                const safeRequesterStudentId = escapeHtml(item.requester_student_id || '-');
+                const safeTargetName = escapeHtml(item.target_name || '-');
+                const safeTargetId = Number(item.target_user_id) || 0;
+                const safeTargetStudentId = escapeHtml(item.target_student_id || '-');
+                const safeReason = escapeHtml(item.reason || '-');
+                const safeHandover = escapeHtml(item.handover_note || '');
+                const safeReviewNote = escapeHtml(item.review_note || '');
+                const safeRequestedAt = escapeHtml(formatDateTime(item.requested_at));
+                const safeReviewedBy = escapeHtml(item.reviewed_by_name || '-');
+                const safeRequestId = Number(item.request_id) || 0;
                 const card = document.createElement('div');
                 card.className = 'admin-item-card';
                 card.innerHTML = `
                     <div class="admin-item-head">
-                        <h4>${item.club_name || '-'}（${item.club_code || '-'}）</h4>
-                        <span class="status-chip ${isPending ? 'chip-warning' : 'chip-success'}">${transferRequestStatusLabel(item.request_status)}</span>
+                        <h4>${safeClubName}（${safeClubCode}）</h4>
+                        <span class="status-chip ${isPending ? 'chip-warning' : 'chip-success'}">${safeStatus}</span>
                     </div>
-                    <p class="admin-item-content">轉讓者：${item.requester_name || '-'}（ID:${item.requester_user_id} / 學號:${item.requester_student_id || '-'}）</p>
-                    <p class="admin-item-content">目標者：${item.target_name || '-'}（ID:${item.target_user_id} / 學號:${item.target_student_id || '-'}）</p>
-                    <p class="admin-item-content">轉讓原因：${item.reason || '-'}</p>
-                    ${item.handover_note ? `<p class="admin-item-content">補充：${item.handover_note}</p>` : ''}
-                    ${item.review_note ? `<p class="admin-item-content">審核意見：${item.review_note}</p>` : ''}
+                    <p class="admin-item-content">轉讓者：${safeRequesterName}（ID:${safeRequesterId} / 學號:${safeRequesterStudentId}）</p>
+                    <p class="admin-item-content">目標者：${safeTargetName}（ID:${safeTargetId} / 學號:${safeTargetStudentId}）</p>
+                    <p class="admin-item-content">轉讓原因：${safeReason}</p>
+                    ${safeHandover ? `<p class="admin-item-content">補充：${safeHandover}</p>` : ''}
+                    ${safeReviewNote ? `<p class="admin-item-content">審核意見：${safeReviewNote}</p>` : ''}
                     <div class="admin-item-footer">
-                        <span class="admin-item-time">送出：${formatDateTime(item.requested_at)}</span>
-                        <span class="admin-item-time">審核者：${item.reviewed_by_name || '-'}</span>
+                        <span class="admin-item-time">送出：${safeRequestedAt}</span>
+                        <span class="admin-item-time">審核者：${safeReviewedBy}</span>
                     </div>
                     ${isPending ? `
                         <div class="row-actions" style="margin-top: 12px;">
-                            <button class="btn btn-primary btn-sm" data-transfer-approve="${item.request_id}">核准</button>
-                            <button class="btn btn-secondary btn-sm" data-transfer-reject="${item.request_id}">退回</button>
+                            <button class="btn btn-primary btn-sm" data-transfer-approve="${safeRequestId}">核准</button>
+                            <button class="btn btn-secondary btn-sm" data-transfer-reject="${safeRequestId}">退回</button>
                         </div>
                     ` : ''}
                 `;
@@ -666,12 +714,14 @@
                 return;
             }
             reports.forEach(report => {
+                const safeEventName = escapeHtml(report.event_name || '-');
+                const safeStatus = escapeHtml(CLUB_STATUS_LABELS[report.event_status] || report.event_status || '-');
                 const card = document.createElement('div');
                 card.className = 'admin-item-card';
                 card.innerHTML = `
                     <div class="admin-item-head">
-                        <h4>${report.event_name || '-'}</h4>
-                        <span class="status-chip">${CLUB_STATUS_LABELS[report.event_status] || report.event_status || '-'}</span>
+                        <h4>${safeEventName}</h4>
+                        <span class="status-chip">${safeStatus}</span>
                     </div>
                     <p class="admin-item-content">參與人數：${report.participants_count ?? 0}，平均評分：${report.average_rating ?? '無'}</p>
                 `;
@@ -690,14 +740,17 @@
                 return;
             }
             feedback.forEach(item => {
+                const safeSubject = escapeHtml(item.subject || '用戶回饋');
+                const safeCreatedAt = escapeHtml(formatDateTime(item.created_at));
+                const safeMessage = escapeHtml(item.message || item.content || '-');
                 const card = document.createElement('div');
                 card.className = 'admin-item-card';
                 card.innerHTML = `
                     <div class="admin-item-head">
-                        <h4>${item.subject || '用戶回饋'}</h4>
-                        <span class="status-chip">${formatDateTime(item.created_at)}</span>
+                        <h4>${safeSubject}</h4>
+                        <span class="status-chip">${safeCreatedAt}</span>
                     </div>
-                    <p class="admin-item-content">${item.message || item.content || '-'}</p>
+                    <p class="admin-item-content">${safeMessage}</p>
                 `;
                 container.appendChild(card);
             });
@@ -780,17 +833,21 @@
                 return;
             }
             pageData.rows.forEach(user => {
+                const safeName = escapeHtml(user.name || '-');
+                const safeEmail = escapeHtml(user.email || '-');
+                const safeRole = escapeHtml(USER_ROLE_LABELS[user.role] || user.role || '-');
+                const safeUserId = Number(user.user_id) || 0;
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${user.name || '-'}</td>
-                    <td>${user.email || '-'}</td>
-                    <td><span class="status-chip role-chip">${USER_ROLE_LABELS[user.role] || user.role || '-'}</span></td>
+                    <td>${safeName}</td>
+                    <td>${safeEmail}</td>
+                    <td><span class="status-chip role-chip">${safeRole}</span></td>
                     <td><span class="status-chip ${user.is_active ? 'chip-success' : 'chip-danger'}">${user.is_active ? '啟用' : '停用'}</span></td>
                     <td>
                         <div class="row-actions">
-                            <button class="btn btn-secondary btn-sm" data-user-id="${user.user_id}" data-role="student">學生</button>
-                            <button class="btn btn-secondary btn-sm" data-user-id="${user.user_id}" data-role="club_admin">社團幹部</button>
-                            <button class="btn btn-secondary btn-sm" data-user-id="${user.user_id}" data-role="platform_admin">管理員</button>
+                            <button class="btn btn-secondary btn-sm" data-user-id="${safeUserId}" data-role="student">學生</button>
+                            <button class="btn btn-secondary btn-sm" data-user-id="${safeUserId}" data-role="club_admin">社團幹部</button>
+                            <button class="btn btn-secondary btn-sm" data-user-id="${safeUserId}" data-role="platform_admin">管理員</button>
                         </div>
                     </td>`;
                 body.appendChild(row);
@@ -818,23 +875,28 @@
             }
             pageData.rows.forEach(club => {
                 const categoryName = getCategoryName(club.category_id);
+                const safeClubCode = escapeHtml(club.club_code || '-');
+                const safeClubName = escapeHtml(club.club_name || '-');
+                const safeCategoryName = escapeHtml(categoryName || '-');
+                const safeStatusLabel = escapeHtml(CLUB_STATUS_LABELS[club.activity_status] || club.activity_status || '-');
+                const safeClubId = Number(club.club_id) || 0;
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${club.club_code || '-'}</td>
-                    <td>${club.club_name || '-'}</td>
-                    <td>${categoryName}</td>
-                    <td><span class="status-chip">${CLUB_STATUS_LABELS[club.activity_status] || club.activity_status || '-'}</span></td>
+                    <td>${safeClubCode}</td>
+                    <td>${safeClubName}</td>
+                    <td>${safeCategoryName}</td>
+                    <td><span class="status-chip">${safeStatusLabel}</span></td>
                     <td><span class="status-chip ${club.deleted_at ? 'chip-warning' : 'chip-success'}">${club.deleted_at ? '已隱藏' : '顯示中'}</span></td>
                     <td>
                         <div class="row-actions">
-                            <select data-club-id="${club.club_id}" class="table-select">
+                            <select data-club-id="${safeClubId}" class="table-select">
                                 <option value="active" ${club.activity_status === 'active' ? 'selected' : ''}>啟用</option>
                                 <option value="inactive" ${club.activity_status === 'inactive' ? 'selected' : ''}>停用</option>
                                 <option value="suspended" ${club.activity_status === 'suspended' ? 'selected' : ''}>暫停</option>
                                 <option value="pending" ${club.activity_status === 'pending' ? 'selected' : ''}>待審核</option>
                             </select>
-                            <button class="btn btn-secondary btn-sm" data-club-update="${club.club_id}">更新</button>
-                            <button class="btn btn-secondary btn-sm" data-club-toggle="${club.club_id}">${club.deleted_at ? '恢復' : '停用/隱藏'}</button>
+                            <button class="btn btn-secondary btn-sm" data-club-update="${safeClubId}">更新</button>
+                            <button class="btn btn-secondary btn-sm" data-club-toggle="${safeClubId}">${club.deleted_at ? '恢復' : '停用/隱藏'}</button>
                         </div>
                     </td>`;
                 body.appendChild(row);
@@ -872,20 +934,25 @@
             pageData.rows.forEach(item => {
                 const typeKey = item.announcement_type || item.type;
                 const isPinned = Boolean(item.is_pinned ?? item.is_sticky);
+                const safeTitle = escapeHtml(item.title || '-');
+                const safeType = escapeHtml(ANNOUNCEMENT_TYPE_LABELS[typeKey] || typeKey || '-');
+                const safeContent = escapeHtml(item.content || '-');
+                const safeCreatedAt = escapeHtml(formatDateTime(item.created_at));
+                const safeAnnouncementId = Number(item.announcement_id) || 0;
                 const card = document.createElement('div');
                 card.className = `admin-item-card ${isPinned ? 'admin-item-card-pinned' : ''}`;
                 card.innerHTML = `
                     <div class="admin-item-head">
-                        <h4>${item.title || '-'}</h4>
+                        <h4>${safeTitle}</h4>
                         <div class="admin-item-badges">
                             ${isPinned ? '<span class="status-chip chip-warning">置頂</span>' : ''}
-                            <span class="status-chip">${ANNOUNCEMENT_TYPE_LABELS[typeKey] || typeKey || '-'}</span>
+                            <span class="status-chip">${safeType}</span>
                         </div>
                     </div>
-                    <p class="admin-item-content">${item.content || '-'}</p>
+                    <p class="admin-item-content">${safeContent}</p>
                     <div class="admin-item-footer">
-                        <span class="admin-item-time">${formatDateTime(item.created_at)}</span>
-                        <button class="btn btn-secondary btn-sm" data-announcement-delete="${item.announcement_id}">刪除</button>
+                        <span class="admin-item-time">${safeCreatedAt}</span>
+                        <button class="btn btn-secondary btn-sm" data-announcement-delete="${safeAnnouncementId}">刪除</button>
                     </div>
                 `;
                 container.appendChild(card);

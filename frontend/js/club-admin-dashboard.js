@@ -455,6 +455,7 @@
             span.tabIndex = 0;
 
             const handleToggle = () => toggleEventTag(tag.tag_id, tag.tag_name, formMode);
+            const safeTagName = PageUtils.escapeHtml(tag.tag_name || '');
             span.addEventListener('click', handleToggle);
             span.addEventListener('keydown', event => {
                 if (event.key === 'Enter' || event.key === ' ') {
@@ -467,17 +468,17 @@
                 span.style.background = '#d3f9d8';
                 span.style.borderColor = '#51cf66';
                 span.style.color = '#2f8f2f';
-                span.innerHTML = `<span>${tag.tag_name}</span><span style="font-size: 1.1rem; color: #2f8f2f; pointer-events: none;">✕</span>`;
+                span.innerHTML = `<span>${safeTagName}</span><span style="font-size: 1.1rem; color: #2f8f2f; pointer-events: none;">✕</span>`;
             } else if (mode === 'suggested') {
                 span.style.background = '#e7f5ff';
                 span.style.borderColor = '#74c0fc';
                 span.style.color = '#1971c2';
-                span.innerHTML = `<span>${tag.tag_name}</span><span style="font-size: 1.1rem; color: #1971c2; pointer-events: none;">+</span>`;
+                span.innerHTML = `<span>${safeTagName}</span><span style="font-size: 1.1rem; color: #1971c2; pointer-events: none;">+</span>`;
             } else if (mode === 'search') {
                 span.style.background = '#fff3bf';
                 span.style.borderColor = '#ffd43b';
                 span.style.color = '#994d00';
-                span.innerHTML = `<span>${tag.tag_name}</span><span style="font-size: 1.1rem; color: #994d00; pointer-events: none;">+</span>`;
+                span.innerHTML = `<span>${safeTagName}</span><span style="font-size: 1.1rem; color: #994d00; pointer-events: none;">+</span>`;
             }
             return span;
         }

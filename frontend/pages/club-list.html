@@ -201,9 +201,10 @@
             btn.style.border = '1px solid var(--primary-color)';
             btn.style.cursor = 'pointer';
             btn.dataset.tagId = tag.tag_id;
+            const safeTagName = String(tag.tag_name || '');
             btn.textContent = withUsage
-                ? `#${tag.tag_name} (${tag.usage_count || 0})`
-                : `#${tag.tag_name}`;
+                ? `#${safeTagName} (${tag.usage_count || 0})`
+                : `#${safeTagName}`;
 
             const id = Number(tag.tag_id);
             const selected = selectedTagIds.includes(id);
@@ -310,14 +311,17 @@
             }
 
             clubs.forEach(club => {
-                const tagHtml = club.tags.map(tag => `<span class="tag tag-primary">#${tag.tag_name}</span>`).join('');
+                const tagHtml = (club.tags || []).map(tag => `<span class="tag tag-primary">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`).join('');
                 const logoHtml = PageUtils.renderClubAvatar(club, 64);
                 const starsHtml = PageUtils.renderStars(club.average_rating || 0);
+                const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
+                const safeDescription = PageUtils.escapeHtml(club.description || '');
+                const safeClubId = Number(club.club_id) || 0;
                 const html = `
                     <div class="card">
                         <div class="card-header" style="display: flex; gap: 1rem; align-items: center; justify-content: space-between;">
                             <div style="flex: 1; min-width: 0;">
-                                <h3 style="margin: 0 0 0.5rem 0;">${club.club_name || '-'}</h3>
+                                <h3 style="margin: 0 0 0.5rem 0;">${safeClubName}</h3>
                                 <span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>
                             </div>
                             ${logoHtml}
@@ -326,7 +330,7 @@
                             ${tagHtml}
                         </div>
                         <div class="card-body" style="margin-bottom: 1rem; height: 60px; overflow: hidden;">
-                            ${club.description}
+                            ${safeDescription}
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem;">
                             <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-light);">
@@ -338,7 +342,7 @@
                                 <span style="font-size: 0.875rem; color: var(--text-light);">（${club.reviews_count || 0} 人評分）</span>
                             </div>
                         </div>
-                        <a href="club-detail.html?id=${club.club_id}" class="btn btn-primary btn-sm">查看詳情</a>
+                        <a href="club-detail.html?id=${safeClubId}" class="btn btn-primary btn-sm">查看詳情</a>
                     </div>
                 `;
                 container.innerHTML += html;

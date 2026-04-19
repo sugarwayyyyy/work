@@ -1,6 +1,40 @@
 // 共用 JavaScript 工具與 API 入口。
-const API_URL = 'http://localhost/work-main/backend/api';
-const FRONTEND_HOME_URL = 'http://localhost/work-main/frontend';
+function detectAppBasePath() {
+    const path = window.location.pathname || '';
+    const frontendIndex = path.indexOf('/frontend/');
+    if (frontendIndex >= 0) {
+        return path.substring(0, frontendIndex);
+    }
+
+    const backendIndex = path.indexOf('/backend/');
+    if (backendIndex >= 0) {
+        return path.substring(0, backendIndex);
+    }
+
+    return '';
+}
+
+const APP_BASE_PATH = detectAppBasePath();
+
+function resolveApiBaseCandidates() {
+    const candidates = [];
+    const sameOriginApi = `${window.location.origin}${APP_BASE_PATH}/backend/api`;
+    candidates.push(sameOriginApi);
+
+    // PHP 內建伺服器跑在 frontend(:8000) 時，後端可能不在同一個 doc root。
+    if (window.location.port === '8000') {
+        candidates.push(`${window.location.protocol}//${window.location.hostname}/work-main/backend/api`);
+        candidates.push(`${window.location.protocol}//${window.location.hostname}/社團活動資訊統整平台/backend/api`);
+        candidates.push(`${window.location.protocol}//${window.location.hostname}/backend/api`);
+        candidates.push('http://127.0.0.1:8080/api');
+    }
+
+    return Array.from(new Set(candidates));
+}
+
+const API_BASE_CANDIDATES = resolveApiBaseCandidates();
+const API_URL = API_BASE_CANDIDATES[0];
+const FRONTEND_HOME_URL = `${window.location.origin}${APP_BASE_PATH}/frontend/index.html`;
 
 class APIClient {
     static async request(endpoint, options = {}) {
@@ -11,14 +45,29 @@ class APIClient {
             ...options.headers
         };
 
-        const response = await fetch(`${API_URL}/${endpoint}`, {
-            method,
-            headers,
-            credentials: 'include',
-            body: method !== 'GET' ? JSON.stringify(options.data || {}) : undefined
-        });
+        const requestBody = method !== 'GET' ? JSON.stringify(options.data || {}) : undefined;
+        let lastError = null;
 
-        return await response.json();
+        for (const baseUrl of API_BASE_CANDIDATES) {
+            try {
+                const response = await fetch(`${baseUrl}/${endpoint}`, {
+                    method,
+                    headers,
+                    credentials: 'include',
+                    body: requestBody
+                });
+
+                const payload = await response.json();
+                if (response.ok || payload?.success === false) {
+                    return payload;
+                }
+            } catch (error) {
+                lastError = error;
+            }
+        }
+
+        if (lastError) throw lastError;
+        throw new Error('API request failed: no reachable backend endpoint');
     }
 
     static get(endpoint) {
@@ -47,6 +96,19 @@ class APIClient {
 }
 
 class PageUtils {
+    static escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    static escapeAttribute(value) {
+        return PageUtils.escapeHtml(String(value ?? '')).replace(/`/g, '&#96;');
+    }
+
     static showAlert(message, type = 'success') {
         const alertContainer = document.getElementById('alert-container');
         if (!alertContainer) return;
@@ -159,17 +221,20 @@ class PageUtils {
         const emoji = PageUtils.getClubAvatarEmoji(clubName, clubCategory, clubDescription);
         const initials = PageUtils.getInitial(clubName);
         const dimension = `${size}px`;
+        const safeClubName = PageUtils.escapeAttribute(clubName || '社團');
 
         if (logoUrl) {
-            const pixelLogoForAttr = pixelLogoUrl.replace(/'/g, '&#39;');
+            const safeLogoUrl = PageUtils.escapeAttribute(logoUrl);
+            const pixelLogoForAttr = PageUtils.escapeAttribute(pixelLogoUrl);
             const fallbackAttr = pixelLogoUrl
                 ? ` onerror="this.onerror=null;this.src='${pixelLogoForAttr}';this.style.imageRendering='pixelated';"`
                 : '';
-            return `<span class="club-avatar" style="width: ${dimension}; height: ${dimension};"><img src="${logoUrl}" alt="${clubName || '社團'} logo" class="club-avatar__img"${fallbackAttr}></span>`;
+            return `<span class="club-avatar" style="width: ${dimension}; height: ${dimension};"><img src="${safeLogoUrl}" alt="${safeClubName} logo" class="club-avatar__img"${fallbackAttr}></span>`;
         }
 
         if (pixelLogoUrl) {
-            return `<span class="club-avatar" style="width: ${dimension}; height: ${dimension};"><img src="${pixelLogoUrl}" alt="${clubName || '社團'} 像素 logo" class="club-avatar__img" style="image-rendering: pixelated;"></span>`;
+            const safePixelUrl = PageUtils.escapeAttribute(pixelLogoUrl);
+            return `<span class="club-avatar" style="width: ${dimension}; height: ${dimension};"><img src="${safePixelUrl}" alt="${safeClubName} 像素 logo" class="club-avatar__img" style="image-rendering: pixelated;"></span>`;
         }
 
         const fallbackContent = emoji || initials;
@@ -312,7 +377,15 @@ class StorageUtils {
 
     static getUser() {
         const user = localStorage.getItem('user');
-        return user ? JSON.parse(user) : null;
+        if (!user) return null;
+
+        try {
+            return JSON.parse(user);
+        } catch (error) {
+            // Corrupted localStorage should not break all pages.
+            localStorage.removeItem('user');
+            return null;
+        }
     }
 
     static clearUser() {
@@ -465,9 +538,11 @@ function updateNavigation() {
         if (logoutBtn) logoutBtn.style.display = 'inline-block';
         if (userDropdown) {
             const initial = (user.name || '?').charAt(0).toUpperCase();
+            const safeAvatarUrl = PageUtils.escapeAttribute(avatarUrl || '');
+            const safeInitial = PageUtils.escapeHtml(initial || '?');
             userDropdown.innerHTML = avatarUrl
-                ? `<img src="${avatarUrl}" alt="個人資料" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;">`
-                : `<span style="display: inline-flex; width: 32px; height: 32px; border-radius: 50%; background: var(--primary-color); color: #fff; align-items: center; justify-content: center; font-weight: 700; border: 2px solid #e5e7eb;">${initial}</span>`;
+                ? `<img src="${safeAvatarUrl}" alt="個人資料" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;">`
+                : `<span style="display: inline-flex; width: 32px; height: 32px; border-radius: 50%; background: var(--primary-color); color: #fff; align-items: center; justify-content: center; font-weight: 700; border: 2px solid #e5e7eb;">${safeInitial}</span>`;
             userDropdown.style.display = 'inline-block';
             userDropdown.style.cursor = 'pointer';
             userDropdown.title = '前往個人資料';

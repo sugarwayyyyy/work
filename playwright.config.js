@@ -63,9 +63,9 @@ module.exports = defineConfig({
   ],
 
   /* 在所有測試之前運行 Web 服務器 */
-  // webServer: {
-  //   command: 'cd frontend && php -S localhost:8000',
-  //   url: 'http://localhost:8000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  webServer: {
+    command: 'php -S localhost:8000 tests/e2e/dev-router.php',
+    url: 'http://localhost:8000',
+    reuseExistingServer: !process.env.CI,
+  },
 });

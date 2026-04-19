@@ -318,7 +318,7 @@
             document.getElementById('review-count').textContent = club.reviews_count || 0;
 
             const tags = Array.isArray(club.tags) ? club.tags : [];
-            const tagsHtml = tags.map(tag => `<span class="tag tag-primary">#${tag.tag_name}</span>`).join('');
+            const tagsHtml = tags.map(tag => `<span class="tag tag-primary">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`).join('');
             document.getElementById('club-tags').innerHTML = tagsHtml || '暫無標籤';
 
             const badgesHtml = `<span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>`;
@@ -398,14 +398,16 @@
             let html = '';
             events.forEach(event => {
                 const eventDate = PageUtils.formatDate(event.event_date);
+                const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
+                const safeLocation = PageUtils.escapeHtml(event.location || '-');
                 html += `
                     <div style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
-                                <h4 style="margin: 0 0 0.5rem 0;">${event.event_name || '未命名活動'}</h4>
+                                <h4 style="margin: 0 0 0.5rem 0;">${safeEventName}</h4>
                         <p style="margin: 0.5rem 0; color: var(--text-light); font-size: 0.9rem;">
                             <strong>時間：</strong>${eventDate}
                         </p>
                         <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">
-                            <strong>地點：</strong>${event.location}
+                            <strong>地點：</strong>${safeLocation}
                         </p>
                     </div>
                 `;
@@ -433,14 +435,16 @@
             let html = '';
             reviews.forEach(review => {
                 const stars = PageUtils.renderStars(review.rating);
-                const author = review.author_name || review.display_name || '匿名用戶';
+                const author = PageUtils.escapeHtml(review.author_name || review.display_name || '匿名用戶');
                 const relativeTime = PageUtils.timeAgo(review.created_at);
                 const absoluteDate = formatDateOnly(review.created_at);
+                const safeReviewTitle = PageUtils.escapeHtml(review.review_title || author);
+                const safeReviewContent = PageUtils.escapeHtml(review.review_content || '');
                 html += `
                     <div style="padding: 1.5rem 0; border-bottom: 1px solid var(--border-color);">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
                             <div>
-                                <strong>${review.review_title || author}</strong>
+                                <strong>${safeReviewTitle}</strong>
                                 <div style="color: var(--text-light); font-size: 0.9rem;">
                                     ${author} • ${relativeTime}（${absoluteDate}）
                                 </div>
@@ -450,7 +454,7 @@
                                 <div style="color: var(--text-light); font-size: 0.8rem;">${review.rating}/5 分</div>
                             </div>
                         </div>
-                        <p style="margin: 0.5rem 0; color: var(--text-light);">${review.review_content}</p>
+                        <p style="margin: 0.5rem 0; color: var(--text-light);">${safeReviewContent}</p>
                     </div>
                 `;
             });
@@ -473,11 +477,13 @@
                     'vice_president': '副社長',
                     'director': '常務理事'
                 }[admin.role] || admin.role;
+                const safeAdminName = PageUtils.escapeHtml(admin.name || '未命名幹部');
+                const safeRoleText = PageUtils.escapeHtml(roleText || '-');
 
                 html += `
                     <div style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
-                        <div style="font-weight: 500;">${admin.name || '未命名幹部'}</div>
-                        <div style="font-size: 0.85rem; color: var(--text-light);">${roleText}</div>
+                        <div style="font-weight: 500;">${safeAdminName}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-light);">${safeRoleText}</div>
                     </div>
                 `;
             });

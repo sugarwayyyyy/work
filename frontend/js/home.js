@@ -36,6 +36,8 @@
 
                 container.innerHTML = '';
                 allSorted.forEach(item => {
+                    const safeTitle = PageUtils.escapeHtml(item.title || '公告');
+                    const safeContent = PageUtils.escapeHtml(item.content || '');
                     const card = document.createElement('div');
                     card.className = `announcement-card ${Number(item.is_pinned) === 1 ? 'announcement-card-pinned' : 'announcement-card-regular'}`;
                     card.innerHTML = `
@@ -43,8 +45,8 @@
                             <span class="announcement-badge">${Number(item.is_pinned) === 1 ? '置頂公告' : '一般公告'}</span>
                             <span class="announcement-time">${PageUtils.formatDate(item.created_at)}</span>
                         </div>
-                        <h3>${item.title || '公告'}</h3>
-                        <p>${item.content || ''}</p>
+                        <h3>${safeTitle}</h3>
+                        <p>${safeContent}</p>
                     `;
                     container.appendChild(card);
                 });
@@ -63,13 +65,16 @@
                     container.innerHTML = '';
 
                     clubs.forEach(club => {
-                        const tagHtml = club.tags.map(tag => `<span class="tag tag-primary">#${tag.tag_name}</span>`).join('');
+                        const tagHtml = (club.tags || []).map(tag => `<span class="tag tag-primary">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`).join('');
                         const logoHtml = PageUtils.renderClubAvatar(club, 52);
+                        const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
+                        const safeDescription = PageUtils.escapeHtml(club.description || '');
+                        const safeClubId = Number(club.club_id) || 0;
                         const html = `
                             <div class="card">
                                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: start;">
                                     <div style="min-width: 0;">
-                                        <h3 style="margin: 0 0 0.5rem 0;">${club.club_name || '-'}</h3>
+                                        <h3 style="margin: 0 0 0.5rem 0;">${safeClubName}</h3>
                                         <span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>
                                     </div>
                                     ${logoHtml}
@@ -78,13 +83,13 @@
                                     ${tagHtml}
                                 </div>
                                 <div class="card-body" style="margin-bottom: 1rem;">
-                                    ${club.description || ''}
+                                    ${safeDescription}
                                 </div>
                                 <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-light); margin-bottom: 1rem;">
                                     <span>👥 ${club.member_count} 成員</span>
                                     <span>⭐ ${(club.average_rating || 0).toFixed(1)}（${club.reviews_count || 0} 人評分）</span>
                                 </div>
-                                <a href="pages/club-detail.html?id=${club.club_id}" class="btn btn-primary btn-sm">查看詳情</a>
+                                <a href="pages/club-detail.html?id=${safeClubId}" class="btn btn-primary btn-sm">查看詳情</a>
                             </div>
                         `;
                         container.innerHTML += html;
@@ -108,21 +113,26 @@
 
                     events.forEach(event => {
                         const eventDate = PageUtils.formatDate(event.event_date);
+                        const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
+                        const safeClubName = PageUtils.escapeHtml(event.club_name || '-');
+                        const safeDescription = PageUtils.escapeHtml(event.description || '');
+                        const safeLocation = PageUtils.escapeHtml(event.location || '-');
+                        const safeEventId = Number(event.event_id) || 0;
                         const html = `
                             <div class="card">
                                 <div class="card-header">
-                                    <h3 style="margin: 0 0 0.5rem 0;">${event.event_name || '未命名活動'}</h3>
-                                    <span style="color: var(--text-light); font-size: 0.875rem;">${event.club_name || '-'}</span>
+                                    <h3 style="margin: 0 0 0.5rem 0;">${safeEventName}</h3>
+                                    <span style="color: var(--text-light); font-size: 0.875rem;">${safeClubName}</span>
                                 </div>
                                 <div class="card-body" style="margin: 1rem 0;">
-                                    ${event.description || ''}
+                                    ${safeDescription}
                                 </div>
                                 <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-light); margin-bottom: 1rem;">
                                     <span>📅 ${eventDate}</span>
-                                    <span>📍 ${event.location || '-'}</span>
+                                    <span>📍 ${safeLocation}</span>
                                     <span>👥 ${event.registered_count} 人報名</span>
                                 </div>
-                                <a href="pages/event-detail.html?id=${event.event_id}" class="btn btn-primary btn-sm">查看活動</a>
+                                <a href="pages/event-detail.html?id=${safeEventId}" class="btn btn-primary btn-sm">查看活動</a>
                             </div>
                         `;
                         container.innerHTML += html;
@@ -193,12 +203,13 @@
                     clubs.forEach(club => {
                         const item = document.createElement('a');
                         item.className = 'home-sidebar-item';
-                        item.href = `pages/club-detail.html?id=${club.club_id}`;
+                        item.href = `pages/club-detail.html?id=${Number(club.club_id) || 0}`;
                         item.title = club.club_name || '社團';
+                        const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
                         item.innerHTML = `
                             ${PageUtils.renderClubAvatar(club, 44)}
                             <span class="home-sidebar-item__body">
-                                <span class="home-sidebar-item__title">${club.club_name || '-'}</span>
+                                <span class="home-sidebar-item__title">${safeClubName}</span>
                             </span>
                         `;
                         container.appendChild(item);

@@ -10,7 +10,6 @@ const { test, expect } = require('@playwright/test');
 
 // 測試配置
 const BASE_URL = 'http://localhost:8000';
-const API_BASE_URL = 'http://127.0.0.1:8080/api';
 
 // 測試帳號
 const ADMIN = {
@@ -38,10 +37,10 @@ async function login(page, email, password) {
   await page.goto(`${BASE_URL}/pages/login.html`);
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
-  await page.click('button[type="submit"]');
-  
-  // 等待重定向
-  await page.waitForNavigation();
+  await Promise.all([
+    page.waitForURL(url => !url.pathname.endsWith('/pages/login.html'), { timeout: 15000 }),
+    page.click('button[type="submit"]')
+  ]);
 }
 
 /**
