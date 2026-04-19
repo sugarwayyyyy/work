@@ -30,7 +30,7 @@ class ClubAdminAPI {
         $clubs = Database::getInstance()->fetchAll(
             'SELECT c.club_id, c.club_name, c.activity_status FROM clubs c '
             . 'JOIN club_members cm ON c.club_id = cm.club_id '
-            . 'WHERE cm.user_id = ? AND cm.role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
+            . 'WHERE cm.user_id = ? AND cm.is_active = 1 AND cm.role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
             [$user_id]
         );
 
@@ -47,7 +47,7 @@ class ClubAdminAPI {
 
         if (!Auth::isAdmin()) {
             $isMember = Database::getInstance()->fetchOne(
-                'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
+                'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
                 [$club_id, Auth::getCurrentUserId()]
             );
             if (!$isMember) {
@@ -55,7 +55,37 @@ class ClubAdminAPI {
             }
         }
 
-        $events = Database::getInstance()->fetchAll('SELECT * FROM events WHERE club_id = ? ORDER BY event_date DESC', [$club_id]);
+        $events = Database::getInstance()->fetchAll(
+            'SELECT e.*, (
+                SELECT COUNT(*)
+                FROM event_registrations er
+                WHERE er.event_id = e.event_id AND er.status = "approved"
+             ) AS registered_count
+             FROM events e
+             WHERE (
+                e.club_id = ?
+                OR e.event_id IN (
+                    SELECT ce.event_id
+                    FROM collaborative_events ce
+                    WHERE ce.participated_club_id = ? AND ce.status = "approved"
+                )
+             )
+             ORDER BY e.event_date DESC',
+            [$club_id, $club_id]
+        );
+
+        foreach ($events as &$event) {
+            $event['co_host_clubs'] = Database::getInstance()->fetchAll(
+                'SELECT c.club_id, c.club_name
+                 FROM collaborative_events ce
+                 JOIN clubs c ON c.club_id = ce.participated_club_id
+                 WHERE ce.event_id = ? AND ce.status = "approved"
+                 ORDER BY c.club_name ASC',
+                [$event['event_id']]
+            );
+        }
+        unset($event);
+
         Helper::success('取得社團活動成功', ['events' => $events]);
     }
 
@@ -71,7 +101,7 @@ class ClubAdminAPI {
 
         $club_id = (int)$data['club_id'];
         $isMember = Database::getInstance()->fetchOne(
-            'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
+            'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
             [$club_id, Auth::getCurrentUserId()]
         );
         if (!Auth::isAdmin() && !$isMember) {

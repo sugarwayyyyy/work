@@ -31,8 +31,12 @@ mysql -u root -p < database/schema.sql
 mysql -u root -p club_platform < database/migrations/2026_04_01_user_stories_core.sql
 mysql -u root -p club_platform < database/migrations/2026_04_03_event_tags.sql
 mysql -u root -p club_platform < database/migrations/2026_04_03_qa_urgency.sql
+mysql -u root -p club_platform < database/migrations/2026_04_03_transfer_request_workflow.sql
 mysql -u root -p club_platform < database/migrations/2026_04_04_event_poster_path.sql
 mysql -u root -p club_platform < database/migrations/2026_04_04_qa_reply_helpful.sql
+mysql -u root -p club_platform < database/migrations/2026_04_09_qa_reply_threads.sql
+mysql -u root -p club_platform < database/migrations/2026_04_19_event_comments.sql
+mysql -u root -p club_platform < database/migrations/2026_04_19_reviews_unique_user_club.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
 

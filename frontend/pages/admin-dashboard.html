@@ -202,6 +202,7 @@
                 <div class="admin-toolbar">
                     <button class="btn btn-secondary" onclick="loadEventReports()">載入活動報告</button>
                     <button class="btn btn-secondary" onclick="loadUserFeedback()">載入用戶回饋</button>
+                    <button class="btn btn-primary" onclick="loadReportCases()">載入檢舉工單</button>
                 </div>
                 <div id="reports-content" class="admin-list"></div>
             </div>
@@ -754,6 +755,102 @@
                 `;
                 container.appendChild(card);
             });
+        }
+
+        function reportStatusLabel(status) {
+            const map = {
+                pending: '待處理',
+                reviewing: '審核中',
+                resolved: '已處理',
+                dismissed: '已駁回'
+            };
+            return map[status] || status || '-';
+        }
+
+        function reportTypeLabel(type) {
+            const map = {
+                qa_question: '提問',
+                qa_reply: '提問回覆',
+                review: '社團評價',
+                event: '活動',
+                club: '社團資料'
+            };
+            return map[type] || type || '-';
+        }
+
+        async function loadReportCases() {
+            const response = await APIClient.get('admin.php?action=reports&status=pending');
+            if (!response.success) {
+                PageUtils.showAlert('載入檢舉工單失敗：' + response.message, 'error');
+                return;
+            }
+
+            const container = document.getElementById('reports-content');
+            container.innerHTML = '';
+            const reports = response.data.reports || [];
+
+            if (reports.length === 0) {
+                renderEmptyState(container, '目前沒有待處理檢舉', '有新檢舉時會顯示在這裡。');
+                return;
+            }
+
+            reports.forEach(report => {
+                const safeStatus = escapeHtml(reportStatusLabel(report.status));
+                const safeType = escapeHtml(reportTypeLabel(report.reported_content_type));
+                const safeReason = escapeHtml(report.reason || '-');
+                const safeDescription = escapeHtml(report.description || '');
+                const safeReporter = escapeHtml(report.reported_by_name || '-');
+                const safeCreated = escapeHtml(formatDateTime(report.created_at));
+                const reportId = Number(report.report_id) || 0;
+
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head">
+                        <h4>${safeType} #${Number(report.reported_content_id) || 0}</h4>
+                        <span class="status-chip chip-warning">${safeStatus}</span>
+                    </div>
+                    <p class="admin-item-content">檢舉人：${safeReporter}｜時間：${safeCreated}</p>
+                    <p class="admin-item-content">事由：${safeReason}</p>
+                    ${safeDescription ? `<p class="admin-item-content">補充：${safeDescription}</p>` : ''}
+                    <div class="row-actions" style="margin-top: 12px;">
+                        <button class="btn btn-primary btn-sm" data-report-resolve="${reportId}">處理並下架</button>
+                        <button class="btn btn-secondary btn-sm" data-report-dismiss="${reportId}">駁回</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            container.querySelectorAll('button[data-report-resolve]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const note = prompt('可選填處理備註（例如：違反社群規範）') || '';
+                    await reviewReportCase(btn.dataset.reportResolve, 'resolved', note, true);
+                });
+            });
+
+            container.querySelectorAll('button[data-report-dismiss]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const note = prompt('請輸入駁回原因（必填）');
+                    if (!note || !note.trim()) return;
+                    await reviewReportCase(btn.dataset.reportDismiss, 'dismissed', note.trim(), false);
+                });
+            });
+        }
+
+        async function reviewReportCase(reportId, decision, adminNotes, forceHide) {
+            const response = await APIClient.post('admin.php?action=review_report', {
+                report_id: Number(reportId),
+                decision,
+                admin_notes: adminNotes,
+                force_hide: forceHide ? 1 : 0
+            });
+
+            if (response.success) {
+                PageUtils.showAlert('檢舉工單已更新', 'success');
+                loadReportCases();
+            } else {
+                PageUtils.showAlert('更新失敗：' + response.message, 'error');
+            }
         }
 
         function getFilteredSortedUsers() {

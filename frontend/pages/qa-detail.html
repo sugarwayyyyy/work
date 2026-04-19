@@ -75,6 +75,9 @@
                     <div id="question-actions" style="display: none;">
                         <button id="mark-solved-btn" class="btn btn-success btn-sm">標記為已解決</button>
                     </div>
+                    <div style="margin-top: 0.75rem;">
+                        <button id="report-question-btn" class="btn btn-secondary btn-sm">檢舉此提問</button>
+                    </div>
                 </div>
             </div>
 
@@ -118,6 +121,33 @@
         </div>
     </div>
 
+    <div id="report-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 1200; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="max-width: 560px; width: 100%;">
+            <h3 style="margin-top: 0;">送出檢舉</h3>
+            <form id="report-form">
+                <div class="form-group">
+                    <label for="report-type-select">檢舉事由</label>
+                    <select id="report-type-select" required>
+                        <option value="">請選擇檢舉事由</option>
+                        <option value="harassment">人身攻擊 / 騷擾</option>
+                        <option value="misinformation">不實資訊</option>
+                        <option value="spam">垃圾訊息 / 廣告</option>
+                        <option value="inappropriate">不當內容</option>
+                        <option value="other">其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="report-reason-input">補充說明</label>
+                    <textarea id="report-reason-input" rows="4" placeholder="請輸入檢舉說明"></textarea>
+                </div>
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button type="button" id="report-cancel-btn" class="btn btn-secondary">取消</button>
+                    <button type="submit" class="btn btn-primary">送出檢舉</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <footer>
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>
@@ -125,6 +155,7 @@
     <script src="../js/main.js"></script>
     <script>
         let currentQuestion = null;
+        let reportTarget = null;
 
         // 獲取URL參數
         function getQuestionId() {
@@ -211,8 +242,13 @@
 
             // 檢查是否顯示操作按鈕
             const user = StorageUtils.getUser();
-            if (user && user.user_id === question.user_id && !solved) {
+            if ((question.can_mark_solved || (user && user.user_id === question.user_id)) && !solved) {
                 document.getElementById('question-actions').style.display = 'block';
+            }
+
+            const reportQuestionBtn = document.getElementById('report-question-btn');
+            if (reportQuestionBtn) {
+                reportQuestionBtn.style.display = question.can_report ? 'inline-block' : 'none';
             }
         }
 
@@ -356,6 +392,15 @@
                             actions.appendChild(replyBtn);
                         }
 
+                        if (reply.can_report) {
+                            const reportBtn = document.createElement('button');
+                            reportBtn.type = 'button';
+                            reportBtn.className = 'dcard-action-btn';
+                            reportBtn.textContent = '檢舉';
+                            reportBtn.addEventListener('click', () => reportContent('qa_reply', reply.reply_id));
+                            actions.appendChild(reportBtn);
+                        }
+
                         shell.appendChild(top);
                         shell.appendChild(content);
                         shell.appendChild(actions);
@@ -470,6 +515,63 @@
             return markReplyVote(replyId, 'helpful');
         }
 
+        async function reportContent(contentType, contentId) {
+            if (!StorageUtils.isLoggedIn()) {
+                PageUtils.showAlert('請先登入', 'warning');
+                return;
+            }
+
+            if (contentType === 'qa_question' && currentQuestion && !currentQuestion.can_report) {
+                PageUtils.showAlert('不能檢舉自己發佈的提問', 'warning');
+                return;
+            }
+
+            reportTarget = {
+                contentType: contentType,
+                contentId: Number(contentId)
+            };
+
+            document.getElementById('report-type-select').value = '';
+            document.getElementById('report-reason-input').value = '';
+            document.getElementById('report-modal').style.display = 'flex';
+        }
+
+        function closeReportModal() {
+            reportTarget = null;
+            document.getElementById('report-modal').style.display = 'none';
+        }
+
+        async function submitReportForm(event) {
+            event.preventDefault();
+            if (!reportTarget) return;
+
+            const reportType = document.getElementById('report-type-select').value;
+            const reason = document.getElementById('report-reason-input').value.trim();
+            if (!reportType) {
+                PageUtils.showAlert('請選擇檢舉事由', 'warning');
+                return;
+            }
+
+            try {
+                const response = await APIClient.post('reports.php?action=create', {
+                    reported_content_type: reportTarget.contentType,
+                    reported_content_id: reportTarget.contentId,
+                    report_type: reportType,
+                    reason: reason
+                });
+
+                if (response.success) {
+                    PageUtils.showAlert('檢舉已送出', 'success');
+                    closeReportModal();
+                } else {
+                    PageUtils.showAlert(response.message || '檢舉失敗', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('檢舉失敗', 'error');
+            }
+        }
+
         // 處理回覆提交
         async function handleReplySubmit(e) {
             e.preventDefault();
@@ -527,6 +629,13 @@
             // 綁定事件
             document.getElementById('mark-solved-btn').addEventListener('click', markAsSolved);
             document.getElementById('add-reply-form').addEventListener('submit', handleReplySubmit);
+            document.getElementById('report-form').addEventListener('submit', submitReportForm);
+            document.getElementById('report-cancel-btn').addEventListener('click', closeReportModal);
+            document.getElementById('report-question-btn').addEventListener('click', () => {
+                const questionId = getQuestionId();
+                if (!questionId) return;
+                reportContent('qa_question', Number(questionId));
+            });
 
             // 檢查登入狀態顯示回覆表單
             const user = StorageUtils.getUser();

@@ -20,6 +20,10 @@
                 <li><a href="club-admin-dashboard.html">幹部</a></li>
             </ul>
             <div class="nav-right">
+                <a href="notifications.html" class="btn btn-secondary btn-sm" style="position: relative;">
+                    通知
+                    <span id="club-admin-unread-dot" style="display:none; position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; border-radius:999px; background:#ef4444; color:#fff; font-size:0.75rem; line-height:18px; text-align:center; padding:0 4px;">0</span>
+                </a>
                 <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()">登出</button>
                 <span id="user-dropdown" class="u-hidden"></span>
             </div>
@@ -281,6 +285,18 @@
                             <label for="event-fee">費用</label>
                             <input type="number" id="event-fee" min="0">
                         </div>
+                        <div class="form-field">
+                            <label>
+                                <input type="checkbox" id="event-registration-open" checked>
+                                開啟活動報名
+                            </label>
+                            <small class="cad-help-text">未勾選時，前台僅顯示活動資訊，不開放報名。</small>
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label for="event-collaborative-clubs">協辦社團（可複選）</label>
+                            <select id="event-collaborative-clubs" multiple size="6"></select>
+                            <small class="cad-help-text">按住 Ctrl（Windows）可複選，送出後活動會同時出現在協辦社團前台。</small>
+                        </div>
                         <div class="form-field admin-span-2">
                             <label for="event-description">活動內容說明 <span class="required">*</span></label>
                             <textarea id="event-description" class="cad-textarea-xl" required oninput="detectEventTagsFromDescription()"></textarea>
@@ -372,6 +388,18 @@
                         <div class="form-field">
                             <label for="update-event-fee">費用</label>
                             <input type="number" id="update-event-fee" min="0">
+                        </div>
+                        <div class="form-field">
+                            <label>
+                                <input type="checkbox" id="update-event-registration-open">
+                                開啟活動報名
+                            </label>
+                            <small class="cad-help-text">可隨時切換是否接受新報名。</small>
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label for="update-event-collaborative-clubs">協辦社團（可複選）</label>
+                            <select id="update-event-collaborative-clubs" multiple size="6"></select>
+                            <small class="cad-help-text">按住 Ctrl（Windows）可複選，更新後會同步到協辦社團頁面。</small>
                         </div>
                         <div class="form-field admin-span-2">
                             <label for="update-event-description">描述 <span class="required">*</span></label>

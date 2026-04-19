@@ -17,6 +17,109 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 class EventAPI {
 
+    private static function ensureEventCommentsTable() {
+        static $checked = false;
+        if ($checked) {
+            return;
+        }
+
+        $sql = 'CREATE TABLE IF NOT EXISTS event_comments (
+            comment_id INT PRIMARY KEY AUTO_INCREMENT,
+            event_id INT NOT NULL,
+            user_id INT NOT NULL,
+            rating INT NOT NULL,
+            comment TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+            UNIQUE KEY unique_event_user_comment (event_id, user_id)
+        )';
+
+        $stmt = Database::getInstance()->prepare($sql);
+        if ($stmt === false) {
+            Helper::error('評論功能初始化失敗，請稍後再試', 500);
+        }
+
+        $ok = $stmt->execute();
+        $stmt->close();
+        if (!$ok) {
+            Helper::error('評論功能初始化失敗，請稍後再試', 500);
+        }
+
+        $checked = true;
+    }
+
+    private static function sanitizeCollaborativeClubIds($rawIds, $ownerClubId) {
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array)$rawIds), function ($id) use ($ownerClubId) {
+            return $id > 0 && $id !== (int)$ownerClubId;
+        })));
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = Database::getInstance()->fetchAll(
+            'SELECT club_id FROM clubs WHERE club_id IN (' . $placeholders . ') AND activity_status = "active" AND deleted_at IS NULL',
+            $ids
+        );
+        $valid = array_map(function ($row) {
+            return (int)($row['club_id'] ?? 0);
+        }, $rows);
+
+        return array_values(array_filter($ids, function ($id) use ($valid) {
+            return in_array((int)$id, $valid, true);
+        }));
+    }
+
+    private static function replaceCollaborativeClubs($eventId, $ownerClubId, $collaborativeClubIds) {
+        $stmt = Database::getInstance()->prepare('DELETE FROM collaborative_events WHERE event_id = ?');
+        if ($stmt !== false) {
+            $stmt->bind_param('i', $eventId);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        $validIds = self::sanitizeCollaborativeClubIds($collaborativeClubIds, $ownerClubId);
+        foreach ($validIds as $clubId) {
+            dbInsert('collaborative_events', [
+                'event_id' => $eventId,
+                'created_by_club_id' => $ownerClubId,
+                'participated_club_id' => $clubId,
+                'status' => 'approved',
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+        }
+    }
+
+    private static function requireEventManagePermission($event_id) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        $event = Database::getInstance()->fetchOne(
+            'SELECT event_id, club_id, event_name, event_status FROM events WHERE event_id = ?',
+            [$event_id]
+        );
+        if (!$event) {
+            Helper::error('活動不存在', 404);
+        }
+
+        if (Auth::isAdmin()) {
+            return $event;
+        }
+
+        $member = Database::getInstance()->fetchOne(
+            'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "director", "public_relations", "treasurer") AND is_active = 1',
+            [$event['club_id'], Auth::getCurrentUserId()]
+        );
+        if (!$member) {
+            Helper::error('您無權限操作此活動', 403);
+        }
+
+        return $event;
+    }
+
     private static function normalizeDatetimeInput($value, $endOfDay = false) {
         $raw = trim((string)$value);
         if ($raw === '') {
@@ -115,7 +218,12 @@ class EventAPI {
             $params = [$status];
             
             if ($club_id) {
-                $conditions[] = 'club_id = ?';
+                $conditions[] = '(club_id = ? OR event_id IN (
+                    SELECT ce.event_id
+                    FROM collaborative_events ce
+                    WHERE ce.participated_club_id = ? AND ce.status = "approved"
+                ))';
+                $params[] = $club_id;
                 $params[] = $club_id;
             }
 
@@ -161,6 +269,14 @@ class EventAPI {
                 $conditions[] = 'fee <= ?';
                 $params[] = $max_fee;
             }
+
+            $conditions[] = 'NOT EXISTS (
+                SELECT 1 FROM reports rp
+                WHERE rp.reported_content_type = "event"
+                  AND rp.reported_content_id = events.event_id
+                  AND rp.status = "resolved"
+                  AND rp.action_taken = "force_hide"
+            )';
             
             $where = implode(' AND ', $conditions);
 
@@ -220,6 +336,16 @@ class EventAPI {
                     [$event['event_id']]
                 );
                 $event['tags'] = $tags;
+
+                $coHosts = Database::getInstance()->fetchAll(
+                    'SELECT c.club_id, c.club_name
+                     FROM collaborative_events ce
+                     JOIN clubs c ON c.club_id = ce.participated_club_id
+                     WHERE ce.event_id = ? AND ce.status = "approved"
+                     ORDER BY c.club_name ASC',
+                    [$event['event_id']]
+                );
+                $event['co_host_clubs'] = $coHosts;
             }
             
             // 取得總數
@@ -266,6 +392,21 @@ class EventAPI {
             if (!$event) {
                 Helper::error('活動不存在', 404);
             }
+
+            if (!Auth::isAdmin()) {
+                $hiddenReport = Database::getInstance()->fetchOne(
+                    'SELECT report_id FROM reports
+                     WHERE reported_content_type = "event"
+                       AND reported_content_id = ?
+                       AND status = "resolved"
+                       AND action_taken = "force_hide"
+                     LIMIT 1',
+                    [$event_id]
+                );
+                if ($hiddenReport) {
+                    Helper::error('活動不存在', 404);
+                }
+            }
             
             // 取得社團信息
             $club = Database::getInstance()->fetchOne(
@@ -282,6 +423,16 @@ class EventAPI {
                 [$event_id]
             );
             $event['tags'] = $tags;
+
+            $coHosts = Database::getInstance()->fetchAll(
+                'SELECT c.club_id, c.club_name
+                 FROM collaborative_events ce
+                 JOIN clubs c ON c.club_id = ce.participated_club_id
+                 WHERE ce.event_id = ? AND ce.status = "approved"
+                 ORDER BY c.club_name ASC',
+                [$event_id]
+            );
+            $event['co_host_clubs'] = $coHosts;
             
             // 取得報名人數
             $registration = Database::getInstance()->fetchOne(
@@ -371,6 +522,12 @@ class EventAPI {
                     'tag_id' => $tag_id
                 ]);
             }
+
+            self::replaceCollaborativeClubs(
+                (int)$event_id,
+                (int)$data['club_id'],
+                $data['collaborative_club_ids'] ?? []
+            );
             
             // 紀錄活動日誌
             dbInsert('activity_logs', [
@@ -465,6 +622,14 @@ class EventAPI {
                         'tag_id' => $tag_id
                     ]);
                 }
+            }
+
+            if (isset($data['collaborative_club_ids'])) {
+                self::replaceCollaborativeClubs(
+                    (int)$event_id,
+                    (int)$event['club_id'],
+                    $data['collaborative_club_ids']
+                );
             }
 
             // 紀錄活動日誌
@@ -689,7 +854,7 @@ class EventAPI {
 
                 $adminCheck = Database::getInstance()->fetchOne(
                     'SELECT 1 FROM club_members cm
-                     WHERE cm.user_id = ? AND cm.club_id = ? AND cm.member_role IN ("president", "vice_president", "director")',
+                     WHERE cm.user_id = ? AND cm.club_id = ? AND cm.role IN ("president", "vice_president", "director", "public_relations", "treasurer") AND cm.is_active = 1',
                     [$user_id, $eventClub['club_id']]
                 );
 
@@ -722,6 +887,8 @@ class EventAPI {
      * GET /api/events.php?action=comments&event_id=1
      */
     public static function getComments() {
+        self::ensureEventCommentsTable();
+
         $event_id = $_GET['event_id'] ?? null;
         if (!$event_id) {
             Helper::error('缺少活動ID', 400);
@@ -772,6 +939,8 @@ class EventAPI {
         if (!Auth::isLoggedIn()) {
             Helper::error('請先登入', 401);
         }
+
+        self::ensureEventCommentsTable();
 
         try {
             $errors = Helper::validateRequired($data, ['event_id', 'rating', 'comment']);
@@ -895,6 +1064,171 @@ class EventAPI {
             Helper::error('更新活動標籤失敗: ' . $e->getMessage(), 500);
         }
     }
+
+    public static function archiveEvent($event_id, $archive = true) {
+        try {
+            $event = self::requireEventManagePermission($event_id);
+            $nextStatus = $archive ? 'archived' : 'published';
+
+            dbUpdate('events', [
+                'event_status' => $nextStatus,
+                'updated_at' => date('Y-m-d H:i:s')
+            ], 'event_id = ?', [$event_id]);
+
+            $logMessage = $archive
+                ? ('將活動設為歷史紀錄: ' . ($event['event_name'] ?? ''))
+                : ('還原歷史活動: ' . ($event['event_name'] ?? ''));
+
+            dbInsert('activity_logs', [
+                'club_id' => $event['club_id'],
+                'activity_type' => 'event',
+                'triggered_by' => Auth::getCurrentUserId(),
+                'description' => $logMessage
+            ]);
+
+            Helper::success($archive ? '活動已歸檔' : '活動已還原');
+        } catch (Exception $e) {
+            Helper::error('更新活動狀態失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public static function exportRegistrationsCsv($event_id) {
+        try {
+            $event = self::requireEventManagePermission($event_id);
+
+            $rows = Database::getInstance()->fetchAll(
+                'SELECT u.name, u.student_id, u.email, u.phone, er.registered_at, er.status
+                 FROM event_registrations er
+                 JOIN users u ON u.user_id = er.user_id
+                 WHERE er.event_id = ?
+                 ORDER BY er.registered_at ASC',
+                [$event_id]
+            );
+
+            $safeEventName = preg_replace('/[^A-Za-z0-9_\-\x{4e00}-\x{9fa5}]/u', '_', (string)($event['event_name'] ?? 'event'));
+            if ($safeEventName === null || $safeEventName === '') {
+                $safeEventName = 'event';
+            }
+
+            header('Content-Type: text/csv; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="registrations_' . $safeEventName . '_' . date('Ymd_His') . '.csv"');
+
+            $out = fopen('php://output', 'w');
+            if ($out === false) {
+                Helper::error('無法輸出 CSV', 500);
+            }
+
+            // UTF-8 BOM for Excel compatibility.
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, ['姓名', '學號', 'Email', '電話', '報名時間', '狀態']);
+
+            foreach ($rows as $row) {
+                fputcsv($out, [
+                    $row['name'] ?? '',
+                    $row['student_id'] ?? '',
+                    $row['email'] ?? '',
+                    $row['phone'] ?? '',
+                    $row['registered_at'] ?? '',
+                    $row['status'] ?? ''
+                ]);
+            }
+
+            fclose($out);
+            exit;
+        } catch (Exception $e) {
+            Helper::error('匯出報名名單失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public static function exportParticipationProofSvg() {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        $user = Auth::getCurrentUser();
+        if (!$user) {
+            Helper::error('找不到用戶資料', 404);
+        }
+
+        $events = Database::getInstance()->fetchAll(
+            'SELECT e.event_name, e.event_date, c.club_name
+             FROM event_registrations er
+             JOIN events e ON e.event_id = er.event_id
+             JOIN clubs c ON c.club_id = e.club_id
+             WHERE er.user_id = ? AND er.status = "approved"
+             ORDER BY e.event_date DESC
+             LIMIT 12',
+            [Auth::getCurrentUserId()]
+        );
+
+        $roles = Database::getInstance()->fetchAll(
+            'SELECT c.club_name, cm.role
+             FROM club_members cm
+             JOIN clubs c ON c.club_id = cm.club_id
+             WHERE cm.user_id = ?
+               AND cm.is_active = 1
+               AND cm.role IN ("president", "vice_president", "public_relations", "treasurer", "director")
+             ORDER BY c.club_name ASC
+             LIMIT 8',
+            [Auth::getCurrentUserId()]
+        );
+
+        $safeName = htmlspecialchars((string)($user['name'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $safeStudentId = htmlspecialchars((string)($user['student_id'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $issuedAt = date('Y-m-d H:i:s');
+
+        $lines = [];
+        $lines[] = '<text x="50" y="92" font-size="26" font-weight="700" fill="#0f172a">社團參與證明</text>';
+        $lines[] = '<text x="50" y="130" font-size="16" fill="#334155">姓名：' . $safeName . '</text>';
+        $lines[] = '<text x="50" y="156" font-size="16" fill="#334155">學號：' . $safeStudentId . '</text>';
+        $lines[] = '<text x="50" y="182" font-size="14" fill="#64748b">簽發時間：' . $issuedAt . '</text>';
+        $lines[] = '<text x="50" y="220" font-size="16" font-weight="600" fill="#0f172a">活動參與紀錄</text>';
+
+        $y = 246;
+        if (empty($events)) {
+            $lines[] = '<text x="66" y="' . $y . '" font-size="14" fill="#475569">- 目前沒有活動參與紀錄</text>';
+            $y += 24;
+        } else {
+            foreach ($events as $idx => $event) {
+                $name = htmlspecialchars((string)($event['event_name'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                $club = htmlspecialchars((string)($event['club_name'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                $date = htmlspecialchars((string)($event['event_date'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                $text = sprintf('%d. %s｜%s｜%s', $idx + 1, $name, $club, $date);
+                $lines[] = '<text x="66" y="' . $y . '" font-size="13" fill="#334155">' . $text . '</text>';
+                $y += 22;
+            }
+        }
+
+        $y += 10;
+        $lines[] = '<text x="50" y="' . $y . '" font-size="16" font-weight="600" fill="#0f172a">幹部任職紀錄</text>';
+        $y += 24;
+
+        if (empty($roles)) {
+            $lines[] = '<text x="66" y="' . $y . '" font-size="14" fill="#475569">- 目前沒有幹部任職紀錄</text>';
+            $y += 24;
+        } else {
+            foreach ($roles as $idx => $role) {
+                $club = htmlspecialchars((string)($role['club_name'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                $roleName = htmlspecialchars((string)($role['role'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                $text = sprintf('%d. %s｜職務：%s', $idx + 1, $club, $roleName);
+                $lines[] = '<text x="66" y="' . $y . '" font-size="13" fill="#334155">' . $text . '</text>';
+                $y += 22;
+            }
+        }
+
+        $svgHeight = max(520, $y + 40);
+        $svg = '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<svg xmlns="http://www.w3.org/2000/svg" width="960" height="' . $svgHeight . '" viewBox="0 0 960 ' . $svgHeight . '">'
+            . '<rect x="0" y="0" width="960" height="' . $svgHeight . '" fill="#f8fafc"/>'
+            . '<rect x="24" y="24" width="912" height="' . ($svgHeight - 48) . '" rx="16" fill="#ffffff" stroke="#cbd5e1"/>'
+            . implode('', $lines)
+            . '</svg>';
+
+        header('Content-Type: image/svg+xml; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="participation_proof_' . Auth::getCurrentUserId() . '_' . date('Ymd_His') . '.svg"');
+        echo $svg;
+        exit;
+    }
 }
 
 // 路由處理
@@ -919,6 +1253,10 @@ if ($method === 'GET') {
         EventAPI::getComments();
     } elseif ($action === 'my_events') {
         EventAPI::getMyEvents();
+    } elseif ($action === 'export_registrations' && $event_id) {
+        EventAPI::exportRegistrationsCsv($event_id);
+    } elseif ($action === 'participation_proof') {
+        EventAPI::exportParticipationProofSvg();
     }
 }
 
@@ -939,6 +1277,10 @@ if ($method === 'POST') {
 if ($method === 'PUT') {
     if ($action === 'update' && $event_id) {
         EventAPI::updateEvent($event_id, $data);
+    } elseif ($action === 'archive' && $event_id) {
+        EventAPI::archiveEvent($event_id, true);
+    } elseif ($action === 'restore' && $event_id) {
+        EventAPI::archiveEvent($event_id, false);
     }
 }
 

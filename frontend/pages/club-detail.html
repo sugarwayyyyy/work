@@ -178,6 +178,13 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="review-event-id">評價活動（需有報名成功或簽到紀錄）</label>
+                    <select id="review-event-id" required>
+                        <option value="">請選擇活動</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label>
                         <input type="checkbox" id="review-anonymous">
                         匿名評價
@@ -192,6 +199,33 @@
         </div>
     </div>
 
+    <div id="report-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 1200; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="max-width: 560px; width: 100%;">
+            <h3 style="margin-top: 0;">送出檢舉</h3>
+            <form id="report-form">
+                <div class="form-group">
+                    <label for="report-type-select">檢舉事由</label>
+                    <select id="report-type-select" required>
+                        <option value="">請選擇檢舉事由</option>
+                        <option value="harassment">人身攻擊 / 騷擾</option>
+                        <option value="misinformation">不實資訊</option>
+                        <option value="spam">垃圾訊息 / 廣告</option>
+                        <option value="inappropriate">不當內容</option>
+                        <option value="other">其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="report-reason-input">補充說明</label>
+                    <textarea id="report-reason-input" rows="4" placeholder="請輸入檢舉說明"></textarea>
+                </div>
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button type="button" id="report-cancel-btn" class="btn btn-secondary">取消</button>
+                    <button type="submit" class="btn btn-primary">送出檢舉</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <footer>
         <p>&copy; 2026 社團活動資訊統整平台</p>
     </footer>
@@ -201,6 +235,28 @@
         const clubId = new URLSearchParams(window.location.search).get('id');
         let selectedRating = 0;
         let hasReviewedClub = false;
+        let reportTarget = null;
+        let followRequestPending = false;
+
+        function getFollowStateCache() {
+            try {
+                return JSON.parse(localStorage.getItem('club-follow-state-cache') || '{}');
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function setFollowStateCache(clubId, isFollowing) {
+            const cache = getFollowStateCache();
+            cache[String(clubId)] = !!isFollowing;
+            localStorage.setItem('club-follow-state-cache', JSON.stringify(cache));
+        }
+
+        function getCachedFollowState(clubId) {
+            const cache = getFollowStateCache();
+            const value = cache[String(clubId)];
+            return typeof value === 'boolean' ? value : null;
+        }
 
         function updateReviewActionState() {
             const reviewBtn = document.getElementById('review-btn');
@@ -275,7 +331,6 @@
                     return;
                 }
 
-                // 只有在是 Google Maps 連結時才顯示按鈕，純文字不顯示
                 if (!isGoogleMapsUrl(rawValue)) {
                     actions.innerHTML = '';
                     return;
@@ -288,7 +343,7 @@
                 link.href = googleMapsUrl;
                 link.target = '_blank';
                 link.rel = 'noopener noreferrer';
-                link.textContent = '開啟地圖連結';
+                link.textContent = '在 Google Maps 導航';
                 actions.appendChild(link);
             };
 
@@ -321,7 +376,7 @@
             const tagsHtml = tags.map(tag => `<span class="tag tag-primary">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`).join('');
             document.getElementById('club-tags').innerHTML = tagsHtml || '暫無標籤';
 
-            const badgesHtml = `<span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>`;
+            const badgesHtml = `<span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : (club.activity_badge === 'no_recent_activity' ? '近期無活動' : '活躍中')}</span>`;
             document.getElementById('club-badges').innerHTML = badgesHtml;
 
             const logoImg = document.getElementById('club-logo-img');
@@ -372,10 +427,31 @@
             }
 
             const followBtn = document.getElementById('follow-btn');
-            if (club.is_following) {
+            if (club.follow_state_known === false) {
+                const cachedState = getCachedFollowState(clubId);
+                if (cachedState === true) {
+                    followBtn.textContent = '已追蹤';
+                    followBtn.classList.remove('btn-primary');
+                    followBtn.classList.add('btn-secondary');
+                    followBtn.title = '目前為本機快取顯示，重新登入後會與伺服器同步';
+                } else {
+                    followBtn.textContent = '登入後可查看追蹤狀態';
+                    followBtn.classList.remove('btn-secondary');
+                    followBtn.classList.add('btn-primary');
+                    followBtn.title = '登入狀態已失效，請重新登入後再查看或操作追蹤';
+                }
+            } else if (club.is_following) {
                 followBtn.textContent = '已追蹤';
                 followBtn.classList.remove('btn-primary');
                 followBtn.classList.add('btn-secondary');
+                followBtn.title = '';
+                setFollowStateCache(clubId, true);
+            } else {
+                followBtn.textContent = '追蹤社團';
+                followBtn.classList.add('btn-primary');
+                followBtn.classList.remove('btn-secondary');
+                followBtn.title = '';
+                setFollowStateCache(clubId, false);
             }
 
             renderUpcomingEvents(club.upcoming_events || []);
@@ -391,7 +467,7 @@
         function renderUpcomingEvents(events) {
             const container = document.getElementById('upcoming-events');
             if (events.length === 0) {
-                container.innerHTML = '<p style="color: var(--text-light);">暫無近期活動</p>';
+                container.innerHTML = '<p style="color: var(--text-light);">目前尚無近期活動</p>';
                 return;
             }
 
@@ -440,6 +516,7 @@
                 const absoluteDate = formatDateOnly(review.created_at);
                 const safeReviewTitle = PageUtils.escapeHtml(review.review_title || author);
                 const safeReviewContent = PageUtils.escapeHtml(review.review_content || '');
+                const reviewId = Number(review.review_id || 0);
                 html += `
                     <div style="padding: 1.5rem 0; border-bottom: 1px solid var(--border-color);">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
@@ -455,10 +532,63 @@
                             </div>
                         </div>
                         <p style="margin: 0.5rem 0; color: var(--text-light);">${safeReviewContent}</p>
+                        ${reviewId > 0 ? `<div style="margin-top: 0.5rem;"><button class="btn btn-secondary btn-sm" onclick="reportContent('review', ${reviewId})">檢舉</button></div>` : ''}
                     </div>
                 `;
             });
             container.innerHTML = html;
+        }
+
+        async function reportContent(contentType, contentId) {
+            if (!StorageUtils.isLoggedIn()) {
+                PageUtils.showAlert('請先登入', 'warning');
+                return;
+            }
+
+            reportTarget = {
+                contentType: contentType,
+                contentId: Number(contentId)
+            };
+
+            document.getElementById('report-type-select').value = '';
+            document.getElementById('report-reason-input').value = '';
+            document.getElementById('report-modal').style.display = 'flex';
+        }
+
+        function closeReportModal() {
+            reportTarget = null;
+            document.getElementById('report-modal').style.display = 'none';
+        }
+
+        async function submitReportForm(event) {
+            event.preventDefault();
+            if (!reportTarget) return;
+
+            const reportType = document.getElementById('report-type-select').value;
+            const reason = document.getElementById('report-reason-input').value.trim();
+            if (!reportType) {
+                PageUtils.showAlert('請選擇檢舉事由', 'warning');
+                return;
+            }
+
+            try {
+                const response = await APIClient.post('reports.php?action=create', {
+                    reported_content_type: reportTarget.contentType,
+                    reported_content_id: reportTarget.contentId,
+                    report_type: reportType,
+                    reason: reason
+                });
+
+                if (response.success) {
+                    PageUtils.showAlert('檢舉已送出', 'success');
+                    closeReportModal();
+                } else {
+                    PageUtils.showAlert(response.message || '檢舉失敗', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('檢舉失敗', 'error');
+            }
         }
 
         function renderAdmins(members) {
@@ -497,7 +627,12 @@
                 return;
             }
 
+            if (followRequestPending) {
+                return;
+            }
+
             try {
+                followRequestPending = true;
                 const response = await APIClient.post(`clubs.php?action=toggle_follow&id=${clubId}`, {});
                 if (response.success) {
                     const btn = document.getElementById('follow-btn');
@@ -506,11 +641,13 @@
                         btn.textContent = '已追蹤';
                         btn.classList.remove('btn-primary');
                         btn.classList.add('btn-secondary');
+                        setFollowStateCache(clubId, true);
                         PageUtils.showAlert('已追蹤此社團', 'success');
                     } else {
                         btn.textContent = '追蹤社團';
                         btn.classList.add('btn-primary');
                         btn.classList.remove('btn-secondary');
+                        setFollowStateCache(clubId, false);
                         PageUtils.showAlert('已取消追蹤', 'success');
                     }
 
@@ -523,6 +660,8 @@
             } catch (error) {
                 console.error('Error:', error);
                 PageUtils.showAlert('操作失敗', 'error');
+            } finally {
+                followRequestPending = false;
             }
         }
 
@@ -538,7 +677,31 @@
                 return;
             }
 
+            loadEligibleReviewEvents();
             document.getElementById('review-modal').style.display = 'flex';
+        }
+
+        async function loadEligibleReviewEvents() {
+            const select = document.getElementById('review-event-id');
+            if (!select) return;
+
+            select.innerHTML = '<option value="">請選擇活動</option>';
+            try {
+                const response = await APIClient.get(`reviews.php?action=eligible_events&club_id=${clubId}`);
+                if (!response.success) {
+                    return;
+                }
+
+                const events = response?.data?.events || [];
+                events.forEach(event => {
+                    const option = document.createElement('option');
+                    option.value = String(event.event_id || '');
+                    option.textContent = `${event.event_name || '未命名活動'}（${PageUtils.formatDate(event.event_date)}）`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
         }
 
         function closeReviewModal() {
@@ -565,13 +728,14 @@
         document.getElementById('review-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (hasReviewedClub) {
-                PageUtils.showAlert('您已評價過此社團，每位使用者僅能評價一次', 'warning');
+            if (selectedRating === 0) {
+                PageUtils.showAlert('請選擇評分', 'warning');
                 return;
             }
 
-            if (selectedRating === 0) {
-                PageUtils.showAlert('請選擇評分', 'warning');
+            const selectedEventId = document.getElementById('review-event-id').value;
+            if (!selectedEventId) {
+                PageUtils.showAlert('請選擇活動後再送出評價', 'warning');
                 return;
             }
 
@@ -581,6 +745,7 @@
                     rating: selectedRating,
                     review_title: document.getElementById('review-title').value,
                     review_content: document.getElementById('review-content').value,
+                    event_attended_id: selectedEventId,
                     is_anonymous: document.getElementById('review-anonymous').checked
                 });
 
@@ -589,7 +754,6 @@
                     closeReviewModal();
                     document.getElementById('review-form').reset();
                     selectedRating = 0;
-                    hasReviewedClub = true;
                     updateReviewActionState();
                     loadClubDetail();
                 } else {
@@ -606,6 +770,8 @@
                 document.querySelector('.container').innerHTML = '<p>無效的社團ID</p>';
                 return;
             }
+            document.getElementById('report-form').addEventListener('submit', submitReportForm);
+            document.getElementById('report-cancel-btn').addEventListener('click', closeReportModal);
             loadClubDetail();
         });
     </script>

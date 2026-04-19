@@ -75,7 +75,7 @@
                                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: start;">
                                     <div style="min-width: 0;">
                                         <h3 style="margin: 0 0 0.5rem 0;">${safeClubName}</h3>
-                                        <span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : '活躍中'}</span>
+                                        <span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : (club.activity_badge === 'no_recent_activity' ? '近期無活動' : '活躍中')}</span>
                                     </div>
                                     ${logoHtml}
                                 </div>

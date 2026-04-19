@@ -6,6 +6,27 @@ require_once 'config.php';
 class Database {
     private $connection;
     private static $instance;
+
+    private function normalizeBoundValue($value) {
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+        return $value;
+    }
+
+    private function inferParamTypes($params) {
+        $types = '';
+        foreach ($params as $param) {
+            if (is_int($param) || is_bool($param)) {
+                $types .= 'i';
+            } elseif (is_float($param)) {
+                $types .= 'd';
+            } else {
+                $types .= 's';
+            }
+        }
+        return $types;
+    }
     
     public static function getInstance() {
         if (!self::$instance) {
@@ -58,8 +79,9 @@ class Database {
         }
         
         if (!empty($params)) {
-            $types = str_repeat('s', count($params));
-            $stmt->bind_param($types, ...$params);
+            $types = $this->inferParamTypes($params);
+            $values = array_map([$this, 'normalizeBoundValue'], $params);
+            $stmt->bind_param($types, ...$values);
         }
         
         $stmt->execute();
@@ -78,8 +100,9 @@ class Database {
         }
         
         if (!empty($params)) {
-            $types = str_repeat('s', count($params));
-            $stmt->bind_param($types, ...$params);
+            $types = $this->inferParamTypes($params);
+            $values = array_map([$this, 'normalizeBoundValue'], $params);
+            $stmt->bind_param($types, ...$values);
         }
         
         $stmt->execute();
@@ -104,8 +127,8 @@ class Database {
             return false;
         }
         
-        $types = str_repeat('s', count($data));
-        $values = array_values($data);
+        $values = array_map([$this, 'normalizeBoundValue'], array_values($data));
+        $types = $this->inferParamTypes($values);
         $stmt->bind_param($types, ...$values);
         
         $result = $stmt->execute();
@@ -125,8 +148,11 @@ class Database {
             return false;
         }
         
-        $types = str_repeat('s', count($data) + count($where_params));
-        $values = array_merge(array_values($data), $where_params);
+        $values = array_merge(
+            array_map([$this, 'normalizeBoundValue'], array_values($data)),
+            array_map([$this, 'normalizeBoundValue'], $where_params)
+        );
+        $types = $this->inferParamTypes($values);
         $stmt->bind_param($types, ...$values);
         
         $result = $stmt->execute();
@@ -145,8 +171,9 @@ class Database {
         }
         
         if (!empty($where_params)) {
-            $types = str_repeat('s', count($where_params));
-            $stmt->bind_param($types, ...$where_params);
+            $types = $this->inferParamTypes($where_params);
+            $values = array_map([$this, 'normalizeBoundValue'], $where_params);
+            $stmt->bind_param($types, ...$values);
         }
         
         $result = $stmt->execute();

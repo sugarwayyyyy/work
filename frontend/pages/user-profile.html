@@ -83,6 +83,9 @@
                                     <h3>我的活動</h3>
                                 </div>
                                 <div class="card-body">
+                                    <div style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="downloadParticipationProof()">匯出參與證明（SVG）</button>
+                                    </div>
                                     <div id="my-events">
                                         <p>載入中...</p>
                                     </div>
@@ -212,6 +215,53 @@
             } catch (error) {
                 console.error('Error loading events:', error);
                 document.getElementById('my-events').innerHTML = '<p>載入失敗</p>';
+            }
+        }
+
+        async function downloadParticipationProof() {
+            if (!StorageUtils.isLoggedIn()) {
+                PageUtils.showAlert('請先登入', 'warning');
+                return;
+            }
+
+            try {
+                const token = StorageUtils.getToken();
+                const base = APIClient.baseUrl || 'http://localhost/backend/api';
+                const url = `${base}/events.php?action=participation_proof`;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                });
+
+                if (!response.ok) {
+                    let message = '匯出參與證明失敗';
+                    try {
+                        const data = await response.json();
+                        message = data.message || message;
+                    } catch (_error) {
+                        // Ignore non-JSON errors.
+                    }
+                    throw new Error(message);
+                }
+
+                const blob = await response.blob();
+                const disposition = response.headers.get('content-disposition') || '';
+                const match = disposition.match(/filename="?([^";]+)"?/i);
+                const fileName = match ? match[1] : `participation_proof_${Date.now()}.svg`;
+
+                const objectUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(objectUrl);
+                PageUtils.showAlert('參與證明已匯出', 'success');
+            } catch (error) {
+                console.error('Error exporting participation proof:', error);
+                PageUtils.showAlert(error.message || '匯出參與證明失敗', 'error');
             }
         }
 

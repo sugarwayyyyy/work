@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "End-to-End tests using Playwright for Club Activity Information Platform",
   "scripts": {
+    "self-check": "node scripts/self-check.js",
+    "test:guard": "npm run self-check && playwright test",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",

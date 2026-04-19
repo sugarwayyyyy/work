@@ -131,10 +131,17 @@ class ReviewAPI {
                 Helper::error('需要指定 club_id', 400);
             }
             
-                    $sql = "SELECT r.*, u.name AS user_name 
+                                        $sql = "SELECT r.*, u.name AS user_name 
                     FROM reviews r
                     JOIN users u ON r.user_id = u.user_id
                     WHERE r.club_id = ? AND r.review_status = 'approved' 
+                                            AND NOT EXISTS (
+                                                    SELECT 1 FROM reports rp
+                                                    WHERE rp.reported_content_type = 'review'
+                                                        AND rp.reported_content_id = r.review_id
+                                                        AND rp.status = 'resolved'
+                                                        AND rp.action_taken = 'force_hide'
+                                            )
                     ORDER BY created_at DESC LIMIT ? OFFSET ?";
             $stmt = Database::getInstance()->prepare($sql);
             $stmt->bind_param('sii', $club_id, $per_page, $offset);
@@ -159,7 +166,14 @@ class ReviewAPI {
             // 取得總數和評分統計
             $info = Database::getInstance()->fetchOne(
                 'SELECT COUNT(*) as count, AVG(rating) as avg_rating FROM reviews 
-                 WHERE club_id = ? AND review_status = "approved"',
+                                 WHERE club_id = ? AND review_status = "approved"
+                                     AND NOT EXISTS (
+                                             SELECT 1 FROM reports rp
+                                             WHERE rp.reported_content_type = "review"
+                                                 AND rp.reported_content_id = reviews.review_id
+                                                 AND rp.status = "resolved"
+                                                 AND rp.action_taken = "force_hide"
+                                     )',
                 [$club_id]
             );
             
@@ -178,6 +192,34 @@ class ReviewAPI {
             Helper::error('取得評價失敗: ' . $e->getMessage(), 500);
         }
     }
+
+    public static function getEligibleEvents() {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        $club_id = (int)($_GET['club_id'] ?? 0);
+        if ($club_id <= 0) {
+            Helper::error('需要指定 club_id', 400);
+        }
+
+        try {
+            $events = Database::getInstance()->fetchAll(
+                'SELECT DISTINCT e.event_id, e.event_name, e.event_date
+                 FROM events e
+                 LEFT JOIN event_registrations er ON er.event_id = e.event_id AND er.user_id = ? AND er.status = "approved"
+                 LEFT JOIN event_attendance ea ON ea.event_id = e.event_id AND ea.user_id = ?
+                 WHERE e.club_id = ?
+                   AND (er.registration_id IS NOT NULL OR ea.attendance_id IS NOT NULL)
+                 ORDER BY e.event_date DESC',
+                [Auth::getCurrentUserId(), Auth::getCurrentUserId(), $club_id]
+            );
+
+            Helper::success('取得可評價活動成功', ['events' => $events]);
+        } catch (Exception $e) {
+            Helper::error('取得可評價活動失敗: ' . $e->getMessage(), 500);
+        }
+    }
     
     /**
      * 建立評價
@@ -189,7 +231,7 @@ class ReviewAPI {
         }
         
         try {
-            $errors = Helper::validateRequired($data, ['club_id', 'rating', 'review_content']);
+            $errors = Helper::validateRequired($data, ['club_id', 'rating', 'review_content', 'event_attended_id']);
             if (!empty($errors)) {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
@@ -198,12 +240,27 @@ class ReviewAPI {
                 Helper::error('評分必須在1-5之間', 400);
             }
 
+            $club_id = (int)$data['club_id'];
+            $event_id = (int)$data['event_attended_id'];
+
+            if ($event_id <= 0) {
+                Helper::error('請選擇要評價的活動', 400);
+            }
+
+            $event = Database::getInstance()->fetchOne(
+                'SELECT event_id, club_id FROM events WHERE event_id = ?',
+                [$event_id]
+            );
+            if (!$event || (int)$event['club_id'] !== $club_id) {
+                Helper::error('活動不存在或不屬於此社團', 400);
+            }
+
             $existingReview = Database::getInstance()->fetchOne(
                 'SELECT review_id FROM reviews WHERE club_id = ? AND user_id = ? LIMIT 1',
-                [$data['club_id'], Auth::getCurrentUserId()]
+                [$club_id, Auth::getCurrentUserId()]
             );
             if (!empty($existingReview)) {
-                Helper::error('您已評價過此社團，每個社團僅能評價一次', 409);
+                Helper::error('您已評價過此社團，每位使用者僅能評價一次', 409);
             }
 
             $reviewText = trim(($data['review_title'] ?? '') . ' ' . ($data['review_content'] ?? ''));
@@ -211,18 +268,22 @@ class ReviewAPI {
                 Helper::error('評價內容包含不適當字眼，請修改後再送出', 400);
             }
             
-            // 檢查是否曾參加過此社團的活動
-            $verified = false;
-            if (isset($data['event_attended_id'])) {
-                $attendance = Database::getInstance()->fetchOne(
-                    'SELECT * FROM event_attendance WHERE event_id = ? AND user_id = ?',
-                    [$data['event_attended_id'], Auth::getCurrentUserId()]
-                );
-                $verified = !empty($attendance);
+            // 必須有報名成功或簽到紀錄才能評價。
+            $registration = Database::getInstance()->fetchOne(
+                'SELECT registration_id FROM event_registrations WHERE event_id = ? AND user_id = ? AND status = "approved" LIMIT 1',
+                [$event_id, Auth::getCurrentUserId()]
+            );
+            $attendance = Database::getInstance()->fetchOne(
+                'SELECT attendance_id FROM event_attendance WHERE event_id = ? AND user_id = ? LIMIT 1',
+                [$event_id, Auth::getCurrentUserId()]
+            );
+            $verified = !empty($registration) || !empty($attendance);
+            if (!$verified) {
+                Helper::error('僅限有報名成功或簽到紀錄的學生可評價此活動', 403);
             }
             
             $review_id = dbInsert('reviews', [
-                'club_id' => $data['club_id'],
+                'club_id' => $club_id,
                 'user_id' => Auth::getCurrentUserId(),
                 'rating' => $data['rating'],
                 'review_title' => $data['review_title'] ?? '',
@@ -230,7 +291,7 @@ class ReviewAPI {
                 'is_anonymous' => $data['is_anonymous'] ?? false,
                 'display_name' => $data['display_name'] ?? '',
                 'verified_participant' => $verified,
-                'event_attended_id' => $data['event_attended_id'] ?? null,
+                'event_attended_id' => $event_id,
                 'review_status' => 'approved'
             ]);
             
@@ -278,6 +339,8 @@ $data = ($method === 'POST' || $method === 'PUT')
 
 if ($method === 'GET' && $action === 'list') {
     ReviewAPI::getReviews();
+} elseif ($method === 'GET' && $action === 'eligible_events') {
+    ReviewAPI::getEligibleEvents();
 } elseif ($method === 'POST' && $action === 'create') {
     ReviewAPI::createReview($data);
 } elseif ($method === 'PUT' && $action === 'approve' && $review_id) {

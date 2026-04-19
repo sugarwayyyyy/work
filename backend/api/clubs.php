@@ -30,6 +30,37 @@ class ClubAPI {
             Helper::error('社課地點包含不適當字眼，請修改後再送出', 400);
         }
     }
+
+    private static function calculateActivityBadge($clubId) {
+        $recentEvent = Database::getInstance()->fetchOne(
+            'SELECT COUNT(*) AS cnt
+             FROM events e
+             WHERE (
+                    e.club_id = ?
+                    OR e.event_id IN (
+                        SELECT ce.event_id
+                        FROM collaborative_events ce
+                        WHERE ce.participated_club_id = ? AND ce.status = "approved"
+                    )
+             )
+               AND e.event_status IN ("published", "ongoing", "completed")
+               AND COALESCE(e.published_at, e.created_at) >= DATE_SUB(NOW(), INTERVAL 90 DAY)',
+            [$clubId, $clubId]
+        );
+
+        $recentPost = Database::getInstance()->fetchOne(
+            'SELECT COUNT(*) AS cnt
+             FROM q_and_a qa
+             WHERE qa.club_id = ?
+               AND qa.created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)',
+            [$clubId]
+        );
+
+        $eventCount = (int)($recentEvent['cnt'] ?? 0);
+        $postCount = (int)($recentPost['cnt'] ?? 0);
+
+        return ($eventCount + $postCount) >= 1 ? 'high_active' : 'no_recent_activity';
+    }
     
     /**
      * 取得所有社團列表（帶過濾）
@@ -205,6 +236,8 @@ class ClubAPI {
                     $row['average_rating'] = 0;
                     $row['reviews_count'] = 0;
                 }
+
+                $row['activity_badge'] = self::calculateActivityBadge((int)$row['club_id']);
                 
                 $clubs[] = $row;
             }
@@ -373,10 +406,25 @@ class ClubAPI {
             // 取得近期活動
             $events = Database::getInstance()->fetchAll(
                 'SELECT * FROM events 
-                 WHERE club_id = ? AND event_status IN ("published", "ongoing") 
+                 WHERE (
+                    club_id = ?
+                    OR event_id IN (
+                        SELECT ce.event_id
+                        FROM collaborative_events ce
+                        WHERE ce.participated_club_id = ? AND ce.status = "approved"
+                    )
+                 )
+                 AND event_status IN ("published", "ongoing") 
+                 AND NOT EXISTS (
+                     SELECT 1 FROM reports rp
+                     WHERE rp.reported_content_type = "event"
+                       AND rp.reported_content_id = events.event_id
+                       AND rp.status = "resolved"
+                       AND rp.action_taken = "force_hide"
+                 )
                  AND event_date >= NOW()
                  ORDER BY event_date ASC LIMIT 5',
-                [$club_id]
+                [$club_id, $club_id]
             );
             $club['upcoming_events'] = $events;
             
@@ -384,6 +432,13 @@ class ClubAPI {
             $reviews = Database::getInstance()->fetchAll(
                 'SELECT * FROM reviews 
                  WHERE club_id = ? AND review_status = "approved"
+                 AND NOT EXISTS (
+                     SELECT 1 FROM reports rp
+                     WHERE rp.reported_content_type = "review"
+                       AND rp.reported_content_id = reviews.review_id
+                       AND rp.status = "resolved"
+                       AND rp.action_taken = "force_hide"
+                 )
                  ORDER BY created_at DESC LIMIT 10',
                 [$club_id]
             );
@@ -392,12 +447,20 @@ class ClubAPI {
             $rating_result = Database::getInstance()->fetchOne(
                 'SELECT AVG(rating) as avg_rating, COUNT(*) as count 
                  FROM reviews 
-                 WHERE club_id = ? AND review_status = "approved"',
+                                 WHERE club_id = ? AND review_status = "approved"
+                                     AND NOT EXISTS (
+                                             SELECT 1 FROM reports rp
+                                             WHERE rp.reported_content_type = "review"
+                                                 AND rp.reported_content_id = reviews.review_id
+                                                 AND rp.status = "resolved"
+                                                 AND rp.action_taken = "force_hide"
+                                     )',
                 [$club_id]
             );
             $club['average_rating'] = (float)($rating_result['avg_rating'] ?? 0);
             $club['reviews_count'] = (int)($rating_result['count'] ?? 0);
             $club['reviews'] = $reviews;
+            $club['activity_badge'] = self::calculateActivityBadge((int)$club_id);
             
             // 取得追蹤人數（前端顯示成員數會隨追蹤變動）
             $member_count = Database::getInstance()->fetchOne(
@@ -408,9 +471,11 @@ class ClubAPI {
             
             // 檢查用戶是否追蹤此社團
             $is_following = false;
+            $follow_state_known = false;
             $has_reviewed = false;
             $user_review_status = null;
             if (Auth::isLoggedIn()) {
+                $follow_state_known = true;
                 $following = Database::getInstance()->fetchOne(
                     'SELECT * FROM club_followers WHERE club_id = ? AND user_id = ?',
                     [$club_id, Auth::getCurrentUserId()]
@@ -427,6 +492,7 @@ class ClubAPI {
                 }
             }
             $club['is_following'] = $is_following;
+            $club['follow_state_known'] = $follow_state_known;
             $club['user_has_reviewed'] = $has_reviewed;
             $club['user_review_status'] = $user_review_status;
             
@@ -513,7 +579,7 @@ class ClubAPI {
         try {
             // 檢查權限
             $member = Database::getInstance()->fetchOne(
-                'SELECT * FROM club_members WHERE club_id = ? AND user_id = ? AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
+                'SELECT * FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
                 [$club_id, Auth::getCurrentUserId()]
             );
             

@@ -47,6 +47,8 @@ class APIClient {
 
         const requestBody = method !== 'GET' ? JSON.stringify(options.data || {}) : undefined;
         let lastError = null;
+        let lastFailurePayload = null;
+        let authFailurePayload = null;
 
         for (const baseUrl of API_BASE_CANDIDATES) {
             try {
@@ -58,12 +60,41 @@ class APIClient {
                 });
 
                 const payload = await response.json();
-                if (response.ok || payload?.success === false) {
+                if (response.ok) {
                     return payload;
+                }
+
+                if (payload?.success === true) {
+                    return payload;
+                }
+
+                if (payload?.success === false) {
+                    if (response.status === 401 || response.status === 403) {
+                        // 若首個候選配置錯誤，保留認證失敗結果但持續嘗試其他候選。
+                        authFailurePayload = authFailurePayload || payload;
+                        continue;
+                    }
+
+                    // same-origin 候選通常為正確後端，優先採納以降低跨域噪音。
+                    if (baseUrl === API_BASE_CANDIDATES[0]) {
+                        return payload;
+                    }
+
+                    // 其餘候選再保留最後一個失敗回應。
+                    lastFailurePayload = payload;
+                    continue;
                 }
             } catch (error) {
                 lastError = error;
             }
+        }
+
+        if (lastFailurePayload) {
+            return lastFailurePayload;
+        }
+
+        if (authFailurePayload) {
+            return authFailurePayload;
         }
 
         if (lastError) throw lastError;
@@ -410,9 +441,23 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function initializePage() {
+    ensureSiteFavicon();
     await hydrateUserFromSession();
     updateNavigation();
+    await renderGlobalFollowSidebar();
     renderAuthPromoBanner();
+}
+
+function ensureSiteFavicon() {
+    if (document.querySelector('link[data-managed-favicon="true"]')) return;
+
+    const iconHref = `${window.location.origin}${APP_BASE_PATH}/frontend/favicon.svg`;
+    const link = document.createElement('link');
+    link.setAttribute('data-managed-favicon', 'true');
+    link.rel = 'icon';
+    link.type = 'image/svg+xml';
+    link.href = iconHref;
+    document.head.appendChild(link);
 }
 
 function shouldRenderAuthPromoBanner() {
@@ -485,31 +530,256 @@ async function hydrateUserFromSession() {
                 avatar_path: user.avatar_path || null
             });
         } else {
+            // 僅在後端明確回傳未登入時清除，避免暫時性網路錯誤造成 UI 狀態跳動。
             StorageUtils.clearUser();
         }
     } catch (error) {
-        StorageUtils.clearUser();
+        // Keep existing local session snapshot on transient request failures.
     }
 }
 
 function isPagesDir() {
-    return window.location.pathname.includes('/frontend/pages/');
+    const path = window.location.pathname || '';
+    return path.includes('/frontend/pages/') || path.includes('/pages/');
 }
 
 function getPageLink(fileName) {
     return isPagesDir() ? fileName : `pages/${fileName}`;
 }
 
+function shouldRenderGlobalFollowSidebar() {
+    const pathname = window.location.pathname || '';
+    const isPagesPath = pathname.includes('/frontend/pages/') || pathname.includes('/pages/');
+    if (!isPagesPath) return false;
+
+    const blockedPageSuffixes = [
+        '/frontend/pages/login.html',
+        '/frontend/pages/register.html',
+        '/frontend/pages/admin-dashboard.html',
+        '/frontend/pages/club-admin-dashboard.html',
+        '/pages/login.html',
+        '/pages/register.html',
+        '/pages/admin-dashboard.html',
+        '/pages/club-admin-dashboard.html'
+    ];
+
+    return !blockedPageSuffixes.some(page => pathname.endsWith(page));
+}
+
+function ensureGlobalFollowSidebarStyles() {
+    if (document.getElementById('global-follow-sidebar-style')) return;
+
+    const style = document.createElement('style');
+    style.id = 'global-follow-sidebar-style';
+    style.textContent = `
+        body.has-global-follow-sidebar #followed-clubs-section {
+            position: fixed;
+            top: 5.25rem;
+            left: 0;
+            bottom: 0;
+            width: 96px;
+            z-index: 90;
+            overflow: visible;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-card {
+            height: calc(100vh - 5.25rem);
+            background: linear-gradient(180deg, #f4f6fa 0%, #eef2f7 100%);
+            border-right: 1px solid rgba(148, 163, 184, 0.35);
+            box-shadow: 4px 0 18px rgba(15, 23, 42, 0.06);
+            border-radius: 0;
+            border-top: 0;
+            border-left: 0;
+            border-bottom: 0;
+            padding: 0.5rem 0.35rem 0.75rem;
+            overflow-y: auto;
+            overflow-x: visible;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-card::-webkit-scrollbar,
+        body.has-global-follow-sidebar #followed-clubs-container::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-card__header {
+            display: none;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            max-height: 100%;
+            overflow-y: auto;
+            overflow-x: visible;
+            padding: 0.15rem 0.1rem;
+            margin: 0;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-item {
+            display: flex;
+            position: relative;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            width: 100%;
+            text-decoration: none;
+            color: inherit;
+            border-radius: 0.8rem;
+            padding: 0.3rem 0.15rem;
+            background: transparent;
+            border: 1px solid transparent;
+            box-shadow: none;
+            transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-item:hover {
+            transform: translateY(-1px);
+            background: rgba(51, 65, 85, 0.1);
+            border-color: rgba(51, 65, 85, 0.18);
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-item__body {
+            display: none;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-empty {
+            color: var(--text-light);
+            font-size: 0.8rem;
+            line-height: 1.45;
+            padding: 0.7rem 0.1rem 0.4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            text-align: left;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-empty a {
+            display: inline-block;
+            font-size: 0.78rem;
+        }
+
+        @media (max-width: 1024px) {
+            body.has-global-follow-sidebar #followed-clubs-section {
+                display: none;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+function getGlobalFollowSidebarMarkup() {
+    return `
+        <section class="home-sidebar-card card">
+            <div class="home-sidebar-card__header">
+                <div>
+                    <h2 id="followed-clubs-title">我追蹤的社團</h2>
+                    <p id="followed-clubs-subtitle">像訂閱頻道一樣，從左側快速進入你常看的社團。</p>
+                </div>
+                <span id="followed-clubs-count" class="badge">載入中</span>
+            </div>
+            <div id="followed-clubs-container" class="home-sidebar-list">
+                <div class="home-sidebar-empty">載入追蹤社團中...</div>
+            </div>
+        </section>
+    `;
+}
+
+function renderGlobalFollowSidebarMessage(html) {
+    const container = document.getElementById('followed-clubs-container');
+    const title = document.getElementById('followed-clubs-title');
+    const subtitle = document.getElementById('followed-clubs-subtitle');
+    const countBadge = document.getElementById('followed-clubs-count');
+
+    if (title) title.textContent = '我追蹤的社團';
+    if (subtitle) subtitle.textContent = '像訂閱頻道一樣，從左側快速進入你常看的社團。';
+    if (countBadge) countBadge.textContent = '提醒';
+    if (container) container.innerHTML = `<div class="home-sidebar-empty">${html}</div>`;
+}
+
+async function renderGlobalFollowSidebar() {
+    if (!shouldRenderGlobalFollowSidebar()) return;
+    if (document.getElementById('followed-clubs-section')) return;
+
+    ensureGlobalFollowSidebarStyles();
+
+    let section = document.getElementById('followed-clubs-section');
+    if (!section) {
+        section = document.createElement('aside');
+        section.id = 'followed-clubs-section';
+        section.className = 'home-sidebar';
+        section.style.display = 'block';
+        section.innerHTML = getGlobalFollowSidebarMarkup();
+        document.body.appendChild(section);
+    }
+
+    document.body.classList.add('has-global-follow-sidebar');
+
+    if (!StorageUtils.isLoggedIn()) {
+        const countBadge = document.getElementById('followed-clubs-count');
+        if (countBadge) countBadge.textContent = '未登入';
+        renderGlobalFollowSidebarMessage(`登入後即可把你追蹤的社團固定在左側。<br><a href="${getPageLink('login.html')}" class="btn btn-primary btn-sm">前往登入</a>`);
+        return;
+    }
+
+    try {
+        const response = await APIClient.get('clubs.php?action=my_follows');
+        if (!response.success) {
+            renderGlobalFollowSidebarMessage('追蹤社團載入失敗，請稍後再試。');
+            return;
+        }
+
+        const clubs = response?.data?.clubs || [];
+        const title = document.getElementById('followed-clubs-title');
+        const subtitle = document.getElementById('followed-clubs-subtitle');
+        const countBadge = document.getElementById('followed-clubs-count');
+        if (title) title.textContent = '我追蹤的社團';
+        if (subtitle) subtitle.textContent = '像訂閱頻道一樣，從左側快速進入你常看的社團。';
+        if (countBadge) countBadge.textContent = `${clubs.length} 個社團`;
+
+        if (clubs.length === 0) {
+            renderGlobalFollowSidebarMessage(`你目前尚未追蹤任何社團。<br><a href="${getPageLink('club-list.html')}" class="btn btn-secondary btn-sm">前往社團列表</a>`);
+            return;
+        }
+
+        const container = document.getElementById('followed-clubs-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        clubs.forEach((club) => {
+            const item = document.createElement('a');
+            item.className = 'home-sidebar-item';
+            item.href = `${getPageLink('club-detail.html')}?id=${Number(club.club_id) || 0}`;
+            item.title = club.club_name || '社團';
+            const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
+            item.innerHTML = `
+                ${PageUtils.renderClubAvatar(club, 44)}
+                <span class="home-sidebar-item__body">
+                    <span class="home-sidebar-item__title">${safeClubName}</span>
+                </span>
+            `;
+            container.appendChild(item);
+        });
+    } catch (error) {
+        renderGlobalFollowSidebarMessage('載入時發生錯誤。');
+    }
+}
+
 function isAdminDashboardPage() {
-    return window.location.pathname.endsWith('/frontend/pages/admin-dashboard.html');
+    const path = window.location.pathname || '';
+    return path.endsWith('/frontend/pages/admin-dashboard.html') || path.endsWith('/pages/admin-dashboard.html');
 }
 
 function isClubAdminDashboardPage() {
-    return window.location.pathname.endsWith('/frontend/pages/club-admin-dashboard.html');
+    const path = window.location.pathname || '';
+    return path.endsWith('/frontend/pages/club-admin-dashboard.html') || path.endsWith('/pages/club-admin-dashboard.html');
 }
 
 function isUserProfilePage() {
-    return window.location.pathname.endsWith('/frontend/pages/user-profile.html');
+    const path = window.location.pathname || '';
+    return path.endsWith('/frontend/pages/user-profile.html') || path.endsWith('/pages/user-profile.html');
 }
 
 function setRestrictedDashboardNav(role) {
@@ -623,14 +893,14 @@ async function handleLogout() {
         const response = await APIClient.get('auth.php?action=logout');
         if (response.success) {
             StorageUtils.clearUser();
-            window.location.href = `${FRONTEND_HOME_URL}/index.html`;
+            window.location.href = FRONTEND_HOME_URL;
             return;
         }
     } catch (e) {
     }
 
     StorageUtils.clearUser();
-    window.location.href = `${FRONTEND_HOME_URL}/index.html`;
+    window.location.href = FRONTEND_HOME_URL;
 }
 
 window.APIClient = APIClient;

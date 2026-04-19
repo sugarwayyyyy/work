@@ -17,6 +17,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 class AdminAPI {
 
+    private static function forceHideReportedContent($report) {
+        $type = $report['reported_content_type'] ?? '';
+        $contentId = (int)($report['reported_content_id'] ?? 0);
+
+        if ($contentId <= 0) {
+            return;
+        }
+
+        if ($type === 'qa_question') {
+            dbUpdate('q_and_a', ['status' => 'closed'], 'qa_id = ?', [$contentId]);
+        } elseif ($type === 'qa_reply') {
+            dbUpdate('qa_replies', ['reply_content' => '[此內容因違反規範已下架]'], 'reply_id = ?', [$contentId]);
+        } elseif ($type === 'review') {
+            dbUpdate('reviews', ['review_status' => 'rejected'], 'review_id = ?', [$contentId]);
+        } elseif ($type === 'event') {
+            dbUpdate('events', ['event_status' => 'cancelled'], 'event_id = ?', [$contentId]);
+        } elseif ($type === 'club') {
+            dbUpdate('clubs', [
+                'activity_status' => 'inactive',
+                'deleted_at' => date('Y-m-d H:i:s'),
+                'last_updated' => date('Y-m-d H:i:s')
+            ], 'club_id = ?', [$contentId]);
+        }
+    }
+
     private static function syncUserRoleByClubAdminMembership($user_id) {
         $activeAdminMembership = Database::getInstance()->fetchOne(
             'SELECT 1
@@ -99,7 +124,11 @@ class AdminAPI {
 
         $club_id = (int)$data['club_id'];
         $user_key = trim($data['user_key']);
-        $role = in_array($data['role'], ['president', 'vice_president', 'public_relations', 'treasurer', 'director']) ? $data['role'] : 'member';
+        $allowedRoles = ['president', 'vice_president', 'public_relations', 'treasurer', 'director'];
+        $role = trim((string)$data['role']);
+        if (!in_array($role, $allowedRoles, true)) {
+            Helper::error('無效的幹部職務', 400);
+        }
         $is_active = isset($data['is_active']) ? (int)$data['is_active'] : 1;
 
         $club = Database::getInstance()->fetchOne('SELECT club_id FROM clubs WHERE club_id = ?', [$club_id]);
@@ -297,6 +326,124 @@ class AdminAPI {
             ORDER BY f.created_at DESC
         ');
         Helper::success('取得用戶回饋成功', ['feedback' => $feedback]);
+    }
+
+    public static function getReports() {
+        self::requireAdmin();
+
+        $status = trim((string)($_GET['status'] ?? ''));
+        $where = '';
+        $params = [];
+        if ($status !== '' && in_array($status, ['pending', 'reviewing', 'resolved', 'dismissed'], true)) {
+            $where = 'WHERE r.status = ?';
+            $params[] = $status;
+        }
+
+        $reports = Database::getInstance()->fetchAll(
+            'SELECT r.*, u.name AS reported_by_name, u.student_id AS reported_by_student_id
+             FROM reports r
+             JOIN users u ON u.user_id = r.reported_by_user_id
+             ' . $where . '
+             ORDER BY (r.status = "pending") DESC, r.created_at DESC',
+            $params
+        );
+
+        Helper::success('取得檢舉列表成功', ['reports' => $reports]);
+    }
+
+    public static function reviewReport($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['report_id', 'decision']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $reportId = (int)$data['report_id'];
+        $decision = trim((string)$data['decision']);
+        $adminNotes = trim((string)($data['admin_notes'] ?? ''));
+        $forceHide = isset($data['force_hide']) && (int)$data['force_hide'] === 1;
+
+        if (!in_array($decision, ['resolved', 'dismissed', 'reviewing'], true)) {
+            Helper::error('decision 必須為 resolved、dismissed 或 reviewing', 400);
+        }
+
+        $report = Database::getInstance()->fetchOne(
+            'SELECT * FROM reports WHERE report_id = ? LIMIT 1',
+            [$reportId]
+        );
+        if (!$report) {
+            Helper::error('找不到檢舉工單', 404);
+        }
+
+        $actionTaken = $report['action_taken'] ?? null;
+        if ($decision === 'resolved' && $forceHide) {
+            $actionTaken = 'force_hide';
+            self::forceHideReportedContent($report);
+        } elseif ($decision === 'dismissed') {
+            $actionTaken = 'no_action';
+        }
+
+        dbUpdate('reports', [
+            'status' => $decision,
+            'admin_notes' => $adminNotes,
+            'action_taken' => $actionTaken,
+            'resolved_at' => in_array($decision, ['resolved', 'dismissed'], true) ? date('Y-m-d H:i:s') : null,
+            'resolved_by' => Auth::getCurrentUser()['user_id']
+        ], 'report_id = ?', [$reportId]);
+
+        Helper::success('檢舉工單已更新');
+    }
+
+    public static function getAnonymousContentIdentity() {
+        self::requireAdmin();
+
+        $contentType = trim((string)($_GET['content_type'] ?? ''));
+        $contentId = (int)($_GET['content_id'] ?? 0);
+        if ($contentId <= 0 || $contentType === '') {
+            Helper::error('缺少 content_type 或 content_id', 400);
+        }
+
+        $row = null;
+        if ($contentType === 'qa_question') {
+            $row = Database::getInstance()->fetchOne(
+                'SELECT qa.qa_id AS content_id, qa.user_id, u.name, u.student_id, qa.is_anonymous
+                 FROM q_and_a qa
+                 JOIN users u ON u.user_id = qa.user_id
+                 WHERE qa.qa_id = ? LIMIT 1',
+                [$contentId]
+            );
+        } elseif ($contentType === 'qa_reply') {
+            $row = Database::getInstance()->fetchOne(
+                'SELECT qr.reply_id AS content_id, qr.user_id, u.name, u.student_id, qr.is_anonymous
+                 FROM qa_replies qr
+                 JOIN users u ON u.user_id = qr.user_id
+                 WHERE qr.reply_id = ? LIMIT 1',
+                [$contentId]
+            );
+        } elseif ($contentType === 'review') {
+            $row = Database::getInstance()->fetchOne(
+                'SELECT r.review_id AS content_id, r.user_id, u.name, u.student_id, r.is_anonymous
+                 FROM reviews r
+                 JOIN users u ON u.user_id = r.user_id
+                 WHERE r.review_id = ? LIMIT 1',
+                [$contentId]
+            );
+        } else {
+            Helper::error('不支援的 content_type', 400);
+        }
+
+        if (!$row) {
+            Helper::error('內容不存在', 404);
+        }
+
+        Helper::success('取得匿名內容真實身分成功', [
+            'content_type' => $contentType,
+            'content_id' => (int)($row['content_id'] ?? $contentId),
+            'is_anonymous' => (int)($row['is_anonymous'] ?? 0),
+            'author' => [
+                'user_id' => (int)($row['user_id'] ?? 0),
+                'name' => $row['name'] ?? '',
+                'student_id' => $row['student_id'] ?? ''
+            ]
+        ]);
     }
 
     public static function createAnnouncement($data) {
@@ -522,6 +669,8 @@ if ($method === 'GET') {
         AdminAPI::getClubAdminAssignments();
     } elseif ($action === 'event_reports') {
         AdminAPI::getEventReports();
+    } elseif ($action === 'reports') {
+        AdminAPI::getReports();
     } elseif ($action === 'user_feedback') {
         AdminAPI::getUserFeedback();
     } elseif ($action === 'announcements') {
@@ -530,6 +679,8 @@ if ($method === 'GET') {
         AdminAPI::getTransferHistory();
     } elseif ($action === 'transfer_requests') {
         AdminAPI::getTransferRequests();
+    } elseif ($action === 'report_identity') {
+        AdminAPI::getAnonymousContentIdentity();
     }
 }
 
@@ -553,6 +704,8 @@ if ($method === 'POST') {
         AdminAPI::createAnnouncement($data);
     } elseif ($action === 'review_transfer_request') {
         AdminAPI::reviewTransferRequest($data);
+    } elseif ($action === 'review_report') {
+        AdminAPI::reviewReport($data);
     }
 }
 

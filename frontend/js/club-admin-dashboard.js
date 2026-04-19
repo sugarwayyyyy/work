@@ -612,6 +612,26 @@
             return ok;
         }
 
+        async function loadUnreadNotificationDot() {
+            const dot = document.getElementById('club-admin-unread-dot');
+            if (!dot || !StorageUtils.isLoggedIn()) return;
+
+            try {
+                const response = await APIClient.get('notifications.php');
+                if (!response.success) return;
+                const notifications = response?.data?.notifications || [];
+                const unread = notifications.filter(item => Number(item.is_read || 0) === 0).length;
+                if (unread > 0) {
+                    dot.style.display = 'inline-block';
+                    dot.textContent = unread > 99 ? '99+' : String(unread);
+                } else {
+                    dot.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('載入通知失敗:', error);
+            }
+        }
+
         function validateEventForm(prefix = '') {
             let ok = true;
             syncDateTimeFromParts(`${prefix}event-date`, true);
@@ -752,6 +772,44 @@
             }
         }
 
+        async function loadCollaborativeClubOptions(currentManagedClubId) {
+            const createSelect = document.getElementById('event-collaborative-clubs');
+            const updateSelect = document.getElementById('update-event-collaborative-clubs');
+            if (!createSelect || !updateSelect) return;
+
+            try {
+                const response = await APIClient.get('clubs.php?action=all_for_filter');
+                if (!response.success) {
+                    return;
+                }
+
+                const clubs = (response.data?.clubs || []).filter(club => Number(club.club_id) !== Number(currentManagedClubId));
+                const options = clubs
+                    .map(club => `<option value="${Number(club.club_id)}">${PageUtils.escapeHtml(club.club_name || '-')}</option>`)
+                    .join('');
+
+                createSelect.innerHTML = options;
+                updateSelect.innerHTML = options;
+            } catch (error) {
+                console.error('載入協辦社團清單失敗:', error);
+            }
+        }
+
+        function getSelectedCollaborativeClubIds(selectId) {
+            const select = document.getElementById(selectId);
+            if (!select) return [];
+            return Array.from(select.selectedOptions || []).map(option => Number(option.value)).filter(id => id > 0);
+        }
+
+        function setSelectedCollaborativeClubIds(selectId, clubIds) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            const selected = new Set((clubIds || []).map(id => Number(id)));
+            Array.from(select.options).forEach(option => {
+                option.selected = selected.has(Number(option.value));
+            });
+        }
+
         async function loadClubDetails(clubId) {
             currentClubId = clubId;
             const response = await APIClient.get('clubs.php?action=detail&id=' + clubId);
@@ -779,6 +837,7 @@
             document.getElementById('club-events-subtitle').textContent = `目前管理社團：${club.club_name || ''}`;
             setDefaultCreateEventDate();
             refreshClubPreview();
+            await loadCollaborativeClubOptions(currentClubId);
 
             const logoImg = document.getElementById('club-logo-img');
             if (club.logo_path) {
@@ -810,6 +869,7 @@
                 return;
             }
             events.forEach(event => {
+                const coHostNames = (event.co_host_clubs || []).map(club => PageUtils.escapeHtml(club.club_name || '')).filter(Boolean);
                 const card = document.createElement('div');
                 card.className = 'admin-item-card';
                 card.innerHTML = `
@@ -820,12 +880,86 @@
                                 <span class="status-chip">${translateStatus(event.event_status)}</span>
                             </div>
                         </div>
-                        <button class="btn btn-secondary btn-sm" onclick="editEvent(${event.event_id})">編輯</button>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                            <button class="btn btn-secondary btn-sm" onclick="editEvent(${event.event_id})">編輯</button>
+                            <button class="btn btn-secondary btn-sm" onclick="exportRegistrations(${event.event_id})">匯出報名 CSV</button>
+                            ${event.event_status === 'archived'
+                                ? `<button class="btn btn-primary btn-sm" onclick="restoreEvent(${event.event_id})">還原</button>`
+                                : `<button class="btn btn-secondary btn-sm" onclick="archiveEvent(${event.event_id})">歸檔</button>`}
+                        </div>
                     </div>
                     <p class="admin-item-content">${formatDateTime(event.event_date)}${event.location ? '｜' + event.location : ''}</p>
+                    <p class="admin-item-content">目前報名人數：${Number(event.registered_count || 0)} 人</p>
+                    ${coHostNames.length > 0 ? `<p class="admin-item-content">協辦社團：${coHostNames.join('、')}</p>` : ''}
                 `;
                 container.appendChild(card);
             });
+        }
+
+        async function archiveEvent(eventId) {
+            const confirmed = window.confirm('確定要將此活動歸檔嗎？歸檔後前台活動列表將不再顯示。');
+            if (!confirmed) return;
+
+            const response = await APIClient.put(`events.php?action=archive&id=${eventId}`, {});
+            if (response.success) {
+                PageUtils.showAlert('活動已歸檔', 'success');
+                loadClubEvents(currentClubId);
+            } else {
+                PageUtils.showAlert(response.message || '歸檔失敗', 'error');
+            }
+        }
+
+        async function restoreEvent(eventId) {
+            const response = await APIClient.put(`events.php?action=restore&id=${eventId}`, {});
+            if (response.success) {
+                PageUtils.showAlert('活動已還原', 'success');
+                loadClubEvents(currentClubId);
+            } else {
+                PageUtils.showAlert(response.message || '還原失敗', 'error');
+            }
+        }
+
+        function exportRegistrations(eventId) {
+            const token = StorageUtils.getToken();
+            const base = APIClient.baseUrl || 'http://localhost/backend/api';
+            const url = `${base}/events.php?action=export_registrations&id=${eventId}`;
+
+            fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            })
+                .then(async (response) => {
+                    if (!response.ok) {
+                        let message = '匯出失敗';
+                        try {
+                            const data = await response.json();
+                            message = data.message || message;
+                        } catch (_err) {
+                            // Ignore JSON parse errors for non-JSON error responses.
+                        }
+                        throw new Error(message);
+                    }
+
+                    const blob = await response.blob();
+                    const disposition = response.headers.get('content-disposition') || '';
+                    const match = disposition.match(/filename="?([^";]+)"?/i);
+                    const fileName = match ? match[1] : `registrations_${eventId}.csv`;
+
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(downloadUrl);
+                    PageUtils.showAlert('報名名單已匯出', 'success');
+                })
+                .catch((error) => {
+                    console.error('匯出報名失敗:', error);
+                    PageUtils.showAlert(error.message || '匯出失敗', 'error');
+                });
         }
 
         async function editEvent(eventId) {
@@ -844,6 +978,7 @@
             document.getElementById('update-event-location').value = event.location || '';
             document.getElementById('update-event-capacity').value = event.capacity || '';
             document.getElementById('update-event-fee').value = event.fee || '';
+            document.getElementById('update-event-registration-open').checked = Number(event.is_registration_open) === 1;
             setDateTimeParts('update-event-deadline', toDatetimeLocal(event.registration_deadline));
             syncDateTimeFromParts('update-event-deadline', false);
 
@@ -853,6 +988,7 @@
                 event.tags.forEach(tag => eventSelectedTagIds.add(tag.tag_id));
             }
             renderEventSelectedTags('update');
+            setSelectedCollaborativeClubIds('update-event-collaborative-clubs', (event.co_host_clubs || []).map(club => club.club_id));
 
             const posterImg = document.getElementById('update-event-poster-img');
             if (event.poster_path) {
@@ -1003,8 +1139,10 @@
                 formData.append('fee', document.getElementById('event-fee').value);
                 formData.append('registration_deadline', document.getElementById('event-deadline').value);
                 formData.append('event_status', 'published');
-                formData.append('is_registration_open', '1');
-                const response = await APIClient.post('events.php?action=create', Object.fromEntries(formData));
+                formData.append('is_registration_open', document.getElementById('event-registration-open').checked ? '1' : '0');
+                const payload = Object.fromEntries(formData);
+                payload.collaborative_club_ids = getSelectedCollaborativeClubIds('event-collaborative-clubs');
+                const response = await APIClient.post('events.php?action=create', payload);
                 
                 if (response.success) {
                     const createdEventId = response?.data?.event_id;
@@ -1075,6 +1213,7 @@
             formData.append('capacity', document.getElementById('update-event-capacity').value);
             formData.append('fee', document.getElementById('update-event-fee').value);
             formData.append('registration_deadline', document.getElementById('update-event-deadline').value);
+            formData.append('is_registration_open', document.getElementById('update-event-registration-open').checked ? '1' : '0');
 
             const posterFile = document.getElementById('update-event-poster-upload').files[0];
             if (posterFile) {
@@ -1103,7 +1242,9 @@
                 formData.append('poster_path', uploadResult.path);
             }
 
-            const response = await APIClient.put('events.php?action=update&id=' + currentEventId, Object.fromEntries(formData));
+            const updatePayload = Object.fromEntries(formData);
+            updatePayload.collaborative_club_ids = getSelectedCollaborativeClubIds('update-event-collaborative-clubs');
+            const response = await APIClient.put('events.php?action=update&id=' + currentEventId, updatePayload);
             if (response.success) {
                 // 保存活動標籤
                 if (eventSelectedTagIds.size > 0 || eventSelectedTagIds.size === 0) {
@@ -1122,6 +1263,7 @@
                 document.getElementById('event-management-section').style.display = 'none';
                 eventSelectedTagIds.clear();
                 renderEventSelectedTags('update');
+                setSelectedCollaborativeClubIds('update-event-collaborative-clubs', []);
             } else {
                 PageUtils.showAlert('更新活動失敗：' + response.message, 'error');
             }
@@ -1201,3 +1343,4 @@
         });
         loadMyClubs();
         loadMyTransferRequests();
+        loadUnreadNotificationDot();

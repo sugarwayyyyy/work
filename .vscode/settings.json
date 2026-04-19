@@ -16,6 +16,14 @@
         "/^Set-Location -Path 'D:\\\\app\\\\appserv\\\\www\\\\work-main'; git checkout main; git pull origin main$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^php -l backend/db\\.php; php -l run_migration\\.php; php -l backend/api/qa\\.php; php -l backend/api/reports\\.php; php -l create_user\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^php -l backend/api/clubs\\.php; php -l backend/api/admin\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

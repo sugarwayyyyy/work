@@ -251,6 +251,14 @@ class QandAAPI {
                 $conditions[] = 'qa.status = ?';
                 $params[] = $status;
             }
+
+            $conditions[] = 'NOT EXISTS (
+                SELECT 1 FROM reports r
+                WHERE r.reported_content_type = "qa_question"
+                  AND r.reported_content_id = qa.qa_id
+                  AND r.status = "resolved"
+                  AND r.action_taken = "force_hide"
+            )';
             
             $where = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
             
@@ -285,6 +293,11 @@ class QandAAPI {
                 $row['author_name'] = !empty($row['is_anonymous'])
                     ? ($row['display_name'] ?: '匿名用戶')
                     : ($row['user_name'] ?: '匿名用戶');
+
+                if (!Auth::isAdmin() && !empty($row['is_anonymous'])) {
+                    unset($row['user_id']);
+                    unset($row['user_name']);
+                }
 
                 // 取得標籤
                 $tags = Database::getInstance()->fetchAll(
@@ -359,6 +372,21 @@ class QandAAPI {
             if (!$question) {
                 Helper::error('提問不存在', 404);
             }
+
+            if (!Auth::isAdmin()) {
+                $hiddenReport = Database::getInstance()->fetchOne(
+                    'SELECT report_id FROM reports
+                     WHERE reported_content_type = "qa_question"
+                       AND reported_content_id = ?
+                       AND status = "resolved"
+                       AND action_taken = "force_hide"
+                     LIMIT 1',
+                    [$qa_id]
+                );
+                if ($hiddenReport) {
+                    Helper::error('提問不存在', 404);
+                }
+            }
             
             $question['author_name'] = !empty($question['is_anonymous'])
                 ? ($question['display_name'] ?: '匿名用戶')
@@ -401,6 +429,15 @@ class QandAAPI {
             $question['not_helpful_count'] = $not_helpful_count['count'];
             $question['is_solved'] = ($question['status'] ?? '') === 'closed' ? 1 : 0;
             $question['urgency_label'] = self::getUrgencyLabel($question['urgency_level'] ?? 'normal');
+            $question['can_mark_solved'] = Auth::isLoggedIn()
+                && ((int)Auth::getCurrentUserId() === (int)$question['user_id']);
+            $question['can_report'] = Auth::isLoggedIn()
+                && ((int)Auth::getCurrentUserId() !== (int)$question['user_id']);
+
+            if (!Auth::isAdmin() && !empty($question['is_anonymous'])) {
+                unset($question['user_id']);
+                unset($question['user_name']);
+            }
             
             Helper::success('取得提問詳情成功', $question);
             
@@ -463,6 +500,33 @@ class QandAAPI {
                 'triggered_by' => Auth::getCurrentUserId(),
                 'description' => '發布了新提問'
             ]);
+
+            $clubAdmins = Database::getInstance()->fetchAll(
+                'SELECT DISTINCT cm.user_id
+                 FROM club_members cm
+                 WHERE cm.club_id = ?
+                   AND cm.is_active = 1
+                   AND cm.role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
+                [$data['club_id']]
+            );
+
+            foreach ($clubAdmins as $admin) {
+                $adminId = (int)($admin['user_id'] ?? 0);
+                if ($adminId <= 0) {
+                    continue;
+                }
+
+                dbInsert('notifications', [
+                    'user_id' => $adminId,
+                    'title' => '收到新的學生提問',
+                    'message' => '你的社團有新提問，請前往留言板回覆。',
+                    'notification_type' => 'qa_reply',
+                    'related_type' => 'qa',
+                    'related_id' => $qa_id,
+                    'is_read' => 0,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            }
             
             Helper::success('提問發布成功', ['qa_id' => $qa_id]);
             
@@ -533,12 +597,20 @@ class QandAAPI {
                  FROM qa_replies qr
                  JOIN users u ON qr.user_id = u.user_id
                  WHERE qr.qa_id = ?
+                   AND NOT EXISTS (
+                       SELECT 1 FROM reports r
+                       WHERE r.reported_content_type = "qa_reply"
+                         AND r.reported_content_id = qr.reply_id
+                         AND r.status = "resolved"
+                         AND r.action_taken = "force_hide"
+                   )
                  ORDER BY qr.created_at ASC',
                 [$question_id]
             );
 
             // 取得每條回覆的有幫助數量
             foreach ($replies as &$reply) {
+                $ownerUserId = (int)($reply['user_id'] ?? 0);
                 $voteStats = Database::getInstance()->fetchOne(
                     'SELECT 
                         SUM(CASE WHEN vote_type = "helpful" THEN 1 ELSE 0 END) AS helpful_count,
@@ -555,6 +627,10 @@ class QandAAPI {
                     : ($reply['user_name'] ?: '匿名用戶');
 
                 // 只要登入即可投票（含自己的留言）
+                    if (!Auth::isAdmin() && !empty($reply['is_anonymous'])) {
+                        unset($reply['user_id']);
+                        unset($reply['user_name']);
+                    }
                 if (Auth::isLoggedIn()) {
                     $user_id = Auth::getCurrentUserId();
                     $vote = Database::getInstance()->fetchOne(
@@ -563,9 +639,13 @@ class QandAAPI {
                     );
                     $reply['my_vote'] = $vote['vote_type'] ?? null;
                     $reply['can_vote'] = true;
+                    $reply['is_mine'] = ((int)$user_id === $ownerUserId);
+                    $reply['can_report'] = ((int)$user_id !== $ownerUserId);
                 } else {
                     $reply['my_vote'] = null;
                     $reply['can_vote'] = false;
+                    $reply['is_mine'] = false;
+                    $reply['can_report'] = false;
                 }
             }
 
