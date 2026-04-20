@@ -351,7 +351,18 @@ class PageUtils {
             normalized = normalized.replace(/^frontend\//, '');
         }
 
+        // 兼容舊資料：若 DB 只存上傳檔名（無路徑），自動補到 uploads 目錄。
+        const isBareFilename = !normalized.includes('/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(normalized);
+        if (isBareFilename) {
+            normalized = `assets/uploads/${normalized}`;
+        }
+
         if (isFrontendDocRootMode) {
+            if (normalized.startsWith('assets/uploads/')) {
+                // 某些本機環境下，舊上傳檔 ACL 會導致 php -S 無法直接讀取 uploads；
+                // 開發模式優先走 Apache 靜態路徑，避免頁面持續 404。
+                return `${window.location.protocol}//${window.location.hostname}/社團活動資訊統整平台/frontend/${normalized}`;
+            }
             return resolveFrontendAssetUrl(normalized);
         }
 
@@ -360,6 +371,27 @@ class PageUtils {
         }
 
         return `${window.location.origin}${APP_BASE_PATH}/${normalized}`;
+    }
+
+    static getAlternateUploadsUrl(url) {
+        if (!url) return '';
+
+        try {
+            const parsed = new URL(url, window.location.origin);
+            const path = parsed.pathname || '';
+
+            if (path.includes('/frontend/assets/uploads/')) {
+                return `${parsed.origin}${path.replace('/frontend/assets/uploads/', '/assets/uploads/')}${parsed.search}`;
+            }
+
+            if (path.includes('/assets/uploads/')) {
+                return `${parsed.origin}${path.replace('/assets/uploads/', '/frontend/assets/uploads/')}${parsed.search}`;
+            }
+        } catch (error) {
+            return '';
+        }
+
+        return '';
     }
 
     static getInitial(text) {
@@ -380,9 +412,21 @@ class PageUtils {
 
         if (logoUrl) {
             const safeLogoUrl = PageUtils.escapeAttribute(logoUrl);
+            const alternateLogoUrl = PageUtils.getAlternateUploadsUrl(logoUrl);
+            const safeAlternateLogoUrl = PageUtils.escapeAttribute(alternateLogoUrl || '');
             const pixelLogoForAttr = PageUtils.escapeAttribute(pixelLogoUrl);
-            const fallbackAttr = pixelLogoUrl
-                ? ` onerror="this.onerror=null;this.src='${pixelLogoForAttr}';this.style.imageRendering='pixelated';"`
+            const fallbackSteps = [];
+
+            if (alternateLogoUrl) {
+                fallbackSteps.push(`if(!this.dataset.uploadFallbackTried){this.dataset.uploadFallbackTried='1';this.src='${safeAlternateLogoUrl}';return;}`);
+            }
+
+            if (pixelLogoUrl) {
+                fallbackSteps.push(`this.onerror=null;this.src='${pixelLogoForAttr}';this.style.imageRendering='pixelated';`);
+            }
+
+            const fallbackAttr = fallbackSteps.length > 0
+                ? ` onerror="${fallbackSteps.join('')}"`
                 : '';
             return `<span class="club-avatar" style="width: ${dimension}; height: ${dimension};"><img src="${safeLogoUrl}" alt="${safeClubName} logo" class="club-avatar__img"${fallbackAttr}></span>`;
         }
@@ -641,6 +685,11 @@ function renderAuthPromoBanner() {
 }
 
 async function hydrateUserFromSession() {
+    // 沒有本地登入快照時，先不主動探測 current，避免未登入首頁持續出現 401 噪音。
+    if (!StorageUtils.isLoggedIn()) {
+        return;
+    }
+
     try {
         const response = await APIClient.get('auth.php?action=current');
         if (response && response.success && response.data) {
