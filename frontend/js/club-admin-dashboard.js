@@ -852,7 +852,7 @@
 
             const logoImg = document.getElementById('club-logo-img');
             if (club.logo_path) {
-                logoImg.src = club.logo_path.startsWith('http') ? club.logo_path : '../' + club.logo_path.replace(/^\.\//, '');
+                logoImg.src = PageUtils.resolveMediaUrl(club.logo_path);
                 logoImg.style.display = 'block';
             } else {
                 logoImg.style.display = 'none';
@@ -1006,7 +1006,7 @@
 
             const posterImg = document.getElementById('update-event-poster-img');
             if (event.poster_path) {
-                posterImg.src = event.poster_path.startsWith('http') ? event.poster_path : '../' + event.poster_path.replace(/^\.\//, '');
+                posterImg.src = PageUtils.resolveMediaUrl(event.poster_path);
                 posterImg.style.display = 'block';
             } else {
                 posterImg.style.display = 'none';
