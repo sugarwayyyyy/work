@@ -3,6 +3,7 @@ $ErrorActionPreference = 'SilentlyContinue'
 $phpProcesses = Get-CimInstance Win32_Process | Where-Object {
     $_.Name -eq 'php.exe' -and (
         $_.CommandLine -match 'localhost:8000' -or
+        $_.CommandLine -match 'localhost:8080' -or
         $_.CommandLine -match '127.0.0.1:8080'
     )
 }

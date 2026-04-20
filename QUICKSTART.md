@@ -88,7 +88,7 @@ php -S localhost:8000
 
 ```bash
 cd backend
-php -S 127.0.0.1:8080
+php -S localhost:8080
 ```
 
 若只開 `localhost:8000` 而後端未提供，頁面會顯示但資料請求會失敗。
@@ -113,7 +113,7 @@ php -S 127.0.0.1:8080
 ### API 回傳 404
 - 檢查前端 `main.js` 的 API 路徑
 - 確認後端資料夾位於 `backend/`
-- 若前端使用 `localhost:8000`，請確認 Apache 或 `127.0.0.1:8080` 至少一種後端模式已啟動
+- 若前端使用 `localhost:8000`，請確認 Apache 或 `localhost:8080` 至少一種後端模式已啟動
 
 ## 相關文件
 

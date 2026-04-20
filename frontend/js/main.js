@@ -45,7 +45,7 @@ function resolveApiBaseCandidates() {
     if (window.location.port === '8000') {
         // 優先嘗試專案預設路徑與本機後端埠，降低錯誤候選導致的噪音。
         candidates.push(`${window.location.protocol}//${window.location.hostname}/社團活動資訊統整平台/backend/api`);
-        candidates.push('http://127.0.0.1:8080/api');
+        candidates.push('http://localhost:8080/api');
     }
 
     return Array.from(new Set(candidates));
@@ -158,7 +158,10 @@ class APIClient {
                 if (payload?.success === false) {
                     if (response.status === 401 || response.status === 403) {
                         if (isCurrentSessionProbe) {
-                            return payload;
+                            // current probe 可能先打到沒有共享 session 的候選主機，
+                            // 必須繼續試完其他候選後再決定是否真的未登入。
+                            lastFailurePayload = lastFailurePayload || payload;
+                            continue;
                         }
 
                         // 若首個候選配置錯誤，保留認證失敗結果但持續嘗試其他候選。
