@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 const BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8080/api';
 
 const STUDENT = {
   email: 'student@univ.edu',
@@ -15,6 +16,82 @@ async function login(page, email, password) {
     page.waitForURL(url => !url.pathname.endsWith('/pages/login.html'), { timeout: 15000 }),
     page.click('button[type="submit"]')
   ]);
+}
+
+async function collectFailedResponses(page, action) {
+  const failures = [];
+  const listener = (response) => {
+    const status = response.status();
+    if (status >= 400) {
+      failures.push({
+        url: response.url(),
+        status
+      });
+    }
+  };
+
+  page.on('response', listener);
+  try {
+    await action();
+  } finally {
+    page.off('response', listener);
+  }
+
+  return failures;
+}
+
+async function fetchPagedIds(endpoint, listKey) {
+  const ids = [];
+  let currentPage = 1;
+  let totalPages = 1;
+
+  while (currentPage <= totalPages) {
+    const response = await fetch(`${API_BASE_URL}/${endpoint}${endpoint.includes('?') ? '&' : '?'}page=${currentPage}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${endpoint} page ${currentPage}: ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const pageItems = payload?.data?.[listKey] || [];
+    for (const item of pageItems) {
+      const id = Number(item?.club_id ?? item?.event_id ?? 0);
+      if (id > 0) {
+        ids.push(id);
+      }
+    }
+
+    const pagination = payload?.data?.pagination || {};
+    totalPages = Number(pagination.total_pages || 1);
+    currentPage += 1;
+  }
+
+  return Array.from(new Set(ids));
+}
+
+async function scanDetailPagesForUploads404(page, urls) {
+  const failures = [];
+  const listener = (response) => {
+    const status = response.status();
+    const url = response.url();
+    if (status === 404 && /\/assets\/uploads\//i.test(url)) {
+      failures.push({ url, status });
+    }
+  };
+
+  page.on('response', listener);
+  try {
+    for (const url of urls) {
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
+      await page.waitForTimeout(250);
+      if (failures.length > 0) {
+        break;
+      }
+    }
+  } finally {
+    page.off('response', listener);
+  }
+
+  return failures;
 }
 
 test.describe('Additional Regression: 首頁進階搜尋', () => {
@@ -234,6 +311,73 @@ test.describe('Additional Regression: QA 互動細節', () => {
 });
 
 test.describe('Additional Regression: 會話與導向自檢', () => {
+  test('AR-22 未登入首頁不應觸發 auth current 401', async ({ page }) => {
+    const failures = await collectFailedResponses(page, async () => {
+      await page.goto(`${BASE_URL}/index.html`);
+      await page.waitForLoadState('networkidle');
+    });
+
+    const current401 = failures.filter(item =>
+      item.status === 401 && item.url.includes('auth.php?action=current')
+    );
+
+    expect(current401).toHaveLength(0);
+    await expect(page.locator('#login-btn')).toBeVisible();
+  });
+
+  test('AR-23 未登入首頁不應載入 uploads 404', async ({ page }) => {
+    const failures = await collectFailedResponses(page, async () => {
+      await page.goto(`${BASE_URL}/index.html`);
+      await page.waitForLoadState('networkidle');
+    });
+
+    const upload404s = failures.filter(item =>
+      item.status === 404 && /\/assets\/uploads\//i.test(item.url)
+    );
+
+    expect(upload404s).toHaveLength(0);
+  });
+
+  test('AR-24 已登入首頁不應載入 uploads 404', async ({ page }) => {
+    await login(page, STUDENT.email, STUDENT.password);
+
+    const failures = await collectFailedResponses(page, async () => {
+      await page.goto(`${BASE_URL}/index.html`);
+      await page.waitForLoadState('networkidle');
+    });
+
+    const upload404s = failures.filter(item =>
+      item.status === 404 && /\/assets\/uploads\//i.test(item.url)
+    );
+
+    expect(upload404s).toHaveLength(0);
+    await expect(page.locator('#followed-clubs-section')).toBeVisible();
+  });
+
+  test('AR-25 所有社團詳情頁不應載入 uploads 404', async ({ page }) => {
+    test.setTimeout(180000);
+    const clubIds = await fetchPagedIds('clubs.php', 'clubs');
+    expect(clubIds.length).toBeGreaterThan(0);
+
+    const urls = clubIds.map(id => `${BASE_URL}/pages/club-detail.html?id=${id}`);
+    const failures = await scanDetailPagesForUploads404(page, urls);
+
+    expect(failures).toHaveLength(0);
+    await expect(page.locator('#club-name')).toBeAttached();
+  });
+
+  test('AR-26 所有活動詳情頁不應載入 uploads 404', async ({ page }) => {
+    test.setTimeout(180000);
+    const eventIds = await fetchPagedIds('events.php', 'events');
+    expect(eventIds.length).toBeGreaterThan(0);
+
+    const urls = eventIds.map(id => `${BASE_URL}/pages/event-detail.html?id=${id}`);
+    const failures = await scanDetailPagesForUploads404(page, urls);
+
+    expect(failures).toHaveLength(0);
+    await expect(page.locator('#event-title')).toBeAttached();
+  });
+
   test('AR-19 登出後應回到首頁且顯示未登入狀態', async ({ page }) => {
     await login(page, STUDENT.email, STUDENT.password);
     await page.goto(`${BASE_URL}/index.html`);
@@ -243,7 +387,7 @@ test.describe('Additional Regression: 會話與導向自檢', () => {
     await expect(logoutBtn).toBeVisible();
 
     await Promise.all([
-      page.waitForURL(/\/frontend\/index\.html$/),
+      page.waitForURL(/\/(index\.html|frontend\/index\.html)$/),
       logoutBtn.click()
     ]);
 
@@ -262,7 +406,7 @@ test.describe('Additional Regression: 會話與導向自檢', () => {
     await page.waitForLoadState('networkidle');
 
     await Promise.all([
-      page.waitForURL(/\/frontend\/index\.html$/),
+      page.waitForURL(/\/(index\.html|frontend\/index\.html)$/),
       page.click('#logout-btn')
     ]);
 
