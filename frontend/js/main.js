@@ -43,9 +43,9 @@ function resolveApiBaseCandidates() {
 
     // PHP 內建伺服器跑在 frontend(:8000) 時，後端可能不在同一個 doc root。
     if (window.location.port === '8000') {
-        // 優先嘗試專案預設路徑與本機後端埠，降低錯誤候選導致的噪音。
-        candidates.push(`${window.location.protocol}//${window.location.hostname}/社團活動資訊統整平台/backend/api`);
+        // 一鍵啟動腳本預設後端在 :8080，先走同一來源可避免候選切換導致狀態錯讀。
         candidates.push('http://localhost:8080/api');
+        candidates.push(`${window.location.protocol}//${window.location.hostname}/社團活動資訊統整平台/backend/api`);
     }
 
     return Array.from(new Set(candidates));
@@ -68,10 +68,26 @@ function resolveFrontendAssetUrl(relativePath) {
 
 let csrfTokenCache = null;
 let csrfTokenPromise = null;
+let activeApiBaseUrl = null;
 
 class APIClient {
     static getBaseUrl() {
-        return API_BASE_CANDIDATES[0] || API_URL;
+        return activeApiBaseUrl || API_BASE_CANDIDATES[0] || API_URL;
+    }
+
+    static getOrderedCandidates() {
+        const ordered = [];
+        if (activeApiBaseUrl) {
+            ordered.push(activeApiBaseUrl);
+        }
+
+        for (const candidate of API_BASE_CANDIDATES) {
+            if (!ordered.includes(candidate)) {
+                ordered.push(candidate);
+            }
+        }
+
+        return ordered;
     }
 
     static async ensureCSRFToken() {
@@ -130,7 +146,9 @@ class APIClient {
         let lastFailurePayload = null;
         let authFailurePayload = null;
 
-        for (const baseUrl of API_BASE_CANDIDATES) {
+        const candidateBaseUrls = this.getOrderedCandidates();
+
+        for (const baseUrl of candidateBaseUrls) {
             try {
                 const response = await fetch(`${baseUrl}/${endpoint}`, {
                     method,
@@ -148,10 +166,12 @@ class APIClient {
                 }
 
                 if (response.ok) {
+                    activeApiBaseUrl = baseUrl;
                     return payload;
                 }
 
                 if (payload?.success === true) {
+                    activeApiBaseUrl = baseUrl;
                     return payload;
                 }
 
@@ -179,6 +199,9 @@ class APIClient {
                     continue;
                 }
             } catch (error) {
+                if (activeApiBaseUrl === baseUrl) {
+                    activeApiBaseUrl = null;
+                }
                 lastError = error;
             }
         }

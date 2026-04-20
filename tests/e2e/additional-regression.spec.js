@@ -426,4 +426,49 @@ test.describe('Additional Regression: 會話與導向自檢', () => {
     await expect(followBtn).toBeVisible();
     await expect(followBtn).toHaveText('登入後可查看追蹤狀態');
   });
+
+  test('AR-27 追蹤狀態在登出再登入後應維持', async ({ page }) => {
+    await login(page, STUDENT.email, STUDENT.password);
+
+    await page.goto(`${BASE_URL}/pages/club-list.html`);
+    await page.waitForLoadState('networkidle');
+
+    const detailLink = page.locator('a[href*="club-detail.html?id="]').first();
+    await expect(detailLink).toBeVisible();
+
+    const detailHref = await detailLink.getAttribute('href');
+    expect(detailHref).toBeTruthy();
+
+    const clubIdMatch = String(detailHref).match(/id=(\d+)/);
+    expect(clubIdMatch).toBeTruthy();
+    const clubId = Number(clubIdMatch[1]);
+    expect(clubId).toBeGreaterThan(0);
+
+    await detailLink.click();
+    await page.waitForURL('**/club-detail.html**');
+    await page.waitForLoadState('networkidle');
+
+    const followBtn = page.locator('#follow-btn');
+    await expect(followBtn).toBeVisible();
+
+    const initialText = (await followBtn.innerText()).trim();
+    if (!initialText.includes('已追蹤')) {
+      await followBtn.click();
+      await page.waitForLoadState('networkidle');
+      await expect(page.locator('#follow-btn')).toContainText('已追蹤');
+    }
+
+    const logoutBtn = page.locator('#logout-btn');
+    await expect(logoutBtn).toBeVisible();
+    await Promise.all([
+      page.waitForURL(/\/(index\.html|frontend\/index\.html)$/),
+      logoutBtn.click()
+    ]);
+
+    await login(page, STUDENT.email, STUDENT.password);
+    await page.goto(`${BASE_URL}/pages/club-detail.html?id=${clubId}`);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.locator('#follow-btn')).toContainText('已追蹤');
+  });
 });
