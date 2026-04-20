@@ -43,8 +43,7 @@ function resolveApiBaseCandidates() {
 
     // PHP 內建伺服器跑在 frontend(:8000) 時，後端可能不在同一個 doc root。
     if (window.location.port === '8000') {
-        // 優先嘗試專案預設路徑與本機後端埠，降低錯誤候選導致的噪音。
-        candidates.push(`${window.location.protocol}//${window.location.hostname}/社團活動資訊統整平台/backend/api`);
+        // 優先嘗試本機後端埠，避免 AppServ 等的舊路徑候選。
         candidates.push('http://127.0.0.1:8080/api');
     }
 
