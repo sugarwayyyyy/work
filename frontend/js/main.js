@@ -16,16 +16,35 @@ function detectAppBasePath() {
 
 const APP_BASE_PATH = detectAppBasePath();
 
+function resolveFrontendHomeUrl() {
+    const path = window.location.pathname || '';
+
+    if (path.includes('/frontend/')) {
+        return `${window.location.origin}${APP_BASE_PATH}/frontend/index.html`;
+    }
+
+    // 在 frontend 目錄直接啟動 php -S 時，首頁位於 /index.html。
+    return `${window.location.origin}/index.html`;
+}
+
 function resolveApiBaseCandidates() {
     const candidates = [];
+    const pathname = window.location.pathname || '';
     const sameOriginApi = `${window.location.origin}${APP_BASE_PATH}/backend/api`;
-    candidates.push(sameOriginApi);
+
+    const isFrontendDocRootMode = window.location.port === '8000'
+        && !pathname.includes('/frontend/')
+        && !pathname.includes('/backend/');
+
+    // frontend 目錄直接啟動時不存在 /backend/api 路徑，避免先打到必定 404 的候選。
+    if (!isFrontendDocRootMode) {
+        candidates.push(sameOriginApi);
+    }
 
     // PHP 內建伺服器跑在 frontend(:8000) 時，後端可能不在同一個 doc root。
     if (window.location.port === '8000') {
-        candidates.push(`${window.location.protocol}//${window.location.hostname}/work-main/backend/api`);
+        // 優先嘗試專案預設路徑與本機後端埠，降低錯誤候選導致的噪音。
         candidates.push(`${window.location.protocol}//${window.location.hostname}/社團活動資訊統整平台/backend/api`);
-        candidates.push(`${window.location.protocol}//${window.location.hostname}/backend/api`);
         candidates.push('http://127.0.0.1:8080/api');
     }
 
@@ -34,7 +53,19 @@ function resolveApiBaseCandidates() {
 
 const API_BASE_CANDIDATES = resolveApiBaseCandidates();
 const API_URL = API_BASE_CANDIDATES[0];
-const FRONTEND_HOME_URL = `${window.location.origin}${APP_BASE_PATH}/frontend/index.html`;
+const FRONTEND_HOME_URL = resolveFrontendHomeUrl();
+
+function resolveFrontendAssetUrl(relativePath) {
+    const normalizedPath = String(relativePath || '').replace(/^\/+/, '');
+    const path = window.location.pathname || '';
+
+    if (path.includes('/frontend/')) {
+        return `${window.location.origin}${APP_BASE_PATH}/frontend/${normalizedPath}`;
+    }
+
+    return `${window.location.origin}/${normalizedPath}`;
+}
+
 let csrfTokenCache = null;
 let csrfTokenPromise = null;
 
@@ -74,6 +105,7 @@ class APIClient {
 
     static async request(endpoint, options = {}) {
         const method = options.method || 'GET';
+        const isCurrentSessionProbe = endpoint === 'auth.php?action=current';
         const shouldAttachCSRF = !options.skipCSRF && method !== 'GET';
 
         if (shouldAttachCSRF && !csrfTokenCache) {
@@ -81,10 +113,13 @@ class APIClient {
         }
 
         const headers = {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
             ...options.headers
         };
+
+        if (method !== 'GET') {
+            headers['Content-Type'] = 'application/json';
+            headers['X-Requested-With'] = 'XMLHttpRequest';
+        }
 
         if (shouldAttachCSRF && csrfTokenCache) {
             headers['X-CSRF-Token'] = csrfTokenCache;
@@ -104,7 +139,14 @@ class APIClient {
                     body: requestBody
                 });
 
-                const payload = await response.json();
+                let payload = null;
+                try {
+                    payload = await response.json();
+                } catch (parseError) {
+                    // 404 HTML 或非 JSON 回應視為此候選不可用，繼續嘗試下一個。
+                    continue;
+                }
+
                 if (response.ok) {
                     return payload;
                 }
@@ -115,6 +157,10 @@ class APIClient {
 
                 if (payload?.success === false) {
                     if (response.status === 401 || response.status === 403) {
+                        if (isCurrentSessionProbe) {
+                            return payload;
+                        }
+
                         // 若首個候選配置錯誤，保留認證失敗結果但持續嘗試其他候選。
                         authFailurePayload = authFailurePayload || payload;
                         continue;
@@ -285,16 +331,32 @@ class PageUtils {
 
         let normalized = raw.replace(/\\/g, '/').replace(/^\.?\//, '');
 
+        const pathname = window.location.pathname || '';
+        const isFrontendDocRootMode = window.location.port === '8000'
+            && !pathname.includes('/frontend/')
+            && !pathname.includes('/backend/');
+
         if (normalized.startsWith('社團活動資訊統整平台/')) {
-            return `/${normalized}`;
+            normalized = normalized.replace(/^社團活動資訊統整平台\//, '');
         }
 
-        // 上傳 API 目前回傳 assets/uploads/*，實際檔案位於 frontend/assets/uploads/*。
+        if (normalized.startsWith(`${APP_BASE_PATH.replace(/^\//, '')}/`)) {
+            normalized = normalized.replace(new RegExp(`^${APP_BASE_PATH.replace(/^\//, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\/`), '');
+        }
+
+        if (normalized.startsWith('frontend/')) {
+            normalized = normalized.replace(/^frontend\//, '');
+        }
+
+        if (isFrontendDocRootMode) {
+            return resolveFrontendAssetUrl(normalized);
+        }
+
         if (normalized.startsWith('assets/uploads/')) {
             normalized = `frontend/${normalized}`;
         }
 
-        return `/社團活動資訊統整平台/${normalized}`;
+        return `${window.location.origin}${APP_BASE_PATH}/${normalized}`;
     }
 
     static getInitial(text) {
@@ -510,7 +572,7 @@ async function initializePage() {
 function ensureSiteFavicon() {
     if (document.querySelector('link[data-managed-favicon="true"]')) return;
 
-    const iconHref = `${window.location.origin}${APP_BASE_PATH}/frontend/favicon.svg`;
+    const iconHref = resolveFrontendAssetUrl('favicon.svg');
     const link = document.createElement('link');
     link.setAttribute('data-managed-favicon', 'true');
     link.rel = 'icon';

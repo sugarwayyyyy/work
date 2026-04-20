@@ -23,22 +23,22 @@
 mysql -u root -p < database/schema.sql
 ```
 
-2. 執行 migration（建議用整包腳本）
+2. 設定資料庫連線
+
+- 編輯 `backend/config.php`
+- 確認 `DB_HOST/DB_USER/DB_PASSWORD/DB_NAME/DB_PORT`
+
+3. 執行 migration（建議用整包腳本）
 
 ```powershell
 php run_migration.php
 ```
 
-3. 匯入測試資料（可選，但建議）
+4. 匯入測試資料（可選，但建議）
 
 ```powershell
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
-
-4. 設定資料庫連線
-
-- 編輯 `backend/config.php`
-- 確認 `DB_HOST/DB_USER/DB_PASSWORD/DB_NAME/DB_PORT`
 
 5. 確認可寫入資料夾
 
@@ -52,7 +52,7 @@ mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 - 專案放在 `C:\AppServ\www\社團活動資訊統整平台`
 - 開啟：`http://localhost/社團活動資訊統整平台/frontend/index.html`
 
-### 方式 B：前端本機伺服器 + 後端由 Apache 提供
+### 方式 B：前端本機伺服器（localhost:8000）
 
 ```powershell
 cd frontend
@@ -60,6 +60,9 @@ php -S localhost:8000
 ```
 
 - 開啟：`http://localhost:8000`
+- 並確認後端 API 至少一種可用：
+	- Apache：`http://localhost/社團活動資訊統整平台/backend/api`
+	- 或另開後端：`cd backend` 後 `php -S 127.0.0.1:8080`
 - 前端 JS 會自動嘗試多組 API base path fallback。
 
 ## 5. 啟動後快速驗證

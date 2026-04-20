@@ -48,12 +48,31 @@ mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ### 3. 檢查資料夾權限
 確認以下資料夾存在且可寫入：
 - `frontend/assets/uploads`
-- `backend/uploads`
 - `logs`
 
 ## 啟動方式
 
-### 方式一：PHP 內建伺服器
+### 一鍵啟動（Windows PowerShell）
+
+```powershell
+pwsh -File scripts/start-local-dev.ps1
+```
+
+停止：
+
+```powershell
+pwsh -File scripts/stop-local-dev.ps1
+```
+
+### 方式一：AppServ / Apache（建議）
+
+確保專案位於 Web 根目錄後，直接開啟：
+
+```text
+http://localhost/社團活動資訊統整平台/frontend/index.html
+```
+
+### 方式二：PHP 內建前端伺服器（localhost:8000）
 
 ```bash
 cd frontend
@@ -62,8 +81,17 @@ php -S localhost:8000
 
 打開 `http://localhost:8000` 即可。
 
-### 方式二：AppServ / Apache
-將專案放到網站根目錄，並確認前端頁面與 API 路徑都指向正確位置。
+若使用方式二，後端 API 需擇一可用：
+
+1. Apache 提供後端：`http://localhost/社團活動資訊統整平台/backend/api`
+2. 獨立啟動後端：
+
+```bash
+cd backend
+php -S 127.0.0.1:8080
+```
+
+若只開 `localhost:8000` 而後端未提供，頁面會顯示但資料請求會失敗。
 
 ## 測試帳號
 
@@ -85,6 +113,7 @@ php -S localhost:8000
 ### API 回傳 404
 - 檢查前端 `main.js` 的 API 路徑
 - 確認後端資料夾位於 `backend/`
+- 若前端使用 `localhost:8000`，請確認 Apache 或 `127.0.0.1:8080` 至少一種後端模式已啟動
 
 ## 相關文件
 
