@@ -122,7 +122,7 @@ php -S localhost:8000
 
 若以 `localhost:8000` 啟動前端，請再確認後端 API 至少一種可用：
 1. Apache 提供 `http://localhost/社團活動資訊統整平台/backend/api`
-2. 或在 `backend/` 另開 `php -S 127.0.0.1:8080`
+2. 或在 `backend/` 另開 `php -S localhost:8080`
 
 ### AppServ / Apache
 如果使用 AppServ，將專案放在網站根目錄下，並確認前端頁面引用路徑與 API 路徑一致。

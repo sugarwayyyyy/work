@@ -157,7 +157,10 @@ class APIClient {
                 if (payload?.success === false) {
                     if (response.status === 401 || response.status === 403) {
                         if (isCurrentSessionProbe) {
-                            return payload;
+                            // current probe 可能先打到沒有共享 session 的候選主機，
+                            // 必須繼續試完其他候選後再決定是否真的未登入。
+                            lastFailurePayload = lastFailurePayload || payload;
+                            continue;
                         }
 
                         // 若首個候選配置錯誤，保留認證失敗結果但持續嘗試其他候選。
