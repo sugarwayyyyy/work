@@ -468,6 +468,13 @@ class ClubAPI {
                 [$club_id]
             );
             $club['member_count'] = $member_count['count'];
+
+            // 取得追蹤人數
+            $follower_count = Database::getInstance()->fetchOne(
+                'SELECT COUNT(*) as count FROM club_followers WHERE club_id = ?',
+                [$club_id]
+            );
+            $club['follower_count'] = (int)($follower_count['count'] ?? 0);
             
             // 檢查用戶是否追蹤此社團
             $is_following = false;
@@ -699,15 +706,19 @@ class ClubAPI {
                 $is_following = true;
             }
 
-            $member_count = Database::getInstance()->fetchOne(
+            $follower_count = Database::getInstance()->fetchOne(
                 'SELECT COUNT(*) as count FROM club_followers WHERE club_id = ?',
                 [$club_id]
             );
-            $current_member_count = (int)($member_count['count'] ?? 0);
+            $current_follower_count = (int)($follower_count['count'] ?? 0);
             
             Helper::success('操作成功', [
                 'is_following' => $is_following,
-                'member_count' => $current_member_count
+                'follower_count' => $current_follower_count,
+                'member_count' => Database::getInstance()->fetchOne(
+                    'SELECT COUNT(*) as count FROM club_members WHERE club_id = ? AND is_active = 1',
+                    [$club_id]
+                )['count'] ?? 0
             ]);
             
         } catch (Exception $e) {
