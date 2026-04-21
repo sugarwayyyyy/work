@@ -612,6 +612,9 @@ class StorageUtils {
 
     static clearUser() {
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('csrf_token');
+        sessionStorage.clear();
     }
 
     static isLoggedIn() {

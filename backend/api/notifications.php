@@ -27,6 +27,21 @@ class NotificationAPI {
 
         try {
             $userId = Auth::getCurrentUserId();
+            
+            // 額外驗證：user_id 必須有效
+            if (!$userId || !is_numeric($userId)) {
+                Helper::error('無效的用戶身份', 401);
+            }
+
+            // 驗證 user_id 確實存在於資料庫
+            $userExists = Database::getInstance()->fetchOne(
+                'SELECT user_id FROM users WHERE user_id = ?',
+                [$userId]
+            );
+            
+            if (!$userExists) {
+                Helper::error('用戶不存在', 401);
+            }
 
             $followCountRow = Database::getInstance()->fetchOne(
                 'SELECT COUNT(*) AS total FROM club_followers WHERE user_id = ?',

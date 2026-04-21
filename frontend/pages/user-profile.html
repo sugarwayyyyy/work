@@ -268,6 +268,13 @@
 
         async function loadFollowedFeed() {
             try {
+                // 確保使用目前登入用戶的資訊，不要使用快取
+                const currentUserId = currentUser?.user_id;
+                if (!currentUserId) {
+                    console.warn('loadFollowedFeed: currentUser not properly initialized');
+                    return;
+                }
+
                 const response = await APIClient.get('notifications.php?action=feed');
                 if (response.success) {
                     const feed = response.data.feed || [];
