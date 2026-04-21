@@ -1138,6 +1138,12 @@ class EventAPI {
     }
 
     public static function exportParticipationProofSvg() {
+        // Verify CSRF for added security on file download
+        $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+        if ($csrfToken && !Auth::verifyCSRFToken($csrfToken)) {
+            Helper::error('CSRF 驗證失敗', 403);
+        }
+        
         if (!Auth::isLoggedIn()) {
             Helper::error('請先登入', 401);
         }

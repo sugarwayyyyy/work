@@ -226,13 +226,22 @@
             }
 
             try {
-                const token = StorageUtils.getToken();
                 const base = APIClient.getBaseUrl();
                 const url = `${base}/events.php?action=participation_proof`;
+                
+                // Ensure CSRF token is available
+                const csrfHeaders = await APIClient.getCSRFHeaders();
+                const token = StorageUtils.getToken();
+                
+                const headers = {
+                    ...csrfHeaders,
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                };
+
                 const response = await fetch(url, {
                     method: 'GET',
-                    credentials: 'same-origin',
-                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                    credentials: 'include',
+                    headers
                 });
 
                 if (!response.ok) {
