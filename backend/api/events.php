@@ -6,12 +6,17 @@
 require_once '../auth.php';
 require_once '../content_filter.php';
 
+header('Access-Control-Allow-Origin: http://localhost:8000');
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Expose-Headers: Content-Disposition');
+
 // Handle CORS preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Origin: http://localhost:8000');
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
     header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Expose-Headers: Content-Disposition');
     exit(0);
 }
 
@@ -35,7 +40,7 @@ class EventAPI {
         $checked = true;
     }
 
-    private static function handleInternalError($publicMessage, Exception $e) {
+    private static function handleInternalError($publicMessage, Throwable $e) {
         Helper::logError($publicMessage . ': ' . $e->getMessage());
         Helper::error($publicMessage, 500);
     }
@@ -1138,93 +1143,103 @@ class EventAPI {
     }
 
     public static function exportParticipationProofSvg() {
-        if (!Auth::isLoggedIn()) {
-            Helper::error('請先登入', 401);
-        }
-
-        $user = Auth::getCurrentUser();
-        if (!$user) {
-            Helper::error('找不到用戶資料', 404);
-        }
-
-        $events = Database::getInstance()->fetchAll(
-            'SELECT e.event_name, e.event_date, c.club_name
-             FROM event_registrations er
-             JOIN events e ON e.event_id = er.event_id
-             JOIN clubs c ON c.club_id = e.club_id
-             WHERE er.user_id = ? AND er.status = "approved"
-             ORDER BY e.event_date DESC
-             LIMIT 12',
-            [Auth::getCurrentUserId()]
-        );
-
-        $roles = Database::getInstance()->fetchAll(
-            'SELECT c.club_name, cm.role
-             FROM club_members cm
-             JOIN clubs c ON c.club_id = cm.club_id
-             WHERE cm.user_id = ?
-               AND cm.is_active = 1
-               AND cm.role IN ("president", "vice_president", "public_relations", "treasurer", "director")
-             ORDER BY c.club_name ASC
-             LIMIT 8',
-            [Auth::getCurrentUserId()]
-        );
-
-        $safeName = htmlspecialchars((string)($user['name'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $safeStudentId = htmlspecialchars((string)($user['student_id'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $issuedAt = date('Y-m-d H:i:s');
-
-        $lines = [];
-        $lines[] = '<text x="50" y="92" font-size="26" font-weight="700" fill="#0f172a">社團參與證明</text>';
-        $lines[] = '<text x="50" y="130" font-size="16" fill="#334155">姓名：' . $safeName . '</text>';
-        $lines[] = '<text x="50" y="156" font-size="16" fill="#334155">學號：' . $safeStudentId . '</text>';
-        $lines[] = '<text x="50" y="182" font-size="14" fill="#64748b">簽發時間：' . $issuedAt . '</text>';
-        $lines[] = '<text x="50" y="220" font-size="16" font-weight="600" fill="#0f172a">活動參與紀錄</text>';
-
-        $y = 246;
-        if (empty($events)) {
-            $lines[] = '<text x="66" y="' . $y . '" font-size="14" fill="#475569">- 目前沒有活動參與紀錄</text>';
-            $y += 24;
-        } else {
-            foreach ($events as $idx => $event) {
-                $name = htmlspecialchars((string)($event['event_name'] ?? '-'), ENT_QUOTES, 'UTF-8');
-                $club = htmlspecialchars((string)($event['club_name'] ?? '-'), ENT_QUOTES, 'UTF-8');
-                $date = htmlspecialchars((string)($event['event_date'] ?? '-'), ENT_QUOTES, 'UTF-8');
-                $text = sprintf('%d. %s｜%s｜%s', $idx + 1, $name, $club, $date);
-                $lines[] = '<text x="66" y="' . $y . '" font-size="13" fill="#334155">' . $text . '</text>';
-                $y += 22;
+        try {
+            // Verify CSRF for added security on file download
+            $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+            if ($csrfToken && !Auth::verifyCSRFToken($csrfToken)) {
+                Helper::error('CSRF 驗證失敗', 403);
             }
-        }
 
-        $y += 10;
-        $lines[] = '<text x="50" y="' . $y . '" font-size="16" font-weight="600" fill="#0f172a">幹部任職紀錄</text>';
-        $y += 24;
-
-        if (empty($roles)) {
-            $lines[] = '<text x="66" y="' . $y . '" font-size="14" fill="#475569">- 目前沒有幹部任職紀錄</text>';
-            $y += 24;
-        } else {
-            foreach ($roles as $idx => $role) {
-                $club = htmlspecialchars((string)($role['club_name'] ?? '-'), ENT_QUOTES, 'UTF-8');
-                $roleName = htmlspecialchars((string)($role['role'] ?? '-'), ENT_QUOTES, 'UTF-8');
-                $text = sprintf('%d. %s｜職務：%s', $idx + 1, $club, $roleName);
-                $lines[] = '<text x="66" y="' . $y . '" font-size="13" fill="#334155">' . $text . '</text>';
-                $y += 22;
+            if (!Auth::isLoggedIn()) {
+                Helper::error('請先登入', 401);
             }
+
+            $user = Auth::getCurrentUser();
+            if (!$user) {
+                Helper::error('找不到用戶資料', 404);
+            }
+
+            $events = Database::getInstance()->fetchAll(
+                'SELECT e.event_name, e.event_date, c.club_name
+                 FROM event_registrations er
+                 JOIN events e ON e.event_id = er.event_id
+                 JOIN clubs c ON c.club_id = e.club_id
+                 WHERE er.user_id = ? AND er.status = "approved"
+                 ORDER BY e.event_date DESC
+                 LIMIT 12',
+                [Auth::getCurrentUserId()]
+            );
+
+            $roles = Database::getInstance()->fetchAll(
+                'SELECT c.club_name, cm.role
+                 FROM club_members cm
+                 JOIN clubs c ON c.club_id = cm.club_id
+                 WHERE cm.user_id = ?
+                   AND cm.is_active = 1
+                   AND cm.role IN ("president", "vice_president", "public_relations", "treasurer", "director")
+                 ORDER BY c.club_name ASC
+                 LIMIT 8',
+                [Auth::getCurrentUserId()]
+            );
+
+            $safeName = htmlspecialchars((string)($user['name'] ?? ''), ENT_QUOTES, 'UTF-8');
+            $safeStudentId = htmlspecialchars((string)($user['student_id'] ?? ''), ENT_QUOTES, 'UTF-8');
+            $issuedAt = date('Y-m-d H:i:s');
+
+            $lines = [];
+            $lines[] = '<text x="50" y="92" font-size="26" font-weight="700" fill="#0f172a">社團參與證明</text>';
+            $lines[] = '<text x="50" y="130" font-size="16" fill="#334155">姓名：' . $safeName . '</text>';
+            $lines[] = '<text x="50" y="156" font-size="16" fill="#334155">學號：' . $safeStudentId . '</text>';
+            $lines[] = '<text x="50" y="182" font-size="14" fill="#64748b">簽發時間：' . $issuedAt . '</text>';
+            $lines[] = '<text x="50" y="220" font-size="16" font-weight="600" fill="#0f172a">活動參與紀錄</text>';
+
+            $y = 246;
+            if (empty($events)) {
+                $lines[] = '<text x="66" y="' . $y . '" font-size="14" fill="#475569">- 目前沒有活動參與紀錄</text>';
+                $y += 24;
+            } else {
+                foreach ($events as $idx => $event) {
+                    $name = htmlspecialchars((string)($event['event_name'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                    $club = htmlspecialchars((string)($event['club_name'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                    $date = htmlspecialchars((string)($event['event_date'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                    $text = sprintf('%d. %s｜%s｜%s', $idx + 1, $name, $club, $date);
+                    $lines[] = '<text x="66" y="' . $y . '" font-size="13" fill="#334155">' . $text . '</text>';
+                    $y += 22;
+                }
+            }
+
+            $y += 10;
+            $lines[] = '<text x="50" y="' . $y . '" font-size="16" font-weight="600" fill="#0f172a">幹部任職紀錄</text>';
+            $y += 24;
+
+            if (empty($roles)) {
+                $lines[] = '<text x="66" y="' . $y . '" font-size="14" fill="#475569">- 目前沒有幹部任職紀錄</text>';
+                $y += 24;
+            } else {
+                foreach ($roles as $idx => $role) {
+                    $club = htmlspecialchars((string)($role['club_name'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                    $roleName = htmlspecialchars((string)($role['role'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                    $text = sprintf('%d. %s｜職務：%s', $idx + 1, $club, $roleName);
+                    $lines[] = '<text x="66" y="' . $y . '" font-size="13" fill="#334155">' . $text . '</text>';
+                    $y += 22;
+                }
+            }
+
+            $svgHeight = max(520, $y + 40);
+            $svg = '<?xml version="1.0" encoding="UTF-8"?>'
+                . '<svg xmlns="http://www.w3.org/2000/svg" width="960" height="' . $svgHeight . '" viewBox="0 0 960 ' . $svgHeight . '">'
+                . '<rect x="0" y="0" width="960" height="' . $svgHeight . '" fill="#f8fafc"/>'
+                . '<rect x="24" y="24" width="912" height="' . ($svgHeight - 48) . '" rx="16" fill="#ffffff" stroke="#cbd5e1"/>'
+                . implode('', $lines)
+                . '</svg>';
+
+            header('Content-Type: image/svg+xml; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="participation_proof_' . Auth::getCurrentUserId() . '_' . date('Ymd_His') . '.svg"');
+            echo $svg;
+            exit;
+        } catch (Throwable $e) {
+            self::handleInternalError('匯出參與證明失敗', $e);
         }
-
-        $svgHeight = max(520, $y + 40);
-        $svg = '<?xml version="1.0" encoding="UTF-8"?>'
-            . '<svg xmlns="http://www.w3.org/2000/svg" width="960" height="' . $svgHeight . '" viewBox="0 0 960 ' . $svgHeight . '">'
-            . '<rect x="0" y="0" width="960" height="' . $svgHeight . '" fill="#f8fafc"/>'
-            . '<rect x="24" y="24" width="912" height="' . ($svgHeight - 48) . '" rx="16" fill="#ffffff" stroke="#cbd5e1"/>'
-            . implode('', $lines)
-            . '</svg>';
-
-        header('Content-Type: image/svg+xml; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="participation_proof_' . Auth::getCurrentUserId() . '_' . date('Ymd_His') . '.svg"');
-        echo $svg;
-        exit;
     }
 }
 

@@ -220,9 +220,9 @@ class ClubAPI {
                 );
                 $row['tags'] = $tags_result;
                 
-                // 取得成員數
+                // 取得成員數（社團平台定義為追蹤數）
                 $member_count = Database::getInstance()->fetchOne(
-                    'SELECT COUNT(*) as count FROM club_members WHERE club_id = ?',
+                    'SELECT COUNT(*) as count FROM club_followers WHERE club_id = ?',
                     [$row['club_id']]
                 );
                 $row['member_count'] = $member_count['count'];
@@ -394,11 +394,11 @@ class ClubAPI {
             );
             $club['tags'] = $tags;
             
-            // 取得成員
+            // 取得成員（僅計算仍有效的成員）
             $members = Database::getInstance()->fetchAll(
                 'SELECT u.*, cm.role FROM users u 
                  JOIN club_members cm ON u.user_id = cm.user_id 
-                 WHERE cm.club_id = ?',
+                 WHERE cm.club_id = ? AND cm.is_active = 1',
                 [$club_id]
             );
             $club['members'] = $members;
@@ -462,7 +462,7 @@ class ClubAPI {
             $club['reviews'] = $reviews;
             $club['activity_badge'] = self::calculateActivityBadge((int)$club_id);
             
-            // 取得追蹤人數（前端顯示成員數會隨追蹤變動）
+            // 取得成員數（社團平台定義為追蹤數）
             $member_count = Database::getInstance()->fetchOne(
                 'SELECT COUNT(*) as count FROM club_followers WHERE club_id = ?',
                 [$club_id]

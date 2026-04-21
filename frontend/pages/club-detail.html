@@ -278,6 +278,22 @@
             reviewBtn.title = '';
         }
 
+        function syncFollowSummary(isFollowing, memberCount) {
+            const followBtn = document.getElementById('follow-btn');
+            const memberCountEl = document.getElementById('member-count');
+
+            if (followBtn) {
+                followBtn.textContent = isFollowing ? '已追蹤' : '追蹤社團';
+                followBtn.classList.toggle('btn-primary', !isFollowing);
+                followBtn.classList.toggle('btn-secondary', isFollowing);
+                followBtn.title = '';
+            }
+
+            if (memberCountEl) {
+                memberCountEl.textContent = Number.isFinite(Number(memberCount)) ? Number(memberCount) : 0;
+            }
+        }
+
         async function loadClubDetail() {
             try {
                 const response = await APIClient.get(`clubs.php?action=detail&id=${clubId}`);
@@ -635,8 +651,13 @@
                 followRequestPending = true;
                 const response = await APIClient.post(`clubs.php?action=toggle_follow&id=${clubId}`, {});
                 if (response.success) {
-                    setFollowStateCache(clubId, !!response.data?.is_following);
-                    window.location.reload();
+                    const isFollowing = !!response.data?.is_following;
+                    const memberCount = Number(response.data?.member_count ?? 0);
+                    setFollowStateCache(clubId, isFollowing);
+                    syncFollowSummary(isFollowing, memberCount);
+
+                    // 背景同步整份詳情資料，避免左側數字之外的資訊殘留舊狀態。
+                    loadClubDetail();
                     return;
                 } else {
                     PageUtils.showAlert(response.message, 'error');

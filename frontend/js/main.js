@@ -67,10 +67,26 @@ function resolveFrontendAssetUrl(relativePath) {
 
 let csrfTokenCache = null;
 let csrfTokenPromise = null;
+let activeApiBaseUrl = null;
 
 class APIClient {
     static getBaseUrl() {
-        return API_BASE_CANDIDATES[0] || API_URL;
+        return activeApiBaseUrl || API_BASE_CANDIDATES[0] || API_URL;
+    }
+
+    static getOrderedCandidates() {
+        const ordered = [];
+        if (activeApiBaseUrl) {
+            ordered.push(activeApiBaseUrl);
+        }
+
+        for (const candidate of API_BASE_CANDIDATES) {
+            if (!ordered.includes(candidate)) {
+                ordered.push(candidate);
+            }
+        }
+
+        return ordered;
     }
 
     static async ensureCSRFToken() {
@@ -129,7 +145,9 @@ class APIClient {
         let lastFailurePayload = null;
         let authFailurePayload = null;
 
-        for (const baseUrl of API_BASE_CANDIDATES) {
+        const candidateBaseUrls = this.getOrderedCandidates();
+
+        for (const baseUrl of candidateBaseUrls) {
             try {
                 const response = await fetch(`${baseUrl}/${endpoint}`, {
                     method,
@@ -147,10 +165,12 @@ class APIClient {
                 }
 
                 if (response.ok) {
+                    activeApiBaseUrl = baseUrl;
                     return payload;
                 }
 
                 if (payload?.success === true) {
+                    activeApiBaseUrl = baseUrl;
                     return payload;
                 }
 
@@ -178,6 +198,9 @@ class APIClient {
                     continue;
                 }
             } catch (error) {
+                if (activeApiBaseUrl === baseUrl) {
+                    activeApiBaseUrl = null;
+                }
                 lastError = error;
             }
         }
@@ -588,6 +611,9 @@ class StorageUtils {
 
     static clearUser() {
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('csrf_token');
+        sessionStorage.clear();
     }
 
     static isLoggedIn() {
