@@ -22,6 +22,200 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 class EventAPI {
 
+    private static function splitSearchTokens($search) {
+        $text = trim((string)$search);
+        if ($text === '') {
+            return [];
+        }
+
+        $tokens = preg_split('/\s+/u', $text);
+        $tokens = array_values(array_filter(array_map('trim', $tokens), function ($token) {
+            return $token !== '';
+        }));
+
+        return empty($tokens) ? [$text] : $tokens;
+    }
+
+    private static function normalizeSearchText($search) {
+        return trim(preg_replace('/\s+/u', ' ', (string)$search));
+    }
+
+    private static function containsText($haystack, $needle) {
+        $haystack = (string)$haystack;
+        $needle = (string)$needle;
+        if ($needle === '' || $haystack === '') {
+            return false;
+        }
+
+        if (function_exists('mb_stripos')) {
+            return mb_stripos($haystack, $needle, 0, 'UTF-8') !== false;
+        }
+
+        return stripos($haystack, $needle) !== false;
+    }
+
+    private static function isOpenEventRow($row) {
+        $isOpen = (int)($row['is_registration_open'] ?? 0) === 1;
+        $registrationDeadline = !empty($row['registration_deadline']) ? strtotime((string)$row['registration_deadline']) : false;
+        $eventDate = !empty($row['event_date']) ? strtotime((string)$row['event_date']) : false;
+        return $isOpen && ($registrationDeadline === false || $registrationDeadline >= time()) && ($eventDate === false || $eventDate >= time());
+    }
+
+    private static function getEventStatusLabel($row) {
+        return self::isOpenEventRow($row) ? '報名中' : '已截止';
+    }
+
+    private static function scoreEventSearchResult($row, $tags, $clubName, $categoryName, $search) {
+        $query = self::normalizeSearchText($search);
+        if ($query === '') {
+            return 0;
+        }
+
+        $terms = self::splitSearchTokens($query);
+        $tagNames = implode(' ', array_map(function ($tag) {
+            return (string)($tag['tag_name'] ?? '');
+        }, (array)$tags));
+        $statusLabel = self::getEventStatusLabel($row);
+        $searchBlob = implode(' ', [
+            (string)($row['event_name'] ?? ''),
+            (string)($row['description'] ?? ''),
+            (string)($row['location'] ?? ''),
+            (string)($row['event_date'] ?? ''),
+            (string)($row['registration_deadline'] ?? ''),
+            (string)($clubName ?? ''),
+            (string)($categoryName ?? ''),
+            $tagNames,
+            $statusLabel,
+        ]);
+
+        $score = 0;
+
+        if (self::containsText($row['event_name'] ?? '', $query)) $score += 60;
+        if (self::containsText($row['description'] ?? '', $query)) $score += 35;
+        if (self::containsText($row['location'] ?? '', $query)) $score += 14;
+        if (self::containsText($clubName ?? '', $query)) $score += 24;
+        if (self::containsText($categoryName ?? '', $query)) $score += 20;
+        if (self::containsText($tagNames, $query)) $score += 24;
+        if (self::containsText($statusLabel, $query)) $score += 18;
+        if (self::containsText($searchBlob, $query)) $score += 16;
+
+        foreach ($terms as $term) {
+            if ($term === '') {
+                continue;
+            }
+            if (self::containsText($row['event_name'] ?? '', $term)) $score += 20;
+            if (self::containsText($row['description'] ?? '', $term)) $score += 10;
+            if (self::containsText($row['location'] ?? '', $term)) $score += 6;
+            if (self::containsText($clubName ?? '', $term)) $score += 10;
+            if (self::containsText($categoryName ?? '', $term)) $score += 8;
+            if (self::containsText($tagNames, $term)) $score += 10;
+            if (self::containsText($statusLabel, $term)) $score += 8;
+            if (self::containsText($searchBlob, $term)) $score += 6;
+        }
+
+        if ((self::containsText($query, '報名中') || self::containsText($query, '開放報名') || self::containsText($query, 'open')) && self::isOpenEventRow($row)) {
+            $score += 25;
+        }
+
+        if ((self::containsText($query, '已截止') || self::containsText($query, '截止') || self::containsText($query, 'closed')) && !self::isOpenEventRow($row)) {
+            $score += 25;
+        }
+
+        $eventDate = !empty($row['event_date']) ? strtotime((string)$row['event_date']) : false;
+        if ($eventDate !== false) {
+            $weekday = (int)date('N', $eventDate);
+            $weekdayMap = [
+                1 => ['週一', '星期一', '禮拜一', '周一'],
+                2 => ['週二', '星期二', '禮拜二', '周二'],
+                3 => ['週三', '星期三', '禮拜三', '周三'],
+                4 => ['週四', '星期四', '禮拜四', '周四'],
+                5 => ['週五', '星期五', '禮拜五', '周五'],
+                6 => ['週六', '星期六', '禮拜六', '周六'],
+                7 => ['週日', '星期日', '禮拜日', '周日'],
+            ];
+            if (!empty($weekdayMap[$weekday])) {
+                foreach ($weekdayMap[$weekday] as $alias) {
+                    if (self::containsText($query, $alias)) {
+                        $score += 14;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (preg_match('/500內|五百內|社費500內|<=\s*500/u', $query) && (int)($row['fee'] ?? 0) <= 500) {
+            $score += 14;
+        }
+
+        if (preg_match('/500\s*[-~到]\s*1000|社費500-1000/u', $query) && (int)($row['fee'] ?? 0) >= 500 && (int)($row['fee'] ?? 0) <= 1000) {
+            $score += 14;
+        }
+
+        if (preg_match('/1000以上|一千以上|>=\s*1000/u', $query) && (int)($row['fee'] ?? 0) >= 1000) {
+            $score += 14;
+        }
+
+        return $score;
+    }
+
+    private static function buildEventSearchScoreExpr($search, &$scoreParams) {
+        $query = trim((string)$search);
+        $terms = self::splitSearchTokens($query);
+        if ($query === '' || empty($terms)) {
+            return '0';
+        }
+
+        $scoreParams = [];
+        $parts = [];
+
+        $searchBlob = "CONCAT_WS(' ', events.event_name, events.description, events.location, DATE_FORMAT(events.event_date, '%Y-%m-%d %H:%i'), DATE_FORMAT(events.registration_deadline, '%Y-%m-%d %H:%i'), CASE WHEN events.is_registration_open = 1 AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW() THEN '報名中' ELSE '已截止' END, IFNULL((SELECT c.club_name FROM clubs c WHERE c.club_id = events.club_id LIMIT 1), ''), IFNULL((SELECT cc.category_name FROM clubs c LEFT JOIN club_categories cc ON cc.category_id = c.category_id WHERE c.club_id = events.club_id LIMIT 1), ''), IFNULL((SELECT GROUP_CONCAT(t.tag_name SEPARATOR ' ') FROM event_tag_relations etr JOIN club_tags t ON t.tag_id = etr.tag_id WHERE etr.event_id = events.event_id), ''))";
+
+        $phraseLike = '%' . $query . '%';
+        $parts[] = '(CASE WHEN events.event_name LIKE ? THEN 40 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+        $parts[] = '(CASE WHEN events.description LIKE ? THEN 24 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+        $parts[] = '(CASE WHEN events.location LIKE ? THEN 12 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+        $parts[] = '(CASE WHEN DATE_FORMAT(events.event_date, "%Y-%m-%d %H:%i") LIKE ? THEN 14 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+        $parts[] = '(CASE WHEN DATE_FORMAT(events.registration_deadline, "%Y-%m-%d %H:%i") LIKE ? THEN 10 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+        $parts[] = '(CASE WHEN ' . $searchBlob . ' LIKE ? THEN 18 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+
+        if (mb_strpos($query, '報名中') !== false || mb_strpos($query, '開放報名') !== false || mb_strpos($query, 'open') !== false) {
+            $parts[] = '(CASE WHEN events.is_registration_open = 1 AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW() THEN 16 ELSE 0 END)';
+        }
+
+        if (mb_strpos($query, '已截止') !== false || mb_strpos($query, '截止') !== false || mb_strpos($query, 'closed') !== false) {
+            $parts[] = '(CASE WHEN events.is_registration_open = 0 OR (events.registration_deadline IS NOT NULL AND events.registration_deadline < NOW()) OR events.event_date < NOW() THEN 16 ELSE 0 END)';
+        }
+
+        foreach ($terms as $term) {
+            $term = trim((string)$term);
+            if ($term === '') {
+                continue;
+            }
+
+            $termLike = '%' . $term . '%';
+            $parts[] = '(CASE WHEN events.event_name LIKE ? THEN 20 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+            $parts[] = '(CASE WHEN events.description LIKE ? THEN 10 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+            $parts[] = '(CASE WHEN events.location LIKE ? THEN 6 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+            $parts[] = '(CASE WHEN DATE_FORMAT(events.event_date, "%Y-%m-%d %H:%i") LIKE ? THEN 8 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+            $parts[] = '(CASE WHEN DATE_FORMAT(events.registration_deadline, "%Y-%m-%d %H:%i") LIKE ? THEN 6 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+            $parts[] = '(CASE WHEN ' . $searchBlob . ' LIKE ? THEN 8 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+        }
+
+        return empty($parts) ? '0' : implode(' + ', $parts);
+    }
+
     private static function ensureEventCommentsTable() {
         static $checked = false;
         if ($checked) {
@@ -209,12 +403,14 @@ class EventAPI {
             $page = (int)($_GET['page'] ?? 1);
             $per_page = ITEMS_PER_PAGE;
             $offset = ($page - 1) * $per_page;
+            $useSearchRanking = trim((string)$search) !== '';
+            $selectColumns = 'events.*';
             
-            $conditions = ["event_status = ?"];
+            $conditions = ["events.event_status = ?"];
             $params = [$status];
             
             if ($club_id) {
-                $conditions[] = '(club_id = ? OR event_id IN (
+                $conditions[] = '(events.club_id = ? OR events.event_id IN (
                     SELECT ce.event_id
                     FROM collaborative_events ce
                     WHERE ce.participated_club_id = ? AND ce.status = "approved"
@@ -228,41 +424,36 @@ class EventAPI {
                 $params[] = "%$club_keyword%";
             }
 
-            if ($search) {
-                $conditions[] = 'event_name LIKE ?';
-                $params[] = "%$search%";
-            }
-
             if ($event_start_from) {
                 self::validateHalfHourField($event_start_from, '開始時間只能選整點或半點', true);
-                $conditions[] = 'event_date >= ?';
+                $conditions[] = 'events.event_date >= ?';
                 $params[] = self::normalizeDatetimeInput($event_start_from, false);
             }
 
             if ($deadline_to) {
                 self::validateHalfHourField($deadline_to, '截止時間只能選整點或半點', true);
-                $conditions[] = 'registration_deadline <= ?';
+                $conditions[] = 'events.registration_deadline <= ?';
                 $params[] = self::normalizeDatetimeInput($deadline_to, true);
             }
 
             if ($min_remaining !== null) {
-                $conditions[] = "(capacity = 0 OR (capacity - (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = events.event_id)) >= ?)";
+                $conditions[] = "(events.capacity = 0 OR (events.capacity - (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = events.event_id)) >= ?)";
                 $params[] = $min_remaining;
             }
 
             if ($filter === 'open') {
-                $conditions[] = '(is_registration_open = 1 AND (registration_deadline IS NULL OR registration_deadline >= NOW()) AND event_date >= NOW())';
+                $conditions[] = '(events.is_registration_open = 1 AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW())';
             } elseif ($filter === 'closed') {
-                $conditions[] = '(is_registration_open = 0 OR (registration_deadline IS NOT NULL AND registration_deadline < NOW()) OR event_date < NOW())';
+                $conditions[] = '(events.is_registration_open = 0 OR (events.registration_deadline IS NOT NULL AND events.registration_deadline < NOW()) OR events.event_date < NOW())';
             }
 
             if ($min_fee !== null) {
-                $conditions[] = 'fee >= ?';
+                $conditions[] = 'events.fee >= ?';
                 $params[] = $min_fee;
             }
 
             if ($max_fee !== null) {
-                $conditions[] = 'fee <= ?';
+                $conditions[] = 'events.fee <= ?';
                 $params[] = $max_fee;
             }
 
@@ -288,60 +479,120 @@ class EventAPI {
                 $orderParams[] = str_replace('T', ' ', $deadline_to) . (strlen($deadline_to) <= 10 ? ' 23:59:59' : ':59');
             }
 
-            $orderParts[] = $filter === 'closed' ? 'event_date DESC' : 'event_date ASC';
+            $orderParts[] = $filter === 'closed' ? 'events.event_date DESC' : 'events.event_date ASC';
 
-            $sql = "SELECT * FROM events WHERE $where ORDER BY " . implode(', ', $orderParts) . " LIMIT ? OFFSET ?";
-            $stmt = Database::getInstance()->prepare($sql);
-            if ($stmt === false) {
-                throw new Exception('查詢準備失敗');
-            }
-
-            $queryParams = array_merge($params, $orderParams);
-            $types = str_repeat('s', count($queryParams)) . 'ii';
-            $queryParams[] = $per_page;
-            $queryParams[] = $offset;
-            $stmt->bind_param($types, ...$queryParams);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
             $events = [];
-            while ($row = $result->fetch_assoc()) {
-                // 取得報名人數
-                $registration = Database::getInstance()->fetchOne(
-                    'SELECT COUNT(*) as count FROM event_registrations WHERE event_id = ?',
-                    [$row['event_id']]
-                );
-                $row['registered_count'] = $registration['count'];
-                $events[] = $row;
+            if ($useSearchRanking) {
+                $sql = "SELECT events.*, c.club_name, cc.category_name
+                        FROM events
+                        LEFT JOIN clubs c ON c.club_id = events.club_id
+                        LEFT JOIN club_categories cc ON cc.category_id = c.category_id
+                        WHERE $where
+                    ORDER BY events.updated_at DESC";
+                $stmt = Database::getInstance()->prepare($sql);
+                if ($stmt === false) {
+                    throw new Exception('查詢準備失敗: ' . Database::getInstance()->error . ' | SQL=' . $sql);
+                }
+                if (!empty($params)) {
+                    $stmt->bind_param(str_repeat('s', count($params)), ...$params);
+                }
+                $stmt->execute();
+                $result = $stmt->get_result();
+                while ($row = $result->fetch_assoc()) {
+                    $registration = Database::getInstance()->fetchOne(
+                        'SELECT COUNT(*) as count FROM event_registrations WHERE event_id = ?',
+                        [$row['event_id']]
+                    );
+                    $row['registered_count'] = $registration['count'];
+
+                    $tags = Database::getInstance()->fetchAll(
+                        'SELECT t.* FROM club_tags t
+                         JOIN event_tag_relations etr ON t.tag_id = etr.tag_id
+                         WHERE etr.event_id = ?
+                         ORDER BY t.tag_name ASC',
+                        [$row['event_id']]
+                    );
+                    $row['tags'] = $tags;
+
+                    $coHosts = Database::getInstance()->fetchAll(
+                        'SELECT c.club_id, c.club_name
+                         FROM collaborative_events ce
+                         JOIN clubs c ON c.club_id = ce.participated_club_id
+                         WHERE ce.event_id = ? AND ce.status = "approved"
+                         ORDER BY c.club_name ASC',
+                        [$row['event_id']]
+                    );
+                    $row['co_host_clubs'] = $coHosts;
+
+                    $row['_search_score'] = self::scoreEventSearchResult($row, $tags, $row['club_name'] ?? '', $row['category_name'] ?? '', $search);
+                    $events[] = $row;
+                }
+                $stmt->close();
+
+                usort($events, function ($left, $right) {
+                    $leftScore = (int)($left['_search_score'] ?? 0);
+                    $rightScore = (int)($right['_search_score'] ?? 0);
+                    if ($leftScore === $rightScore) {
+                        return strcmp((string)($left['event_date'] ?? ''), (string)($right['event_date'] ?? ''));
+                    }
+                    return $rightScore <=> $leftScore;
+                });
+            } else {
+                $sql = "SELECT $selectColumns FROM events WHERE $where ORDER BY " . implode(', ', $orderParts) . " LIMIT ? OFFSET ?";
+                $stmt = Database::getInstance()->prepare($sql);
+                if ($stmt === false) {
+                    throw new Exception('查詢準備失敗: ' . Database::getInstance()->error . ' | SQL=' . $sql);
+                }
+
+                $queryParams = array_merge($params, $orderParams);
+                $types = str_repeat('s', count($queryParams)) . 'ii';
+                $queryParams[] = $per_page;
+                $queryParams[] = $offset;
+                $stmt->bind_param($types, ...$queryParams);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                while ($row = $result->fetch_assoc()) {
+                    $registration = Database::getInstance()->fetchOne(
+                        'SELECT COUNT(*) as count FROM event_registrations WHERE event_id = ?',
+                        [$row['event_id']]
+                    );
+                    $row['registered_count'] = $registration['count'];
+                    $events[] = $row;
+                }
+                $stmt->close();
+
+                foreach ($events as &$event) {
+                    $club = Database::getInstance()->fetchOne(
+                        'SELECT club_name FROM clubs WHERE club_id = ?',
+                        [$event['club_id']]
+                    );
+                    $event['club_name'] = $club['club_name'] ?? '';
+
+                    $tags = Database::getInstance()->fetchAll(
+                        'SELECT t.* FROM club_tags t
+                         JOIN event_tag_relations etr ON t.tag_id = etr.tag_id
+                         WHERE etr.event_id = ?
+                         ORDER BY t.tag_name ASC',
+                        [$event['event_id']]
+                    );
+                    $event['tags'] = $tags;
+
+                    $coHosts = Database::getInstance()->fetchAll(
+                        'SELECT c.club_id, c.club_name
+                         FROM collaborative_events ce
+                         JOIN clubs c ON c.club_id = ce.participated_club_id
+                         WHERE ce.event_id = ? AND ce.status = "approved"
+                         ORDER BY c.club_name ASC',
+                        [$event['event_id']]
+                    );
+                    $event['co_host_clubs'] = $coHosts;
+                }
+                unset($event);
             }
-            $stmt->close();
-            
-            // 取得該活動的社團名稱
-            foreach ($events as &$event) {
-                $club = Database::getInstance()->fetchOne(
-                    'SELECT club_name FROM clubs WHERE club_id = ?',
-                    [$event['club_id']]
-                );
-                $event['club_name'] = $club['club_name'] ?? '';
 
-                $tags = Database::getInstance()->fetchAll(
-                    'SELECT t.* FROM club_tags t
-                     JOIN event_tag_relations etr ON t.tag_id = etr.tag_id
-                     WHERE etr.event_id = ?
-                     ORDER BY t.tag_name ASC',
-                    [$event['event_id']]
-                );
-                $event['tags'] = $tags;
-
-                $coHosts = Database::getInstance()->fetchAll(
-                    'SELECT c.club_id, c.club_name
-                     FROM collaborative_events ce
-                     JOIN clubs c ON c.club_id = ce.participated_club_id
-                     WHERE ce.event_id = ? AND ce.status = "approved"
-                     ORDER BY c.club_name ASC',
-                    [$event['event_id']]
-                );
-                $event['co_host_clubs'] = $coHosts;
+            if ($useSearchRanking) {
+                $events = array_slice($events, $offset, $per_page);
             }
             
             // 取得總數
@@ -349,7 +600,7 @@ class EventAPI {
                 "SELECT COUNT(*) as total FROM events WHERE $where"
             );
             if ($count_stmt === false) {
-                throw new Exception('計數查詢準備失敗');
+                throw new Exception('計數查詢準備失敗: ' . Database::getInstance()->error . ' | SQL=SELECT COUNT(*) as total FROM events WHERE ' . $where);
             }
             if (!empty($params)) {
                 $count_stmt->bind_param(str_repeat('s', count($params)), ...$params);
@@ -926,8 +1177,13 @@ class EventAPI {
                 'SELECT e.*, c.club_name, er.status AS registration_status FROM events e
                  JOIN event_registrations er ON e.event_id = er.event_id
                  JOIN clubs c ON e.club_id = c.club_id
-                 WHERE er.user_id = ? AND er.status = "approved"
-                 ORDER BY e.event_date DESC',
+                 WHERE er.user_id = ?
+                   AND er.status = "approved"
+                                     AND (
+                                                e.event_status = "ongoing"
+                                                OR (e.event_status = "published" AND e.event_date >= NOW())
+                                     )
+                 ORDER BY e.event_date ASC',
                 [Auth::getCurrentUserId()]
             );
 
@@ -935,6 +1191,34 @@ class EventAPI {
 
         } catch (Exception $e) {
             self::handleInternalError('取得我的活動失敗', $e);
+        }
+    }
+
+    /**
+     * 取得用戶參與過的活動歷程（未開始、進行中、已完成）
+     * GET /api/events.php?action=my_timeline
+     */
+    public static function getMyTimelineEvents() {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        try {
+            $events = Database::getInstance()->fetchAll(
+                'SELECT e.*, c.club_name, er.status AS registration_status FROM events e
+                 JOIN event_registrations er ON e.event_id = er.event_id
+                 JOIN clubs c ON e.club_id = c.club_id
+                 WHERE er.user_id = ?
+                   AND er.status = "approved"
+                   AND e.event_status IN ("published", "ongoing", "completed")
+                 ORDER BY e.event_date DESC',
+                [Auth::getCurrentUserId()]
+            );
+
+            Helper::success('取得我的活動歷程成功', ['events' => $events]);
+
+        } catch (Exception $e) {
+            self::handleInternalError('取得我的活動歷程失敗', $e);
         }
     }
     public static function addComment($data) {
@@ -1265,6 +1549,8 @@ if ($method === 'GET') {
         EventAPI::getComments();
     } elseif ($action === 'my_events') {
         EventAPI::getMyEvents();
+    } elseif ($action === 'my_timeline') {
+        EventAPI::getMyTimelineEvents();
     } elseif ($action === 'export_registrations' && $event_id) {
         EventAPI::exportRegistrationsCsv($event_id);
     } elseif ($action === 'participation_proof') {

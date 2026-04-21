@@ -182,6 +182,39 @@
             return roles[role] || role;
         }
 
+        function getTimelineStatusMeta(event) {
+            const eventStatus = String(event.event_status || '').toLowerCase();
+            const eventTime = new Date(event.event_date).getTime();
+            const now = Date.now();
+
+            if (eventStatus === 'completed') {
+                return { label: '已完成', className: 'completed' };
+            }
+
+            if (eventStatus === 'ongoing') {
+                return { label: '進行中', className: 'ongoing' };
+            }
+
+            if (!Number.isNaN(eventTime) && eventTime > now) {
+                return { label: '未開始', className: 'upcoming' };
+            }
+
+            return { label: '已參與', className: 'attended' };
+        }
+
+        function getTimelineStatusStyle(className) {
+            if (className === 'completed') {
+                return 'background-color: #e8f5e9; color: #1b5e20;';
+            }
+            if (className === 'ongoing') {
+                return 'background-color: #fff3e0; color: #e65100;';
+            }
+            if (className === 'upcoming') {
+                return 'background-color: #e3f2fd; color: #0d47a1;';
+            }
+            return 'background-color: #f3f4f6; color: #374151;';
+        }
+
         async function loadUserEvents() {
             try {
                 const response = await APIClient.get('events.php?action=my_events');
@@ -277,24 +310,23 @@
 
         async function loadFollowedFeed() {
             try {
-                // 確保使用目前登入用戶的資訊，不要使用快取
+                // 使用目前登入用戶身份載入其活動歷程
                 const currentUserId = currentUser?.user_id;
                 if (!currentUserId) {
                     console.warn('loadFollowedFeed: currentUser not properly initialized');
                     return;
                 }
 
-                const response = await APIClient.get('notifications.php?action=feed');
+                const response = await APIClient.get('events.php?action=my_timeline');
                 if (response.success) {
-                    const feed = response.data.feed || [];
+                    const feed = response.data.events || [];
                     const container = document.getElementById('followed-feed');
 
                     if (feed.length === 0) {
-                        const emptyState = response.data.empty_state;
                         container.innerHTML = `
                             <div style="padding: 1rem; border: 1px dashed var(--border-color); border-radius: 8px;">
-                                <p>${emptyState?.message || '您尚未追蹤任何社團，無法顯示動態'}</p>
-                                <a href="club-list.html" class="btn btn-primary btn-sm">${emptyState?.cta_text || '前往探索社團'}</a>
+                                <p>您尚未參加任何活動，尚無可顯示的動態</p>
+                                <a href="events.html" class="btn btn-primary btn-sm">前往探索活動</a>
                             </div>
                         `;
                         return;
@@ -302,6 +334,8 @@
 
                     let html = '<div style="display: grid; gap: 1rem;">';
                     feed.forEach(item => {
+                        const statusMeta = getTimelineStatusMeta(item);
+                        const statusStyle = getTimelineStatusStyle(statusMeta.className);
                         html += `
                             <div class="card">
                                 <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
@@ -311,7 +345,10 @@
                                         <p style="margin: 0 0 0.5rem 0; color: var(--text-light);">${PageUtils.formatDate(item.event_date)}</p>
                                         <p style="margin: 0; color: var(--text-light);">${item.description || ''}</p>
                                     </div>
-                                    <a href="event-detail.html?id=${item.event_id}" class="btn btn-primary btn-sm">查看活動</a>
+                                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+                                        <span class="badge" style="${statusStyle}">${statusMeta.label}</span>
+                                        <a href="event-detail.html?id=${item.event_id}" class="btn btn-primary btn-sm">查看活動</a>
+                                    </div>
                                 </div>
                             </div>
                         `;
@@ -321,7 +358,7 @@
                 }
             } catch (error) {
                 console.error('Error loading feed:', error);
-                document.getElementById('followed-feed').innerHTML = '<p>載入失敗</p>';
+                document.getElementById('followed-feed').innerHTML = '<p>載入活動歷程失敗</p>';
             }
         }
 
@@ -400,10 +437,10 @@
                     formData.append('avatar', avatarFile);
                     const csrfHeaders = await APIClient.getCSRFHeaders();
 
-                    const uploadResponse = await fetch('/社團活動資訊統整平台/backend/api/upload.php?action=upload_user_avatar', {
+                    const uploadResponse = await fetch(`${APIClient.getBaseUrl()}/upload.php?action=upload_user_avatar`, {
                         method: 'POST',
                         body: formData,
-                        credentials: 'same-origin',
+                        credentials: 'include',
                         headers: {
                             ...APIClient.getAuthHeaders(),
                             ...csrfHeaders

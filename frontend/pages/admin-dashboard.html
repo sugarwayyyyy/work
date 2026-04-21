@@ -388,13 +388,18 @@
             const select = document.getElementById('club-admin-user-key');
             if (!select) return;
             const selectedClubId = document.getElementById('club-admin-club-id')?.value || '';
-            const clubAdmins = clubAdminAssignmentsState.rows.filter(item => String(item.club_id) === String(selectedClubId));
-            select.disabled = !selectedClubId;
-            select.innerHTML = `<option value="">${selectedClubId ? '請選擇幹部帳號' : '請先選擇社團'}</option>` + clubAdmins
+            const previousValue = select.value;
+            const users = (usersState.rows || [])
+                .filter(user => Number(user.is_active) === 1)
                 .slice()
-                .sort((a, b) => compareByValue(a.user_name, b.user_name, 'asc'))
-                .map(user => `<option value="${Number(user.user_id) || 0}">${escapeHtml(user.user_name || '-')}｜${escapeHtml(user.user_email || '-')}｜${escapeHtml(user.user_student_id || '-')}</option>`)
+                .sort((a, b) => compareByValue(a.name, b.name, 'asc'));
+            select.disabled = !selectedClubId;
+            select.innerHTML = `<option value="">${selectedClubId ? '請選擇幹部帳號' : '請先選擇社團'}</option>` + users
+                .map(user => `<option value="${Number(user.user_id) || 0}">${escapeHtml(user.name || '-')}｜${escapeHtml(user.email || '-')}｜${escapeHtml(user.student_id || '-')}｜${escapeHtml(USER_ROLE_LABELS[user.role] || user.role || '-')}</option>`)
                 .join('');
+            if (previousValue) {
+                select.value = previousValue;
+            }
         }
 
         function clubAdminRoleLabel(role) {

@@ -6,6 +6,8 @@
  * 執行：npx playwright test tests/e2e/user-stories.spec.js
  */
 
+const { execFileSync } = require('child_process');
+const path = require('path');
 const { test, expect } = require('@playwright/test');
 
 // 測試配置
@@ -29,6 +31,16 @@ const STUDENT = {
   password: 'Test123456',
   role: 'student'
 };
+
+const CLEANUP_SCRIPT = path.resolve(__dirname, '../../scripts/cleanup-e2e-test-data.php');
+
+function cleanupE2ETestData(fullCleanup = false) {
+  const args = [CLEANUP_SCRIPT];
+  if (fullCleanup) {
+    args.push('--full');
+  }
+  execFileSync('php', args, { stdio: 'inherit' });
+}
 
 /**
  * 登入幫助函數
@@ -101,6 +113,10 @@ async function publishEventAsClubAdmin(page, eventName) {
 
   return { startAt };
 }
+
+test.afterEach(async () => {
+  cleanupE2ETestData();
+});
 
 /**
  * User Story 1.1: 社團列表與搜尋篩選

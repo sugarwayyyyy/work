@@ -346,6 +346,7 @@
                         <div class="form-field">
                             <label for="update-event-name">活動名稱 <span class="required">*</span></label>
                             <input type="text" id="update-event-name" required>
+                            <div id="err-update-event-name" class="field-error"></div>
                         </div>
                         <div class="form-field admin-span-2">
                             <label>活動時間區間 <span class="required">*</span></label>
@@ -361,6 +362,7 @@
                                             <option value="30">半點（30）</option>
                                         </select>
                                     </div>
+                                    <div id="err-update-event-date" class="field-error"></div>
                                 </div>
                                 <div>
                                     <div class="cad-time-caption">結束時間（目前作為報名截止）</div>
@@ -373,6 +375,7 @@
                                             <option value="30">半點（30）</option>
                                         </select>
                                     </div>
+                                    <div id="err-update-event-deadline" class="field-error"></div>
                                 </div>
                             </div>
                             <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點。</small>
@@ -380,6 +383,7 @@
                         <div class="form-field">
                             <label for="update-event-location">地點 <span class="required">*</span></label>
                             <input type="text" id="update-event-location" required>
+                            <div id="err-update-event-location" class="field-error"></div>
                         </div>
                         <div class="form-field">
                             <label for="update-event-capacity">名額</label>
@@ -403,7 +407,8 @@
                         </div>
                         <div class="form-field admin-span-2">
                             <label for="update-event-description">描述 <span class="required">*</span></label>
-                            <textarea id="update-event-description" class="cad-textarea-xl" required></textarea>
+                            <textarea id="update-event-description" class="cad-textarea-xl" required oninput="detectUpdateEventTagsFromDescription()"></textarea>
+                            <div id="err-update-event-description" class="field-error"></div>
                         </div>
                         <div class="form-field admin-span-2">
                             <label for="update-event-poster-upload">海報上傳</label>
@@ -419,6 +424,12 @@
                                 <div class="cad-block-gap">
                                     <label class="cad-label-muted">已選標籤</label>
                                     <div id="update-event-selected-tags" class="cad-tag-list-with-top-gap"></div>
+                                </div>
+                                <div class="cad-block-gap">
+                                    <label class="cad-label-muted">描述自動推薦</label>
+                                    <div id="update-event-suggested-tags" class="cad-tag-list-with-top-gap">
+                                        <span style="color: #999; font-size: 0.9rem;">輸入活動內容後會自動推薦</span>
+                                    </div>
                                 </div>
                                 <div class="cad-search-row">
                                     <input type="text" id="update-event-tag-search" class="cad-input-inline" placeholder="搜尋或建立標籤...">

@@ -16,6 +16,184 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 class ClubAPI {
+    private static function splitSearchTokens($search) {
+        $text = trim((string)$search);
+        if ($text === '') {
+            return [];
+        }
+
+        $tokens = preg_split('/\s+/u', $text);
+        $tokens = array_values(array_filter(array_map('trim', $tokens), function ($token) {
+            return $token !== '';
+        }));
+
+        return empty($tokens) ? [$text] : $tokens;
+    }
+
+    private static function normalizeSearchText($search) {
+        return trim(preg_replace('/\s+/u', ' ', (string)$search));
+    }
+
+    private static function containsText($haystack, $needle) {
+        $haystack = (string)$haystack;
+        $needle = (string)$needle;
+        if ($needle === '' || $haystack === '') {
+            return false;
+        }
+
+        if (function_exists('mb_stripos')) {
+            return mb_stripos($haystack, $needle, 0, 'UTF-8') !== false;
+        }
+
+        return stripos($haystack, $needle) !== false;
+    }
+
+    private static function getActivityBadgeLabel($badge) {
+        if ($badge === 'high_active') {
+            return '高活躍';
+        }
+        if ($badge === 'no_recent_activity') {
+            return '近期無活動';
+        }
+        return '活躍中';
+    }
+
+    private static function scoreClubSearchResult($row, $tags, $search) {
+        $query = self::normalizeSearchText($search);
+        if ($query === '') {
+            return 0;
+        }
+
+        $terms = self::splitSearchTokens($query);
+        $tagNames = implode(' ', array_map(function ($tag) {
+            return (string)($tag['tag_name'] ?? '');
+        }, (array)$tags));
+
+        $badgeLabel = self::getActivityBadgeLabel($row['activity_badge'] ?? 'normal_active');
+        $searchBlob = implode(' ', [
+            (string)($row['club_name'] ?? ''),
+            (string)($row['description'] ?? ''),
+            (string)($row['meeting_day'] ?? ''),
+            (string)($row['meeting_time'] ?? ''),
+            (string)($row['meeting_location'] ?? ''),
+            (string)($row['club_code'] ?? ''),
+            (string)($row['category_name'] ?? ''),
+            $tagNames,
+            $badgeLabel,
+        ]);
+
+        $score = 0;
+
+        if (self::containsText($row['club_name'] ?? '', $query)) $score += 60;
+        if (self::containsText($row['description'] ?? '', $query)) $score += 35;
+        if (self::containsText($row['meeting_day'] ?? '', $query)) $score += 18;
+        if (self::containsText($row['meeting_time'] ?? '', $query)) $score += 12;
+        if (self::containsText($row['meeting_location'] ?? '', $query)) $score += 12;
+        if (self::containsText($row['club_code'] ?? '', $query)) $score += 10;
+        if (self::containsText($row['category_name'] ?? '', $query)) $score += 22;
+        if (self::containsText($tagNames, $query)) $score += 24;
+        if (self::containsText($badgeLabel, $query)) $score += 20;
+        if (self::containsText($searchBlob, $query)) $score += 18;
+
+        foreach ($terms as $term) {
+            if ($term === '') {
+                continue;
+            }
+            if (self::containsText($row['club_name'] ?? '', $term)) $score += 20;
+            if (self::containsText($row['description'] ?? '', $term)) $score += 10;
+            if (self::containsText($row['meeting_day'] ?? '', $term)) $score += 8;
+            if (self::containsText($row['meeting_time'] ?? '', $term)) $score += 6;
+            if (self::containsText($row['meeting_location'] ?? '', $term)) $score += 6;
+            if (self::containsText($row['club_code'] ?? '', $term)) $score += 5;
+            if (self::containsText($row['category_name'] ?? '', $term)) $score += 8;
+            if (self::containsText($tagNames, $term)) $score += 10;
+            if (self::containsText($searchBlob, $term)) $score += 8;
+        }
+
+        if ((self::containsText($query, '活躍') || self::containsText($query, '高')) && ($row['activity_badge'] ?? '') === 'high_active') {
+            $score += 25;
+        }
+
+        if ((self::containsText($query, '近期無活動') || self::containsText($query, '無活動')) && ($row['activity_badge'] ?? '') === 'no_recent_activity') {
+            $score += 25;
+        }
+
+        if (preg_match('/500內|五百內|社費500內|<=\s*500/u', $query) && (int)($row['club_fee'] ?? 0) <= 500) {
+            $score += 14;
+        }
+
+        if (preg_match('/500\s*[-~到]\s*1000|社費500-1000/u', $query) && (int)($row['club_fee'] ?? 0) >= 500 && (int)($row['club_fee'] ?? 0) <= 1000) {
+            $score += 14;
+        }
+
+        if (preg_match('/1000以上|一千以上|>=\s*1000/u', $query) && (int)($row['club_fee'] ?? 0) >= 1000) {
+            $score += 14;
+        }
+
+        return $score;
+    }
+
+    private static function buildClubSearchScoreExpr($search, &$scoreParams) {
+        $query = trim((string)$search);
+        $terms = self::splitSearchTokens($query);
+        if ($query === '' || empty($terms)) {
+            return '0';
+        }
+
+        $scoreParams = [];
+        $parts = [];
+
+
+        $phraseLike = '%' . $query . '%';
+        $parts[] = '(CASE WHEN clubs.club_name LIKE ? THEN 40 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+        $parts[] = '(CASE WHEN clubs.description LIKE ? THEN 25 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+        $parts[] = '(CASE WHEN clubs.meeting_day LIKE ? THEN 14 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+        $parts[] = '(CASE WHEN clubs.meeting_time LIKE ? THEN 12 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+        $parts[] = '(CASE WHEN clubs.meeting_location LIKE ? THEN 12 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+        $parts[] = '(CASE WHEN clubs.club_code LIKE ? THEN 10 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+        $parts[] = '(CASE WHEN ' . $searchBlob . ' LIKE ? THEN 18 ELSE 0 END)';
+        $scoreParams[] = $phraseLike;
+
+        if (mb_strpos($query, '活躍') !== false || mb_strpos($query, '高') !== false) {
+            $parts[] = '(CASE WHEN clubs.activity_badge = "high_active" THEN 16 ELSE 0 END)';
+        }
+
+        if (mb_strpos($query, '近期無活動') !== false || mb_strpos($query, '無活動') !== false) {
+            $parts[] = '(CASE WHEN clubs.activity_badge = "no_recent_activity" THEN 16 ELSE 0 END)';
+        }
+
+        foreach ($terms as $term) {
+            $term = trim((string)$term);
+            if ($term === '') {
+                continue;
+            }
+
+            $termLike = '%' . $term . '%';
+            $parts[] = '(CASE WHEN clubs.club_name LIKE ? THEN 20 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+            $parts[] = '(CASE WHEN clubs.description LIKE ? THEN 10 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+            $parts[] = '(CASE WHEN clubs.meeting_day LIKE ? THEN 8 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+            $parts[] = '(CASE WHEN clubs.meeting_time LIKE ? THEN 6 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+            $parts[] = '(CASE WHEN clubs.meeting_location LIKE ? THEN 6 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+            $parts[] = '(CASE WHEN clubs.club_code LIKE ? THEN 5 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+            $parts[] = '(CASE WHEN ' . $searchBlob . ' LIKE ? THEN 8 ELSE 0 END)';
+            $scoreParams[] = $termLike;
+        }
+
+        return empty($parts) ? '0' : implode(' + ', $parts);
+    }
+
     private static function validateMeetingLocationIfProvided($meetingLocation) {
         $value = trim((string)$meetingLocation);
         if ($value === '') {
@@ -78,8 +256,9 @@ class ClubAPI {
             $page = (int)($_GET['page'] ?? 1);
             $per_page = ITEMS_PER_PAGE;
             $offset = ($page - 1) * $per_page;
+            $useSearchRanking = trim((string)$search) !== '';
             
-            $where_conditions = ['activity_status = "active"', 'deleted_at IS NULL'];
+            $where_conditions = ['clubs.activity_status = "active"', 'clubs.deleted_at IS NULL'];
             $params = [];
             $categoryCondition = null;
             $clubCondition = null;
@@ -90,25 +269,20 @@ class ClubAPI {
             $selectTagScoreParams = [];
             
             if ($category_id) {
-                $categoryCondition = 'category_id = ?';
+                $categoryCondition = 'clubs.category_id = ?';
             }
 
             if ($club_id) {
-                $clubCondition = 'club_id = ?';
+                $clubCondition = 'clubs.club_id = ?';
             }
             
-            if ($search) {
-                $where_conditions[] = 'club_name LIKE ?';
-                $params[] = "%$search%";
-            }
-
             if ($min_fee !== null) {
-                $where_conditions[] = 'club_fee >= ?';
+                $where_conditions[] = 'clubs.club_fee >= ?';
                 $params[] = $min_fee;
             }
 
             if ($max_fee !== null) {
-                $where_conditions[] = 'club_fee <= ?';
+                $where_conditions[] = 'clubs.club_fee <= ?';
                 $params[] = $max_fee;
             }
 
@@ -162,36 +336,58 @@ class ClubAPI {
             }
             
             $where = implode(' AND ', $where_conditions);
-            
-            // 取得社團列表
-            $sql = "SELECT $selectColumns FROM clubs WHERE $where ORDER BY $orderBy LIMIT ? OFFSET ?";
-            $stmt = Database::getInstance()->prepare($sql);
-            if ($stmt === false) {
-                throw new Exception('查詢準備失敗: ' . Database::getInstance()->error);
-            }
 
-            $queryParams = array_merge($selectTagScoreParams, $params);
-            if (!empty($queryParams)) {
-                $types = str_repeat('s', count($queryParams)) . 'ii';
-                $queryParams[] = $per_page;
-                $queryParams[] = $offset;
-                $stmt->bind_param($types, ...$queryParams);
-            } else {
-                $stmt->bind_param('ii', $per_page, $offset);
-            }
-
-            $stmt->execute();
-            $result = $stmt->get_result();
             $clubs = [];
             $club_ids = [];
             $rows_temp = [];
-            
-            // 先收集所有 club_id
-            while ($row = $result->fetch_assoc()) {
-                $club_ids[] = $row['club_id'];
-                $rows_temp[] = $row;
+
+            if ($useSearchRanking) {
+                $sql = "SELECT clubs.*, cc.category_name FROM clubs LEFT JOIN club_categories cc ON cc.category_id = clubs.category_id WHERE $where ORDER BY clubs.last_updated DESC";
+                $stmt = Database::getInstance()->prepare($sql);
+                if ($stmt === false) {
+                    throw new Exception('查詢準備失敗: ' . Database::getInstance()->error);
+                }
+
+                if (!empty($params)) {
+                    $types = str_repeat('s', count($params));
+                    $stmt->bind_param($types, ...$params);
+                }
+
+                $stmt->execute();
+                $result = $stmt->get_result();
+                while ($row = $result->fetch_assoc()) {
+                    $club_ids[] = $row['club_id'];
+                    $rows_temp[] = $row;
+                }
+                $stmt->close();
+            } else {
+                // 取得社團列表
+                $sql = "SELECT $selectColumns FROM clubs WHERE $where ORDER BY $orderBy LIMIT ? OFFSET ?";
+                $stmt = Database::getInstance()->prepare($sql);
+                if ($stmt === false) {
+                    throw new Exception('查詢準備失敗: ' . Database::getInstance()->error);
+                }
+
+                $queryParams = array_merge($selectTagScoreParams, $params);
+                if (!empty($queryParams)) {
+                    $types = str_repeat('s', count($queryParams)) . 'ii';
+                    $queryParams[] = $per_page;
+                    $queryParams[] = $offset;
+                    $stmt->bind_param($types, ...$queryParams);
+                } else {
+                    $stmt->bind_param('ii', $per_page, $offset);
+                }
+
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                // 先收集所有 club_id
+                while ($row = $result->fetch_assoc()) {
+                    $club_ids[] = $row['club_id'];
+                    $rows_temp[] = $row;
+                }
+                $stmt->close();
             }
-            $stmt->close();
             
             // 一次性查詢所有評分
             $ratings_map = [];
@@ -238,8 +434,28 @@ class ClubAPI {
                 }
 
                 $row['activity_badge'] = self::calculateActivityBadge((int)$row['club_id']);
+
+                if ($useSearchRanking) {
+                    $row['_search_score'] = self::scoreClubSearchResult($row, $tags_result, $search);
+                }
                 
                 $clubs[] = $row;
+            }
+
+            if ($useSearchRanking) {
+                usort($clubs, function ($left, $right) {
+                    $leftScore = (int)($left['_search_score'] ?? 0);
+                    $rightScore = (int)($right['_search_score'] ?? 0);
+                    if ($leftScore === $rightScore) {
+                        return strcmp((string)($right['last_updated'] ?? ''), (string)($left['last_updated'] ?? ''));
+                    }
+                    return $rightScore <=> $leftScore;
+                });
+            }
+
+            $total = count($clubs);
+            if ($useSearchRanking) {
+                $clubs = array_slice($clubs, $offset, $per_page);
             }
             
             // 取得總數
@@ -262,7 +478,7 @@ class ClubAPI {
                 'pagination' => [
                     'current_page' => $page,
                     'per_page' => $per_page,
-                    'total' => $total,
+                    'total' => $useSearchRanking ? $total : $total,
                     'total_pages' => ceil($total / $per_page)
                 ]
             ]);
@@ -430,18 +646,32 @@ class ClubAPI {
             
             // 取得評價
             $reviews = Database::getInstance()->fetchAll(
-                'SELECT * FROM reviews 
+                'SELECT r.*, u.name AS user_name 
+                 FROM reviews r
+                 LEFT JOIN users u ON u.user_id = r.user_id
                  WHERE club_id = ? AND review_status = "approved"
                  AND NOT EXISTS (
                      SELECT 1 FROM reports rp
                      WHERE rp.reported_content_type = "review"
-                       AND rp.reported_content_id = reviews.review_id
+                       AND rp.reported_content_id = r.review_id
                        AND rp.status = "resolved"
                        AND rp.action_taken = "force_hide"
                  )
                  ORDER BY created_at DESC LIMIT 10',
                 [$club_id]
             );
+
+            foreach ($reviews as &$review) {
+                $review['author_name'] = !empty($review['is_anonymous'])
+                    ? ($review['display_name'] ?: '匿名用戶')
+                    : ($review['user_name'] ?: '匿名用戶');
+
+                if ($review['is_anonymous']) {
+                    $review['display_name'] = $review['display_name'] ?: '匿名用戶';
+                    unset($review['user_id']);
+                }
+            }
+            unset($review);
             
             // 計算平均評分
             $rating_result = Database::getInstance()->fetchOne(

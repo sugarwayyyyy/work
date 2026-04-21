@@ -656,6 +656,10 @@
                     setFollowStateCache(clubId, isFollowing);
                     syncFollowSummary(isFollowing, memberCount);
 
+                    if (typeof window.refreshGlobalFollowSidebar === 'function') {
+                        await window.refreshGlobalFollowSidebar();
+                    }
+
                     // 背景同步整份詳情資料，避免左側數字之外的資訊殘留舊狀態。
                     loadClubDetail();
                     return;

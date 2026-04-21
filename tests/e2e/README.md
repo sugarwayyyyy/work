@@ -58,6 +58,17 @@ npx playwright test user-stories.spec.js
 npx playwright test -g "US 1.1"  # 執行名稱包含 "US 1.1" 的測試
 ```
 
+### 測試資料清理
+E2E 會在每個測試結束後自動執行 `scripts/cleanup-e2e-test-data.php`，回收測試建立的活動與關聯資料，並還原追蹤狀態。
+
+在整個 E2E suite 結束後，會再執行一次 `scripts/cleanup-e2e-test-data.php --full`，把先前植入的 seed 測試帳號、測試活動與測試公告一併移除。
+
+若需要手動清理，可執行：
+```bash
+php scripts/cleanup-e2e-test-data.php
+php scripts/cleanup-e2e-test-data.php --full
+```
+
 ## 測試結構
 
 測試文件位置：`tests/e2e/user-stories.spec.js`

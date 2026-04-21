@@ -8,6 +8,8 @@
 
 import pytest
 import re
+import subprocess
+from pathlib import Path
 from playwright.sync_api import Page, expect
 from datetime import datetime
 
@@ -34,6 +36,8 @@ STUDENT = {
     'role': 'student'
 }
 
+CLEANUP_SCRIPT = Path(__file__).resolve().parents[2] / 'scripts' / 'cleanup-e2e-test-data.php'
+
 
 def do_login(page: Page, email: str, password: str) -> Page:
     page.goto(f'{BASE_URL}/pages/login.html')
@@ -44,6 +48,26 @@ def do_login(page: Page, email: str, password: str) -> Page:
     page.wait_for_timeout(1400)
     page.wait_for_load_state('domcontentloaded')
     return page
+
+
+def cleanup_e2e_test_data() -> None:
+    subprocess.run(['php', str(CLEANUP_SCRIPT)], check=True)
+
+
+def cleanup_e2e_seeded_data() -> None:
+    subprocess.run(['php', str(CLEANUP_SCRIPT), '--full'], check=True)
+
+
+@pytest.fixture(autouse=True)
+def e2e_cleanup():
+    yield
+    cleanup_e2e_test_data()
+
+
+@pytest.fixture(scope='session', autouse=True)
+def e2e_full_cleanup():
+    yield
+    cleanup_e2e_seeded_data()
 
 
 @pytest.fixture

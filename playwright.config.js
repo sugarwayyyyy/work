@@ -68,4 +68,6 @@ module.exports = defineConfig({
     url: 'http://localhost:8000',
     reuseExistingServer: !process.env.CI,
   },
+
+  globalTeardown: './tests/e2e/global-teardown.js',
 });

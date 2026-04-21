@@ -912,7 +912,6 @@ function renderGlobalFollowSidebarMessage(html) {
 
 async function renderGlobalFollowSidebar() {
     if (!shouldRenderGlobalFollowSidebar()) return;
-    if (document.getElementById('followed-clubs-section')) return;
 
     ensureGlobalFollowSidebarStyles();
 
@@ -1121,3 +1120,4 @@ window.PageUtils = PageUtils;
 window.Validator = Validator;
 window.FormUtils = FormUtils;
 window.StorageUtils = StorageUtils;
+window.refreshGlobalFollowSidebar = renderGlobalFollowSidebar;

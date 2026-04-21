@@ -13,9 +13,9 @@
         let createEventSelectedTagIds = new Set();
 
         function getUploadApiUrl(action) {
-            const base = (typeof API_URL === 'string' && API_URL)
-                ? API_URL
-                : '/社團活動資訊統整平台/backend/api';
+            const base = (typeof APIClient !== 'undefined' && typeof APIClient.getBaseUrl === 'function')
+                ? APIClient.getBaseUrl()
+                : ((typeof API_URL === 'string' && API_URL) ? API_URL : '/社團活動資訊統整平台/backend/api');
             return `${base}/upload.php?action=${encodeURIComponent(action)}`;
         }
 
@@ -434,6 +434,7 @@
             } else {
                 document.getElementById('update-event-tag-search').value = '';
                 document.getElementById('update-event-tag-results').innerHTML = '';
+                detectUpdateEventTagsFromDescription();
             }
         }
 
@@ -512,6 +513,39 @@
 
             suggestions.forEach(tag => {
                 const badge = createEventTagBadge(tag, 'suggested', 'create');
+                container.appendChild(badge);
+            });
+        }
+
+        function detectUpdateEventTagsFromDescription() {
+            const textarea = document.getElementById('update-event-description');
+            const container = document.getElementById('update-event-suggested-tags');
+            if (!textarea || !container) return;
+
+            const description = textarea.value.trim().toLowerCase();
+            container.innerHTML = '';
+
+            if (!description) {
+                container.innerHTML = '<span style="color: #999; font-size: 0.9rem;">輸入活動內容後會自動推薦</span>';
+                return;
+            }
+
+            const suggestions = [];
+            allTags.forEach(tag => {
+                const tagTypeKeywords = getTagTypeKeywords(tag.tag_type);
+                const hasMatch = tagTypeKeywords.some(keyword => description.includes(keyword.toLowerCase()));
+                if (hasMatch && !eventSelectedTagIds.has(tag.tag_id)) {
+                    suggestions.push(tag);
+                }
+            });
+
+            if (suggestions.length === 0) {
+                container.innerHTML = '<span style="color: #999; font-size: 0.9rem;">掃描後無推薦標籤</span>';
+                return;
+            }
+
+            suggestions.forEach(tag => {
+                const badge = createEventTagBadge(tag, 'suggested', 'update');
                 container.appendChild(badge);
             });
         }
@@ -1002,6 +1036,7 @@
                 event.tags.forEach(tag => eventSelectedTagIds.add(tag.tag_id));
             }
             renderEventSelectedTags('update');
+            detectUpdateEventTagsFromDescription();
             setSelectedCollaborativeClubIds('update-event-collaborative-clubs', (event.co_host_clubs || []).map(club => club.club_id));
 
             const posterImg = document.getElementById('update-event-poster-img');
@@ -1091,7 +1126,7 @@
                     const uploadResponse = await fetch(getUploadApiUrl('upload_club_logo'), {
                         method: 'POST',
                         body: uploadFormData,
-                        credentials: 'same-origin',
+                        credentials: 'include',
                         headers: {
                             ...APIClient.getAuthHeaders(),
                             ...csrfHeaders
@@ -1174,7 +1209,7 @@
                         const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
                             method: 'POST',
                             body: uploadFormData,
-                            credentials: 'same-origin',
+                            credentials: 'include',
                             headers: {
                                 ...APIClient.getAuthHeaders(),
                                 ...csrfHeaders
@@ -1227,53 +1262,60 @@
             event.preventDefault();
             if (!validateEventForm('update-')) return;
 
-            const formData = new FormData();
-            formData.append('event_name', document.getElementById('update-event-name').value);
-            formData.append('description', document.getElementById('update-event-description').value);
-            formData.append('event_date', document.getElementById('update-event-date').value);
-            formData.append('location', document.getElementById('update-event-location').value);
-            formData.append('capacity', document.getElementById('update-event-capacity').value);
-            formData.append('fee', document.getElementById('update-event-fee').value);
-            formData.append('registration_deadline', document.getElementById('update-event-deadline').value);
-            formData.append('is_registration_open', document.getElementById('update-event-registration-open').checked ? '1' : '0');
-
-            const posterFile = document.getElementById('update-event-poster-upload').files[0];
-            if (posterFile) {
-                const uploadFormData = new FormData();
-                uploadFormData.append('poster', posterFile);
-                uploadFormData.append('event_id', currentEventId);
-                const csrfHeaders = await APIClient.getCSRFHeaders();
-                const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
-                    method: 'POST',
-                    body: uploadFormData,
-                    credentials: 'same-origin',
-                    headers: {
-                        ...APIClient.getAuthHeaders(),
-                        ...csrfHeaders
-                    }
-                });
-
-                const uploadRawText = await uploadResponse.text();
-                let uploadResult = null;
-                try {
-                    uploadResult = JSON.parse(uploadRawText);
-                } catch (parseError) {
-                    throw new Error(`活動海報上傳回應格式錯誤（HTTP ${uploadResponse.status}）：${uploadRawText.slice(0, 300)}`);
-                }
-
-                if (!uploadResponse.ok || !uploadResult.success) {
-                    throw new Error(uploadResult.message || '活動海報上傳失敗');
-                }
-
-                formData.append('poster_path', uploadResult.path);
+            if (!currentEventId) {
+                PageUtils.showAlert('找不到活動識別碼，請重新點選要編輯的活動', 'error');
+                return;
             }
 
-            const updatePayload = Object.fromEntries(formData);
-            updatePayload.collaborative_club_ids = getSelectedCollaborativeClubIds('update-event-collaborative-clubs');
-            const response = await APIClient.put('events.php?action=update&id=' + currentEventId, updatePayload);
-            if (response.success) {
-                // 保存活動標籤
-                if (eventSelectedTagIds.size > 0 || eventSelectedTagIds.size === 0) {
+            const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+            if (submitButton) submitButton.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('event_name', document.getElementById('update-event-name').value);
+                formData.append('description', document.getElementById('update-event-description').value);
+                formData.append('event_date', document.getElementById('update-event-date').value);
+                formData.append('location', document.getElementById('update-event-location').value);
+                formData.append('capacity', document.getElementById('update-event-capacity').value);
+                formData.append('fee', document.getElementById('update-event-fee').value);
+                formData.append('registration_deadline', document.getElementById('update-event-deadline').value);
+                formData.append('is_registration_open', document.getElementById('update-event-registration-open').checked ? '1' : '0');
+
+                const posterFile = document.getElementById('update-event-poster-upload').files[0];
+                if (posterFile) {
+                    const uploadFormData = new FormData();
+                    uploadFormData.append('poster', posterFile);
+                    uploadFormData.append('event_id', currentEventId);
+                    const csrfHeaders = await APIClient.getCSRFHeaders();
+                    const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
+                        method: 'POST',
+                        body: uploadFormData,
+                        credentials: 'include',
+                        headers: {
+                            ...APIClient.getAuthHeaders(),
+                            ...csrfHeaders
+                        }
+                    });
+
+                    const uploadRawText = await uploadResponse.text();
+                    let uploadResult = null;
+                    try {
+                        uploadResult = JSON.parse(uploadRawText);
+                    } catch (parseError) {
+                        throw new Error(`活動海報上傳回應格式錯誤（HTTP ${uploadResponse.status}）：${uploadRawText.slice(0, 300)}`);
+                    }
+
+                    if (!uploadResponse.ok || !uploadResult.success) {
+                        throw new Error(uploadResult.message || '活動海報上傳失敗');
+                    }
+
+                    formData.append('poster_path', uploadResult.path);
+                }
+
+                const updatePayload = Object.fromEntries(formData);
+                updatePayload.collaborative_club_ids = getSelectedCollaborativeClubIds('update-event-collaborative-clubs');
+                const response = await APIClient.put('events.php?action=update&id=' + currentEventId, updatePayload);
+                if (response.success) {
                     try {
                         await APIClient.post('events.php?action=update_event_tags', {
                             event_id: currentEventId,
@@ -1282,16 +1324,22 @@
                     } catch (error) {
                         console.error('保存活動標籤失敗:', error);
                     }
+
+                    PageUtils.showAlert('活動更新成功', 'success');
+                    loadClubEvents(currentClubId);
+                    document.getElementById('event-management-section').style.display = 'none';
+                    eventSelectedTagIds.clear();
+                    renderEventSelectedTags('update');
+                    setSelectedCollaborativeClubIds('update-event-collaborative-clubs', []);
+                    detectUpdateEventTagsFromDescription();
+                } else {
+                    PageUtils.showAlert('更新活動失敗：' + (response.message || '未知錯誤'), 'error');
                 }
-                
-                PageUtils.showAlert('活動更新成功', 'success');
-                loadClubEvents(currentClubId);
-                document.getElementById('event-management-section').style.display = 'none';
-                eventSelectedTagIds.clear();
-                renderEventSelectedTags('update');
-                setSelectedCollaborativeClubIds('update-event-collaborative-clubs', []);
-            } else {
-                PageUtils.showAlert('更新活動失敗：' + response.message, 'error');
+            } catch (error) {
+                console.error('更新活動出現異常:', error);
+                PageUtils.showAlert('更新活動錯誤：' + (error.message || '未知錯誤'), 'error');
+            } finally {
+                if (submitButton) submitButton.disabled = false;
             }
         });
 
