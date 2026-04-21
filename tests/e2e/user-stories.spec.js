@@ -43,6 +43,65 @@ async function login(page, email, password) {
   ]);
 }
 
+function toDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+async function openCreateEventFormFromClubAdminDashboard(page) {
+  await page.goto(`${BASE_URL}/pages/club-admin-dashboard.html`);
+  await page.waitForLoadState('networkidle');
+
+  const manageClubBtn = page.locator('#my-clubs-container button:has-text("管理社團")').first();
+  await expect(manageClubBtn).toBeVisible({ timeout: 15000 });
+  await manageClubBtn.click();
+
+  const actionSelector = page.locator('#club-action-selector');
+  await expect(actionSelector).toBeVisible();
+
+  const createEventBtn = page.locator('#club-action-selector button:has-text("建立活動")');
+  await expect(createEventBtn).toBeVisible();
+  await createEventBtn.click();
+
+  await expect(page.locator('#create-event-form')).toBeVisible();
+}
+
+async function publishEventAsClubAdmin(page, eventName) {
+  await openCreateEventFormFromClubAdminDashboard(page);
+
+  const startAt = new Date();
+  startAt.setDate(startAt.getDate() + 7);
+  startAt.setHours(14, 0, 0, 0);
+
+  const deadlineAt = new Date(startAt.getTime());
+  deadlineAt.setDate(deadlineAt.getDate() - 1);
+  deadlineAt.setHours(21, 0, 0, 0);
+
+  await page.fill('#event-name', eventName);
+  await page.fill('#event-location', '綜合教學大樓 R201');
+  await page.fill('#event-description', `E2E 自動化建立活動：${eventName}`);
+
+  await page.fill('#event-date-date', toDateInputValue(startAt));
+  await page.selectOption('#event-date-hour', String(startAt.getHours()).padStart(2, '0'));
+  await page.selectOption('#event-date-minute', '00');
+
+  await page.fill('#event-deadline-date', toDateInputValue(deadlineAt));
+  await page.selectOption('#event-deadline-hour', String(deadlineAt.getHours()).padStart(2, '0'));
+  await page.selectOption('#event-deadline-minute', '00');
+
+  const submitBtn = page.locator('#create-event-submit');
+  await expect(submitBtn).toBeEnabled();
+
+  page.once('dialog', dialog => dialog.accept());
+  await submitBtn.click();
+
+  await expect(page.locator('#alert-container .alert-success')).toContainText('活動建立成功', { timeout: 15000 });
+
+  return { startAt };
+}
+
 /**
  * User Story 1.1: 社團列表與搜尋篩選
  */
@@ -180,6 +239,32 @@ test.describe('US 1.5: 資料時間戳', () => {
     await expect(updateTime.first()).toBeVisible();
     await expect(updateTime.first()).not.toHaveText('-');
   });
+
+  test('AC2: 新發布活動在活動詳情頁顯示最新上傳時間', async ({ page }) => {
+    await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    const eventName = `US15-TS-${Date.now()}`;
+
+    await publishEventAsClubAdmin(page, eventName);
+
+    await page.goto(`${BASE_URL}/pages/events.html`);
+    await page.waitForLoadState('networkidle');
+    await page.fill('#event-search', eventName);
+    await page.click('button:has-text("篩選")');
+
+    const eventCard = page.locator('#events-container .card').filter({ hasText: eventName }).first();
+    await expect(eventCard).toBeVisible({ timeout: 15000 });
+
+    await eventCard.locator('a[href*="event-detail.html?id="]').first().click();
+    await page.waitForURL('**/event-detail.html**');
+    await page.waitForLoadState('networkidle');
+
+    const latestUpload = page.locator('#event-last-updated');
+    await expect(latestUpload).toBeVisible();
+
+    const text = (await latestUpload.innerText()).trim();
+    expect(text).not.toBe('最新上傳時間：-');
+    expect(text).toMatch(/\d{4}-\d{2}-\d{2}/);
+  });
 });
 
 /**
@@ -212,29 +297,61 @@ test.describe('US 2.1: 社團幹部編輯社團資訊', () => {
 test.describe('US 2.2: 社團活動發布', () => {
   test('AC1: 幹部可發布活動', async ({ page }) => {
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
-    
-    // 進入活動發布頁面
-    await page.goto(`${BASE_URL}/pages/events.html`);
-    
-    await page.waitForLoadState('networkidle');
-    
-    // 查找發布按鈕
-    const createBtn = page.locator('button:has-text("新增"), button:has-text("發布"), [class*="create"]');
-    const isVisible = await createBtn.first().isVisible().catch(() => false);
-    
-    expect(isVisible || true).toBeTruthy();
+
+    const eventName = `US22-PUB-${Date.now()}`;
+    await publishEventAsClubAdmin(page, eventName);
+
+    const eventsPanelBtn = page.locator('#club-action-selector button:has-text("社團活動列表")');
+    await expect(eventsPanelBtn).toBeVisible();
+    await eventsPanelBtn.click();
+
+    const createdEventCard = page.locator('#club-events-container .admin-item-card').filter({ hasText: eventName }).first();
+    await expect(createdEventCard).toBeVisible({ timeout: 15000 });
   });
 
-  test('AC2: 活動列表近到遠排序', async ({ page }) => {
+  test('AC2: 發布後可在前台查到，且活動列表為近到遠排序', async ({ page }) => {
+    await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    const eventName = `US22-LIST-${Date.now()}`;
+    await publishEventAsClubAdmin(page, eventName);
+
     await page.goto(`${BASE_URL}/pages/events.html`);
-    
     await page.waitForLoadState('networkidle');
-    
-    // 獲取活動列表
-    const eventCards = page.locator('[class*="event"], .event-card');
-    const count = await eventCards.count();
-    
-    expect(count).toBeGreaterThan(-1); // 驗證頁面加載
+
+    await page.fill('#event-search', eventName);
+    await page.click('button:has-text("篩選")');
+
+    const targetCard = page.locator('#events-container .card').filter({ hasText: eventName }).first();
+    await expect(targetCard).toBeVisible({ timeout: 15000 });
+
+    const sortedCheck = await page.evaluate(async () => {
+      const response = await window.APIClient.get('events.php?page=1&filter=open');
+      if (!response || response.success !== true) {
+        return { ok: false, isAscending: false, count: 0 };
+      }
+
+      const events = Array.isArray(response?.data?.events) ? response.data.events : [];
+      const timestamps = events
+        .map(item => Date.parse(item?.event_date || ''))
+        .filter(value => Number.isFinite(value));
+
+      let isAscending = true;
+      for (let i = 1; i < timestamps.length; i++) {
+        if (timestamps[i] < timestamps[i - 1]) {
+          isAscending = false;
+          break;
+        }
+      }
+
+      return {
+        ok: true,
+        isAscending,
+        count: timestamps.length
+      };
+    });
+
+    expect(sortedCheck.ok).toBeTruthy();
+    expect(sortedCheck.count).toBeGreaterThan(0);
+    expect(sortedCheck.isAscending).toBeTruthy();
   });
 });
 
