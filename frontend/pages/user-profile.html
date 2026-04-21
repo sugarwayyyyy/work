@@ -133,6 +133,7 @@
                 const response = await APIClient.get('auth.php?action=current');
                 if (response.success) {
                     currentUser = response.data;
+                    StorageUtils.setUser(currentUser);
                     displayUserProfile(currentUser);
                     loadUserEvents();
                     loadFollowedFeed();
