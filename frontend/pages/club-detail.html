@@ -35,14 +35,10 @@
                     <h1 id="club-name" style="margin: 0 0 1rem 0;"></h1>
                     <div id="club-last-updated-banner" style="margin: -0.25rem 0 0.85rem 0; color: var(--text-light); font-size: 0.92rem;">最後更新時間：-</div>
                     <div id="club-badges" style="margin-bottom: 1rem;"></div>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; margin: 1rem 0;">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin: 1rem 0;">
                         <div>
                             <div style="color: var(--text-light); font-size: 0.9rem;">👥 成員數</div>
                             <div style="font-size: 1.5rem; font-weight: bold;" id="member-count">-</div>
-                        </div>
-                        <div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">🔔 追蹤數</div>
-                            <div style="font-size: 1.5rem; font-weight: bold;" id="follower-count">-</div>
                         </div>
                         <div>
                             <div style="color: var(--text-light); font-size: 0.9rem;">⭐ 平均評分</div>
@@ -370,7 +366,6 @@
             document.getElementById('club-last-updated-banner').textContent = `最後更新時間：${formatDateTime(club.last_updated)}`;
             document.getElementById('club-description').textContent = club.description || '-';
             document.getElementById('member-count').textContent = club.member_count || 0;
-            document.getElementById('follower-count').textContent = club.follower_count || 0;
             const avgRating = Number(club.average_rating || 0);
             const starsHtml = PageUtils.renderStars(avgRating);
             document.getElementById('avg-rating-stars').innerHTML = starsHtml;
@@ -642,9 +637,9 @@
                 if (response.success) {
                     setFollowStateCache(clubId, !!response.data?.is_following);
                     const followBtn = document.getElementById('follow-btn');
-                    const followerCountEl = document.getElementById('follower-count');
+                    const memberCountEl = document.getElementById('member-count');
                     const isFollowing = !!response.data?.is_following;
-                    const followerCount = Number(response.data?.follower_count ?? followerCountEl?.textContent ?? 0);
+                    const memberCount = Number(response.data?.member_count ?? memberCountEl?.textContent ?? 0);
 
                     if (followBtn) {
                         followBtn.textContent = isFollowing ? '已追蹤' : '追蹤社團';
@@ -652,8 +647,8 @@
                         followBtn.classList.toggle('btn-secondary', isFollowing);
                     }
 
-                    if (followerCountEl) {
-                        followerCountEl.textContent = Number.isFinite(followerCount) ? followerCount : 0;
+                    if (memberCountEl) {
+                        memberCountEl.textContent = Number.isFinite(memberCount) ? memberCount : 0;
                     }
                     return;
                 } else {

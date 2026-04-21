@@ -220,9 +220,9 @@ class ClubAPI {
                 );
                 $row['tags'] = $tags_result;
                 
-                // 取得成員數
+                // 取得成員數（社團平台定義為追蹤數）
                 $member_count = Database::getInstance()->fetchOne(
-                    'SELECT COUNT(*) as count FROM club_members WHERE club_id = ? AND is_active = 1',
+                    'SELECT COUNT(*) as count FROM club_followers WHERE club_id = ?',
                     [$row['club_id']]
                 );
                 $row['member_count'] = $member_count['count'];
@@ -462,19 +462,12 @@ class ClubAPI {
             $club['reviews'] = $reviews;
             $club['activity_badge'] = self::calculateActivityBadge((int)$club_id);
             
-            // 取得成員數（僅統計有效成員）
+            // 取得成員數（社團平台定義為追蹤數）
             $member_count = Database::getInstance()->fetchOne(
-                'SELECT COUNT(*) as count FROM club_members WHERE club_id = ? AND is_active = 1',
-                [$club_id]
-            );
-            $club['member_count'] = $member_count['count'];
-
-            // 取得追蹤人數
-            $follower_count = Database::getInstance()->fetchOne(
                 'SELECT COUNT(*) as count FROM club_followers WHERE club_id = ?',
                 [$club_id]
             );
-            $club['follower_count'] = (int)($follower_count['count'] ?? 0);
+            $club['member_count'] = $member_count['count'];
             
             // 檢查用戶是否追蹤此社團
             $is_following = false;
@@ -706,19 +699,15 @@ class ClubAPI {
                 $is_following = true;
             }
 
-            $follower_count = Database::getInstance()->fetchOne(
+            $member_count = Database::getInstance()->fetchOne(
                 'SELECT COUNT(*) as count FROM club_followers WHERE club_id = ?',
                 [$club_id]
             );
-            $current_follower_count = (int)($follower_count['count'] ?? 0);
+            $current_member_count = (int)($member_count['count'] ?? 0);
             
             Helper::success('操作成功', [
                 'is_following' => $is_following,
-                'follower_count' => $current_follower_count,
-                'member_count' => Database::getInstance()->fetchOne(
-                    'SELECT COUNT(*) as count FROM club_members WHERE club_id = ? AND is_active = 1',
-                    [$club_id]
-                )['count'] ?? 0
+                'member_count' => $current_member_count
             ]);
             
         } catch (Exception $e) {
