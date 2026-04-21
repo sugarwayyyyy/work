@@ -636,20 +636,7 @@
                 const response = await APIClient.post(`clubs.php?action=toggle_follow&id=${clubId}`, {});
                 if (response.success) {
                     setFollowStateCache(clubId, !!response.data?.is_following);
-                    const followBtn = document.getElementById('follow-btn');
-                    const memberCountEl = document.getElementById('member-count');
-                    const isFollowing = !!response.data?.is_following;
-                    const memberCount = Number(response.data?.member_count ?? memberCountEl?.textContent ?? 0);
-
-                    if (followBtn) {
-                        followBtn.textContent = isFollowing ? '已追蹤' : '追蹤社團';
-                        followBtn.classList.toggle('btn-primary', !isFollowing);
-                        followBtn.classList.toggle('btn-secondary', isFollowing);
-                    }
-
-                    if (memberCountEl) {
-                        memberCountEl.textContent = Number.isFinite(memberCount) ? memberCount : 0;
-                    }
+                    await loadClubDetail();
                     return;
                 } else {
                     PageUtils.showAlert(response.message, 'error');
