@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>社團活動資訊統整平台 - 首頁</title>
+    <title>社團活動平台 - 首頁</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/home.css">
 </head>
@@ -12,12 +12,12 @@
 <body>
     <header>
         <nav>
-            <a href="index.html" class="logo">⚡ 社團平台</a>
+            <a href="index.html" class="logo">校園社團平台</a>
             <ul class="nav-links">
                 <li><a href="index.html">首頁</a></li>
                 <li><a href="pages/club-list.html">社團</a></li>
                 <li><a href="pages/events.html">活動</a></li>
-                <li><a href="pages/qa.html">提問</a></li>
+                <li><a href="pages/qa.html">問答</a></li>
             </ul>
             <div class="nav-right">
                 <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href = 'pages/login.html'">登入</button>
@@ -30,177 +30,201 @@
     <div id="alert-container"></div>
 
     <div class="home-shell">
-    <section class="hero">
-        <h1>探索校園社團</h1>
-        <p>輕鬆找到適合你的社團，參與校園活動，豐富大學生活</p>
+        <div class="container home-container">
+            <div class="home-portal">
+                <aside class="home-left-rail">
+                    <section id="followed-clubs-section" class="home-follow-rail" aria-label="我追蹤的社團">
+                        <div class="home-follow-rail__label">追蹤社團</div>
+                        <div id="followed-clubs-container" class="home-follow-rail__list">
+                            <div class="home-follow-rail__loading" aria-hidden="true">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                    </section>
 
-        <div class="search-container" style="margin: 2rem 0; max-width: 600px; margin-left: auto; margin-right: auto;">
-            <form id="advanced-search-form" style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 8px; backdrop-filter: blur(10px);">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div>
-                        <label for="search-type" style="color: white; display: block; margin-bottom: 0.5rem;">搜尋類型</label>
-                        <select id="search-type" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="clubs">社團</option>
-                            <option value="events">活動</option>
-                            <option value="qa">問答</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="search-keyword" style="color: white; display: block; margin-bottom: 0.5rem;">關鍵字</label>
-                        <input type="text" id="search-keyword" placeholder="輸入關鍵字..." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                    </div>
-                </div>
+                </aside>
 
-                <div id="clubs-filters" class="search-filters" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-                    <div>
-                        <label for="club-category" style="color: white; display: block; margin-bottom: 0.5rem;">社團分類</label>
-                        <select id="club-category" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="">全部</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="club-fee-range" style="color: white; display: block; margin-bottom: 0.5rem;">社費範圍</label>
-                        <select id="club-fee-range" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="">全部</option>
-                            <option value="0-500">0-500元</option>
-                            <option value="500-1000">500-1000元</option>
-                            <option value="1000+">1000元以上</option>
-                        </select>
-                    </div>
-                </div>
+                <main class="home-main-column">
+                    <section class="card home-welcome-card">
+                        <div class="portal-section-head portal-section-head--welcome">
+                            <h1 class="portal-title">歡迎回來，今天想看哪些校園動態？</h1>
+                            <p class="portal-subtitle">用搜尋快速前往社團、活動與問答，掌握全校最新資訊。</p>
+                        </div>
 
-                <div id="events-filters" class="search-filters" style="display: none; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-                    <div>
-                        <label for="event-date-from" style="color: white; display: block; margin-bottom: 0.5rem;">活動日期從</label>
-                        <input type="date" id="event-date-from" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                    </div>
-                    <div>
-                        <label for="event-date-to" style="color: white; display: block; margin-bottom: 0.5rem;">活動日期到</label>
-                        <input type="date" id="event-date-to" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                    </div>
-                    <div>
-                        <label for="event-fee-range" style="color: white; display: block; margin-bottom: 0.5rem;">費用範圍</label>
-                        <select id="event-fee-range" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="">全部</option>
-                            <option value="free">免費</option>
-                            <option value="0-100">0-100元</option>
-                            <option value="100+">100元以上</option>
-                        </select>
-                    </div>
-                </div>
+                        <form id="advanced-search-form" class="portal-search-form">
+                            <div class="portal-search-top">
+                                <div class="portal-field">
+                                    <label for="search-type">搜尋類型</label>
+                                    <select id="search-type">
+                                        <option value="clubs">社團</option>
+                                        <option value="events">活動</option>
+                                        <option value="qa">問答</option>
+                                    </select>
+                                </div>
+                                <div class="portal-field">
+                                    <label for="search-keyword">關鍵字</label>
+                                    <input type="text" id="search-keyword" placeholder="輸入社團名稱、活動主題或問題...">
+                                </div>
+                            </div>
 
-                <div id="qa-filters" class="search-filters" style="display: none; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-                    <div>
-                        <label for="qa-status" style="color: white; display: block; margin-bottom: 0.5rem;">問題狀態</label>
-                        <select id="qa-status" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="">全部</option>
-                            <option value="open">開放中</option>
-                            <option value="answered">已回答</option>
-                            <option value="closed">已關閉</option>
-                        </select>
-                    </div>
-                </div>
+                            <div id="clubs-filters" class="portal-search-filters">
+                                <div class="portal-field">
+                                    <label for="club-category">社團分類</label>
+                                    <select id="club-category">
+                                        <option value="">不限</option>
+                                    </select>
+                                </div>
+                                <div class="portal-field">
+                                    <label for="club-fee-range">社費區間</label>
+                                    <select id="club-fee-range">
+                                        <option value="">不限</option>
+                                        <option value="0-500">0-500</option>
+                                        <option value="500-1000">500-1000</option>
+                                        <option value="1000+">1000+</option>
+                                    </select>
+                                </div>
+                            </div>
 
-                <div style="display: flex; gap: 1rem; justify-content: center;">
-                    <button type="submit" class="btn btn-primary">搜尋</button>
-                    <button type="button" id="clear-search" class="btn btn-secondary">清除</button>
-                </div>
-            </form>
+                            <div id="events-filters" class="portal-search-filters portal-search-filters--hidden">
+                                <div class="portal-field">
+                                    <label for="event-date-from">活動日期起</label>
+                                    <input type="date" id="event-date-from">
+                                </div>
+                                <div class="portal-field">
+                                    <label for="event-date-to">活動日期迄</label>
+                                    <input type="date" id="event-date-to">
+                                </div>
+                                <div class="portal-field">
+                                    <label for="event-fee-range">費用區間</label>
+                                    <select id="event-fee-range">
+                                        <option value="">不限</option>
+                                        <option value="free">免費</option>
+                                        <option value="0-100">0-100</option>
+                                        <option value="100+">100+</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="qa-filters" class="portal-search-filters portal-search-filters--hidden">
+                                <div class="portal-field">
+                                    <label for="qa-status">問答狀態</label>
+                                    <select id="qa-status">
+                                        <option value="">不限</option>
+                                        <option value="open">開放中</option>
+                                        <option value="answered">已回答</option>
+                                        <option value="closed">已結案</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="portal-search-actions">
+                                <button type="submit" class="btn btn-primary">開始搜尋</button>
+                                <button type="button" id="clear-search" class="btn btn-secondary">清除條件</button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <section class="portal-section">
+                        <div class="portal-section-head">
+                            <h2 class="portal-section-title">快捷入口</h2>
+                        </div>
+                        <div class="portal-quick-grid">
+                            <a href="pages/club-list.html" class="card portal-quick-card">
+                                <h3>社團列表</h3>
+                                <p>依分類快速找到社團。</p>
+                            </a>
+                            <a href="pages/events.html" class="card portal-quick-card">
+                                <h3>活動探索</h3>
+                                <p>查看近期活動與報名資訊。</p>
+                            </a>
+                            <a href="pages/qa.html" class="card portal-quick-card">
+                                <h3>Q&A 問答</h3>
+                                <p>提問、回覆與追蹤互動。</p>
+                            </a>
+                        </div>
+                    </section>
+
+                    <section class="portal-section portal-section--dynamic">
+                        <div class="portal-section-head">
+                            <h2 class="portal-section-title">校園動態中心</h2>
+                            <div class="feed-tabs" role="tablist" aria-label="動態切換">
+                                <button type="button" class="feed-tab is-active" data-panel="announcements" aria-selected="true">全校公告</button>
+                                <button type="button" class="feed-tab" data-panel="clubs" aria-selected="false">熱門社團</button>
+                                <button type="button" class="feed-tab" data-panel="events" aria-selected="false">近期活動</button>
+                            </div>
+                        </div>
+
+                        <div class="feed-panels">
+                            <section id="feed-panel-announcements" class="feed-panel is-active" data-panel="announcements">
+                                <div id="pinned-announcements" class="feed-stream-list feed-stream-list--collapsed">
+                                    <div class="loading">
+                                        <div class="spinner"></div>
+                                        <p>載入中...</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section id="feed-panel-clubs" class="feed-panel" data-panel="clubs">
+                                <div id="featured-clubs" class="feed-stream-list feed-stream-list--collapsed">
+                                    <div class="loading">
+                                        <div class="spinner"></div>
+                                        <p>載入中...</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section id="feed-panel-events" class="feed-panel" data-panel="events">
+                                <div id="featured-events" class="feed-stream-list feed-stream-list--collapsed">
+                                    <div class="loading">
+                                        <div class="spinner"></div>
+                                        <p>載入中...</p>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="feed-footer">
+                            <button type="button" id="feed-more-btn" class="btn btn-secondary btn-sm">查看更多</button>
+                        </div>
+                    </section>
+                </main>
+
+                <aside class="home-right-rail">
+                    <section class="card rail-card">
+                        <div class="widget-head widget-head--compact">
+                            <h2 class="widget-title">個人摘要</h2>
+                        </div>
+                        <p class="widget-subtitle">查看你的帳號狀態與近期參與資訊。</p>
+                        <div class="rail-actions">
+                            <a href="pages/profile.html" class="btn btn-primary btn-sm">檢視個人檔案</a>
+                        </div>
+                    </section>
+
+                    <section class="card rail-card">
+                        <div class="widget-head widget-head--compact">
+                            <h2 class="widget-title">即將開始活動</h2>
+                        </div>
+                        <div id="home-upcoming-events-summary" class="widget-list">
+                            <p class="widget-empty">載入中...</p>
+                        </div>
+                    </section>
+
+                    <section class="card rail-card home-widget home-widget--tip" aria-label="使用小建議">
+                        <div class="home-widget__header">
+                            <span class="home-widget__title">使用小建議</span>
+                        </div>
+                        <div class="home-widget__body">
+                            <p class="home-widget__tip">先追蹤常看的社團，回來首頁就能更快找到最新動態。</p>
+                        </div>
+                    </section>
+
+                </aside>
+            </div>
         </div>
-
-        <div style="margin-top: 2rem;">
-            <a href="pages/club-list.html" class="btn btn-primary">瀏覽社團</a>
-            <a href="pages/events.html" class="btn btn-secondary" style="Color: white; background-color: rgba(255,255,255,0.2); margin-left: 1rem;">查看活動</a>
-        </div>
-    </section>
-
-    <div class="container home-container">
-        <div class="home-layout">
-            <aside id="followed-clubs-section" class="home-sidebar">
-                <section class="home-sidebar-card card">
-                    <div class="home-sidebar-card__header">
-                        <div>
-                            <h2 id="followed-clubs-title">我追蹤的社團</h2>
-                            <p id="followed-clubs-subtitle">像訂閱頻道一樣，從左側快速進入你常看的社團。</p>
-                        </div>
-                        <span id="followed-clubs-count" class="badge">載入中</span>
-                    </div>
-                    <div id="followed-clubs-container" class="home-sidebar-list">
-                        <div class="loading">
-                            <div class="spinner"></div>
-                            <p>載入追蹤社團中...</p>
-                        </div>
-                    </div>
-                </section>
-            </aside>
-
-            <main class="home-content">
-                <section style="margin-bottom: 2rem;">
-                    <h2 style="margin-bottom: 1rem;">全校公告</h2>
-                    <div id="pinned-announcements">
-                        <div class="loading">
-                            <div class="spinner"></div>
-                            <p>載入公告中...</p>
-                        </div>
-                    </div>
-                </section>
-
-                <section style="margin-bottom: 4rem;">
-                    <h2 style="text-align: center; margin-bottom: 2rem;">平台特色</h2>
-                    <div class="grid">
-                        <div class="card">
-                            <div class="card-header">📋 社團分類搜尋</div>
-                            <div class="card-body">使用系統預設的分類和熱門標籤，快速篩選符合條件的社團</div>
-                        </div>
-                        <div class="card">
-                            <div class="card-header">📅 活動一覽</div>
-                            <div class="card-body">追蹤社團動態，接收即時活動通知，不錯過任何精彩活動</div>
-                        </div>
-                        <div class="card">
-                            <div class="card-header">💬 線上提問</div>
-                            <div class="card-body">在公開提問板發問，快速找到相似問題的解答</div>
-                        </div>
-                        <div class="card">
-                            <div class="card-header">⭐ 真實評價</div>
-                            <div class="card-body">查看參與者留下的真實評價，作為加入社團的參考</div>
-                        </div>
-                        <div class="card">
-                            <div class="card-header">🗺️ 校園導航</div>
-                            <div class="card-body">在社課地點信息中直接開啟校園地圖，不會迷路</div>
-                        </div>
-                        <div class="card">
-                            <div class="card-header">📱 行事曆同步</div>
-                            <div class="card-body">同步社團活動到Google或Apple行事曆，統一管理行程</div>
-                        </div>
-                    </div>
-                </section>
-
-                <section style="margin-bottom: 4rem;">
-                    <h2 style="margin-bottom: 2rem;">熱門社團</h2>
-                    <div id="featured-clubs" class="grid">
-                        <div class="loading">
-                            <div class="spinner"></div>
-                            <p>載入中...</p>
-                        </div>
-                    </div>
-                </section>
-
-                <section style="margin-bottom: 4rem;">
-                    <h2 style="margin-bottom: 2rem;">近期活動</h2>
-                    <div id="featured-events" class="grid">
-                        <div class="loading">
-                            <div class="spinner"></div>
-                            <p>載入中...</p>
-                        </div>
-                    </div>
-                </section>
-            </main>
-        </div>
-    </div>
     </div>
 
     <footer>
-        <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
+        <p>&copy; 2026 Campus Club Platform</p>
     </footer>
 
     <script src="js/main.js"></script>
