@@ -34,7 +34,8 @@ try {
         __DIR__ . '/database/migrations/2026_04_04_qa_reply_helpful.sql',
         __DIR__ . '/database/migrations/2026_04_09_qa_reply_threads.sql',
         __DIR__ . '/database/migrations/2026_04_19_event_comments.sql',
-        __DIR__ . '/database/migrations/2026_04_19_reviews_unique_user_club.sql'
+        __DIR__ . '/database/migrations/2026_04_19_reviews_unique_user_club.sql',
+        __DIR__ . '/database/migrations/2026_04_22_event_timeline_windows.sql'
     ];
 
     foreach ($files as $file) {

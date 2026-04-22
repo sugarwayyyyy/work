@@ -242,22 +242,23 @@
                             <div id="err-event-name" class="field-error"></div>
                         </div>
                         <div class="form-field admin-span-2">
-                            <label>活動時間區間 <span class="required">*</span></label>
+                            <label>報名時間區間</label>
                             <div class="cad-date-time-grid">
                                 <div>
-                                    <div class="cad-time-caption">開始時間</div>
-                                    <input type="hidden" id="event-date">
+                                    <div class="cad-time-caption">報名開始</div>
+                                    <input type="hidden" id="event-registration-start">
                                     <div class="cad-datetime-split">
-                                        <input type="date" id="event-date-date" required>
-                                        <select id="event-date-hour"></select>
-                                        <select id="event-date-minute">
+                                        <input type="date" id="event-registration-start-date">
+                                        <select id="event-registration-start-hour"></select>
+                                        <select id="event-registration-start-minute">
                                             <option value="00">整點（00）</option>
                                             <option value="30">半點（30）</option>
                                         </select>
                                     </div>
+                                    <div id="err-event-registration-start" class="field-error"></div>
                                 </div>
                                 <div>
-                                    <div class="cad-time-caption">結束時間（目前作為報名截止）</div>
+                                    <div class="cad-time-caption">報名截止</div>
                                     <input type="hidden" id="event-deadline">
                                     <div class="cad-datetime-split">
                                         <input type="date" id="event-deadline-date">
@@ -267,10 +268,42 @@
                                             <option value="30">半點（30）</option>
                                         </select>
                                     </div>
+                                    <div id="err-event-deadline" class="field-error"></div>
                                 </div>
                             </div>
-                            <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點。</small>
-                            <div id="err-event-date" class="field-error"></div>
+                            <small class="cad-help-text">報名開始/截止都可留空；若有填寫，分鐘僅能選整點或半點。</small>
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label>實際活動時間區間 <span class="required">*</span></label>
+                            <div class="cad-date-time-grid">
+                                <div>
+                                    <div class="cad-time-caption">活動開始</div>
+                                    <input type="hidden" id="event-date">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="event-date-date" required>
+                                        <select id="event-date-hour"></select>
+                                        <select id="event-date-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                    <div id="err-event-date" class="field-error"></div>
+                                </div>
+                                <div>
+                                    <div class="cad-time-caption">活動結束</div>
+                                    <input type="hidden" id="event-end-date">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="event-end-date-date">
+                                        <select id="event-end-date-hour"></select>
+                                        <select id="event-end-date-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                    <div id="err-event-end-date" class="field-error"></div>
+                                </div>
+                            </div>
+                            <small class="cad-help-text">活動開始必填；活動結束未填時預設等於活動開始。</small>
                         </div>
                         <div class="form-field">
                             <label for="event-location">地點 <span class="required">*</span></label>
@@ -349,23 +382,23 @@
                             <div id="err-update-event-name" class="field-error"></div>
                         </div>
                         <div class="form-field admin-span-2">
-                            <label>活動時間區間 <span class="required">*</span></label>
+                            <label>報名時間區間</label>
                             <div class="cad-date-time-grid">
                                 <div>
-                                    <div class="cad-time-caption">開始時間</div>
-                                    <input type="hidden" id="update-event-date">
+                                    <div class="cad-time-caption">報名開始</div>
+                                    <input type="hidden" id="update-event-registration-start">
                                     <div class="cad-datetime-split">
-                                        <input type="date" id="update-event-date-date" required>
-                                        <select id="update-event-date-hour"></select>
-                                        <select id="update-event-date-minute">
+                                        <input type="date" id="update-event-registration-start-date">
+                                        <select id="update-event-registration-start-hour"></select>
+                                        <select id="update-event-registration-start-minute">
                                             <option value="00">整點（00）</option>
                                             <option value="30">半點（30）</option>
                                         </select>
                                     </div>
-                                    <div id="err-update-event-date" class="field-error"></div>
+                                    <div id="err-update-event-registration-start" class="field-error"></div>
                                 </div>
                                 <div>
-                                    <div class="cad-time-caption">結束時間（目前作為報名截止）</div>
+                                    <div class="cad-time-caption">報名截止</div>
                                     <input type="hidden" id="update-event-deadline">
                                     <div class="cad-datetime-split">
                                         <input type="date" id="update-event-deadline-date">
@@ -378,7 +411,39 @@
                                     <div id="err-update-event-deadline" class="field-error"></div>
                                 </div>
                             </div>
-                            <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點。</small>
+                            <small class="cad-help-text">報名開始/截止都可留空；若有填寫，分鐘僅能選整點或半點。</small>
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label>實際活動時間區間 <span class="required">*</span></label>
+                            <div class="cad-date-time-grid">
+                                <div>
+                                    <div class="cad-time-caption">活動開始</div>
+                                    <input type="hidden" id="update-event-date">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="update-event-date-date" required>
+                                        <select id="update-event-date-hour"></select>
+                                        <select id="update-event-date-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                    <div id="err-update-event-date" class="field-error"></div>
+                                </div>
+                                <div>
+                                    <div class="cad-time-caption">活動結束</div>
+                                    <input type="hidden" id="update-event-end-date">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="update-event-end-date-date">
+                                        <select id="update-event-end-date-hour"></select>
+                                        <select id="update-event-end-date-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                    <div id="err-update-event-end-date" class="field-error"></div>
+                                </div>
+                            </div>
+                            <small class="cad-help-text">活動開始必填；活動結束未填時預設等於活動開始。</small>
                         </div>
                         <div class="form-field">
                             <label for="update-event-location">地點 <span class="required">*</span></label>

@@ -86,8 +86,12 @@
                                 <h4>活動資訊</h4>
                                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                                     <div>
-                                        <strong>📅 日期時間</strong>
-                                        <p id="event-datetime-detail"></p>
+                                        <strong>🎫 報名期間</strong>
+                                        <p id="event-registration-period"></p>
+                                    </div>
+                                    <div>
+                                        <strong>📅 活動期間</strong>
+                                        <p id="event-time-period"></p>
                                     </div>
                                     <div>
                                         <strong>📍 地點</strong>
@@ -264,9 +268,28 @@
                 return `${y}-${m}-${day} ${hh}:${mm}`;
             };
 
+            const formatFee = (rawValue) => {
+                if (rawValue === null || rawValue === undefined || rawValue === '') {
+                    return '免費';
+                }
+
+                const numeric = Number(rawValue);
+                if (!Number.isFinite(numeric) || numeric <= 0) {
+                    return '免費';
+                }
+
+                const rounded = Math.max(0, Math.round(numeric));
+                return `NT$ ${rounded}`;
+            };
+
+            const registrationStart = event.registration_start || event.published_at || event.created_at || null;
+            const registrationDeadline = event.registration_deadline || null;
+            const eventStart = event.event_date || null;
+            const eventEnd = event.event_end_date || eventStart;
+
             document.getElementById('event-title').textContent = event.event_name;
             document.getElementById('event-club').textContent = event.club_name;
-            document.getElementById('event-date').textContent = PageUtils.formatDate(event.event_date);
+            document.getElementById('event-date').textContent = `${PageUtils.formatDate(eventStart)} ~ ${PageUtils.formatDate(eventEnd)}`;
             document.getElementById('event-location').textContent = event.location;
             const latestEventTime = event.updated_at || event.published_at || event.created_at || null;
             document.getElementById('event-last-updated').textContent = `最新上傳時間：${formatDateTime(latestEventTime)}`;
@@ -286,14 +309,15 @@
             document.getElementById('max-participants').textContent = Number.isFinite(capacity) && capacity > 0
                 ? String(capacity)
                 : '無上限';
-            document.getElementById('event-datetime-detail').textContent = PageUtils.formatDate(event.event_date);
+            document.getElementById('event-registration-period').textContent = `${registrationStart ? formatDateTime(registrationStart) : '未設定'} ~ ${registrationDeadline ? formatDateTime(registrationDeadline) : '未設定'}`;
+            document.getElementById('event-time-period').textContent = `${eventStart ? formatDateTime(eventStart) : '未設定'} ~ ${eventEnd ? formatDateTime(eventEnd) : '未設定'}`;
             document.getElementById('event-location-detail').textContent = event.location;
             document.getElementById('event-club-detail').textContent = event.club_name;
-            document.getElementById('event-fee').textContent = event.fee ? `NT$ ${event.fee}` : '免費';
+            document.getElementById('event-fee').textContent = formatFee(event.fee);
             document.getElementById('event-contact').textContent = event.contact_info || '請聯繫社團幹部';
 
             // 設定活動狀態
-            const eventDate = new Date(event.event_date);
+            const eventDate = new Date(eventEnd || eventStart || '');
             const now = new Date();
             let status = '進行中';
             if (eventDate < now) {
@@ -602,7 +626,7 @@
             const start = toCalendarDate(currentEvent.event_date);
             if (!start) return null;
 
-            const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+            const end = toCalendarDate(currentEvent.event_end_date) || new Date(start.getTime() + 2 * 60 * 60 * 1000);
             return {
                 title: currentEvent.event_name || currentEvent.title || '社團活動',
                 description: currentEvent.description || '',

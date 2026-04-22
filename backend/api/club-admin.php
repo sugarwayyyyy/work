@@ -95,7 +95,15 @@ class ClubAdminAPI {
         $errors = Helper::validateRequired($data, ['club_id', 'event_name', 'event_date', 'location']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
-        if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description', 'location'])) {
+        $eventName = trim((string)($data['event_name'] ?? ''));
+        $description = trim((string)($data['description'] ?? ''));
+        $location = trim((string)($data['location'] ?? ''));
+
+        if (
+            ($eventName !== '' && ContentFilter::containsRestrictedLanguage($eventName))
+            || ($description !== '' && ContentFilter::containsRestrictedLanguageIgnoringUrls($description))
+            || ($location !== '' && ContentFilter::containsRestrictedLanguageAllowingUrls($location))
+        ) {
             Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
         }
 

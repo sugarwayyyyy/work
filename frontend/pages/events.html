@@ -36,7 +36,7 @@
         <div class="filter-card" style="margin-bottom: 2rem;">
             <div class="filter-card__header">
                 <div class="filter-card__title">篩選活動</div>
-                <div class="filter-card__subtitle">可以先搜活動名稱，再用日期、社團與狀態縮小結果。</div>
+                <div class="filter-card__subtitle">可以先搜活動名稱，再用報名/活動時間、社團與狀態縮小結果。</div>
             </div>
             <div class="filter-card__body">
                 <div class="filter-stack">
@@ -62,20 +62,20 @@
 
                     <div class="event-filter-row">
                         <div class="filter-field">
-                            <label for="event-start-from">開始時間</label>
-                            <input type="hidden" id="event-start-from">
+                            <label for="registration-start-from">報名開始（起）</label>
+                            <input type="hidden" id="registration-start-from">
                             <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 0.5rem;">
-                                <input type="date" id="event-start-from-date">
-                                <select id="event-start-from-hour"></select>
-                                <select id="event-start-from-minute">
+                                <input type="date" id="registration-start-from-date">
+                                <select id="registration-start-from-hour"></select>
+                                <select id="registration-start-from-minute">
                                     <option value="00">整點（00）</option>
                                     <option value="30">半點（30）</option>
                                 </select>
                             </div>
-                            <small>填入後會顯示此時間之後的活動，越接近你填的時間會越優先。</small>
+                            <small>填入後會顯示報名開始晚於或等於此時間的活動。</small>
                         </div>
                         <div class="filter-field">
-                            <label for="deadline-to">截止時間</label>
+                            <label for="deadline-to">報名截止（迄）</label>
                             <input type="hidden" id="deadline-to">
                             <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 0.5rem;">
                                 <input type="date" id="deadline-to-date">
@@ -85,7 +85,36 @@
                                     <option value="30">半點（30）</option>
                                 </select>
                             </div>
-                            <small>填入後會顯示報名截止早於此時間的活動，越接近你填的時間會越優先。</small>
+                            <small>填入後會顯示報名截止早於或等於此時間的活動。</small>
+                        </div>
+                    </div>
+
+                    <div class="event-filter-row">
+                        <div class="filter-field">
+                            <label for="event-start-from">活動開始（起）</label>
+                            <input type="hidden" id="event-start-from">
+                            <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 0.5rem;">
+                                <input type="date" id="event-start-from-date">
+                                <select id="event-start-from-hour"></select>
+                                <select id="event-start-from-minute">
+                                    <option value="00">整點（00）</option>
+                                    <option value="30">半點（30）</option>
+                                </select>
+                            </div>
+                            <small>填入後會顯示活動開始晚於或等於此時間的活動。</small>
+                        </div>
+                        <div class="filter-field">
+                            <label for="event-end-to">活動結束（迄）</label>
+                            <input type="hidden" id="event-end-to">
+                            <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 0.5rem;">
+                                <input type="date" id="event-end-to-date">
+                                <select id="event-end-to-hour"></select>
+                                <select id="event-end-to-minute">
+                                    <option value="00">整點（00）</option>
+                                    <option value="30">半點（30）</option>
+                                </select>
+                            </div>
+                            <small>填入後會顯示活動結束早於或等於此時間的活動。</small>
                         </div>
                     </div>
                 </div>
@@ -133,8 +162,10 @@
                 filter: params.get('filter') || '',
                 clubId: params.get('club_id') || params.get('club') || '',
                 categoryId: params.get('category_id') || '',
+                registrationStartFrom: params.get('registration_start_from') || '',
                 eventStartFrom: params.get('event_start_from') || params.get('date_from') || '',
-                deadlineTo: params.get('deadline_to') || params.get('date_to') || ''
+                deadlineTo: params.get('deadline_to') || params.get('date_to') || '',
+                eventEndTo: params.get('event_end_to') || ''
             };
         }
 
@@ -198,6 +229,7 @@
 
             const filters = [
                 { key: 'open', label: '報名中' },
+                { key: 'not_open', label: '尚未開放' },
                 { key: 'closed', label: '已截止' }
             ];
 
@@ -220,18 +252,32 @@
 
         async function loadEvents() {
             try {
+                syncDateTimeFromParts('registration-start-from');
                 syncDateTimeFromParts('event-start-from');
                 syncDateTimeFromParts('deadline-to');
+                syncDateTimeFromParts('event-end-to');
+
+                const registrationStartFrom = document.getElementById('registration-start-from').value;
+                if (registrationStartFrom && !isHalfHourAligned(registrationStartFrom)) {
+                    PageUtils.showAlert('報名開始（起）只能選整點或半點', 'error');
+                    return;
+                }
 
                 const eventStartFrom = document.getElementById('event-start-from').value;
                 if (eventStartFrom && !isHalfHourAligned(eventStartFrom)) {
-                    PageUtils.showAlert('開始時間只能選整點或半點', 'error');
+                    PageUtils.showAlert('活動開始（起）只能選整點或半點', 'error');
                     return;
                 }
 
                 const deadlineTo = document.getElementById('deadline-to').value;
                 if (deadlineTo && !isHalfHourAligned(deadlineTo)) {
-                    PageUtils.showAlert('截止時間只能選整點或半點', 'error');
+                    PageUtils.showAlert('報名截止（迄）只能選整點或半點', 'error');
+                    return;
+                }
+
+                const eventEndTo = document.getElementById('event-end-to').value;
+                if (eventEndTo && !isHalfHourAligned(eventEndTo)) {
+                    PageUtils.showAlert('活動結束（迄）只能選整點或半點', 'error');
                     return;
                 }
 
@@ -240,8 +286,10 @@
                 if (clubFilter) url += `&club_id=${encodeURIComponent(clubFilter)}`;
                 const eventSearch = document.getElementById('event-search').value;
                 if (eventSearch) url += `&search=${encodeURIComponent(eventSearch)}`;
+                if (registrationStartFrom) url += `&registration_start_from=${encodeURIComponent(registrationStartFrom)}`;
                 if (eventStartFrom) url += `&event_start_from=${encodeURIComponent(eventStartFrom)}`;
                 if (deadlineTo) url += `&deadline_to=${encodeURIComponent(deadlineTo)}`;
+                if (eventEndTo) url += `&event_end_to=${encodeURIComponent(eventEndTo)}`;
                 url += `&filter=${encodeURIComponent(selectedFilter)}`;
 
                 const response = await APIClient.get(url);
@@ -266,18 +314,35 @@
                 return;
             }
 
+            const formatDateTime = (value) => {
+                if (!value) return '-';
+                return PageUtils.formatDate(value);
+            };
+
             events.forEach(event => {
-                const eventDate = PageUtils.formatDate(event.event_date);
+                const eventStart = event.event_date;
+                const eventEnd = event.event_end_date || eventStart;
+                const registrationStart = event.registration_start || event.published_at || event.created_at || '';
                 const registrationDeadline = event.registration_deadline ? new Date(event.registration_deadline) : null;
-                const eventDateObj = new Date(event.event_date);
+                const registrationStartDate = registrationStart ? new Date(registrationStart) : null;
+                const eventDateObj = new Date(eventStart);
                 const now = new Date();
-                const capacity = Number(event.capacity) || 0;
                 const registeredCount = Number(event.registered_count) || 0;
-                const isOpen = Number(event.is_registration_open) === 1
-                    && (!registrationDeadline || !Number.isNaN(registrationDeadline.getTime()) && registrationDeadline >= now)
-                    && (!Number.isNaN(eventDateObj.getTime()) && eventDateObj >= now);
-                const statusTagClass = isOpen ? 'tag tag-success' : 'tag tag-warning';
-                const statusTagText = isOpen ? '報名中' : '已截止';
+                const hasStartedRegistration = !registrationStartDate || (!Number.isNaN(registrationStartDate.getTime()) && registrationStartDate <= now);
+                const beforeDeadline = !registrationDeadline || (!Number.isNaN(registrationDeadline.getTime()) && registrationDeadline >= now);
+                const beforeEventStart = !Number.isNaN(eventDateObj.getTime()) && eventDateObj >= now;
+                const registrationEnabled = Number(event.is_registration_open) === 1;
+
+                let statusTagClass = 'tag tag-warning';
+                let statusTagText = '已截止';
+                const isNotOpen = beforeEventStart && (!registrationEnabled || !hasStartedRegistration);
+                if (isNotOpen) {
+                    statusTagClass = 'tag';
+                    statusTagText = '未開放';
+                } else if (beforeDeadline && beforeEventStart) {
+                    statusTagClass = 'tag tag-success';
+                    statusTagText = '報名中';
+                }
                 const tagsHtml = event.tags && event.tags.length > 0 
                     ? event.tags.map(tag => `<span class="tag tag-primary" style="cursor: default;">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`).join('')
                     : '';
@@ -299,7 +364,8 @@
                         </div>
                         <div style="margin: 1rem 0;">
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; font-size: 0.95rem;">
-                                <div>📅 ${eventDate}</div>
+                                <div>🎫 報名：${registrationStart ? formatDateTime(registrationStart) : '未設定'} ~ ${event.registration_deadline ? formatDateTime(event.registration_deadline) : '未設定'}</div>
+                                <div>📅 活動：${formatDateTime(eventStart)} ~ ${formatDateTime(eventEnd)}</div>
                                 <div>📍 ${safeLocation}</div>
                                 <div>👥 已有 ${registeredCount} 人報名</div>
                                 <div>${event.capacity > 0 ? '容納人數: ' + event.capacity : '無容納限制'}</div>
@@ -391,14 +457,22 @@
             clubSelect.disabled = true;
             clubSelect.innerHTML = '<option value="">請先選擇類別</option>';
             document.getElementById('event-search').value = '';
+            document.getElementById('registration-start-from-date').value = '';
             document.getElementById('event-start-from-date').value = '';
             document.getElementById('deadline-to-date').value = '';
+            document.getElementById('event-end-to-date').value = '';
+            document.getElementById('registration-start-from-hour').value = '00';
             document.getElementById('event-start-from-hour').value = '00';
             document.getElementById('deadline-to-hour').value = '00';
+            document.getElementById('event-end-to-hour').value = '00';
+            document.getElementById('registration-start-from-minute').value = '00';
             document.getElementById('event-start-from-minute').value = '00';
             document.getElementById('deadline-to-minute').value = '00';
+            document.getElementById('event-end-to-minute').value = '00';
+            document.getElementById('registration-start-from').value = '';
             document.getElementById('event-start-from').value = '';
             document.getElementById('deadline-to').value = '';
+            document.getElementById('event-end-to').value = '';
             selectedFilter = 'open';
             renderEventFilters();
             currentPage = 1;
@@ -409,7 +483,7 @@
             const params = getEventUrlParams();
 
             document.getElementById('event-search').value = params.search;
-            selectedFilter = params.filter === 'closed' ? 'closed' : 'open';
+            selectedFilter = ['open', 'not_open', 'closed'].includes(params.filter) ? params.filter : 'open';
             renderEventFilters();
 
             if (params.categoryId) {
@@ -420,25 +494,21 @@
                 }
             }
 
-            if (params.eventStartFrom) {
-                const date = new Date(params.eventStartFrom.replace('T', ' '));
+            const setDateTimeFilterFromUrl = (baseId, value) => {
+                if (!value) return;
+                const date = new Date(value.replace('T', ' '));
                 if (!Number.isNaN(date.getTime())) {
-                    document.getElementById('event-start-from-date').value = date.toISOString().slice(0, 10);
-                    document.getElementById('event-start-from-hour').value = String(date.getHours()).padStart(2, '0');
-                    document.getElementById('event-start-from-minute').value = String(date.getMinutes()).padStart(2, '0');
-                    syncDateTimeFromParts('event-start-from');
+                    document.getElementById(`${baseId}-date`).value = date.toISOString().slice(0, 10);
+                    document.getElementById(`${baseId}-hour`).value = String(date.getHours()).padStart(2, '0');
+                    document.getElementById(`${baseId}-minute`).value = String(date.getMinutes()).padStart(2, '0');
+                    syncDateTimeFromParts(baseId);
                 }
-            }
+            };
 
-            if (params.deadlineTo) {
-                const date = new Date(params.deadlineTo.replace('T', ' '));
-                if (!Number.isNaN(date.getTime())) {
-                    document.getElementById('deadline-to-date').value = date.toISOString().slice(0, 10);
-                    document.getElementById('deadline-to-hour').value = String(date.getHours()).padStart(2, '0');
-                    document.getElementById('deadline-to-minute').value = String(date.getMinutes()).padStart(2, '0');
-                    syncDateTimeFromParts('deadline-to');
-                }
-            }
+            setDateTimeFilterFromUrl('registration-start-from', params.registrationStartFrom);
+            setDateTimeFilterFromUrl('event-start-from', params.eventStartFrom);
+            setDateTimeFilterFromUrl('deadline-to', params.deadlineTo);
+            setDateTimeFilterFromUrl('event-end-to', params.eventEndTo);
         }
 
         document.getElementById('club-category-filter').addEventListener('change', async (event) => {
@@ -464,7 +534,7 @@
         });
 
         window.addEventListener('DOMContentLoaded', function() {
-            ['event-start-from', 'deadline-to'].forEach(baseId => {
+            ['registration-start-from', 'event-start-from', 'deadline-to', 'event-end-to'].forEach(baseId => {
                 initHourSelect(`${baseId}-hour`);
                 const dateInput = document.getElementById(`${baseId}-date`);
                 const hourSelect = document.getElementById(`${baseId}-hour`);

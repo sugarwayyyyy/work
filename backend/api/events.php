@@ -22,6 +22,120 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 class EventAPI {
 
+    private static function hasEventColumn($columnName) {
+        static $cache = [];
+        $key = (string)$columnName;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+
+        $row = Database::getInstance()->fetchOne(
+            'SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = "events" AND COLUMN_NAME = ? LIMIT 1',
+            [$key]
+        );
+
+        $cache[$key] = (int)($row['cnt'] ?? 0) > 0;
+        return $cache[$key];
+    }
+
+    private static function normalizeFeeValue($value, $fallback = 0) {
+        if ($value === null || $value === '') {
+            return (int)$fallback;
+        }
+
+        if (!is_numeric($value)) {
+            return (int)$fallback;
+        }
+
+        return max(0, (int)round((float)$value));
+    }
+
+    private static function toTimestampOrNull($value) {
+        $raw = trim((string)$value);
+        if ($raw === '') {
+            return null;
+        }
+
+        $timestamp = strtotime(str_replace('T', ' ', $raw));
+        return $timestamp === false ? null : $timestamp;
+    }
+
+    private static function normalizeOptionalDatetime($value, $endOfDay = false) {
+        $raw = trim((string)$value);
+        if ($raw === '') {
+            return null;
+        }
+
+        return self::normalizeDatetimeInput($raw, $endOfDay);
+    }
+
+    private static function getRegistrationStartTimestamp($row) {
+        $timestamp = self::toTimestampOrNull($row['registration_start'] ?? null);
+        if ($timestamp !== null) {
+            return $timestamp;
+        }
+
+        return self::toTimestampOrNull($row['published_at'] ?? ($row['created_at'] ?? null));
+    }
+
+    private static function getRegistrationDeadlineTimestamp($row) {
+        return self::toTimestampOrNull($row['registration_deadline'] ?? null);
+    }
+
+    private static function getEventStartTimestamp($row) {
+        return self::toTimestampOrNull($row['event_date'] ?? null);
+    }
+
+    private static function getEventEndTimestamp($row) {
+        $timestamp = self::toTimestampOrNull($row['event_end_date'] ?? null);
+        if ($timestamp !== null) {
+            return $timestamp;
+        }
+
+        return self::getEventStartTimestamp($row);
+    }
+
+    private static function hydrateEventTimelineFields(&$row) {
+        if (!is_array($row)) {
+            return;
+        }
+
+        if (empty($row['registration_start'])) {
+            $row['registration_start'] = $row['published_at'] ?? ($row['created_at'] ?? null);
+        }
+
+        if (empty($row['event_end_date'])) {
+            $row['event_end_date'] = $row['event_date'] ?? null;
+        }
+    }
+
+    private static function validateEventTimelineOrError($eventStartRaw, $registrationStartRaw, $registrationDeadlineRaw, $eventEndRaw) {
+        $eventStartTs = self::toTimestampOrNull($eventStartRaw);
+        $registrationStartTs = self::toTimestampOrNull($registrationStartRaw);
+        $registrationDeadlineTs = self::toTimestampOrNull($registrationDeadlineRaw);
+        $eventEndTs = self::toTimestampOrNull($eventEndRaw);
+
+        if ($eventStartTs === null) {
+            Helper::error('活動開始時間無效', 400);
+        }
+
+        if ($registrationStartTs !== null && $registrationDeadlineTs !== null && $registrationStartTs > $registrationDeadlineTs) {
+            Helper::error('報名開始不可晚於報名截止', 400);
+        }
+
+        if ($registrationStartTs !== null && $registrationStartTs > $eventStartTs) {
+            Helper::error('報名開始不可晚於活動開始', 400);
+        }
+
+        if ($registrationDeadlineTs !== null && $registrationDeadlineTs > $eventStartTs) {
+            Helper::error('報名截止不可晚於活動開始', 400);
+        }
+
+        if ($eventEndTs !== null && $eventEndTs < $eventStartTs) {
+            Helper::error('活動結束不可早於活動開始', 400);
+        }
+    }
+
     private static function splitSearchTokens($search) {
         $text = trim((string)$search);
         if ($text === '') {
@@ -56,9 +170,15 @@ class EventAPI {
 
     private static function isOpenEventRow($row) {
         $isOpen = (int)($row['is_registration_open'] ?? 0) === 1;
-        $registrationDeadline = !empty($row['registration_deadline']) ? strtotime((string)$row['registration_deadline']) : false;
-        $eventDate = !empty($row['event_date']) ? strtotime((string)$row['event_date']) : false;
-        return $isOpen && ($registrationDeadline === false || $registrationDeadline >= time()) && ($eventDate === false || $eventDate >= time());
+        $now = time();
+        $registrationStart = self::getRegistrationStartTimestamp($row);
+        $registrationDeadline = self::getRegistrationDeadlineTimestamp($row);
+        $eventStart = self::getEventStartTimestamp($row);
+
+        return $isOpen
+            && ($registrationStart === null || $registrationStart <= $now)
+            && ($registrationDeadline === null || $registrationDeadline >= $now)
+            && ($eventStart === null || $eventStart >= $now);
     }
 
     private static function getEventStatusLabel($row) {
@@ -80,7 +200,9 @@ class EventAPI {
             (string)($row['event_name'] ?? ''),
             (string)($row['description'] ?? ''),
             (string)($row['location'] ?? ''),
+            (string)($row['registration_start'] ?? ''),
             (string)($row['event_date'] ?? ''),
+            (string)($row['event_end_date'] ?? ''),
             (string)($row['registration_deadline'] ?? ''),
             (string)($clubName ?? ''),
             (string)($categoryName ?? ''),
@@ -168,7 +290,20 @@ class EventAPI {
         $scoreParams = [];
         $parts = [];
 
-        $searchBlob = "CONCAT_WS(' ', events.event_name, events.description, events.location, DATE_FORMAT(events.event_date, '%Y-%m-%d %H:%i'), DATE_FORMAT(events.registration_deadline, '%Y-%m-%d %H:%i'), CASE WHEN events.is_registration_open = 1 AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW() THEN '報名中' ELSE '已截止' END, IFNULL((SELECT c.club_name FROM clubs c WHERE c.club_id = events.club_id LIMIT 1), ''), IFNULL((SELECT cc.category_name FROM clubs c LEFT JOIN club_categories cc ON cc.category_id = c.category_id WHERE c.club_id = events.club_id LIMIT 1), ''), IFNULL((SELECT GROUP_CONCAT(t.tag_name SEPARATOR ' ') FROM event_tag_relations etr JOIN club_tags t ON t.tag_id = etr.tag_id WHERE etr.event_id = events.event_id), ''))";
+        $hasRegistrationStart = self::hasEventColumn('registration_start');
+        $hasEventEndDate = self::hasEventColumn('event_end_date');
+        $openExpr = 'events.is_registration_open = 1'
+            . ($hasRegistrationStart ? ' AND (events.registration_start IS NULL OR events.registration_start <= NOW())' : '')
+            . ' AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW()';
+        $closedExpr = 'events.is_registration_open = 0'
+            . ($hasRegistrationStart ? ' OR (events.registration_start IS NOT NULL AND events.registration_start > NOW())' : '')
+            . ' OR (events.registration_deadline IS NOT NULL AND events.registration_deadline < NOW()) OR events.event_date < NOW()';
+
+        $searchBlob = "CONCAT_WS(' ', events.event_name, events.description, events.location"
+            . ($hasRegistrationStart ? ", DATE_FORMAT(events.registration_start, '%Y-%m-%d %H:%i')" : '')
+            . ", DATE_FORMAT(events.event_date, '%Y-%m-%d %H:%i')"
+            . ($hasEventEndDate ? ", DATE_FORMAT(events.event_end_date, '%Y-%m-%d %H:%i')" : '')
+            . ", DATE_FORMAT(events.registration_deadline, '%Y-%m-%d %H:%i'), CASE WHEN " . $openExpr . " THEN '報名中' ELSE '已截止' END, IFNULL((SELECT c.club_name FROM clubs c WHERE c.club_id = events.club_id LIMIT 1), ''), IFNULL((SELECT cc.category_name FROM clubs c LEFT JOIN club_categories cc ON cc.category_id = c.category_id WHERE c.club_id = events.club_id LIMIT 1), ''), IFNULL((SELECT GROUP_CONCAT(t.tag_name SEPARATOR ' ') FROM event_tag_relations etr JOIN club_tags t ON t.tag_id = etr.tag_id WHERE etr.event_id = events.event_id), ''))";
 
         $phraseLike = '%' . $query . '%';
         $parts[] = '(CASE WHEN events.event_name LIKE ? THEN 40 ELSE 0 END)';
@@ -179,17 +314,25 @@ class EventAPI {
         $scoreParams[] = $phraseLike;
         $parts[] = '(CASE WHEN DATE_FORMAT(events.event_date, "%Y-%m-%d %H:%i") LIKE ? THEN 14 ELSE 0 END)';
         $scoreParams[] = $phraseLike;
+        if ($hasEventEndDate) {
+            $parts[] = '(CASE WHEN DATE_FORMAT(events.event_end_date, "%Y-%m-%d %H:%i") LIKE ? THEN 10 ELSE 0 END)';
+            $scoreParams[] = $phraseLike;
+        }
+        if ($hasRegistrationStart) {
+            $parts[] = '(CASE WHEN DATE_FORMAT(events.registration_start, "%Y-%m-%d %H:%i") LIKE ? THEN 10 ELSE 0 END)';
+            $scoreParams[] = $phraseLike;
+        }
         $parts[] = '(CASE WHEN DATE_FORMAT(events.registration_deadline, "%Y-%m-%d %H:%i") LIKE ? THEN 10 ELSE 0 END)';
         $scoreParams[] = $phraseLike;
         $parts[] = '(CASE WHEN ' . $searchBlob . ' LIKE ? THEN 18 ELSE 0 END)';
         $scoreParams[] = $phraseLike;
 
         if (mb_strpos($query, '報名中') !== false || mb_strpos($query, '開放報名') !== false || mb_strpos($query, 'open') !== false) {
-            $parts[] = '(CASE WHEN events.is_registration_open = 1 AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW() THEN 16 ELSE 0 END)';
+            $parts[] = '(CASE WHEN ' . $openExpr . ' THEN 16 ELSE 0 END)';
         }
 
         if (mb_strpos($query, '已截止') !== false || mb_strpos($query, '截止') !== false || mb_strpos($query, 'closed') !== false) {
-            $parts[] = '(CASE WHEN events.is_registration_open = 0 OR (events.registration_deadline IS NOT NULL AND events.registration_deadline < NOW()) OR events.event_date < NOW() THEN 16 ELSE 0 END)';
+            $parts[] = '(CASE WHEN ' . $closedExpr . ' THEN 16 ELSE 0 END)';
         }
 
         foreach ($terms as $term) {
@@ -207,6 +350,14 @@ class EventAPI {
             $scoreParams[] = $termLike;
             $parts[] = '(CASE WHEN DATE_FORMAT(events.event_date, "%Y-%m-%d %H:%i") LIKE ? THEN 8 ELSE 0 END)';
             $scoreParams[] = $termLike;
+            if ($hasEventEndDate) {
+                $parts[] = '(CASE WHEN DATE_FORMAT(events.event_end_date, "%Y-%m-%d %H:%i") LIKE ? THEN 6 ELSE 0 END)';
+                $scoreParams[] = $termLike;
+            }
+            if ($hasRegistrationStart) {
+                $parts[] = '(CASE WHEN DATE_FORMAT(events.registration_start, "%Y-%m-%d %H:%i") LIKE ? THEN 6 ELSE 0 END)';
+                $scoreParams[] = $termLike;
+            }
             $parts[] = '(CASE WHEN DATE_FORMAT(events.registration_deadline, "%Y-%m-%d %H:%i") LIKE ? THEN 6 ELSE 0 END)';
             $scoreParams[] = $termLike;
             $parts[] = '(CASE WHEN ' . $searchBlob . ' LIKE ? THEN 8 ELSE 0 END)';
@@ -354,6 +505,37 @@ class EventAPI {
         }
     }
 
+    private static function hasRestrictedEventContent($data, $partial = false) {
+        if (isset($data['event_name'])) {
+            $eventName = trim((string)$data['event_name']);
+            if ($eventName !== '' && ContentFilter::containsRestrictedLanguage($eventName)) {
+                return true;
+            }
+        } elseif (!$partial) {
+            return true;
+        }
+
+        if (isset($data['description'])) {
+            $description = trim((string)$data['description']);
+            if ($description !== '' && ContentFilter::containsRestrictedLanguageIgnoringUrls($description)) {
+                return true;
+            }
+        } elseif (!$partial) {
+            return true;
+        }
+
+        if (isset($data['location'])) {
+            $location = trim((string)$data['location']);
+            if ($location !== '' && ContentFilter::containsRestrictedLanguageAllowingUrls($location)) {
+                return true;
+            }
+        } elseif (!$partial) {
+            return true;
+        }
+
+        return false;
+    }
+
     private static function notifyFollowersForNewEvent($event_id, $club_id, $event_name) {
         $followers = Database::getInstance()->fetchAll(
             'SELECT user_id FROM club_followers WHERE club_id = ? AND is_subscribing_notifications = 1',
@@ -380,6 +562,16 @@ class EventAPI {
      */
     public static function getEvents() {
         try {
+            $hasRegistrationStart = self::hasEventColumn('registration_start');
+            $hasEventEndDate = self::hasEventColumn('event_end_date');
+            $openExpr = '(events.is_registration_open = 1'
+                . ($hasRegistrationStart ? ' AND (events.registration_start IS NULL OR events.registration_start <= NOW())' : '')
+                . ' AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW())';
+            $notOpenExpr = '((events.is_registration_open = 0'
+                . ($hasRegistrationStart ? ' OR (events.registration_start IS NOT NULL AND events.registration_start > NOW())' : '')
+                . ') AND events.event_date >= NOW())';
+            $closedExpr = '((events.registration_deadline IS NOT NULL AND events.registration_deadline < NOW()) OR events.event_date < NOW())';
+
             $club_id_raw = $_GET['club_id'] ?? ($_GET['club'] ?? null);
             $club_id = null;
             $club_keyword = null;
@@ -393,8 +585,10 @@ class EventAPI {
             $status = $_GET['status'] ?? 'published';
             $search = $_GET['search'] ?? '';
             $filter = strtolower($_GET['filter'] ?? 'open');
+            $registration_start_from = $_GET['registration_start_from'] ?? null;
             $event_start_from = $_GET['event_start_from'] ?? ($_GET['date_from'] ?? null);
             $deadline_to = $_GET['deadline_to'] ?? ($_GET['date_to'] ?? null);
+            $event_end_to = $_GET['event_end_to'] ?? null;
             $min_remaining = isset($_GET['min_remaining']) && $_GET['min_remaining'] !== ''
                 ? (int)$_GET['min_remaining']
                 : null;
@@ -424,16 +618,28 @@ class EventAPI {
                 $params[] = "%$club_keyword%";
             }
 
+            if ($registration_start_from) {
+                self::validateHalfHourField($registration_start_from, '報名開始只能選整點或半點', true);
+                $conditions[] = 'COALESCE(events.registration_start, events.published_at, events.created_at) >= ?';
+                $params[] = self::normalizeDatetimeInput($registration_start_from, false);
+            }
+
             if ($event_start_from) {
-                self::validateHalfHourField($event_start_from, '開始時間只能選整點或半點', true);
+                self::validateHalfHourField($event_start_from, '活動開始只能選整點或半點', true);
                 $conditions[] = 'events.event_date >= ?';
                 $params[] = self::normalizeDatetimeInput($event_start_from, false);
             }
 
             if ($deadline_to) {
-                self::validateHalfHourField($deadline_to, '截止時間只能選整點或半點', true);
+                self::validateHalfHourField($deadline_to, '報名截止只能選整點或半點', true);
                 $conditions[] = 'events.registration_deadline <= ?';
                 $params[] = self::normalizeDatetimeInput($deadline_to, true);
+            }
+
+            if ($event_end_to) {
+                self::validateHalfHourField($event_end_to, '活動結束只能選整點或半點', true);
+                $conditions[] = 'COALESCE(events.event_end_date, events.event_date) <= ?';
+                $params[] = self::normalizeDatetimeInput($event_end_to, true);
             }
 
             if ($min_remaining !== null) {
@@ -442,9 +648,11 @@ class EventAPI {
             }
 
             if ($filter === 'open') {
-                $conditions[] = '(events.is_registration_open = 1 AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW())';
+                $conditions[] = $openExpr;
+            } elseif ($filter === 'not_open') {
+                $conditions[] = $notOpenExpr;
             } elseif ($filter === 'closed') {
-                $conditions[] = '(events.is_registration_open = 0 OR (events.registration_deadline IS NOT NULL AND events.registration_deadline < NOW()) OR events.event_date < NOW())';
+                $conditions[] = $closedExpr;
             }
 
             if ($min_fee !== null) {
@@ -469,6 +677,11 @@ class EventAPI {
 
             $orderParts = [];
             $orderParams = [];
+            if ($registration_start_from) {
+                $orderParts[] = 'ABS(TIMESTAMPDIFF(SECOND, COALESCE(registration_start, published_at, created_at), ?)) ASC';
+                $orderParams[] = str_replace('T', ' ', $registration_start_from) . (strlen($registration_start_from) <= 10 ? ' 00:00:00' : ':00');
+            }
+
             if ($event_start_from) {
                 $orderParts[] = 'ABS(TIMESTAMPDIFF(SECOND, event_date, ?)) ASC';
                 $orderParams[] = str_replace('T', ' ', $event_start_from) . (strlen($event_start_from) <= 10 ? ' 00:00:00' : ':00');
@@ -477,6 +690,11 @@ class EventAPI {
             if ($deadline_to) {
                 $orderParts[] = 'ABS(TIMESTAMPDIFF(SECOND, COALESCE(registration_deadline, event_date), ?)) ASC';
                 $orderParams[] = str_replace('T', ' ', $deadline_to) . (strlen($deadline_to) <= 10 ? ' 23:59:59' : ':59');
+            }
+
+            if ($event_end_to) {
+                $orderParts[] = 'ABS(TIMESTAMPDIFF(SECOND, COALESCE(event_end_date, event_date), ?)) ASC';
+                $orderParams[] = str_replace('T', ' ', $event_end_to) . (strlen($event_end_to) <= 10 ? ' 23:59:59' : ':59');
             }
 
             $orderParts[] = $filter === 'closed' ? 'events.event_date DESC' : 'events.event_date ASC';
@@ -499,6 +717,7 @@ class EventAPI {
                 $stmt->execute();
                 $result = $stmt->get_result();
                 while ($row = $result->fetch_assoc()) {
+                    self::hydrateEventTimelineFields($row);
                     $registration = Database::getInstance()->fetchOne(
                         'SELECT COUNT(*) as count FROM event_registrations WHERE event_id = ?',
                         [$row['event_id']]
@@ -553,6 +772,7 @@ class EventAPI {
                 $result = $stmt->get_result();
 
                 while ($row = $result->fetch_assoc()) {
+                    self::hydrateEventTimelineFields($row);
                     $registration = Database::getInstance()->fetchOne(
                         'SELECT COUNT(*) as count FROM event_registrations WHERE event_id = ?',
                         [$row['event_id']]
@@ -568,6 +788,7 @@ class EventAPI {
                         [$event['club_id']]
                     );
                     $event['club_name'] = $club['club_name'] ?? '';
+                    self::hydrateEventTimelineFields($event);
 
                     $tags = Database::getInstance()->fetchAll(
                         'SELECT t.* FROM club_tags t
@@ -661,6 +882,8 @@ class EventAPI {
                 [$event['club_id']]
             );
             $event['club'] = $club;
+            $event['club_name'] = $club['club_name'] ?? '';
+            self::hydrateEventTimelineFields($event);
             
             // 取得標籤
             $tags = Database::getInstance()->fetchAll(
@@ -727,12 +950,22 @@ class EventAPI {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
 
-            if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description', 'location'])) {
+            if (self::hasRestrictedEventContent($data, false)) {
                 Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
             }
             
             self::validateHalfHourField($data['event_date'] ?? '', '舉辦日期與時間只能選整點或半點', true);
+            self::validateHalfHourField($data['registration_start'] ?? '', '報名開始只能選整點或半點', false);
             self::validateHalfHourField($data['registration_deadline'] ?? '', '報名截止只能選整點或半點', false);
+            self::validateHalfHourField($data['event_end_date'] ?? '', '活動結束只能選整點或半點', false);
+
+            self::validateEventTimelineOrError(
+                $data['event_date'] ?? '',
+                $data['registration_start'] ?? '',
+                $data['registration_deadline'] ?? '',
+                $data['event_end_date'] ?? ''
+            );
+
             // 檢查用戶權限
             $member = Database::getInstance()->fetchOne(
                 'SELECT * FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "director", "public_relations", "treasurer")',
@@ -742,20 +975,45 @@ class EventAPI {
             if (!$member && !Auth::isAdmin()) {
                 Helper::error('您無權限發布活動', 403);
             }
+
+            $hasRegistrationStart = self::hasEventColumn('registration_start');
+            $hasEventEndDate = self::hasEventColumn('event_end_date');
+            $eventStart = self::normalizeDatetimeInput($data['event_date'] ?? '', false);
+            $registrationStart = self::normalizeOptionalDatetime($data['registration_start'] ?? '', false);
+            $registrationDeadline = self::normalizeOptionalDatetime($data['registration_deadline'] ?? '', false);
+            $eventEndDate = self::normalizeOptionalDatetime($data['event_end_date'] ?? '', false);
+
+            if ($registrationStart === null) {
+                $registrationStart = date('Y-m-d H:i:s');
+            }
+
+            if ($eventEndDate === null) {
+                $eventEndDate = $eventStart;
+            }
             
-            $event_id = dbInsert('events', [
+            $insertData = [
                 'club_id' => $data['club_id'],
                 'event_name' => $data['event_name'],
                 'description' => $data['description'],
-                'event_date' => $data['event_date'],
+                'event_date' => $eventStart,
                 'location' => $data['location'],
                 'capacity' => $data['capacity'] ?? 0,
-                'fee' => $data['fee'] ?? 0,
-                'registration_deadline' => $data['registration_deadline'] ?? null,
+                'fee' => self::normalizeFeeValue($data['fee'] ?? 0, 0),
+                'registration_deadline' => $registrationDeadline,
                 'event_status' => 'published',
                 'is_registration_open' => $data['is_registration_open'] ?? false,
                 'published_at' => date('Y-m-d H:i:s')
-            ]);
+            ];
+
+            if ($hasRegistrationStart) {
+                $insertData['registration_start'] = $registrationStart;
+            }
+
+            if ($hasEventEndDate) {
+                $insertData['event_end_date'] = $eventEndDate;
+            }
+
+            $event_id = dbInsert('events', $insertData);
             
             if (!$event_id) {
                 Helper::error('建立活動失敗', 500);
@@ -823,7 +1081,7 @@ class EventAPI {
                 Helper::error('您無權限編輯此活動', 403);
             }
 
-            if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description', 'location'])) {
+            if (self::hasRestrictedEventContent($data, true)) {
                 Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
             }
 
@@ -831,22 +1089,61 @@ class EventAPI {
                 self::validateHalfHourField($data['event_date'], '日期只能選整點或半點', true);
             }
 
+            if (isset($data['registration_start'])) {
+                self::validateHalfHourField($data['registration_start'], '報名開始只能選整點或半點', false);
+            }
+
             if (isset($data['registration_deadline'])) {
                 self::validateHalfHourField($data['registration_deadline'], '報名截止只能選整點或半點', false);
             }
+
+            if (isset($data['event_end_date'])) {
+                self::validateHalfHourField($data['event_end_date'], '活動結束只能選整點或半點', false);
+            }
+
+            $nextEventDateRaw = $data['event_date'] ?? $event['event_date'];
+            $nextRegistrationStartRaw = array_key_exists('registration_start', $data)
+                ? $data['registration_start']
+                : ($event['registration_start'] ?? ($event['published_at'] ?? ($event['created_at'] ?? '')));
+            $nextRegistrationDeadlineRaw = array_key_exists('registration_deadline', $data)
+                ? $data['registration_deadline']
+                : ($event['registration_deadline'] ?? '');
+            $nextEventEndRaw = array_key_exists('event_end_date', $data)
+                ? $data['event_end_date']
+                : ($event['event_end_date'] ?? ($event['event_date'] ?? ''));
+
+            self::validateEventTimelineOrError(
+                $nextEventDateRaw,
+                $nextRegistrationStartRaw,
+                $nextRegistrationDeadlineRaw,
+                $nextEventEndRaw
+            );
+
+            $hasRegistrationStart = self::hasEventColumn('registration_start');
+            $hasEventEndDate = self::hasEventColumn('event_end_date');
 
             // 更新活動信息
             $update_data = [
                 'event_name' => $data['event_name'] ?? $event['event_name'],
                 'description' => $data['description'] ?? $event['description'],
-                'event_date' => $data['event_date'] ?? $event['event_date'],
+                'event_date' => self::normalizeDatetimeInput($nextEventDateRaw, false),
                 'location' => $data['location'] ?? $event['location'],
                 'capacity' => $data['capacity'] ?? $event['capacity'],
-                'fee' => $data['fee'] ?? $event['fee'],
-                'registration_deadline' => $data['registration_deadline'] ?? $event['registration_deadline'],
+                'fee' => array_key_exists('fee', $data)
+                    ? self::normalizeFeeValue($data['fee'], $event['fee'] ?? 0)
+                    : self::normalizeFeeValue($event['fee'] ?? 0, 0),
+                'registration_deadline' => self::normalizeOptionalDatetime($nextRegistrationDeadlineRaw, false),
                 'is_registration_open' => $data['is_registration_open'] ?? $event['is_registration_open'],
                 'updated_at' => date('Y-m-d H:i:s')
             ];
+
+            if ($hasRegistrationStart) {
+                $update_data['registration_start'] = self::normalizeOptionalDatetime($nextRegistrationStartRaw, false);
+            }
+
+            if ($hasEventEndDate) {
+                $update_data['event_end_date'] = self::normalizeOptionalDatetime($nextEventEndRaw, false);
+            }
 
             if (isset($data['poster_path'])) {
                 $update_data['poster_path'] = $data['poster_path'];
@@ -924,12 +1221,31 @@ class EventAPI {
                 Helper::error('活動不存在', 404);
             }
 
-            if (strtotime((string)$event['event_date']) <= time()) {
+            self::hydrateEventTimelineFields($event);
+            $now = time();
+            $eventStartTs = self::getEventStartTimestamp($event);
+            $eventEndTs = self::getEventEndTimestamp($event);
+            $registrationStartTs = self::getRegistrationStartTimestamp($event);
+            $registrationDeadlineTs = self::getRegistrationDeadlineTimestamp($event);
+
+            if ($eventEndTs !== null && $eventEndTs <= $now) {
                 Helper::error('活動已結束，無法報名', 400);
+            }
+
+            if ($eventStartTs !== null && $eventStartTs <= $now) {
+                Helper::error('活動已開始，無法報名', 400);
             }
             
             if (!$event['is_registration_open']) {
                 Helper::error('此活動不開放報名', 400);
+            }
+
+            if ($registrationStartTs !== null && $registrationStartTs > $now) {
+                Helper::error('尚未到報名開始時間', 400);
+            }
+
+            if ($registrationDeadlineTs !== null && $registrationDeadlineTs < $now) {
+                Helper::error('報名已截止', 400);
             }
             
             // 檢查是否已報名
@@ -985,7 +1301,7 @@ class EventAPI {
 
         try {
             $event = Database::getInstance()->fetchOne(
-                'SELECT event_id, event_date FROM events WHERE event_id = ?',
+                'SELECT * FROM events WHERE event_id = ?',
                 [$event_id]
             );
 
@@ -993,7 +1309,9 @@ class EventAPI {
                 Helper::error('活動不存在', 404);
             }
 
-            if (strtotime((string)$event['event_date']) <= time()) {
+            self::hydrateEventTimelineFields($event);
+            $eventEndTs = self::getEventEndTimestamp($event);
+            if ($eventEndTs !== null && $eventEndTs <= time()) {
                 Helper::error('活動已結束，無法取消報名', 400);
             }
 
@@ -1235,7 +1553,7 @@ class EventAPI {
             }
 
             $event = Database::getInstance()->fetchOne(
-                'SELECT event_id, event_date FROM events WHERE event_id = ?',
+                'SELECT * FROM events WHERE event_id = ?',
                 [$data['event_id']]
             );
 
@@ -1243,7 +1561,9 @@ class EventAPI {
                 Helper::error('活動不存在', 404);
             }
 
-            if (strtotime((string)$event['event_date']) >= time()) {
+            self::hydrateEventTimelineFields($event);
+            $eventEndTs = self::getEventEndTimestamp($event);
+            if ($eventEndTs === null || $eventEndTs >= time()) {
                 Helper::error('活動尚未結束，需參與完成後才能評論', 403);
             }
 

@@ -186,6 +186,18 @@ class ContentFilter {
         return self::containsRestrictedLanguage($withoutUrls);
     }
 
+    public static function containsRestrictedLanguageIgnoringUrls($text) {
+        $raw = (string)$text;
+        if (trim($raw) === '') {
+            return false;
+        }
+
+        $withoutUrls = preg_replace('/https?:\/\/\S+|www\.\S+/i', ' ', $raw);
+        $withoutUrls = $withoutUrls === null ? $raw : $withoutUrls;
+
+        return self::containsRestrictedLanguage($withoutUrls);
+    }
+
     public static function isGoogleMapsUrl($text) {
         $raw = trim((string)$text);
         if ($raw === '') {

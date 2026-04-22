@@ -59,10 +59,36 @@
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             tomorrow.setHours(14, 0, 0, 0);
+            const twoHoursLater = new Date(tomorrow.getTime() + 2 * 60 * 60 * 1000);
+            const regDeadline = new Date(tomorrow.getTime() - 2 * 60 * 60 * 1000);
+            const now = new Date();
+            now.setMinutes(now.getMinutes() >= 30 ? 30 : 0, 0, 0);
             const pad = (value) => String(value).padStart(2, '0');
-            const defaultValue = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T${pad(tomorrow.getHours())}:${pad(tomorrow.getMinutes())}`;
-            setDateTimeParts('event-date', defaultValue);
+
+            const toLocal = (dateObj) => `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`;
+
+            setDateTimeParts('event-registration-start', toLocal(now));
+            setDateTimeParts('event-deadline', toLocal(regDeadline));
+            setDateTimeParts('event-date', toLocal(tomorrow));
+            setDateTimeParts('event-end-date', toLocal(twoHoursLater));
+
+            syncDateTimeFromParts('event-registration-start', false);
+            syncDateTimeFromParts('event-deadline', false);
             syncDateTimeFromParts('event-date', true);
+            syncDateTimeFromParts('event-end-date', false);
+        }
+
+        function resolveEventTimeline(event) {
+            const eventStart = event?.event_date || '';
+            const eventEnd = event?.event_end_date || eventStart;
+            const registrationStart = event?.registration_start || event?.published_at || event?.created_at || '';
+            const registrationDeadline = event?.registration_deadline || '';
+            return {
+                registrationStart,
+                registrationDeadline,
+                eventStart,
+                eventEnd
+            };
         }
 
         function toDatetimeLocal(value) {
@@ -668,8 +694,10 @@
 
         function validateEventForm(prefix = '') {
             let ok = true;
+            syncDateTimeFromParts(`${prefix}event-registration-start`, false);
             syncDateTimeFromParts(`${prefix}event-date`, true);
             syncDateTimeFromParts(`${prefix}event-deadline`, false);
+            syncDateTimeFromParts(`${prefix}event-end-date`, false);
 
             const required = [`${prefix}event-name`, `${prefix}event-description`, `${prefix}event-date`, `${prefix}event-location`];
             required.forEach(id => {
@@ -683,9 +711,21 @@
             });
 
             const dateFieldId = `${prefix}event-date`;
+            const registrationStartFieldId = `${prefix}event-registration-start`;
             const deadlineFieldId = `${prefix}event-deadline`;
+            const eventEndFieldId = `${prefix}event-end-date`;
             if (!validateHalfHourField(dateFieldId, '舉辦時間只能選整點或半點')) {
                 ok = false;
+            }
+
+            const registrationStartField = document.getElementById(registrationStartFieldId);
+            if (registrationStartField && registrationStartField.value.trim()) {
+                if (!isHalfHourAligned(registrationStartField.value.trim())) {
+                    setFieldError(registrationStartFieldId, '報名開始只能選整點或半點');
+                    ok = false;
+                } else {
+                    setFieldError(registrationStartFieldId, '');
+                }
             }
 
             const deadlineField = document.getElementById(deadlineFieldId);
@@ -696,6 +736,53 @@
                 } else {
                     setFieldError(deadlineFieldId, '');
                 }
+            }
+
+            const eventEndField = document.getElementById(eventEndFieldId);
+            if (eventEndField && eventEndField.value.trim()) {
+                if (!isHalfHourAligned(eventEndField.value.trim())) {
+                    setFieldError(eventEndFieldId, '活動結束只能選整點或半點');
+                    ok = false;
+                } else {
+                    setFieldError(eventEndFieldId, '');
+                }
+            }
+
+            const eventStartValue = document.getElementById(dateFieldId)?.value?.trim() || '';
+            const regStartValue = document.getElementById(registrationStartFieldId)?.value?.trim() || '';
+            const regDeadlineValue = document.getElementById(deadlineFieldId)?.value?.trim() || '';
+            const eventEndValue = document.getElementById(eventEndFieldId)?.value?.trim() || '';
+
+            const toMs = (value) => {
+                if (!value) return null;
+                const date = new Date(value);
+                return Number.isNaN(date.getTime()) ? null : date.getTime();
+            };
+
+            const eventStartMs = toMs(eventStartValue);
+            const regStartMs = toMs(regStartValue);
+            const regDeadlineMs = toMs(regDeadlineValue);
+            const eventEndMs = toMs(eventEndValue);
+
+            if (regStartMs !== null && regDeadlineMs !== null && regStartMs > regDeadlineMs) {
+                setFieldError(registrationStartFieldId, '報名開始不可晚於報名截止');
+                setFieldError(deadlineFieldId, '報名截止不可早於報名開始');
+                ok = false;
+            }
+
+            if (regStartMs !== null && eventStartMs !== null && regStartMs > eventStartMs) {
+                setFieldError(registrationStartFieldId, '報名開始不可晚於活動開始');
+                ok = false;
+            }
+
+            if (regDeadlineMs !== null && eventStartMs !== null && regDeadlineMs > eventStartMs) {
+                setFieldError(deadlineFieldId, '報名截止不可晚於活動開始');
+                ok = false;
+            }
+
+            if (eventEndMs !== null && eventStartMs !== null && eventEndMs < eventStartMs) {
+                setFieldError(eventEndFieldId, '活動結束不可早於活動開始');
+                ok = false;
             }
             return ok;
         }
@@ -914,6 +1001,7 @@
                 return;
             }
             events.forEach(event => {
+                const timeline = resolveEventTimeline(event);
                 const coHostNames = (event.co_host_clubs || []).map(club => PageUtils.escapeHtml(club.club_name || '')).filter(Boolean);
                 const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
                 const safeStatus = PageUtils.escapeHtml(translateStatus(event.event_status));
@@ -936,7 +1024,8 @@
                                 : `<button class="btn btn-secondary btn-sm" onclick="archiveEvent(${event.event_id})">歸檔</button>`}
                         </div>
                     </div>
-                    <p class="admin-item-content">${formatDateTime(event.event_date)}${safeLocation ? '｜' + safeLocation : ''}</p>
+                    <p class="admin-item-content">活動：${formatDateTime(timeline.eventStart)} ~ ${formatDateTime(timeline.eventEnd)}${safeLocation ? '｜' + safeLocation : ''}</p>
+                    <p class="admin-item-content">報名：${timeline.registrationStart ? formatDateTime(timeline.registrationStart) : '未設定'} ~ ${timeline.registrationDeadline ? formatDateTime(timeline.registrationDeadline) : '未設定'}</p>
                     <p class="admin-item-content">目前報名人數：${Number(event.registered_count || 0)} 人</p>
                     ${coHostNames.length > 0 ? `<p class="admin-item-content">協辦社團：${coHostNames.join('、')}</p>` : ''}
                 `;
@@ -1016,18 +1105,23 @@
             if (!response.success) return console.error(response.message);
 
             const event = response.data;
+            const timeline = resolveEventTimeline(event);
             document.getElementById('event-management-section').style.display = 'block';
             document.getElementById('event-manage-title').textContent = event.event_name || '';
             document.getElementById('update-event-id').value = event.event_id;
             document.getElementById('update-event-name').value = event.event_name || '';
             document.getElementById('update-event-description').value = event.description || '';
-            setDateTimeParts('update-event-date', toDatetimeLocal(event.event_date));
+            setDateTimeParts('update-event-registration-start', toDatetimeLocal(timeline.registrationStart));
+            syncDateTimeFromParts('update-event-registration-start', false);
+            setDateTimeParts('update-event-date', toDatetimeLocal(timeline.eventStart));
             syncDateTimeFromParts('update-event-date', true);
+            setDateTimeParts('update-event-end-date', toDatetimeLocal(timeline.eventEnd));
+            syncDateTimeFromParts('update-event-end-date', false);
             document.getElementById('update-event-location').value = event.location || '';
             document.getElementById('update-event-capacity').value = event.capacity || '';
             document.getElementById('update-event-fee').value = event.fee || '';
             document.getElementById('update-event-registration-open').checked = Number(event.is_registration_open) === 1;
-            setDateTimeParts('update-event-deadline', toDatetimeLocal(event.registration_deadline));
+            setDateTimeParts('update-event-deadline', toDatetimeLocal(timeline.registrationDeadline));
             syncDateTimeFromParts('update-event-deadline', false);
 
             // 加載標籤
@@ -1186,7 +1280,9 @@
                 formData.append('club_id', currentClubId);
                 formData.append('event_name', document.getElementById('event-name').value);
                 formData.append('description', document.getElementById('event-description').value);
+                formData.append('registration_start', document.getElementById('event-registration-start').value);
                 formData.append('event_date', document.getElementById('event-date').value);
+                formData.append('event_end_date', document.getElementById('event-end-date').value);
                 formData.append('location', document.getElementById('event-location').value);
                 formData.append('capacity', document.getElementById('event-capacity').value);
                 formData.append('fee', document.getElementById('event-fee').value);
@@ -1274,7 +1370,9 @@
                 const formData = new FormData();
                 formData.append('event_name', document.getElementById('update-event-name').value);
                 formData.append('description', document.getElementById('update-event-description').value);
+                formData.append('registration_start', document.getElementById('update-event-registration-start').value);
                 formData.append('event_date', document.getElementById('update-event-date').value);
+                formData.append('event_end_date', document.getElementById('update-event-end-date').value);
                 formData.append('location', document.getElementById('update-event-location').value);
                 formData.append('capacity', document.getElementById('update-event-capacity').value);
                 formData.append('fee', document.getElementById('update-event-fee').value);
@@ -1394,7 +1492,7 @@
         });
         setClubMeetingTimeFromValue('');
 
-        ['event-date', 'event-deadline', 'update-event-date', 'update-event-deadline'].forEach(baseId => {
+        ['event-registration-start', 'event-date', 'event-end-date', 'event-deadline', 'update-event-registration-start', 'update-event-date', 'update-event-end-date', 'update-event-deadline'].forEach(baseId => {
             initHourSelect(`${baseId}-hour`);
             const dateInput = document.getElementById(`${baseId}-date`);
             const hourSelect = document.getElementById(`${baseId}-hour`);
