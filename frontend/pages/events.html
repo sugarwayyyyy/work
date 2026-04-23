@@ -4,19 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>活動列表 - 社團平台</title>
+    <title>活動探索 - 校園社團平台</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/events.css">
 </head>
 
 <body>
-    <!-- 導航 -->
     <header>
         <nav>
-            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <a href="../index.html" class="logo">校園社團平台</a>
             <ul class="nav-links">
                 <li><a href="../index.html">首頁</a></li>
                 <li><a href="club-list.html">社團</a></li>
-                <li><a href="events.html">活動</a></li>
+                <li><a href="events.html" class="active">活動</a></li>
                 <li><a href="qa.html">提問</a></li>
             </ul>
             <div class="nav-right">
@@ -29,95 +29,123 @@
 
     <div id="alert-container"></div>
 
-    <div class="container">
-        <h1>活動列表</h1>
+    <div class="event-list-page">
+        <div class="container event-list-container">
 
-        <!-- 過濾欄 -->
-        <div class="filter-card" style="margin-bottom: 2rem;">
-            <div class="filter-card__header">
-                <div class="filter-card__title">篩選活動</div>
-                <div class="filter-card__subtitle">可以先搜活動名稱，再用日期、社團與狀態縮小結果。</div>
-            </div>
-            <div class="filter-card__body">
-                <div class="filter-stack">
-                    <div class="filter-field filter-field-wide">
-                        <label for="event-search">活動關鍵字</label>
-                        <input type="text" id="event-search" placeholder="輸入關鍵字">
+            <!-- 頁首 Hero -->
+            <div class="event-list-hero">
+                <div class="event-list-hero__head">
+                    <div>
+                        <span class="event-list-kicker">活動探索</span>
+                        <h1 class="event-list-title">探索所有活動</h1>
+                        <p class="event-list-subtitle">查看近期活動與報名資訊，掌握校園精彩時刻。</p>
                     </div>
+                    <p class="event-list-meta" id="result-count-meta"></p>
+                </div>
+            </div>
 
-                    <div class="event-filter-row">
+            <!-- 上方篩選卡（全寬） -->
+            <div class="event-filter-card filter-card">
+                <div class="filter-card__header">
+                    <div class="filter-card__title">篩選活動</div>
+                    <div class="filter-card__subtitle">可先搜活動名稱，再用日期、社團與狀態縮小結果。</div>
+                </div>
+                <div class="filter-card__body">
+
+                    <div class="event-filter-grid">
+                        <!-- 關鍵字：全寬 -->
+                        <div class="filter-field event-filter-keyword">
+                            <label for="event-search">活動關鍵字</label>
+                            <input type="text" id="event-search" placeholder="輸入活動名稱或關鍵字">
+                        </div>
+
+                        <!-- 社團類別 -->
                         <div class="filter-field">
                             <label for="club-category-filter">社團類別</label>
                             <select id="club-category-filter">
                                 <option value="">全部類別</option>
                             </select>
                         </div>
+
+                        <!-- 社團 -->
                         <div class="filter-field">
                             <label for="club-filter">社團</label>
                             <select id="club-filter" disabled>
                                 <option value="">請先選擇類別</option>
                             </select>
                         </div>
-                    </div>
 
-                    <div class="event-filter-row">
+                        <!-- 開始時間 -->
                         <div class="filter-field">
-                            <label for="event-start-from">開始時間</label>
+                            <label>開始時間（起）</label>
                             <input type="hidden" id="event-start-from">
-                            <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 0.5rem;">
+                            <div class="event-datetime-group">
                                 <input type="date" id="event-start-from-date">
                                 <select id="event-start-from-hour"></select>
                                 <select id="event-start-from-minute">
-                                    <option value="00">整點（00）</option>
-                                    <option value="30">半點（30）</option>
+                                    <option value="00">整點</option>
+                                    <option value="30">半點</option>
                                 </select>
                             </div>
-                            <small>填入後會顯示此時間之後的活動，越接近你填的時間會越優先。</small>
+                            <small>填入後顯示此時間之後的活動，越接近越優先。</small>
                         </div>
+
+                        <!-- 截止時間 -->
                         <div class="filter-field">
-                            <label for="deadline-to">截止時間</label>
+                            <label>截止時間（迄）</label>
                             <input type="hidden" id="deadline-to">
-                            <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 0.5rem;">
+                            <div class="event-datetime-group">
                                 <input type="date" id="deadline-to-date">
                                 <select id="deadline-to-hour"></select>
                                 <select id="deadline-to-minute">
-                                    <option value="00">整點（00）</option>
-                                    <option value="30">半點（30）</option>
+                                    <option value="00">整點</option>
+                                    <option value="30">半點</option>
                                 </select>
                             </div>
-                            <small>填入後會顯示報名截止早於此時間的活動，越接近你填的時間會越優先。</small>
+                            <small>填入後顯示報名截止早於此時間的活動。</small>
+                        </div>
+                    </div>
+
+                    <!-- 工具列：狀態 chip + 動作按鈕 -->
+                    <div class="event-filter-toolbar">
+                        <div class="event-filter-toolbar__status">
+                            <span class="event-filter-toolbar__label">活動狀態</span>
+                            <div id="event-filters" class="chip-cloud"></div>
+                        </div>
+                        <div class="event-filter-toolbar__actions">
+                            <button class="btn btn-primary" onclick="loadEvents()">篩選</button>
+                            <button class="btn btn-secondary" onclick="resetFilters()">重製</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 結果區 -->
+            <div class="event-results-surface">
+                <div class="event-results-surface__head">
+                    <h2 class="event-results-surface__title">活動列表</h2>
+                    <div class="event-results-surface__meta">
+                        <span id="result-count">搜尋中...</span>
+                        <span id="results-page-info"></span>
+                    </div>
+                </div>
+
+                <div id="events-container" class="event-list-grid">
+                    <div class="event-state">
+                        <div class="loading">
+                            <div class="spinner"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="filter-toolbar">
-                    <div class="event-status-group filter-toolbar__group">
-                        <span class="filter-toolbar__label">活動狀態</span>
-                        <div id="event-filters" class="event-status-buttons chip-cloud"></div>
-                    </div>
-                    <div class="filter-toolbar__actions">
-                        <button class="btn btn-primary" onclick="loadEvents()">篩選</button>
-                        <button class="btn btn-secondary" onclick="resetFilters()">重製</button>
-                    </div>
-                </div>
+                <div id="pagination-container"></div>
             </div>
-        </div>
 
-        <!-- 活動列表 -->
-        <div id="events-container">
-            <div class="loading">
-                <div class="spinner"></div>
-                <p>載入中...</p>
-            </div>
         </div>
-
-        <!-- 分頁 -->
-        <div id="pagination-container"></div>
     </div>
 
-    <!-- 頁腳 -->
     <footer>
-        <p>&copy; 2026 社團活動資訊統整平台</p>
+        <p>&copy; 2026 校園社團平台</p>
     </footer>
 
     <script src="../js/main.js"></script>
@@ -125,6 +153,9 @@
         let currentPage = 1;
         let selectedFilter = 'open';
         let clubCategories = [];
+
+        const MONTHS_ZH = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+        const WEEKDAYS_ZH = ['日','一','二','三','四','五','六'];
 
         function getEventUrlParams() {
             const params = new URLSearchParams(window.location.search);
@@ -206,19 +237,23 @@
                 button.type = 'button';
                 button.className = `badge badge-filter${selectedFilter === filter.key ? ' is-selected' : ''}`;
                 button.textContent = filter.label;
-
                 button.addEventListener('click', () => {
                     selectedFilter = filter.key;
                     currentPage = 1;
                     renderEventFilters();
                     loadEvents();
                 });
-
                 container.appendChild(button);
             });
         }
 
         async function loadEvents() {
+            const container = document.getElementById('events-container');
+            container.innerHTML = `<div class="event-state"><div class="loading"><div class="spinner"></div></div></div>`;
+
+            const countEl = document.getElementById('result-count');
+            if (countEl) countEl.textContent = '搜尋中...';
+
             try {
                 syncDateTimeFromParts('event-start-from');
                 syncDateTimeFromParts('deadline-to');
@@ -246,14 +281,19 @@
 
                 const response = await APIClient.get(url);
                 if (response.success) {
+                    const pagination = response.data.pagination || {};
+                    const total = pagination.total_count ?? response.data.events.length;
+                    if (countEl) countEl.textContent = `共 ${total} 個活動`;
+                    const metaEl = document.getElementById('result-count-meta');
+                    if (metaEl) metaEl.textContent = `共 ${total} 個活動`;
                     renderEvents(response.data.events);
-                    renderPagination(response.data.pagination);
+                    renderPagination(pagination);
                 } else {
-                    document.getElementById('events-container').innerHTML = '<p>載入失敗</p>';
+                    container.innerHTML = `<div class="event-state"><p class="event-state__desc">載入失敗，請稍後再試</p></div>`;
                 }
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('events-container').innerHTML = '<p>發生錯誤</p>';
+                document.getElementById('events-container').innerHTML = `<div class="event-state"><p class="event-state__desc">發生錯誤，請重新整理</p></div>`;
             }
         }
 
@@ -261,58 +301,78 @@
             const container = document.getElementById('events-container');
             container.innerHTML = '';
 
-            if (events.length === 0) {
-                container.innerHTML = '<p style="text-align: center;">未找到相符的活動</p>';
+            if (!events || events.length === 0) {
+                container.innerHTML = `
+                    <div class="event-state">
+                        <p class="event-state__title">找不到符合的活動</p>
+                        <p class="event-state__desc">請嘗試調整篩選條件或關鍵字</p>
+                    </div>`;
                 return;
             }
 
             events.forEach(event => {
-                const eventDate = PageUtils.formatDate(event.event_date);
-                const registrationDeadline = event.registration_deadline ? new Date(event.registration_deadline) : null;
                 const eventDateObj = new Date(event.event_date);
+                const registrationDeadline = event.registration_deadline
+                    ? new Date(event.registration_deadline)
+                    : null;
                 const now = new Date();
-                const capacity = Number(event.capacity) || 0;
-                const registeredCount = Number(event.registered_count) || 0;
+
                 const isOpen = Number(event.is_registration_open) === 1
-                    && (!registrationDeadline || !Number.isNaN(registrationDeadline.getTime()) && registrationDeadline >= now)
+                    && (!registrationDeadline || (!Number.isNaN(registrationDeadline.getTime()) && registrationDeadline >= now))
                     && (!Number.isNaN(eventDateObj.getTime()) && eventDateObj >= now);
-                const statusTagClass = isOpen ? 'tag tag-success' : 'tag tag-warning';
-                const statusTagText = isOpen ? '報名中' : '已截止';
-                const tagsHtml = event.tags && event.tags.length > 0 
-                    ? event.tags.map(tag => `<span class="tag tag-primary" style="cursor: default;">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`).join('')
+
+                const month = MONTHS_ZH[eventDateObj.getMonth()] ?? '';
+                const day = eventDateObj.getDate();
+                const weekday = WEEKDAYS_ZH[eventDateObj.getDay()] ?? '';
+
+                const registeredCount = Number(event.registered_count) || 0;
+                const capacity = Number(event.capacity) || 0;
+                const capacityRatio = capacity > 0 ? Math.min(1, registeredCount / capacity) : 0;
+                const capacityText = capacity > 0
+                    ? `${registeredCount} / ${capacity} 人`
+                    : `${registeredCount} 人報名`;
+
+                const deadlineText = registrationDeadline && !Number.isNaN(registrationDeadline.getTime())
+                    ? `截止 ${PageUtils.formatDate(event.registration_deadline)}`
                     : '';
+
+                const tagsHtml = (event.tags || [])
+                    .map(tag => `<span class="tag tag-primary">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`)
+                    .join('');
+
                 const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
                 const safeClubName = PageUtils.escapeHtml(event.club_name || '-');
                 const safeLocation = PageUtils.escapeHtml(event.location || '-');
-                const safeDescription = PageUtils.escapeHtml(event.description || '');
                 const safeEventId = Number(event.event_id) || 0;
-                const html = `
-                    <div class="card" style="margin-bottom: 1.5rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-top: 1rem;">
-                            <div style="flex: 1;">
-                                <h3 style="margin: 0 0 0.5rem 0;">${safeEventName}</h3>
-                                <p style="margin: 0; color: var(--text-light); font-size: 0.95rem;">
-                                    <strong>社團：</strong>${safeClubName}
-                                </p>
-                            </div>
-                            <span class="${statusTagClass}">${statusTagText}</span>
+
+                const row = document.createElement('div');
+                row.className = 'event-result-row';
+                row.innerHTML = `
+                    <div class="event-date-block">
+                        <span class="event-date-block__month">${month}</span>
+                        <span class="event-date-block__day">${day}</span>
+                        <span class="event-date-block__weekday">週${weekday}</span>
+                    </div>
+                    <div class="event-card-content">
+                        <h3 class="event-card-title">${safeEventName}</h3>
+                        <p class="event-card-club">${safeClubName}</p>
+                        <div class="event-card-meta">
+                            <span>${safeLocation}</span>
+                            <span>${capacityText}</span>
+                            ${deadlineText ? `<span>${deadlineText}</span>` : ''}
                         </div>
-                        <div style="margin: 1rem 0;">
-                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; font-size: 0.95rem;">
-                                <div>📅 ${eventDate}</div>
-                                <div>📍 ${safeLocation}</div>
-                                <div>👥 已有 ${registeredCount} 人報名</div>
-                                <div>${event.capacity > 0 ? '容納人數: ' + event.capacity : '無容納限制'}</div>
-                            </div>
-                        </div>
-                        ${tagsHtml ? `<div style="margin: 0.8rem 0; display: flex; flex-wrap: wrap; gap: 0.5rem;">${tagsHtml}</div>` : ''}
-                        <p style="color: var(--text-light); margin: 1rem 0 0 0; height: 50px; overflow: hidden;">
-                            ${safeDescription}
-                        </p>
-                        <a href="event-detail.html?id=${safeEventId}" class="btn btn-primary btn-sm" style="margin-top: 1rem;">查看詳情</a>
+                        ${tagsHtml ? `<div class="event-card-tags">${tagsHtml}</div>` : ''}
+                    </div>
+                    <div class="event-card-footer">
+                        <span class="event-status-badge event-status-badge--${isOpen ? 'open' : 'closed'}">${isOpen ? '報名中' : '已截止'}</span>
+                        ${capacity > 0 ? `
+                            <div class="event-capacity-bar">
+                                <div class="event-capacity-bar__fill" style="width:${Math.round(capacityRatio * 100)}%"></div>
+                            </div>` : ''}
+                        <a href="event-detail.html?id=${safeEventId}" class="btn btn-primary btn-sm">查看詳情</a>
                     </div>
                 `;
-                container.innerHTML += html;
+                container.appendChild(row);
             });
         }
 
@@ -320,24 +380,35 @@
             const container = document.getElementById('pagination-container');
             container.innerHTML = '';
 
-            if (pagination.total_pages <= 1) return;
+            const totalPages = Number(pagination.total_pages) || 0;
+            const currentPageNum = Number(pagination.current_page) || 1;
+
+            const pageInfoEl = document.getElementById('results-page-info');
+            if (pageInfoEl) {
+                pageInfoEl.textContent = totalPages > 1 ? `第 ${currentPageNum} / ${totalPages} 頁` : '';
+            }
+
+            if (totalPages <= 1) return;
 
             let html = '<div class="pagination">';
-            
-            if (pagination.current_page > 1) {
-                html += `<a onclick="changePage(${pagination.current_page - 1})">← 上一頁</a>`;
+
+            if (currentPageNum > 1) {
+                html += `<button type="button" class="page-btn" onclick="changePage(${currentPageNum - 1})">←</button>`;
             }
 
-            for (let i = 1; i <= pagination.total_pages; i++) {
-                if (i === pagination.current_page) {
-                    html += `<span class="active">${i}</span>`;
-                } else if (i <= pagination.current_page + 2 && i >= pagination.current_page - 2) {
-                    html += `<a onclick="changePage(${i})">${i}</a>`;
-                }
-            }
+            const pages = new Set([1, totalPages, currentPageNum - 1, currentPageNum, currentPageNum + 1]);
+            const validPages = Array.from(pages).filter(p => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+            let prev = 0;
+            validPages.forEach(page => {
+                if (prev && page - prev > 1) html += `<span class="page-gap">…</span>`;
+                html += page === currentPageNum
+                    ? `<span class="page-btn is-active">${page}</span>`
+                    : `<button type="button" class="page-btn" onclick="changePage(${page})">${page}</button>`;
+                prev = page;
+            });
 
-            if (pagination.current_page < pagination.total_pages) {
-                html += `<a onclick="changePage(${pagination.current_page + 1})">下一頁 →</a>`;
+            if (currentPageNum < totalPages) {
+                html += `<button type="button" class="page-btn" onclick="changePage(${currentPageNum + 1})">→</button>`;
             }
 
             html += '</div>';
@@ -347,7 +418,7 @@
         function changePage(page) {
             currentPage = page;
             loadEvents();
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function isHalfHourAligned(value) {
@@ -360,7 +431,6 @@
         function initHourSelect(selectId) {
             const select = document.getElementById(selectId);
             if (!select || select.options.length > 0) return;
-
             for (let i = 0; i < 24; i++) {
                 const option = document.createElement('option');
                 option.value = String(i).padStart(2, '0');
@@ -381,7 +451,6 @@
                 hiddenInput.value = '';
                 return;
             }
-
             hiddenInput.value = `${datePart}T${hourSelect.value}:${minuteSelect.value}`;
         }
 
@@ -441,9 +510,9 @@
             }
         }
 
-        document.getElementById('club-category-filter').addEventListener('change', async (event) => {
+        document.getElementById('club-category-filter').addEventListener('change', async (e) => {
             currentPage = 1;
-            await loadClubsByCategory(event.target.value);
+            await loadClubsByCategory(e.target.value);
             loadEvents();
         });
 
@@ -452,27 +521,21 @@
             loadEvents();
         });
 
-        let eventSearchDebounceTimer = null;
+        let searchDebounce = null;
         document.getElementById('event-search').addEventListener('input', () => {
             currentPage = 1;
-            if (eventSearchDebounceTimer) {
-                clearTimeout(eventSearchDebounceTimer);
-            }
-            eventSearchDebounceTimer = setTimeout(() => {
-                loadEvents();
-            }, 250);
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(loadEvents, 250);
         });
 
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', function () {
             ['event-start-from', 'deadline-to'].forEach(baseId => {
                 initHourSelect(`${baseId}-hour`);
                 const dateInput = document.getElementById(`${baseId}-date`);
                 const hourSelect = document.getElementById(`${baseId}-hour`);
                 const minuteSelect = document.getElementById(`${baseId}-minute`);
-                [dateInput, hourSelect, minuteSelect].forEach(control => {
-                    if (control) {
-                        control.addEventListener('change', () => syncDateTimeFromParts(baseId));
-                    }
+                [dateInput, hourSelect, minuteSelect].forEach(el => {
+                    if (el) el.addEventListener('change', () => syncDateTimeFromParts(baseId));
                 });
                 syncDateTimeFromParts(baseId);
             });

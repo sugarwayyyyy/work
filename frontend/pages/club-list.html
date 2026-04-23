@@ -4,17 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>社團列表 - 社團平台</title>
+    <title>社團探索 - 校園社團平台</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/club-list.css">
 </head>
 
 <body>
     <header>
         <nav>
-            <a href="../index.html" class="logo">⚡ 社團平台</a>
+            <a href="../index.html" class="logo">校園社團平台</a>
             <ul class="nav-links">
                 <li><a href="../index.html">首頁</a></li>
-                <li><a href="club-list.html">社團</a></li>
+                <li><a href="club-list.html" class="active">社團</a></li>
                 <li><a href="events.html">活動</a></li>
                 <li><a href="qa.html">提問</a></li>
             </ul>
@@ -28,73 +29,117 @@
 
     <div id="alert-container"></div>
 
-    <div class="container">
-        <h1>社團列表</h1>
+    <div class="club-list-page">
+        <div class="container club-list-container">
 
-        <div class="filter-card" style="margin-bottom: 2rem;">
-            <div class="filter-card__header">
-                <div class="filter-card__title">篩選社團</div>
-                <div class="filter-card__subtitle">先用關鍵字、分類與費用縮小範圍，再用標籤精準定位。</div>
-            </div>
-            <div class="filter-card__body">
-                <div class="filter-grid filter-grid--clubs">
-                    <div class="filter-field filter-field-wide">
-                        <label for="club-search">社團關鍵字</label>
-                        <input id="club-search" type="text" placeholder="輸入關鍵字">
+            <!-- 頁首 Hero -->
+            <div class="club-list-hero">
+                <div class="club-list-hero__head">
+                    <div>
+                        <span class="club-list-kicker">社團探索</span>
+                        <h1 class="club-list-title">探索所有社團</h1>
+                        <p class="club-list-subtitle">從關鍵字、類別、社費到標籤，精準找到你的校園圈子。</p>
                     </div>
-                    <div class="filter-field">
-                        <label for="category-filter">社團類別</label>
-                        <select id="category-filter">
-                            <option value="">全部類別</option>
-                        </select>
-                    </div>
-                    <div class="filter-field">
-                        <label for="club-filter">社團</label>
-                        <select id="club-filter" disabled>
-                            <option value="">請先選擇類別</option>
-                        </select>
-                    </div>
-                    <div class="filter-field">
-                        <label for="club-fee-range">社費範圍</label>
-                        <select id="club-fee-range">
-                            <option value="">全部</option>
-                            <option value="0-500">0-500元</option>
-                            <option value="500-1000">500-1000元</option>
-                            <option value="1000+">1000元以上</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="filter-toolbar">
-                    <div class="filter-toolbar__group">
-                        <span class="filter-toolbar__label">熱門標籤</span>
-                        <div id="popular-tags-helper" class="filter-hint">多選標籤採 OR 排序：符合較多標籤的社團會排前面，未符合的社團仍會保留在列表。</div>
-                        <div id="popular-tags" class="chip-cloud"></div>
-                    </div>
-                    <div class="filter-toolbar__group subsearch-box">
-                        <label for="tag-search-input">標籤副查詢</label>
-                        <input id="tag-search-input" type="text" placeholder="輸入標籤關鍵字...">
-                        <div id="tag-search-results" class="chip-cloud"></div>
-                    </div>
-                    <div class="filter-toolbar__actions">
-                        <button class="btn btn-primary" onclick="loadClubs()">篩選</button>
-                        <button class="btn btn-secondary" onclick="resetFilters()">重製</button>
-                    </div>
+                    <p class="club-list-meta" id="result-count-meta"></p>
                 </div>
             </div>
-        </div>
 
-        <div id="clubs-container" class="grid">
-            <div class="loading">
-                <div class="spinner"></div>
-                <p>載入中...</p>
+            <!-- 雙欄探索器：左側篩選 + 右側結果 -->
+            <div class="club-explorer-layout">
+
+                <!-- 左側：篩選欄（sticky） -->
+                <aside class="club-filter-column">
+                    <div class="club-filter-card filter-card">
+                        <div class="filter-card__header">
+                            <div class="filter-card__title">篩選社團</div>
+                            <div class="filter-card__subtitle">縮小範圍，找到最適合你的社團。</div>
+                        </div>
+                        <div class="filter-card__body">
+                            <div class="filter-grid filter-grid--clubs">
+                                <div class="filter-field filter-field-wide">
+                                    <label for="club-search">社團關鍵字</label>
+                                    <input id="club-search" type="text" placeholder="輸入名稱或關鍵字">
+                                </div>
+                                <div class="filter-field">
+                                    <label for="category-filter">社團類別</label>
+                                    <select id="category-filter">
+                                        <option value="">全部類別</option>
+                                    </select>
+                                </div>
+                                <div class="filter-field">
+                                    <label for="club-filter">社團</label>
+                                    <select id="club-filter" disabled>
+                                        <option value="">請先選擇類別</option>
+                                    </select>
+                                </div>
+                                <div class="filter-field">
+                                    <label for="club-fee-range">社費範圍</label>
+                                    <select id="club-fee-range">
+                                        <option value="">全部</option>
+                                        <option value="0-500">0–500 元</option>
+                                        <option value="500-1000">500–1000 元</option>
+                                        <option value="1000+">1000 元以上</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="filter-toolbar">
+                                <div class="filter-toolbar__group">
+                                    <span class="filter-toolbar__label">熱門標籤</span>
+                                    <p id="popular-tags-helper" class="filter-hint">多選標籤採 OR 排序：符合較多標籤的社團排前面。</p>
+                                    <div id="popular-tags" class="chip-cloud"></div>
+                                </div>
+                                <div class="filter-toolbar__group subsearch-box">
+                                    <label for="tag-search-input">標籤副查詢</label>
+                                    <input id="tag-search-input" type="text" placeholder="輸入標籤關鍵字...">
+                                    <div id="tag-search-results" class="chip-cloud"></div>
+                                </div>
+                                <div class="filter-toolbar__actions">
+                                    <button class="btn btn-primary" onclick="loadClubs()">篩選</button>
+                                    <button class="btn btn-secondary" onclick="resetFilters()">重製</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- 右側：結果欄 -->
+                <main class="club-results-column">
+
+                    <!-- 結果摘要列 -->
+                    <div class="club-results-summary">
+                        <div class="club-results-summary__head">
+                            <span class="club-results-summary__title" id="result-count">搜尋中...</span>
+                            <span class="club-results-summary__meta">依相關度排序</span>
+                        </div>
+                        <div class="club-results-summary__chips" id="active-filters-chips"></div>
+                    </div>
+
+                    <!-- 社團卡片清單 -->
+                    <div class="club-results-surface">
+                        <div class="club-results-surface__head">
+                            <h2 class="club-results-surface__title">社團列表</h2>
+                            <span class="club-results-surface__subtitle" id="results-page-info"></span>
+                        </div>
+
+                        <div id="clubs-container" class="club-list-grid">
+                            <div class="club-state">
+                                <div class="loading">
+                                    <div class="spinner"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="pagination-container"></div>
+                    </div>
+                </main>
             </div>
-        </div>
 
-        <div id="pagination-container"></div>
+        </div>
     </div>
 
     <footer>
-        <p>&copy; 2026 社團活動資訊統整平台</p>
+        <p>&copy; 2026 校園社團平台</p>
     </footer>
 
     <script src="../js/main.js"></script>
@@ -198,7 +243,6 @@
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'tag tag-primary';
-            btn.style.border = '1px solid var(--primary-color)';
             btn.style.cursor = 'pointer';
             btn.dataset.tagId = tag.tag_id;
             const safeTagName = String(tag.tag_name || '');
@@ -208,9 +252,12 @@
 
             const id = Number(tag.tag_id);
             const selected = selectedTagIds.includes(id);
-            btn.style.backgroundColor = selected ? 'var(--primary-color)' : 'rgba(99, 102, 241, 0.1)';
-            btn.style.color = selected ? '#fff' : 'var(--primary-color)';
-            btn.classList.toggle('is-selected', selected);
+            if (selected) {
+                btn.style.backgroundColor = 'var(--primary-color)';
+                btn.style.color = '#fff';
+                btn.style.borderColor = 'var(--primary-color)';
+                btn.classList.add('is-selected');
+            }
 
             btn.addEventListener('click', () => {
                 if (selectedTagIds.includes(id)) {
@@ -237,7 +284,7 @@
             visible.forEach(tag => container.appendChild(createTagButton(tag, true)));
 
             if (helper) {
-                helper.textContent = `多選標籤採 OR 排序。熱門標籤僅顯示前 ${POPULAR_TAG_LIMIT} 個，可用下方副查詢找其他標籤。`;
+                helper.textContent = `多選標籤採 OR 排序。熱門標籤顯示前 ${POPULAR_TAG_LIMIT} 個，可用下方副查詢找其他標籤。`;
             }
         }
 
@@ -250,7 +297,7 @@
             container.innerHTML = '';
 
             if (!keyword) {
-                container.innerHTML = '<span style="color: var(--text-light); font-size: 0.82rem;">可用副查詢搜尋未出現在熱門區的標籤</span>';
+                container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.82rem;">可搜尋熱門區以外的標籤</span>';
                 return;
             }
 
@@ -259,7 +306,7 @@
                 .slice(0, 12);
 
             if (matched.length === 0) {
-                container.innerHTML = '<span style="color: var(--text-light); font-size: 0.82rem;">找不到符合的標籤</span>';
+                container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.82rem;">找不到符合的標籤</span>';
                 return;
             }
 
@@ -267,13 +314,19 @@
         }
 
         async function loadClubs() {
+            const container = document.getElementById('clubs-container');
+            container.innerHTML = `<div class="club-state"><div class="loading"><div class="spinner"></div></div></div>`;
+
+            const countEl = document.getElementById('result-count');
+            if (countEl) countEl.textContent = '搜尋中...';
+
             try {
                 currentPage = Math.max(1, currentPage || 1);
                 const categoryId = document.getElementById('category-filter').value;
                 const clubId = document.getElementById('club-filter').value;
                 const search = document.getElementById('club-search').value.trim();
                 const feeRange = document.getElementById('club-fee-range').value;
-                
+
                 let url = `clubs.php?page=${currentPage}`;
                 if (categoryId) url += `&category_id=${categoryId}`;
                 if (clubId) url += `&club_id=${clubId}`;
@@ -290,62 +343,94 @@
 
                 const response = await APIClient.get(url);
                 if (response.success) {
+                    const pagination = response.data.pagination || {};
+                    const total = pagination.total_count ?? response.data.clubs.length;
+                    if (countEl) countEl.textContent = `共 ${total} 個社團`;
+                    const metaEl = document.getElementById('result-count-meta');
+                    if (metaEl) metaEl.textContent = `共 ${total} 個社團`;
                     renderClubs(response.data.clubs);
-                    renderPagination(response.data.pagination);
+                    renderPagination(pagination);
                 } else {
-                    document.getElementById('clubs-container').innerHTML = '<p>載入失敗</p>';
+                    container.innerHTML = `<div class="club-state"><p class="club-state__desc">載入失敗，請稍後再試</p></div>`;
                 }
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('clubs-container').innerHTML = '<p>發生錯誤</p>';
+                document.getElementById('clubs-container').innerHTML = `<div class="club-state"><p class="club-state__desc">發生錯誤，請重新整理</p></div>`;
             }
+        }
+
+        function renderClubRatingStars(rating) {
+            const filled = Math.round(Number(rating) || 0);
+            return Array.from({ length: 5 }, (_, i) =>
+                `<span class="club-rating-star${i < filled ? ' is-filled' : ''}">★</span>`
+            ).join('');
         }
 
         function renderClubs(clubs) {
             const container = document.getElementById('clubs-container');
             container.innerHTML = '';
 
-            if (clubs.length === 0) {
-                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">目前無符合此條件的社團，請嘗試其他關鍵字</p>';
+            if (!clubs || clubs.length === 0) {
+                container.innerHTML = `
+                    <div class="club-state">
+                        <p class="club-state__title">找不到符合的社團</p>
+                        <p class="club-state__desc">請嘗試調整篩選條件或關鍵字</p>
+                    </div>`;
                 return;
             }
 
             clubs.forEach(club => {
-                const tagHtml = (club.tags || []).map(tag => `<span class="tag tag-primary">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`).join('');
-                const logoHtml = PageUtils.renderClubAvatar(club, 64);
-                const starsHtml = PageUtils.renderStars(club.average_rating || 0);
+                const tagHtml = (club.tags || [])
+                    .map(tag => `<span class="tag tag-primary">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`)
+                    .join('');
+
+                const logoHtml = PageUtils.renderClubAvatar(club, 44);
+
+                const statusClass = club.activity_badge === 'high_active'
+                    ? 'club-card-status--active'
+                    : (club.activity_badge === 'no_recent_activity'
+                        ? 'club-card-status--quiet'
+                        : 'club-card-status--steady');
+                const statusLabel = club.activity_badge === 'high_active'
+                    ? '高活躍'
+                    : (club.activity_badge === 'no_recent_activity' ? '近期無活動' : '活躍中');
+
+                const rating = Number(club.average_rating) || 0;
+                const ratingStars = renderClubRatingStars(rating);
+
                 const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
                 const safeDescription = PageUtils.escapeHtml(club.description || '');
                 const safeClubId = Number(club.club_id) || 0;
-                const html = `
-                    <div class="card">
-                        <div class="card-header" style="display: flex; gap: 1rem; align-items: center; justify-content: space-between;">
-                            <div style="flex: 1; min-width: 0;">
-                                <h3 style="margin: 0 0 0.5rem 0;">${safeClubName}</h3>
-                                <span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : (club.activity_badge === 'no_recent_activity' ? '近期無活動' : '活躍中')}</span>
-                            </div>
+
+                const card = document.createElement('div');
+                card.className = 'card club-result-row';
+                card.innerHTML = `
+                    <div class="club-result-row__layout">
+                        <div class="club-result-row__avatar">
                             ${logoHtml}
                         </div>
-                        <div style="margin-bottom: 1rem;">
-                            ${tagHtml}
-                        </div>
-                        <div class="card-body" style="margin-bottom: 1rem; height: 60px; overflow: hidden;">
-                            ${safeDescription}
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem;">
-                            <div style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-light);">
-                                <span>👥 ${club.member_count} 成員</span>
+                        <div class="club-result-row__content">
+                            <div class="club-card-header">
+                                <h3 class="club-card-title">${safeClubName}</h3>
+                                <span class="club-card-status ${statusClass}">${statusLabel}</span>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <div style="font-size: 1rem; line-height: 1;">${starsHtml}</div>
-                                <span style="font-size: 0.875rem; color: var(--text-color); font-weight: 500;">${(club.average_rating || 0).toFixed(1)}</span>
-                                <span style="font-size: 0.875rem; color: var(--text-light);">（${club.reviews_count || 0} 人評分）</span>
+                            <p class="club-card-description">${safeDescription}</p>
+                            <div class="club-card-tags">${tagHtml}</div>
+                            <div class="club-card-meta club-card-meta--inline">
+                                <span>${club.member_count || 0} 成員</span>
+                                <div class="club-rating">
+                                    <span class="club-rating-stars">${ratingStars}</span>
+                                    <span class="club-rating-score">${rating.toFixed(1)}</span>
+                                    <span class="club-rating-count">(${club.reviews_count || 0})</span>
+                                </div>
                             </div>
                         </div>
-                        <a href="club-detail.html?id=${safeClubId}" class="btn btn-primary btn-sm">查看詳情</a>
+                        <div class="club-card-footer">
+                            <a href="club-detail.html?id=${safeClubId}" class="btn btn-primary btn-sm">查看詳情</a>
+                        </div>
                     </div>
                 `;
-                container.innerHTML += html;
+                container.appendChild(card);
             });
         }
 
@@ -353,48 +438,48 @@
             const container = document.getElementById('pagination-container');
             container.innerHTML = '';
 
-            if (pagination.total_pages <= 1) return;
-
-            let html = '<div class="pagination">';
             const totalPages = Number(pagination.total_pages) || 0;
             const currentPageNum = Number(pagination.current_page) || 1;
-            
-            if (currentPageNum > 1) {
-                html += `<a onclick="changePage(${currentPageNum - 1})">← 上一頁</a>`;
+
+            const pageInfoEl = document.getElementById('results-page-info');
+            if (pageInfoEl) {
+                pageInfoEl.textContent = totalPages > 1 ? `第 ${currentPageNum} / ${totalPages} 頁` : '';
             }
 
-            // 頁數不多時顯示完整頁碼，避免 6 頁只看見 3 頁的體感問題。
+            if (totalPages <= 1) return;
+
+            let html = '<div class="pagination">';
+
+            if (currentPageNum > 1) {
+                html += `<button type="button" class="page-btn" onclick="changePage(${currentPageNum - 1})">←</button>`;
+            }
+
             if (totalPages <= 10) {
                 for (let i = 1; i <= totalPages; i++) {
-                    if (i === currentPageNum) {
-                        html += `<span class="active">${i}</span>`;
-                    } else {
-                        html += `<a onclick="changePage(${i})">${i}</a>`;
-                    }
+                    html += i === currentPageNum
+                        ? `<span class="page-btn is-active">${i}</span>`
+                        : `<button type="button" class="page-btn" onclick="changePage(${i})">${i}</button>`;
                 }
             } else {
                 const pages = new Set([1, totalPages, currentPageNum - 1, currentPageNum, currentPageNum + 1]);
                 const validPages = Array.from(pages)
-                    .filter(page => page >= 1 && page <= totalPages)
+                    .filter(p => p >= 1 && p <= totalPages)
                     .sort((a, b) => a - b);
 
                 let prevPage = 0;
                 validPages.forEach(page => {
                     if (prevPage && page - prevPage > 1) {
-                        html += '<span>...</span>';
+                        html += `<span class="page-gap">…</span>`;
                     }
-
-                    if (page === currentPageNum) {
-                        html += `<span class="active">${page}</span>`;
-                    } else {
-                        html += `<a onclick="changePage(${page})">${page}</a>`;
-                    }
+                    html += page === currentPageNum
+                        ? `<span class="page-btn is-active">${page}</span>`
+                        : `<button type="button" class="page-btn" onclick="changePage(${page})">${page}</button>`;
                     prevPage = page;
                 });
             }
 
             if (currentPageNum < totalPages) {
-                html += `<a onclick="changePage(${currentPageNum + 1})">下一頁 →</a>`;
+                html += `<button type="button" class="page-btn" onclick="changePage(${currentPageNum + 1})">→</button>`;
             }
 
             html += '</div>';
@@ -404,7 +489,7 @@
         function changePage(page) {
             currentPage = page;
             loadClubs();
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function resetFilters() {
@@ -476,7 +561,7 @@
             renderTagSearchResults();
         }
 
-        window.addEventListener('DOMContentLoaded', async function() {
+        window.addEventListener('DOMContentLoaded', async function () {
             await loadCategories();
             await loadPopularTags();
             await loadAllTags();

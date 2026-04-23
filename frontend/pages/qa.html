@@ -6,6 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>提問 - 社團平台</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        #ask-modal {
+            padding: 1rem;
+        }
+
+        #ask-modal .card {
+            width: min(520px, 92vw);
+            max-height: 82vh;
+            overflow-y: auto;
+            padding: 1.1rem 1.2rem;
+            margin-bottom: 0;
+        }
+
+        #ask-modal h2 {
+            margin-bottom: 0.9rem;
+            font-size: 1.25rem;
+        }
+
+        #ask-modal .form-group {
+            margin-bottom: 1rem;
+        }
+
+        #ask-modal textarea {
+            min-height: 96px;
+        }
+    </style>
 </head>
 
 <body>
@@ -71,7 +97,7 @@
     </div>
 
     <div id="ask-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div class="card" style="max-width: 600px; width: 90%;">
+        <div class="card">
             <h2>發布提問</h2>
             <form id="ask-form">
                 <div class="form-group">

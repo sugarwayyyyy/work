@@ -83,7 +83,7 @@
 .club-filter-card .filter-card__header {
     padding: 0.82rem 0.88rem 0.72rem;
     border-bottom: 1px solid var(--color-border-light);
-    background: linear-gradient(180deg, rgba(238, 242, 255, 0.72), rgba(255, 255, 255, 0.92));
+    background: linear-gradient(180deg, rgba(237, 233, 254, 0.72), rgba(255, 255, 255, 0.92));
 }
 
 .club-filter-card .filter-card__title {

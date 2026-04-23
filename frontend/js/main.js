@@ -1005,7 +1005,7 @@ function ensureGlobalFollowSidebarStyles() {
 }
 
 function getGlobalFollowSidebarMarkup() {
-    const allFollowedClubsHref = getPageLink('club-list.html');
+    const allFollowedClubsHref = `${window.location.origin}${APP_BASE_PATH}/frontend/pages/user-profile.html`;
     return `
         <div class="home-follow-rail__toolbar followed-club-float__toolbar">
             <span class="home-follow-rail__toolbar-title followed-club-float__toolbar-title">&#x8FFD;&#x8E64;&#x793E;&#x5718;</span>
@@ -1076,7 +1076,7 @@ async function renderGlobalFollowSidebar() {
         if (clubs.length === 0) {
             renderGlobalFollowSidebarMessage(
                 PageUtils.createFollowRailActionItem({
-                    href: getPageLink('club-list.html'),
+                    href: `${window.location.origin}${APP_BASE_PATH}/frontend/pages/user-profile.html`,
                     label: '+',
                     title: 'Explore club list',
                     ariaLabel: 'Explore club list',
