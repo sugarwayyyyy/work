@@ -1,79 +1,144 @@
 /* 元件層：按鈕 / 卡片 / 標籤 / Avatar */
 .btn {
-    padding: 0.75rem 1.5rem;
+    padding: 0.65rem 1.4rem;
     border: none;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     cursor: pointer;
-    font-size: 1rem;
-    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
     text-decoration: none;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
     text-align: center;
+    white-space: nowrap;
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
 }
 
 .btn-primary {
-    background-color: var(--brand);
+    background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700));
     color: #ffffff;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.28);
 }
 
 .btn-primary:hover {
-    background-color: var(--brand-hover);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+    background: linear-gradient(135deg, var(--color-primary-700), var(--color-primary-800));
+    box-shadow: 0 6px 18px rgba(124, 58, 237, 0.38);
+    transform: translateY(-1px);
+}
+
+.btn-cta {
+    background: linear-gradient(135deg, var(--color-cta-500), var(--color-cta-600));
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.28);
+}
+
+.btn-cta:hover {
+    background: linear-gradient(135deg, var(--color-cta-600), #15803D);
+    box-shadow: 0 6px 18px rgba(34, 197, 94, 0.38);
+    transform: translateY(-1px);
 }
 
 .btn-secondary {
-    background-color: var(--surface-subtle);
+    background-color: var(--surface);
     color: var(--text-default);
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--color-border-default);
 }
 
 .btn-secondary:hover {
-    background-color: var(--color-bg-muted);
+    background-color: var(--color-primary-50);
+    border-color: var(--color-primary-300);
+    color: var(--brand);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--brand);
+    border: 1.5px solid var(--color-primary-300);
+}
+
+.btn-outline:hover {
+    background: var(--color-primary-50);
+    border-color: var(--brand);
 }
 
 .btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.825rem;
+    border-radius: 0.6rem;
+}
+
+.btn-lg {
+    padding: 0.85rem 2rem;
+    font-size: 1.05rem;
+    border-radius: 0.85rem;
 }
 
 .card {
-    background: white;
-    border-radius: 0.5rem;
-    box-shadow: var(--shadow);
+    background: var(--surface);
+    border-radius: 1rem;
+    border: 1px solid var(--color-border-light);
+    box-shadow: 0 1px 4px rgba(30, 16, 58, 0.06), 0 1px 2px rgba(30, 16, 58, 0.04);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.card:hover {
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.1), 0 2px 6px rgba(30, 16, 58, 0.06);
+    border-color: var(--color-primary-200);
 }
 
 .card-header {
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 1.15rem;
+    font-weight: 700;
     margin-bottom: 1rem;
-    color: var(--text-dark);
+    color: var(--text-strong);
+    letter-spacing: -0.01em;
 }
 
 .card-body {
-    color: var(--text-light);
+    color: var(--text-muted);
 }
 
 .tag {
     display: inline-block;
-    background-color: var(--light-gray);
-    color: var(--text-dark);
-    padding: 0.25rem 0.75rem;
+    background-color: var(--color-primary-100);
+    color: var(--color-primary-700);
+    padding: 0.22rem 0.72rem;
     border-radius: 999px;
-    font-size: 0.875rem;
-    margin-right: 0.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-right: 0.4rem;
+    margin-bottom: 0.4rem;
+    border: 1px solid var(--color-primary-200);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.tag:hover {
+    background-color: var(--color-primary-200);
+    border-color: var(--color-primary-300);
 }
 
 .badge {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.4rem;
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
+    background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700));
+    color: #fff;
 }
 
 .widget-head {
@@ -155,6 +220,64 @@
     line-height: 1.3;
 }
 
+.home-follow-rail__toolbar,
+.followed-club-float__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    margin-bottom: 0.38rem;
+    padding: 0.28rem 0.34rem;
+    border: 1px solid var(--color-border-light);
+    border-radius: 0.72rem;
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.home-follow-rail__toolbar-title,
+.followed-club-float__toolbar-title {
+    color: var(--text-default);
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.home-follow-rail__all-link,
+.followed-club-float__all-link {
+    color: var(--text-default);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 0.18rem 0.48rem;
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    border-radius: 999px;
+    border: 1px solid var(--color-border-light);
+    background: var(--surface-subtle);
+    white-space: nowrap;
+    box-shadow: 0 1px 1px rgba(15, 23, 42, 0.03);
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.home-follow-rail__all-link:hover,
+.followed-club-float__all-link:hover {
+    color: var(--brand-hover);
+    background: var(--brand-soft);
+    border-color: var(--color-primary-200);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+    transform: translateY(-1px);
+}
+
+.home-follow-rail__all-link:focus-visible,
+.followed-club-float__all-link:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+}
+
 .home-follow-rail__list,
 .followed-club-float__list {
     display: grid;
@@ -197,7 +320,7 @@
 .followed-club-float__item--active {
     border-color: var(--color-primary-300);
     background: var(--color-primary-50);
-    box-shadow: 0 6px 14px rgba(79, 70, 229, 0.18);
+    box-shadow: 0 6px 14px rgba(124, 58, 237, 0.2);
 }
 
 .home-follow-rail__item--action,

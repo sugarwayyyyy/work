@@ -138,7 +138,7 @@
 .club-filter-card .filter-field select:focus,
 .club-filter-card .subsearch-box input:focus {
     border-color: var(--brand);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
 }
 
 .club-filter-card .filter-toolbar {

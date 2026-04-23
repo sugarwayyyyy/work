@@ -10,16 +10,18 @@
 }
 
 :root {
-    --color-primary-50: #eef2ff;
-    --color-primary-100: #e0e7ff;
-    --color-primary-200: #c7d2fe;
-    --color-primary-300: #a5b4fc;
-    --color-primary-400: #818cf8;
-    --color-primary-500: #6366f1;
-    --color-primary-600: #5458ee;
-    --color-primary-700: #4f46e5;
-    --color-primary-800: #4338ca;
+    /* 主色調：紫羅蘭（校園活力） */
+    --color-primary-50: #F5F3FF;
+    --color-primary-100: #EDE9FE;
+    --color-primary-200: #DDD6FE;
+    --color-primary-300: #C4B5FD;
+    --color-primary-400: #A78BFA;
+    --color-primary-500: #8B5CF6;
+    --color-primary-600: #7C3AED;
+    --color-primary-700: #6D28D9;
+    --color-primary-800: #5B21B6;
 
+    /* 輔色：玫瑰紅 */
     --color-accent-50: #fff1f2;
     --color-accent-100: #ffe4e6;
     --color-accent-200: #fecdd3;
@@ -28,24 +30,33 @@
     --color-accent-500: #f43f5e;
     --color-accent-600: #e11d48;
 
-    --color-bg-page: #f7f8fc;
+    /* CTA 綠 */
+    --color-cta-50: #f0fdf4;
+    --color-cta-100: #dcfce7;
+    --color-cta-500: #22C55E;
+    --color-cta-600: #16A34A;
+
+    /* 背景與介面色 */
+    --color-bg-page: #FAF5FF;
     --color-bg-surface: #ffffff;
-    --color-bg-subtle: #f3f4f6;
-    --color-bg-muted: #eef0f5;
-    --color-border-light: #e5e7eb;
-    --color-border-default: #d9dce5;
-    --color-border-strong: #c7ccd8;
-    --color-text-strong: #111827;
+    --color-bg-subtle: #F5F3FF;
+    --color-bg-muted: #EDE9FE;
+    --color-border-light: #EDE9FE;
+    --color-border-default: #DDD6FE;
+    --color-border-strong: #C4B5FD;
+    --color-text-strong: #18103A;
     --color-text-default: #374151;
     --color-text-muted: #6b7280;
     --color-text-soft: #9ca3af;
 
-    --brand: var(--color-primary-500);
+    --brand: var(--color-primary-600);
     --brand-hover: var(--color-primary-700);
     --brand-soft: var(--color-primary-100);
     --accent: var(--color-accent-500);
     --accent-strong: var(--color-accent-600);
     --accent-soft: var(--color-accent-100);
+    --cta: var(--color-cta-500);
+    --cta-hover: var(--color-cta-600);
     --page-bg: var(--color-bg-page);
     --surface: var(--color-bg-surface);
     --surface-subtle: var(--color-bg-subtle);
@@ -57,8 +68,8 @@
     --text-soft: var(--color-text-soft);
 
     --primary-color: var(--brand);
-    --secondary-color: var(--color-primary-300);
-    --success-color: #10b981;
+    --secondary-color: var(--color-primary-400);
+    --success-color: #22C55E;
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
     --info-color: #0ea5e9;
@@ -66,24 +77,29 @@
     --border-color: var(--border);
     --text-dark: var(--text-strong);
     --text-light: var(--text-muted);
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px rgba(30, 16, 58, 0.08), 0 1px 2px rgba(30, 16, 58, 0.04);
+    --shadow-lg: 0 10px 24px -3px rgba(124, 58, 237, 0.14), 0 4px 8px -2px rgba(30, 16, 58, 0.08);
+    --shadow-brand: 0 4px 14px rgba(124, 58, 237, 0.28);
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', 'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
     color: var(--text-dark);
-    background-color: var(--surface);
+    background-color: var(--page-bg);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
 }
 
 /* 頭部導航 */
 header {
-    background-color: #ffffff;
-    box-shadow: var(--shadow);
+    background-color: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--color-border-light);
     position: sticky;
     top: 0;
     z-index: 100;
+    transition: background-color 0.2s ease;
 }
 
 nav {
@@ -92,35 +108,67 @@ nav {
     align-items: center;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1rem 2rem;
+    padding: 0.85rem 2rem;
 }
 
 .logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--primary-color);
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
     text-decoration: none;
+    background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-400) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .nav-links {
     display: flex;
     list-style: none;
-    gap: 2rem;
+    gap: 1.75rem;
 }
 
 .nav-links a {
     text-decoration: none;
-    color: var(--text-dark);
-    transition: color 0.3s ease;
+    color: var(--text-default);
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: color 0.2s ease;
+    position: relative;
+    padding-bottom: 2px;
+}
+
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-primary-600), var(--color-primary-400));
+    border-radius: 2px;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.2s ease;
 }
 
 .nav-links a:hover {
-    color: var(--primary-color);
+    color: var(--brand);
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+    transform: scaleX(1);
+}
+
+.nav-links a.active {
+    color: var(--brand);
+    font-weight: 600;
 }
 
 .nav-right {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     align-items: center;
 }
 
@@ -163,40 +211,87 @@ nav {
 
 /* 按鈕樣式 */
 .btn {
-    padding: 0.75rem 1.5rem;
+    padding: 0.65rem 1.4rem;
     border: none;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     cursor: pointer;
-    font-size: 1rem;
-    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
     text-decoration: none;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
     text-align: center;
+    white-space: nowrap;
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
 }
 
 .btn-primary {
-    background-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700));
     color: white;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.28);
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+    background: linear-gradient(135deg, var(--color-primary-700), var(--color-primary-800));
+    box-shadow: 0 6px 18px rgba(124, 58, 237, 0.38);
+    transform: translateY(-1px);
+}
+
+.btn-cta {
+    background: linear-gradient(135deg, var(--color-cta-500), var(--color-cta-600));
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.28);
+}
+
+.btn-cta:hover {
+    background: linear-gradient(135deg, var(--color-cta-600), #15803D);
+    box-shadow: 0 6px 18px rgba(34, 197, 94, 0.38);
+    transform: translateY(-1px);
 }
 
 .btn-secondary {
-    background-color: var(--light-gray);
-    color: var(--text-dark);
-    border: 1px solid var(--border-color);
+    background-color: var(--surface);
+    color: var(--text-default);
+    border: 1.5px solid var(--color-border-default);
 }
 
 .btn-secondary:hover {
-    background-color: #e5e7eb;
+    background-color: var(--color-primary-50);
+    border-color: var(--color-primary-300);
+    color: var(--brand);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--brand);
+    border: 1.5px solid var(--color-primary-300);
+}
+
+.btn-outline:hover {
+    background: var(--color-primary-50);
+    border-color: var(--brand);
 }
 
 .btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.825rem;
+    border-radius: 0.6rem;
+}
+
+.btn-lg {
+    padding: 0.85rem 2rem;
+    font-size: 1.05rem;
+    border-radius: 0.85rem;
 }
 
 /* 表單 */
@@ -228,11 +323,11 @@ nav {
 }
 
 .password-toggle:hover {
-    color: #4f46e5;
+    color: var(--color-primary-700);
 }
 
 .password-toggle:focus-visible {
-    outline: 2px solid rgba(99, 102, 241, 0.35);
+    outline: 2px solid rgba(124, 58, 237, 0.35);
     outline-offset: 2px;
     border-radius: 0.25rem;
 }
@@ -266,7 +361,7 @@ textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
 textarea {
@@ -276,36 +371,58 @@ textarea {
 
 /* 英雄區域 */
 .hero {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-400) 60%, var(--color-primary-300) 100%);
     color: white;
-    padding: 4rem 2rem;
+    padding: 5rem 2rem;
     text-align: center;
     margin-bottom: 3rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    inset: -40% -20%;
+    background-image:
+        radial-gradient(circle at 25% 40%, rgba(255,255,255,0.15) 0%, transparent 50%),
+        radial-gradient(circle at 75% 60%, rgba(255,255,255,0.1) 0%, transparent 50%);
+    pointer-events: none;
 }
 
 .hero h1 {
-    font-size: 2.5rem;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
     margin-bottom: 1rem;
+    position: relative;
 }
 
 .hero p {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     margin-bottom: 2rem;
-    opacity: 0.9;
+    opacity: 0.92;
+    position: relative;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.65;
 }
 
 /* 卡片 */
 .card {
-    background: white;
-    border-radius: 0.5rem;
-    box-shadow: var(--shadow);
+    background: var(--surface);
+    border-radius: 1rem;
+    border: 1px solid var(--color-border-light);
+    box-shadow: 0 1px 4px rgba(30, 16, 58, 0.06), 0 1px 2px rgba(30, 16, 58, 0.04);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    transition: all 0.3s ease;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
 
 .card:hover {
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.1), 0 2px 6px rgba(30, 16, 58, 0.06);
+    border-color: var(--color-primary-200);
     transform: translateY(-2px);
 }
 
@@ -321,7 +438,7 @@ textarea {
     grid-template-columns: auto 1fr auto;
     gap: 0.75rem;
     align-items: center;
-    background: linear-gradient(135deg, rgba(29, 78, 216, 0.58) 0%, rgba(30, 58, 138, 0.66) 62%, rgba(15, 23, 42, 0.72) 100%);
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.82) 0%, rgba(109, 40, 217, 0.88) 55%, rgba(30, 16, 58, 0.92) 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
@@ -372,12 +489,13 @@ textarea {
 
 .auth-promo-banner__login {
     background: #ffffff;
-    color: #1d4ed8;
+    color: var(--color-primary-700);
     border: 1px solid #ffffff;
+    font-weight: 700;
 }
 
 .auth-promo-banner__login:hover {
-    color: #0f172a;
+    color: var(--color-primary-800);
 }
 
 .auth-promo-banner__register {
@@ -482,7 +600,7 @@ textarea {
 
 .dcard-reply-shell {
     background: #ffffff;
-    border: 1px solid rgba(99, 102, 241, 0.14);
+    border: 1px solid rgba(124, 58, 237, 0.14);
     border-radius: 0.95rem;
     padding: 0.85rem 0.95rem;
     box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
@@ -490,7 +608,7 @@ textarea {
 
 .dcard-reply-child-shell {
     background: #f8fbff;
-    border: 1px solid rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(124, 58, 237, 0.1);
     border-radius: 0.7rem;
     padding: 0.55rem 0.7rem;
     margin-left: 0.5rem;
@@ -554,7 +672,7 @@ textarea {
     border-radius: 999px;
     font-size: 0.74rem;
     color: var(--primary-color);
-    background: rgba(99, 102, 241, 0.08);
+    background: rgba(124, 58, 237, 0.08);
 }
 
 .dcard-reply-actions {
@@ -576,7 +694,7 @@ textarea {
 
 .dcard-action-btn:hover {
     color: var(--primary-color);
-    background: rgba(99, 102, 241, 0.07);
+    background: rgba(124, 58, 237, 0.07);
 }
 
 .dcard-action-btn.is-active {
@@ -593,7 +711,7 @@ textarea {
     margin-top: 0.55rem;
     margin-left: 1.05rem;
     padding-left: 0.9rem;
-    border-left: 2px solid rgba(99, 102, 241, 0.22);
+    border-left: 2px solid rgba(124, 58, 237, 0.22);
     display: flex;
     flex-direction: column;
     gap: 0.45rem;
@@ -629,7 +747,7 @@ textarea {
 .qa-reply-card--nested {
     margin-left: 0.5rem;
     background: #f8fbff;
-    border: 1px solid rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(124, 58, 237, 0.12);
     box-shadow: none;
     width: calc(100% - 1rem);
     padding: 0.5rem 0.7rem;
@@ -644,19 +762,19 @@ textarea {
     top: 0.9rem;
     width: 0.6rem;
     height: 0.6rem;
-    border-left: 2px solid rgba(99, 102, 241, 0.35);
-    border-bottom: 2px solid rgba(99, 102, 241, 0.35);
+    border-left: 2px solid rgba(124, 58, 237, 0.35);
+    border-bottom: 2px solid rgba(124, 58, 237, 0.35);
     border-bottom-left-radius: 0.3rem;
 }
 
 .qa-reply-thread {
     margin-top: 0.8rem;
     padding: 0.6rem 0.7rem 0.3rem 1rem;
-    border-left: 3px solid rgba(99, 102, 241, 0.28);
+    border-left: 3px solid rgba(124, 58, 237, 0.28);
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-    background: linear-gradient(90deg, rgba(99, 102, 241, 0.04) 0%, rgba(99, 102, 241, 0.01) 100%);
+    background: linear-gradient(90deg, rgba(124, 58, 237, 0.04) 0%, rgba(124, 58, 237, 0.01) 100%);
     border-radius: 0.7rem;
 }
 
@@ -671,7 +789,7 @@ textarea {
     margin-top: 0.35rem;
     padding: 0.18rem 0.5rem;
     border-radius: 999px;
-    background: rgba(99, 102, 241, 0.08);
+    background: rgba(124, 58, 237, 0.08);
     color: var(--primary-color);
     font-size: 0.76rem;
     font-weight: 600;
@@ -721,39 +839,52 @@ textarea {
 /* 標籤 */
 .tag {
     display: inline-block;
-    background-color: var(--light-gray);
-    color: var(--text-dark);
-    padding: 0.25rem 0.75rem;
+    background-color: var(--color-primary-100);
+    color: var(--color-primary-700);
+    padding: 0.22rem 0.72rem;
     border-radius: 999px;
-    font-size: 0.875rem;
-    margin-right: 0.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-right: 0.4rem;
+    margin-bottom: 0.4rem;
+    border: 1px solid var(--color-primary-200);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.tag:hover {
+    background-color: var(--color-primary-200);
+    border-color: var(--color-primary-300);
 }
 
 .tag-primary {
-    background-color: rgba(99, 102, 241, 0.1);
+    background-color: rgba(124, 58, 237, 0.1);
     color: var(--primary-color);
+    border-color: rgba(124, 58, 237, 0.2);
 }
 
 .tag-success {
-    background-color: rgba(16, 185, 129, 0.1);
+    background-color: rgba(34, 197, 94, 0.1);
     color: var(--success-color);
+    border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
 .tag-warning {
     background-color: rgba(245, 158, 11, 0.1);
     color: var(--warning-color);
+    border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
 /* 徽章 */
 .badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    background-color: var(--primary-color);
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.65rem;
+    background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700));
     color: white;
-    border-radius: 0.25rem;
+    border-radius: 0.45rem;
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
 }
 
@@ -780,9 +911,9 @@ textarea {
 
 .badge-filter[style*="cursor: default"] {
     cursor: default;
-    background-color: rgba(99, 102, 241, 0.1);
+    background-color: rgba(124, 58, 237, 0.1);
     color: var(--primary-color);
-    border-color: rgba(99, 102, 241, 0.2);
+    border-color: rgba(124, 58, 237, 0.2);
 }
 
 .event-filter-panel {
@@ -837,7 +968,7 @@ textarea {
 .event-filter-field input[type="number"]:focus,
 .event-filter-field input[type="text"]:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
     transform: translateY(-1px);
 }
 
@@ -875,7 +1006,7 @@ textarea {
 
 .filter-card {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
-    border: 1px solid rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(124, 58, 237, 0.12);
     border-radius: 1.1rem;
     box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
     overflow: hidden;
@@ -883,8 +1014,8 @@ textarea {
 
 .filter-card__header {
     padding: 1rem 1.1rem 0.75rem;
-    border-bottom: 1px solid rgba(99, 102, 241, 0.08);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.07), rgba(236, 72, 153, 0.04));
+    border-bottom: 1px solid rgba(124, 58, 237, 0.08);
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.07), rgba(236, 72, 153, 0.04));
 }
 
 .filter-card__title {
@@ -948,7 +1079,7 @@ textarea {
 .filter-field input,
 .filter-field select {
     width: 100%;
-    border: 1px solid rgba(99, 102, 241, 0.14);
+    border: 1px solid rgba(124, 58, 237, 0.14);
     border-radius: 0.85rem;
     background: #ffffff;
     padding: 0.82rem 0.95rem;
@@ -958,7 +1089,7 @@ textarea {
 .filter-field input:focus,
 .filter-field select:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
 }
 
 .filter-field small,
@@ -980,7 +1111,7 @@ textarea {
     align-items: flex-end;
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid rgba(99, 102, 241, 0.08);
+    border-top: 1px solid rgba(124, 58, 237, 0.08);
 }
 
 .filter-toolbar__group {
@@ -1018,8 +1149,8 @@ textarea {
 .chip-cloud .tag {
     border-radius: 999px;
     padding: 0.42rem 0.8rem;
-    border: 1px solid rgba(99, 102, 241, 0.16);
-    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(124, 58, 237, 0.16);
+    background: rgba(124, 58, 237, 0.08);
     color: var(--primary-color);
     font-weight: 600;
     transition: all 0.18s ease;
@@ -1185,25 +1316,33 @@ textarea {
 /* 分頁 */
 .pagination {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
     justify-content: center;
     margin: 2rem 0;
 }
 
 .pagination a,
 .pagination span {
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.25rem;
+    padding: 0.48rem 1rem;
+    border: 1.5px solid var(--color-border-default);
+    border-radius: 0.6rem;
     text-decoration: none;
-    color: var(--text-dark);
+    color: var(--text-default);
+    font-weight: 500;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.pagination a:hover,
+.pagination a:hover {
+    background-color: var(--color-primary-50);
+    border-color: var(--color-primary-300);
+    color: var(--brand);
+}
+
 .pagination .active {
-    background-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700));
     color: white;
-    border-color: var(--primary-color);
+    border-color: var(--color-primary-600);
+    box-shadow: 0 3px 8px rgba(124, 58, 237, 0.25);
 }
 
 /* 側邊欄 */
@@ -1292,12 +1431,13 @@ textarea {
 
 /* 頁腳 */
 footer {
-    background-color: var(--text-dark);
-    color: white;
-    padding: 2rem;
+    background: linear-gradient(135deg, var(--color-primary-800) 0%, var(--color-primary-700) 60%, #18103A 100%);
+    color: rgba(255,255,255,0.9);
+    padding: 2.5rem 2rem;
     text-align: center;
     width: 100%;
     margin-top: 4rem;
+    border-top: 1px solid rgba(255,255,255,0.08);
 }
 
 footer p {
@@ -1621,7 +1761,7 @@ footer p {
     border-radius: 0.75rem;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    border: 1px solid rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(124, 58, 237, 0.15);
 }
 
 .admin-list {
@@ -1632,7 +1772,7 @@ footer p {
 
 .admin-item-card {
     background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(124, 58, 237, 0.2);
     border-radius: 0.75rem;
     padding: 1.25rem;
     transition: all 0.3s ease;
@@ -1652,8 +1792,8 @@ footer p {
 
 .admin-item-card:hover {
     background: rgba(255, 255, 255, 0.7);
-    border-color: rgba(99, 102, 241, 0.4);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    border-color: rgba(124, 58, 237, 0.4);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
 }
 
 .admin-item-card-pinned {
@@ -1698,7 +1838,7 @@ footer p {
     align-items: center;
     margin-top: 1rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba(99, 102, 241, 0.1);
+    border-top: 1px solid rgba(124, 58, 237, 0.1);
     flex-wrap: wrap;
     gap: 0.75rem;
 }
@@ -1713,7 +1853,7 @@ footer p {
     place-items: center;
     text-align: center;
     padding: 1.5rem 1rem;
-    border: 1px dashed rgba(99, 102, 241, 0.25);
+    border: 1px dashed rgba(124, 58, 237, 0.25);
     border-radius: 0.85rem;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(241, 245, 249, 0.75) 100%);
 }
@@ -1917,7 +2057,7 @@ footer p {
     right: 0;
     bottom: 0;
     background-image: 
-        radial-gradient(at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+        radial-gradient(at 20% 50%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
         radial-gradient(at 80% 80%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
     pointer-events: none;
 }
@@ -2000,10 +2140,10 @@ footer p {
 
 .image-preview-container {
     margin-top: 0.75rem;
-    border: 2px dashed rgba(99, 102, 241, 0.2);
+    border: 2px dashed rgba(124, 58, 237, 0.2);
     border-radius: 0.5rem;
     padding: 0.75rem;
-    background: rgba(99, 102, 241, 0.03);
+    background: rgba(124, 58, 237, 0.03);
     text-align: center;
     min-height: 80px;
     display: flex;
@@ -2018,8 +2158,8 @@ footer p {
 }
 
 .form-preview-card {
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: rgba(124, 58, 237, 0.08);
+    border: 1px solid rgba(124, 58, 237, 0.2);
     border-radius: 0.5rem;
     padding: 1rem;
     margin-bottom: 1.5rem;

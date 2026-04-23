@@ -1,4 +1,6 @@
 /* 基礎層：reset / tokens / typography / form */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -6,16 +8,18 @@
 }
 
 :root {
-    --color-primary-50: #eef2ff;
-    --color-primary-100: #e0e7ff;
-    --color-primary-200: #c7d2fe;
-    --color-primary-300: #a5b4fc;
-    --color-primary-400: #818cf8;
-    --color-primary-500: #6366f1;
-    --color-primary-600: #5458ee;
-    --color-primary-700: #4f46e5;
-    --color-primary-800: #4338ca;
+    /* 主色調：紫羅蘭（校園活力） */
+    --color-primary-50: #F5F3FF;
+    --color-primary-100: #EDE9FE;
+    --color-primary-200: #DDD6FE;
+    --color-primary-300: #C4B5FD;
+    --color-primary-400: #A78BFA;
+    --color-primary-500: #8B5CF6;
+    --color-primary-600: #7C3AED;
+    --color-primary-700: #6D28D9;
+    --color-primary-800: #5B21B6;
 
+    /* 輔色：玫瑰紅（強調、通知） */
     --color-accent-50: #fff1f2;
     --color-accent-100: #ffe4e6;
     --color-accent-200: #fecdd3;
@@ -24,24 +28,34 @@
     --color-accent-500: #f43f5e;
     --color-accent-600: #e11d48;
 
-    --color-bg-page: #f7f8fc;
+    /* CTA 綠（加入社團、主要行動） */
+    --color-cta-50: #f0fdf4;
+    --color-cta-100: #dcfce7;
+    --color-cta-500: #22C55E;
+    --color-cta-600: #16A34A;
+
+    /* 背景與介面色 */
+    --color-bg-page: #FAF5FF;
     --color-bg-surface: #ffffff;
-    --color-bg-subtle: #f3f4f6;
-    --color-bg-muted: #eef0f5;
-    --color-border-light: #e5e7eb;
-    --color-border-default: #d9dce5;
-    --color-border-strong: #c7ccd8;
-    --color-text-strong: #111827;
+    --color-bg-subtle: #F5F3FF;
+    --color-bg-muted: #EDE9FE;
+    --color-border-light: #EDE9FE;
+    --color-border-default: #DDD6FE;
+    --color-border-strong: #C4B5FD;
+    --color-text-strong: #18103A;
     --color-text-default: #374151;
     --color-text-muted: #6b7280;
     --color-text-soft: #9ca3af;
 
-    --brand: var(--color-primary-500);
+    /* 語意化 token */
+    --brand: var(--color-primary-600);
     --brand-hover: var(--color-primary-700);
     --brand-soft: var(--color-primary-100);
     --accent: var(--color-accent-500);
     --accent-strong: var(--color-accent-600);
     --accent-soft: var(--color-accent-100);
+    --cta: var(--color-cta-500);
+    --cta-hover: var(--color-cta-600);
     --page-bg: var(--color-bg-page);
     --surface: var(--color-bg-surface);
     --surface-subtle: var(--color-bg-subtle);
@@ -52,9 +66,10 @@
     --text-muted: var(--color-text-muted);
     --text-soft: var(--color-text-soft);
 
+    /* 向後相容別名 */
     --primary-color: var(--brand);
-    --secondary-color: var(--color-primary-300);
-    --success-color: #10b981;
+    --secondary-color: var(--color-primary-400);
+    --success-color: #22C55E;
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
     --info-color: #0ea5e9;
@@ -62,15 +77,17 @@
     --border-color: var(--border);
     --text-dark: var(--text-strong);
     --text-light: var(--text-muted);
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px rgba(30, 16, 58, 0.08), 0 1px 2px rgba(30, 16, 58, 0.04);
+    --shadow-lg: 0 10px 24px -3px rgba(124, 58, 237, 0.14), 0 4px 8px -2px rgba(30, 16, 58, 0.08);
+    --shadow-brand: 0 4px 14px rgba(124, 58, 237, 0.28);
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', 'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
     color: var(--text-dark);
-    background-color: var(--surface);
+    background-color: var(--page-bg);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
 }
 
 .u-hidden {
@@ -106,7 +123,7 @@ textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
 }
 
 textarea {
