@@ -10,16 +10,62 @@
 }
 
 :root {
-    --primary-color: #6366f1;
-    --secondary-color: #ec4899;
+    --color-primary-50: #eef2ff;
+    --color-primary-100: #e0e7ff;
+    --color-primary-200: #c7d2fe;
+    --color-primary-300: #a5b4fc;
+    --color-primary-400: #818cf8;
+    --color-primary-500: #6366f1;
+    --color-primary-600: #5458ee;
+    --color-primary-700: #4f46e5;
+    --color-primary-800: #4338ca;
+
+    --color-accent-50: #fff1f2;
+    --color-accent-100: #ffe4e6;
+    --color-accent-200: #fecdd3;
+    --color-accent-300: #fda4af;
+    --color-accent-400: #fb7185;
+    --color-accent-500: #f43f5e;
+    --color-accent-600: #e11d48;
+
+    --color-bg-page: #f7f8fc;
+    --color-bg-surface: #ffffff;
+    --color-bg-subtle: #f3f4f6;
+    --color-bg-muted: #eef0f5;
+    --color-border-light: #e5e7eb;
+    --color-border-default: #d9dce5;
+    --color-border-strong: #c7ccd8;
+    --color-text-strong: #111827;
+    --color-text-default: #374151;
+    --color-text-muted: #6b7280;
+    --color-text-soft: #9ca3af;
+
+    --brand: var(--color-primary-500);
+    --brand-hover: var(--color-primary-700);
+    --brand-soft: var(--color-primary-100);
+    --accent: var(--color-accent-500);
+    --accent-strong: var(--color-accent-600);
+    --accent-soft: var(--color-accent-100);
+    --page-bg: var(--color-bg-page);
+    --surface: var(--color-bg-surface);
+    --surface-subtle: var(--color-bg-subtle);
+    --border: var(--color-border-default);
+    --border-strong: var(--color-border-strong);
+    --text-strong: var(--color-text-strong);
+    --text-default: var(--color-text-default);
+    --text-muted: var(--color-text-muted);
+    --text-soft: var(--color-text-soft);
+
+    --primary-color: var(--brand);
+    --secondary-color: var(--color-primary-300);
     --success-color: #10b981;
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
     --info-color: #0ea5e9;
-    --light-gray: #f3f4f6;
-    --border-color: #e5e7eb;
-    --text-dark: #1f2937;
-    --text-light: #6b7280;
+    --light-gray: var(--surface-subtle);
+    --border-color: var(--border);
+    --text-dark: var(--text-strong);
+    --text-light: var(--text-muted);
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
@@ -27,7 +73,7 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: var(--text-dark);
-    background-color: #ffffff;
+    background-color: var(--surface);
     line-height: 1.6;
 }
 

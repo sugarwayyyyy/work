@@ -27,13 +27,16 @@ async function loadPinnedAnnouncements() {
 
         container.innerHTML = '';
         allSorted.forEach((item, index) => {
+            const isPinned = Number(item.is_pinned) === 1;
+            const badgeText = isPinned ? '置頂' : '公告';
+            const badgeClass = isPinned ? 'feed-item-badge--accent' : 'feed-item-badge--neutral';
             const card = document.createElement('article');
             card.className = 'feed-item-card feed-item-card--announcement';
             card.innerHTML = `
                 <button type="button" class="feed-item-link feed-item-link--announcement" data-expand-row="${index}">
                     <div class="feed-item-head">
                         <h3 class="feed-item-title">${escapeHtml(item.title || '未命名公告')}</h3>
-                        <span class="feed-item-badge">${Number(item.is_pinned) === 1 ? '置頂' : '公告'}</span>
+                        <span class="feed-item-badge ${badgeClass}">${badgeText}</span>
                     </div>
                     <div class="feed-item-time">${safeDate(item.created_at)}</div>
                     <p class="feed-item-body" data-expand-body>${escapeHtml(item.content || '')}</p>
@@ -74,9 +77,12 @@ async function loadFeaturedClubs() {
         clubs.forEach(club => {
             const clubId = Number(club.club_id) || 0;
             const tags = (club.tags || []).slice(0, 2).map(tag => `#${escapeHtml(tag.tag_name || '')}`).join(' ');
-            const badge = club.activity_badge === 'high_active'
+            const badgeText = club.activity_badge === 'high_active'
                 ? '熱門'
                 : (club.activity_badge === 'no_recent_activity' ? '低活躍' : '社團');
+            const badgeClass = club.activity_badge === 'high_active'
+                ? 'feed-item-badge--accent'
+                : (club.activity_badge === 'no_recent_activity' ? 'feed-item-badge--neutral' : '');
 
             const card = document.createElement('article');
             card.className = 'feed-item-card';
@@ -84,7 +90,7 @@ async function loadFeaturedClubs() {
                 <a href="pages/club-detail.html?id=${clubId}" class="feed-item-link">
                     <div class="feed-item-head">
                         <h3 class="feed-item-title">${escapeHtml(club.club_name || '-')}</h3>
-                        <span class="feed-item-badge">${badge}</span>
+                        <span class="feed-item-badge ${badgeClass}">${badgeText}</span>
                     </div>
                     <div class="feed-item-subtitle">${tags || '社團標籤'}</div>
                     <p class="feed-item-body">${escapeHtml(club.description || '')}</p>
@@ -165,19 +171,15 @@ async function loadFeaturedEvents() {
 }
 
 async function loadFollowedClubs() {
-    const section = document.getElementById('followed-clubs-section');
-
     if (!StorageUtils.isLoggedIn()) {
-        if (section) section.style.display = 'none';
-        homeState.followedClubs = [];
+        hideFollowedClubsRail();
         return;
     }
 
     try {
         const response = await APIClient.get('clubs.php?action=my_follows');
         if (!response.success) {
-            if (section) section.style.display = 'none';
-            homeState.followedClubs = [];
+            hideFollowedClubsRail();
             return;
         }
 
@@ -187,9 +189,14 @@ async function loadFollowedClubs() {
 
     } catch (error) {
         console.error('loadFollowedClubs error:', error);
-        if (section) section.style.display = 'none';
-        homeState.followedClubs = [];
+        hideFollowedClubsRail();
     }
+}
+
+function hideFollowedClubsRail() {
+    const section = document.getElementById('followed-clubs-section');
+    if (section) section.style.display = 'none';
+    homeState.followedClubs = [];
 }
 
 function renderFollowedClubsRail(clubs = []) {

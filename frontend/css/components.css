@@ -12,23 +12,24 @@
 }
 
 .btn-primary {
-    background-color: var(--primary-color);
-    color: white;
+    background-color: var(--brand);
+    color: #ffffff;
 }
 
 .btn-primary:hover {
+    background-color: var(--brand-hover);
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
 }
 
 .btn-secondary {
-    background-color: var(--light-gray);
-    color: var(--text-dark);
-    border: 1px solid var(--border-color);
+    background-color: var(--surface-subtle);
+    color: var(--text-default);
+    border: 1px solid var(--border);
 }
 
 .btn-secondary:hover {
-    background-color: #e5e7eb;
+    background-color: var(--color-bg-muted);
 }
 
 .btn-sm {
@@ -73,6 +74,35 @@
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
+}
+
+.widget-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.45rem;
+}
+
+.widget-head--compact {
+    margin-bottom: 0.3rem;
+}
+
+.widget-title {
+    margin: 0;
+    font-size: 0.86rem;
+    color: var(--text-strong);
+}
+
+.widget-subtitle {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    line-height: 1.4;
+}
+
+.widget-list {
+    display: grid;
+    gap: 0.42rem;
 }
 
 .club-avatar {
