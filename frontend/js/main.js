@@ -464,6 +464,60 @@ class PageUtils {
         return `<span class="club-avatar ${fallbackClass}" aria-hidden="true" style="width: ${dimension}; height: ${dimension};">${fallbackContent}</span>`;
     }
 
+    static renderFollowRailAvatar(club, size = 38) {
+        return PageUtils.renderClubAvatar(club, size)
+            .replace('club-avatar', 'club-avatar home-follow-rail__icon followed-club-float__icon')
+            .replace('club-avatar__img', 'club-avatar__img home-follow-rail__icon-img followed-club-float__icon-img');
+    }
+
+    static getFollowRailActiveClubId() {
+        const params = new URLSearchParams(window.location.search);
+        return Number(params.get('club_id') || params.get('club') || params.get('id') || 0);
+    }
+
+    static createFollowRailClubItem(club, href, isActive = false) {
+        const clubName = String(club?.club_name || '').trim() || 'Followed club';
+        const item = document.createElement('a');
+        item.className = `home-follow-rail__item followed-club-float__item${isActive ? ' home-follow-rail__item--active followed-club-float__item--active' : ''}`;
+        item.href = href;
+        item.title = clubName;
+        item.setAttribute('aria-label', clubName);
+        item.innerHTML = PageUtils.renderFollowRailAvatar(club, 38);
+        return item;
+    }
+
+    static createFollowRailActionItem({ href, label, title, ariaLabel, modifier = 'action' }) {
+        const item = document.createElement('a');
+        item.className = `home-follow-rail__item followed-club-float__item home-follow-rail__item--${modifier} followed-club-float__item--${modifier}`;
+        item.href = href;
+        item.title = title;
+        item.setAttribute('aria-label', ariaLabel || title);
+        const text = document.createElement('span');
+        text.className = modifier === 'more'
+            ? 'home-follow-rail__more-label followed-club-float__more-label'
+            : 'home-follow-rail__message followed-club-float__message';
+        text.textContent = label;
+        item.appendChild(text);
+        return item;
+    }
+
+    static createFollowRailMessage(label, title = '') {
+        const message = document.createElement('div');
+        message.className = 'home-follow-rail__message followed-club-float__message';
+        message.textContent = label;
+        if (title) message.title = title;
+        message.setAttribute('aria-hidden', 'true');
+        return message;
+    }
+
+    static replaceFollowRailChildren(container, nodes = []) {
+        if (!container) return;
+        container.innerHTML = '';
+        nodes.forEach((node) => {
+            if (node) container.appendChild(node);
+        });
+    }
+
     static getClubPixelAvatarUrl(club) {
         const code = String(club?.club_code || '').trim();
         if (!/^\d{3}$/.test(code)) return '';
@@ -749,9 +803,19 @@ function getPageLink(fileName) {
 function shouldRenderGlobalFollowSidebar() {
     const pathname = window.location.pathname || '';
     const isPagesPath = pathname.includes('/frontend/pages/') || pathname.includes('/pages/');
-    if (!isPagesPath) return false;
+    const isHomePath = pathname === '/'
+        || pathname.endsWith('/index.html')
+        || pathname.endsWith('/frontend')
+        || pathname.endsWith('/frontend/')
+        || pathname.endsWith('/frontend/index.html');
+    const isHomeDocument = !!document.querySelector('.home-shell');
+    if (!isPagesPath && !isHomePath && !isHomeDocument) return false;
 
     const blockedPageSuffixes = [
+        '/login.html',
+        '/register.html',
+        '/admin-dashboard.html',
+        '/club-admin-dashboard.html',
         '/frontend/pages/login.html',
         '/frontend/pages/register.html',
         '/frontend/pages/admin-dashboard.html',
@@ -772,109 +836,89 @@ function ensureGlobalFollowSidebarStyles() {
     style.id = 'global-follow-sidebar-style';
     style.textContent = `
         body.has-global-follow-sidebar {
-            --global-follow-sidebar-width: 96px;
+            --followed-rail-item-size: 48px;
+            --followed-rail-icon-size: 36px;
+            --followed-rail-left: 0.6rem;
+            --followed-rail-gap: 0.34rem;
+            --followed-rail-reserve: 88px;
+            --followed-rail-top: 5.35rem;
         }
 
         body.has-global-follow-sidebar #followed-clubs-section {
             position: fixed;
-            top: 5.25rem;
-            left: 0;
-            bottom: 0;
-            width: 96px;
-            z-index: 90;
-            overflow: visible;
+            top: var(--followed-rail-top);
+            left: var(--followed-rail-left);
+            width: var(--followed-rail-item-size);
+            z-index: 95;
         }
 
-        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-card {
-            height: calc(100vh - 5.25rem);
-            background: linear-gradient(180deg, #f4f6fa 0%, #eef2f7 100%);
-            border-right: 1px solid rgba(148, 163, 184, 0.35);
-            box-shadow: 4px 0 18px rgba(15, 23, 42, 0.06);
-            border-radius: 0;
-            border-top: 0;
-            border-left: 0;
-            border-bottom: 0;
-            padding: 0.5rem 0.35rem 0.75rem;
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__list {
+            gap: var(--followed-rail-gap);
+            max-height: calc(100vh - 6.4rem);
             overflow-y: auto;
-            overflow-x: visible;
+            overflow-x: hidden;
+            padding: 0.1rem 0;
         }
 
-        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-card::-webkit-scrollbar,
-        body.has-global-follow-sidebar #followed-clubs-container::-webkit-scrollbar {
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__item,
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__message {
+            width: var(--followed-rail-item-size);
+            height: var(--followed-rail-item-size);
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__icon {
+            width: var(--followed-rail-icon-size);
+            height: var(--followed-rail-icon-size);
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__list::-webkit-scrollbar {
             width: 0;
             height: 0;
         }
 
-        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-card__header {
-            display: none;
-        }
-
-        body.has-global-follow-sidebar #followed-clubs-container {
-            display: flex;
-            flex-direction: column;
-            gap: 0.45rem;
-            max-height: 100%;
-            overflow-y: auto;
-            overflow-x: visible;
-            padding: 0.15rem 0.1rem;
-            margin: 0;
-        }
-
-        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-item {
-            display: flex;
-            position: relative;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
-            width: 100%;
-            text-decoration: none;
-            color: inherit;
-            border-radius: 0.8rem;
-            padding: 0.3rem 0.15rem;
-            background: transparent;
-            border: 1px solid transparent;
-            box-shadow: none;
-            transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-        }
-
-        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-item:hover {
-            transform: translateY(-1px);
-            background: rgba(51, 65, 85, 0.1);
-            border-color: rgba(51, 65, 85, 0.18);
-        }
-
-        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-item__body {
-            display: none;
-        }
-
-        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-empty {
-            color: var(--text-light);
-            font-size: 0.8rem;
-            line-height: 1.45;
-            padding: 0.7rem 0.1rem 0.4rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-            text-align: left;
-        }
-
         body.has-global-follow-sidebar .container {
-            padding-left: calc(2rem + var(--global-follow-sidebar-width));
+            padding-left: calc(2rem + var(--followed-rail-reserve));
         }
 
-        body.has-global-follow-sidebar #followed-clubs-section .home-sidebar-empty a {
-            display: inline-block;
-            font-size: 0.78rem;
-        }
-
-        @media (max-width: 1024px) {
-            body.has-global-follow-sidebar #followed-clubs-section {
-                display: none;
+        @media (max-width: 1280px) {
+            body.has-global-follow-sidebar {
+                --followed-rail-item-size: 42px;
+                --followed-rail-icon-size: 32px;
+                --followed-rail-left: 0.45rem;
+                --followed-rail-gap: 0.28rem;
+                --followed-rail-reserve: 72px;
             }
+        }
 
+        @media (max-width: 900px) {
             body.has-global-follow-sidebar .container {
                 padding-left: 1rem;
+            }
+
+            body.has-global-follow-sidebar #followed-clubs-section {
+                position: static;
+                width: auto;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0.5rem 1rem 0;
+                z-index: auto;
+            }
+
+            body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__list {
+                display: flex;
+                align-items: center;
+                gap: 0.32rem;
+                max-height: none;
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding: 0.06rem 0.06rem 0.22rem;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+
+            body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__list::-webkit-scrollbar {
+                width: 0;
+                height: 0;
             }
         }
     `;
@@ -883,31 +927,16 @@ function ensureGlobalFollowSidebarStyles() {
 
 function getGlobalFollowSidebarMarkup() {
     return `
-        <section class="home-sidebar-card card">
-            <div class="home-sidebar-card__header">
-                <div>
-                    <h2 id="followed-clubs-title">我追蹤的社團</h2>
-                    <p id="followed-clubs-subtitle">像訂閱頻道一樣，從左側快速進入你常看的社團。</p>
-                </div>
-                <span id="followed-clubs-count" class="badge">載入中</span>
-            </div>
-            <div id="followed-clubs-container" class="home-sidebar-list">
-                <div class="home-sidebar-empty">載入追蹤社團中...</div>
-            </div>
-        </section>
+        <div id="followed-clubs-container" class="home-follow-rail__list followed-club-float__list" aria-label="Followed clubs rail">
+            <div class="home-follow-rail__message followed-club-float__message" aria-hidden="true">...</div>
+        </div>
     `;
 }
 
-function renderGlobalFollowSidebarMessage(html) {
+function renderGlobalFollowSidebarMessage(nodes) {
     const container = document.getElementById('followed-clubs-container');
-    const title = document.getElementById('followed-clubs-title');
-    const subtitle = document.getElementById('followed-clubs-subtitle');
-    const countBadge = document.getElementById('followed-clubs-count');
-
-    if (title) title.textContent = '我追蹤的社團';
-    if (subtitle) subtitle.textContent = '像訂閱頻道一樣，從左側快速進入你常看的社團。';
-    if (countBadge) countBadge.textContent = '提醒';
-    if (container) container.innerHTML = `<div class="home-sidebar-empty">${html}</div>`;
+    if (!container) return;
+    PageUtils.replaceFollowRailChildren(container, Array.isArray(nodes) ? nodes : [nodes]);
 }
 
 async function renderGlobalFollowSidebar() {
@@ -919,61 +948,73 @@ async function renderGlobalFollowSidebar() {
     if (!section) {
         section = document.createElement('aside');
         section.id = 'followed-clubs-section';
-        section.className = 'home-sidebar';
+        section.className = 'home-follow-rail followed-club-float';
         section.style.display = 'block';
         section.innerHTML = getGlobalFollowSidebarMarkup();
+    }
+
+    const alertContainer = document.getElementById('alert-container');
+    const header = document.querySelector('header');
+    const preferredAnchor = alertContainer || header;
+    if (preferredAnchor && preferredAnchor.parentNode) {
+        const expectedPrev = preferredAnchor;
+        const isMountedAfterAnchor = section.previousElementSibling === expectedPrev;
+        if (!isMountedAfterAnchor) {
+            preferredAnchor.insertAdjacentElement('afterend', section);
+        }
+    } else if (section.parentNode !== document.body) {
         document.body.appendChild(section);
     }
 
     document.body.classList.add('has-global-follow-sidebar');
 
     if (!StorageUtils.isLoggedIn()) {
-        const countBadge = document.getElementById('followed-clubs-count');
-        if (countBadge) countBadge.textContent = '未登入';
-        renderGlobalFollowSidebarMessage(`登入後即可把你追蹤的社團固定在左側。<br><a href="${getPageLink('login.html')}" class="btn btn-primary btn-sm">前往登入</a>`);
+        renderGlobalFollowSidebarMessage(
+            PageUtils.createFollowRailActionItem({
+                href: getPageLink('login.html'),
+                label: 'L',
+                title: 'Login to view followed clubs',
+                ariaLabel: 'Login to view followed clubs',
+                modifier: 'action'
+            })
+        );
         return;
     }
 
     try {
         const response = await APIClient.get('clubs.php?action=my_follows');
         if (!response.success) {
-            renderGlobalFollowSidebarMessage('追蹤社團載入失敗，請稍後再試。');
+            renderGlobalFollowSidebarMessage(PageUtils.createFollowRailMessage('!', 'Load failed'));
             return;
         }
 
         const clubs = response?.data?.clubs || [];
-        const title = document.getElementById('followed-clubs-title');
-        const subtitle = document.getElementById('followed-clubs-subtitle');
-        const countBadge = document.getElementById('followed-clubs-count');
-        if (title) title.textContent = '我追蹤的社團';
-        if (subtitle) subtitle.textContent = '像訂閱頻道一樣，從左側快速進入你常看的社團。';
-        if (countBadge) countBadge.textContent = `${clubs.length} 個社團`;
 
         if (clubs.length === 0) {
-            renderGlobalFollowSidebarMessage(`你目前尚未追蹤任何社團。<br><a href="${getPageLink('club-list.html')}" class="btn btn-secondary btn-sm">前往社團列表</a>`);
+            renderGlobalFollowSidebarMessage(
+                PageUtils.createFollowRailActionItem({
+                    href: getPageLink('club-list.html'),
+                    label: '+',
+                    title: 'Explore club list',
+                    ariaLabel: 'Explore club list',
+                    modifier: 'action'
+                })
+            );
             return;
         }
 
         const container = document.getElementById('followed-clubs-container');
         if (!container) return;
-        container.innerHTML = '';
-
-        clubs.forEach((club) => {
-            const item = document.createElement('a');
-            item.className = 'home-sidebar-item';
-            item.href = `${getPageLink('club-detail.html')}?id=${Number(club.club_id) || 0}`;
-            item.title = club.club_name || '社團';
-            const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
-            item.innerHTML = `
-                ${PageUtils.renderClubAvatar(club, 44)}
-                <span class="home-sidebar-item__body">
-                    <span class="home-sidebar-item__title">${safeClubName}</span>
-                </span>
-            `;
-            container.appendChild(item);
+        const activeClubId = PageUtils.getFollowRailActiveClubId();
+        const nodes = clubs.map((club) => {
+            const clubId = Number(club.club_id) || 0;
+            const href = `${getPageLink('club-detail.html')}?id=${clubId}`;
+            const isActive = activeClubId > 0 && activeClubId === clubId;
+            return PageUtils.createFollowRailClubItem(club, href, isActive);
         });
+        PageUtils.replaceFollowRailChildren(container, nodes);
     } catch (error) {
-        renderGlobalFollowSidebarMessage('載入時發生錯誤。');
+        renderGlobalFollowSidebarMessage(PageUtils.createFollowRailMessage('!', 'Temporary load issue'));
     }
 }
 

@@ -1,6 +1,5 @@
 ﻿const homeState = {
-    events: [],
-    followedClubs: []
+    events: []
 };
 
 async function loadPinnedAnnouncements() {
@@ -170,106 +169,6 @@ async function loadFeaturedEvents() {
     }
 }
 
-async function loadFollowedClubs() {
-    if (!StorageUtils.isLoggedIn()) {
-        hideFollowedClubsRail();
-        return;
-    }
-
-    try {
-        const response = await APIClient.get('clubs.php?action=my_follows');
-        if (!response.success) {
-            hideFollowedClubsRail();
-            return;
-        }
-
-        const clubs = response.data.clubs || [];
-        homeState.followedClubs = clubs;
-        renderFollowedClubsRail(clubs);
-
-    } catch (error) {
-        console.error('loadFollowedClubs error:', error);
-        hideFollowedClubsRail();
-    }
-}
-
-function hideFollowedClubsRail() {
-    const section = document.getElementById('followed-clubs-section');
-    if (section) section.style.display = 'none';
-    homeState.followedClubs = [];
-}
-
-function renderFollowedClubsRail(clubs = []) {
-    const section = document.getElementById('followed-clubs-section');
-    const container = document.getElementById('followed-clubs-container');
-    if (!section || !container) return;
-
-    if (!clubs.length) {
-        section.style.display = 'none';
-        return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const activeClubId = Number(params.get('club_id') || params.get('club') || params.get('id') || 0);
-    const maxVisible = getFollowRailMaxVisible();
-    const visibleClubs = clubs.slice(0, maxVisible);
-    const hiddenCount = Math.max(0, clubs.length - visibleClubs.length);
-
-    section.style.display = 'block';
-    container.innerHTML = visibleClubs.map(club => {
-        const clubId = Number(club.club_id) || 0;
-        const clubName = club.club_name || '未命名社團';
-        const activeClass = clubId !== 0 && clubId === activeClubId ? ' home-follow-rail__item--active' : '';
-        return `
-            <a class="home-follow-rail__item${activeClass}" href="pages/club-detail.html?id=${clubId}" title="${escapeAttribute(clubName)}" aria-label="${escapeAttribute(clubName)}">
-                ${renderFollowedClubAvatar(club)}
-            </a>
-        `;
-    }).join('');
-
-    if (hiddenCount > 0) {
-        container.insertAdjacentHTML('beforeend', `
-            <a class="home-follow-rail__item home-follow-rail__item--more" href="pages/club-list.html" title="還有 ${hiddenCount} 個追蹤社團" aria-label="查看更多追蹤社團">
-                <span class="home-follow-rail__more-label">+${hiddenCount}</span>
-            </a>
-        `);
-    }
-}
-
-function getFollowRailMaxVisible() {
-    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1440;
-    if (viewportWidth <= 720) return 3;
-    if (viewportWidth <= 1040) return 6;
-    return 8;
-}
-
-function setupFollowedRailResponsive() {
-    let timerId = null;
-    window.addEventListener('resize', () => {
-        if (timerId) window.clearTimeout(timerId);
-        timerId = window.setTimeout(() => {
-            renderFollowedClubsRail(homeState.followedClubs);
-        }, 120);
-    });
-}
-
-function renderFollowedClubAvatar(club) {
-    const clubName = String(club?.club_name || '').trim() || '社團';
-    const pixelLogoUrl = (window.PageUtils && typeof PageUtils.getClubPixelAvatarUrl === 'function')
-        ? PageUtils.getClubPixelAvatarUrl(club)
-        : '';
-
-    if (pixelLogoUrl) {
-        const safePixelUrl = escapeAttribute(pixelLogoUrl);
-        return `<span class="club-avatar home-follow-rail__icon"><img src="${safePixelUrl}" alt="${escapeAttribute(clubName)} 像素 logo" class="club-avatar__img home-follow-rail__icon-img" data-pixel="true"></span>`;
-    }
-
-    const emoji = (window.PageUtils && typeof PageUtils.getClubAvatarEmoji === 'function')
-        ? PageUtils.getClubAvatarEmoji(clubName, club?.category_name || club?.category || '', club?.description || '')
-        : '';
-    const fallbackEmoji = emoji || '🏫';
-    return `<span class="club-avatar club-avatar--emoji home-follow-rail__icon" aria-hidden="true">${escapeHtml(fallbackEmoji)}</span>`;
-}
 function renderUpcomingEventsSummary(events) {
     const container = document.getElementById('home-upcoming-events-summary');
     if (!container) return;
@@ -487,9 +386,7 @@ window.addEventListener('DOMContentLoaded', async function () {
     }
 
     setupUnifiedFeedTabs();
-    setupFollowedRailResponsive();
     loadPinnedAnnouncements();
-    await loadFollowedClubs();
     loadFeaturedClubs();
     loadFeaturedEvents();
     loadClubCategories();

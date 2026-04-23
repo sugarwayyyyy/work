@@ -134,3 +134,108 @@
     object-fit: cover;
     display: block;
 }
+
+/* Shared followed clubs floating rail component */
+.home-follow-rail,
+.followed-club-float {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.home-follow-rail__label,
+.followed-club-float__label {
+    margin: 0 0 0.6rem;
+    padding-left: 0.1rem;
+    color: var(--text-soft);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.home-follow-rail__list,
+.followed-club-float__list {
+    display: grid;
+    gap: 0.34rem;
+}
+
+.home-follow-rail__loading,
+.home-follow-rail__item,
+.home-follow-rail__message,
+.followed-club-float__loading,
+.followed-club-float__item,
+.followed-club-float__message {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.88rem;
+    border: 1px solid var(--color-border-light);
+    background: var(--surface);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.home-follow-rail__item,
+.followed-club-float__item {
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.home-follow-rail__item:hover,
+.followed-club-float__item:hover {
+    border-color: var(--color-primary-200);
+    background: var(--brand-soft);
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.16);
+    transform: translateY(-1px) scale(1.06);
+}
+
+.home-follow-rail__item--active,
+.followed-club-float__item--active {
+    border-color: var(--color-primary-300);
+    background: var(--color-primary-50);
+    box-shadow: 0 6px 14px rgba(79, 70, 229, 0.18);
+}
+
+.home-follow-rail__item--action,
+.home-follow-rail__item--more,
+.followed-club-float__item--action,
+.followed-club-float__item--more {
+    border-style: dashed;
+    background: var(--surface-subtle);
+}
+
+.home-follow-rail__more-label,
+.home-follow-rail__message,
+.followed-club-float__more-label,
+.followed-club-float__message {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.home-follow-rail__icon,
+.followed-club-float__icon {
+    width: 36px;
+    height: 36px;
+    box-shadow: none;
+    outline: 1px solid rgba(16, 24, 40, 0.08);
+}
+
+.home-follow-rail__icon-img[data-pixel="true"],
+.followed-club-float__icon-img[data-pixel="true"] {
+    image-rendering: pixelated;
+}
+
+.home-follow-rail__icon.club-avatar--emoji,
+.home-follow-rail__icon.club-avatar--fallback,
+.followed-club-float__icon.club-avatar--emoji,
+.followed-club-float__icon.club-avatar--fallback {
+    font-size: 1.05rem;
+    background: var(--surface-subtle);
+    color: var(--text-default);
+}

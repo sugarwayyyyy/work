@@ -4,7 +4,7 @@
 require_once '../config.php';
 require_once '../auth.php';
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: http://localhost:8000');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-CSRF-Token');
@@ -19,7 +19,7 @@ set_exception_handler(function ($e) {
     Helper::logError('upload.php exception: ' . $e->getMessage());
     if (!headers_sent()) {
         http_response_code(500);
-        header('Content-Type: application/json');
+        header('Content-Type: application/json; charset=UTF-8');
     }
     echo json_encode([
         'success' => false,
@@ -38,7 +38,7 @@ register_shutdown_function(function () {
         Helper::logError('upload.php fatal: ' . $error['message']);
         if (!headers_sent()) {
             http_response_code(500);
-            header('Content-Type: application/json');
+            header('Content-Type: application/json; charset=UTF-8');
         }
         echo json_encode([
             'success' => false,
