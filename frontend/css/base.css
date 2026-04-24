@@ -9,43 +9,43 @@
 
 :root {
     /* 主色調：紫羅蘭（校園活力） */
-    --color-primary-50: #F5F3FF;
-    --color-primary-100: #EDE9FE;
-    --color-primary-200: #DDD6FE;
-    --color-primary-300: #C4B5FD;
-    --color-primary-400: #A78BFA;
-    --color-primary-500: #8B5CF6;
-    --color-primary-600: #7C3AED;
-    --color-primary-700: #6D28D9;
-    --color-primary-800: #5B21B6;
+    --color-primary-50: #F2F6FC;
+    --color-primary-100: #E4ECF8;
+    --color-primary-200: #C9D9F0;
+    --color-primary-300: #9FBDE4;
+    --color-primary-400: #6F97D1;
+    --color-primary-500: #2A5FB5;
+    --color-primary-600: #244F95;
+    --color-primary-700: #1D3F76;
+    --color-primary-800: #162F57;
 
     /* 輔色：玫瑰紅（強調、通知） */
-    --color-accent-50: #fff1f2;
-    --color-accent-100: #ffe4e6;
-    --color-accent-200: #fecdd3;
-    --color-accent-300: #fda4af;
-    --color-accent-400: #fb7185;
-    --color-accent-500: #f43f5e;
-    --color-accent-600: #e11d48;
+    --color-accent-50: #FDF2EE;
+    --color-accent-100: #FCE4DA;
+    --color-accent-200: #F8C9B2;
+    --color-accent-300: #F2A17E;
+    --color-accent-400: #E97B50;
+    --color-accent-500: #D63F2A;
+    --color-accent-600: #B93523;
 
     /* CTA 綠（加入社團、主要行動） */
-    --color-cta-50: #f0fdf4;
-    --color-cta-100: #dcfce7;
-    --color-cta-500: #22C55E;
-    --color-cta-600: #16A34A;
+    --color-cta-50: #EEF7F1;
+    --color-cta-100: #D8ECE0;
+    --color-cta-500: #2E7D4F;
+    --color-cta-600: #256540;
 
     /* 背景與介面色 */
-    --color-bg-page: #FAF5FF;
-    --color-bg-surface: #ffffff;
-    --color-bg-subtle: #F5F3FF;
-    --color-bg-muted: #EDE9FE;
-    --color-border-light: #EDE9FE;
-    --color-border-default: #DDD6FE;
-    --color-border-strong: #C4B5FD;
-    --color-text-strong: #18103A;
-    --color-text-default: #374151;
-    --color-text-muted: #6b7280;
-    --color-text-soft: #9ca3af;
+    --color-bg-page: #F5F0E8;
+    --color-bg-surface: #FFFCF7;
+    --color-bg-subtle: #EDE8DC;
+    --color-bg-muted: #E3DCCE;
+    --color-border-light: #E3DCCE;
+    --color-border-default: #D4CEC4;
+    --color-border-strong: #B0A898;
+    --color-text-strong: #1A1714;
+    --color-text-default: #3D3830;
+    --color-text-muted: #7A7060;
+    --color-text-soft: #B0A898;
 
     /* 語意化 token */
     --brand: var(--color-primary-600);
@@ -69,17 +69,17 @@
     /* 向後相容別名 */
     --primary-color: var(--brand);
     --secondary-color: var(--color-primary-400);
-    --success-color: #22C55E;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --info-color: #0ea5e9;
+    --success-color: #2E7D4F;
+    --warning-color: #E07830;
+    --danger-color: #D63F2A;
+    --info-color: #2A5FB5;
     --light-gray: var(--surface-subtle);
     --border-color: var(--border);
     --text-dark: var(--text-strong);
     --text-light: var(--text-muted);
-    --shadow: 0 1px 3px rgba(30, 16, 58, 0.08), 0 1px 2px rgba(30, 16, 58, 0.04);
-    --shadow-lg: 0 10px 24px -3px rgba(124, 58, 237, 0.14), 0 4px 8px -2px rgba(30, 16, 58, 0.08);
-    --shadow-brand: 0 4px 14px rgba(124, 58, 237, 0.28);
+    --shadow: 0 1px 3px rgba(26, 23, 20, 0.08), 0 1px 2px rgba(26, 23, 20, 0.04);
+    --shadow-lg: 0 10px 24px -3px rgba(42, 95, 181, 0.16), 0 4px 8px -2px rgba(26, 23, 20, 0.08);
+    --shadow-brand: 0 4px 14px rgba(42, 95, 181, 0.28);
 }
 
 body {
@@ -123,7 +123,7 @@ textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+    box-shadow: 0 0 0 3px rgba(42, 95, 181, 0.18);
 }
 
 textarea {
