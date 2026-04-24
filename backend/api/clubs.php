@@ -899,6 +899,11 @@ class ClubAPI {
                 [Auth::getCurrentUserId()]
             );
 
+            foreach ($clubs as &$club) {
+                $club['activity_badge'] = self::calculateActivityBadge((int)$club['club_id']);
+            }
+            unset($club);
+
             Helper::success('取得追蹤社團成功', ['clubs' => $clubs]);
 
         } catch (Exception $e) {
