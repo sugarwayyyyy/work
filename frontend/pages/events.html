@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -12,7 +12,7 @@
 <body>
     <header>
         <nav>
-            <a href="../index.html" class="logo">校園社團平台</a>
+            <a href="../index.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
             <ul class="nav-links">
                 <li><a href="../index.html">首頁</a></li>
                 <li><a href="club-list.html">社團</a></li>
@@ -46,77 +46,107 @@
 
             <!-- 上方篩選卡（全寬） -->
             <div class="event-filter-card filter-card">
-                <div class="filter-card__header">
-                    <div class="filter-card__title">篩選活動</div>
-                    <div class="filter-card__subtitle">可先搜活動名稱，再用日期、社團與狀態縮小結果。</div>
-                </div>
                 <div class="filter-card__body">
 
-                    <div class="event-filter-grid">
-                        <!-- 關鍵字：全寬 -->
+                    <!-- 基本搜尋列（永遠顯示） -->
+                    <div class="event-filter-topbar">
                         <div class="filter-field event-filter-keyword">
-                            <label for="event-search">活動關鍵字</label>
-                            <input type="text" id="event-search" placeholder="輸入活動名稱或關鍵字">
+                            <input type="text" id="event-search" placeholder="輸入活動名稱或關鍵字…">
                         </div>
+                        <button type="button" id="advanced-toggle-btn" class="event-filter-toggle-btn" aria-expanded="false" aria-controls="event-advanced-filters">
+                            進階篩選 <span class="toggle-arrow">&#9660;</span>
+                        </button>
+                    </div>
 
-                        <!-- 社團類別 -->
-                        <div class="filter-field">
-                            <label for="club-category-filter">社團類別</label>
-                            <select id="club-category-filter">
-                                <option value="">全部類別</option>
-                            </select>
-                        </div>
-
-                        <!-- 社團 -->
-                        <div class="filter-field">
-                            <label for="club-filter">社團</label>
-                            <select id="club-filter" disabled>
-                                <option value="">請先選擇類別</option>
-                            </select>
-                        </div>
-
-                        <!-- 開始時間 -->
-                        <div class="filter-field">
-                            <label>開始時間（起）</label>
-                            <input type="hidden" id="event-start-from">
-                            <div class="event-datetime-group">
-                                <input type="date" id="event-start-from-date">
-                                <select id="event-start-from-hour"></select>
-                                <select id="event-start-from-minute">
-                                    <option value="00">整點</option>
-                                    <option value="30">半點</option>
+                    <!-- 進階篩選（預設隱藏） -->
+                    <div id="event-advanced-filters" class="event-advanced-filters" aria-hidden="true">
+                        <div class="event-filter-grid event-filter-grid--advanced">
+                            <!-- 社團類別 -->
+                            <div class="filter-field">
+                                <label for="club-category-filter">社團類別</label>
+                                <select id="club-category-filter">
+                                    <option value="">全部類別</option>
                                 </select>
                             </div>
-                            <small>填入後顯示此時間之後的活動，越接近越優先。</small>
-                        </div>
 
-                        <!-- 截止時間 -->
-                        <div class="filter-field">
-                            <label>截止時間（迄）</label>
-                            <input type="hidden" id="deadline-to">
-                            <div class="event-datetime-group">
-                                <input type="date" id="deadline-to-date">
-                                <select id="deadline-to-hour"></select>
-                                <select id="deadline-to-minute">
-                                    <option value="00">整點</option>
-                                    <option value="30">半點</option>
+                            <!-- 社團 -->
+                            <div class="filter-field">
+                                <label for="club-filter">社團</label>
+                                <select id="club-filter" disabled>
+                                    <option value="">請先選擇類別</option>
                                 </select>
                             </div>
-                            <small>填入後顯示報名截止早於此時間的活動。</small>
+
+                            <!-- 報名開始 -->
+                            <div class="filter-field">
+                                <label>報名開始（起）</label>
+                                <input type="hidden" id="reg-start-from">
+                                <div class="event-datetime-group">
+                                    <input type="date" id="reg-start-from-date">
+                                    <select id="reg-start-from-hour"></select>
+                                    <select id="reg-start-from-minute">
+                                        <option value="00">整點</option>
+                                        <option value="30">半點</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 報名截止 -->
+                            <div class="filter-field">
+                                <label>報名截止（迄）</label>
+                                <input type="hidden" id="deadline-to">
+                                <div class="event-datetime-group">
+                                    <input type="date" id="deadline-to-date">
+                                    <select id="deadline-to-hour"></select>
+                                    <select id="deadline-to-minute">
+                                        <option value="00">整點</option>
+                                        <option value="30">半點</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 活動開始 -->
+                            <div class="filter-field">
+                                <label>活動開始（起）</label>
+                                <input type="hidden" id="event-start-from">
+                                <div class="event-datetime-group">
+                                    <input type="date" id="event-start-from-date">
+                                    <select id="event-start-from-hour"></select>
+                                    <select id="event-start-from-minute">
+                                        <option value="00">整點</option>
+                                        <option value="30">半點</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 活動結束 -->
+                            <div class="filter-field">
+                                <label>活動結束（迄）</label>
+                                <input type="hidden" id="event-end-to">
+                                <div class="event-datetime-group">
+                                    <input type="date" id="event-end-to-date">
+                                    <select id="event-end-to-hour"></select>
+                                    <select id="event-end-to-minute">
+                                        <option value="00">整點</option>
+                                        <option value="30">半點</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 工具列：狀態 chip + 動作按鈕 -->
+                        <div class="event-filter-toolbar">
+                            <div class="event-filter-toolbar__status">
+                                <span class="event-filter-toolbar__label">活動狀態</span>
+                                <div id="event-filters" class="chip-cloud"></div>
+                            </div>
+                            <div class="event-filter-toolbar__actions">
+                                <button class="btn btn-primary btn-sm" onclick="loadEvents()">套用篩選</button>
+                                <button class="btn btn-secondary btn-sm" onclick="resetFilters()">重置</button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- 工具列：狀態 chip + 動作按鈕 -->
-                    <div class="event-filter-toolbar">
-                        <div class="event-filter-toolbar__status">
-                            <span class="event-filter-toolbar__label">活動狀態</span>
-                            <div id="event-filters" class="chip-cloud"></div>
-                        </div>
-                        <div class="event-filter-toolbar__actions">
-                            <button class="btn btn-primary" onclick="loadEvents()">篩選</button>
-                            <button class="btn btn-secondary" onclick="resetFilters()">重製</button>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -165,7 +195,9 @@
                 clubId: params.get('club_id') || params.get('club') || '',
                 categoryId: params.get('category_id') || '',
                 eventStartFrom: params.get('event_start_from') || params.get('date_from') || '',
-                deadlineTo: params.get('deadline_to') || params.get('date_to') || ''
+                eventEndTo: params.get('event_end_to') || '',
+                deadlineTo: params.get('deadline_to') || params.get('date_to') || '',
+                regStartFrom: params.get('reg_start_from') || ''
             };
         }
 
@@ -229,6 +261,7 @@
 
             const filters = [
                 { key: 'open', label: '報名中' },
+                { key: 'not_open', label: '尚未開放' },
                 { key: 'closed', label: '已截止' }
             ];
 
@@ -255,19 +288,24 @@
             if (countEl) countEl.textContent = '搜尋中...';
 
             try {
-                syncDateTimeFromParts('event-start-from');
-                syncDateTimeFromParts('deadline-to');
+                ['event-start-from', 'deadline-to', 'reg-start-from', 'event-end-to'].forEach(syncDateTimeFromParts);
 
                 const eventStartFrom = document.getElementById('event-start-from').value;
-                if (eventStartFrom && !isHalfHourAligned(eventStartFrom)) {
-                    PageUtils.showAlert('開始時間只能選整點或半點', 'error');
-                    return;
-                }
+                const deadlineTo     = document.getElementById('deadline-to').value;
+                const regStartFrom   = document.getElementById('reg-start-from').value;
+                const eventEndTo     = document.getElementById('event-end-to').value;
 
-                const deadlineTo = document.getElementById('deadline-to').value;
-                if (deadlineTo && !isHalfHourAligned(deadlineTo)) {
-                    PageUtils.showAlert('截止時間只能選整點或半點', 'error');
-                    return;
+                const halfHourChecks = [
+                    [eventStartFrom, '活動開始時間只能選整點或半點'],
+                    [deadlineTo,     '報名截止時間只能選整點或半點'],
+                    [regStartFrom,   '報名開始時間只能選整點或半點'],
+                    [eventEndTo,     '活動結束時間只能選整點或半點'],
+                ];
+                for (const [val, msg] of halfHourChecks) {
+                    if (val && !isHalfHourAligned(val)) {
+                        PageUtils.showAlert(msg, 'error');
+                        return;
+                    }
                 }
 
                 let url = `events.php?page=${currentPage}`;
@@ -276,7 +314,10 @@
                 const eventSearch = document.getElementById('event-search').value;
                 if (eventSearch) url += `&search=${encodeURIComponent(eventSearch)}`;
                 if (eventStartFrom) url += `&event_start_from=${encodeURIComponent(eventStartFrom)}`;
-                if (deadlineTo) url += `&deadline_to=${encodeURIComponent(deadlineTo)}`;
+                if (deadlineTo)     url += `&deadline_to=${encodeURIComponent(deadlineTo)}`;
+                if (regStartFrom)   url += `&reg_start_from=${encodeURIComponent(regStartFrom)}`;
+                if (eventEndTo)     url += `&event_end_to=${encodeURIComponent(eventEndTo)}`;
+
                 url += `&filter=${encodeURIComponent(selectedFilter)}`;
 
                 const response = await APIClient.get(url);
@@ -455,19 +496,18 @@
         }
 
         function resetFilters() {
+            closeAdvancedFilters();
             document.getElementById('club-category-filter').value = '';
             const clubSelect = document.getElementById('club-filter');
             clubSelect.disabled = true;
             clubSelect.innerHTML = '<option value="">請先選擇類別</option>';
             document.getElementById('event-search').value = '';
-            document.getElementById('event-start-from-date').value = '';
-            document.getElementById('deadline-to-date').value = '';
-            document.getElementById('event-start-from-hour').value = '00';
-            document.getElementById('deadline-to-hour').value = '00';
-            document.getElementById('event-start-from-minute').value = '00';
-            document.getElementById('deadline-to-minute').value = '00';
-            document.getElementById('event-start-from').value = '';
-            document.getElementById('deadline-to').value = '';
+            ['event-start-from', 'deadline-to', 'reg-start-from', 'event-end-to'].forEach(baseId => {
+                document.getElementById(`${baseId}-date`).value = '';
+                document.getElementById(`${baseId}-hour`).value = '00';
+                document.getElementById(`${baseId}-minute`).value = '00';
+                document.getElementById(baseId).value = '';
+            });
             selectedFilter = 'open';
             renderEventFilters();
             currentPage = 1;
@@ -478,8 +518,12 @@
             const params = getEventUrlParams();
 
             document.getElementById('event-search').value = params.search;
-            selectedFilter = params.filter === 'closed' ? 'closed' : 'open';
+            selectedFilter = ['open', 'not_open', 'closed'].includes(params.filter) ? params.filter : 'open';
             renderEventFilters();
+
+            const hasAdvanced = params.categoryId || params.clubId || params.eventStartFrom
+                || params.eventEndTo || params.deadlineTo || params.regStartFrom;
+            if (hasAdvanced) openAdvancedFilters();
 
             if (params.categoryId) {
                 document.getElementById('club-category-filter').value = params.categoryId;
@@ -508,6 +552,26 @@
                     syncDateTimeFromParts('deadline-to');
                 }
             }
+
+            if (params.regStartFrom) {
+                const date = new Date(params.regStartFrom.replace('T', ' '));
+                if (!Number.isNaN(date.getTime())) {
+                    document.getElementById('reg-start-from-date').value = date.toISOString().slice(0, 10);
+                    document.getElementById('reg-start-from-hour').value = String(date.getHours()).padStart(2, '0');
+                    document.getElementById('reg-start-from-minute').value = String(date.getMinutes()).padStart(2, '0');
+                    syncDateTimeFromParts('reg-start-from');
+                }
+            }
+
+            if (params.eventEndTo) {
+                const date = new Date(params.eventEndTo.replace('T', ' '));
+                if (!Number.isNaN(date.getTime())) {
+                    document.getElementById('event-end-to-date').value = date.toISOString().slice(0, 10);
+                    document.getElementById('event-end-to-hour').value = String(date.getHours()).padStart(2, '0');
+                    document.getElementById('event-end-to-minute').value = String(date.getMinutes()).padStart(2, '0');
+                    syncDateTimeFromParts('event-end-to');
+                }
+            }
         }
 
         document.getElementById('club-category-filter').addEventListener('change', async (e) => {
@@ -528,8 +592,35 @@
             searchDebounce = setTimeout(loadEvents, 250);
         });
 
+        function openAdvancedFilters() {
+            const panel = document.getElementById('event-advanced-filters');
+            const btn   = document.getElementById('advanced-toggle-btn');
+            panel.classList.add('is-open');
+            panel.setAttribute('aria-hidden', 'false');
+            btn.classList.add('is-active');
+            btn.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeAdvancedFilters() {
+            const panel = document.getElementById('event-advanced-filters');
+            const btn   = document.getElementById('advanced-toggle-btn');
+            panel.classList.remove('is-open');
+            panel.setAttribute('aria-hidden', 'true');
+            btn.classList.remove('is-active');
+            btn.setAttribute('aria-expanded', 'false');
+        }
+
         window.addEventListener('DOMContentLoaded', function () {
-            ['event-start-from', 'deadline-to'].forEach(baseId => {
+            document.getElementById('advanced-toggle-btn').addEventListener('click', () => {
+                const panel = document.getElementById('event-advanced-filters');
+                if (panel.classList.contains('is-open')) {
+                    closeAdvancedFilters();
+                } else {
+                    openAdvancedFilters();
+                }
+            });
+
+            ['event-start-from', 'deadline-to', 'reg-start-from', 'event-end-to'].forEach(baseId => {
                 initHourSelect(`${baseId}-hour`);
                 const dateInput = document.getElementById(`${baseId}-date`);
                 const hourSelect = document.getElementById(`${baseId}-hour`);

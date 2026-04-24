@@ -244,7 +244,7 @@
 }
 
 .feed-item-card:last-child {
-    border-bottom: 0;
+    border-bottom: 1px solid var(--color-border-light);
 }
 
 .feed-item-link {
@@ -341,10 +341,54 @@
     margin-bottom: 0.4rem;
 }
 
+.feed-item-meta__updated {
+    margin-left: auto;
+    color: var(--text-muted);
+    opacity: 0.75;
+}
+
 .feed-footer {
     margin-top: 0.5rem;
     display: flex;
     justify-content: center;
+    min-height: 2.4rem;
+}
+
+.feed-pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feed-pagination__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border-light);
+    background: var(--surface);
+    color: var(--text-default);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.feed-pagination__btn:hover:not(:disabled) {
+    background: var(--brand-soft);
+    border-color: var(--color-primary-200);
+}
+
+.feed-pagination__btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.feed-pagination__info {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
 }
 
 .home-summary-item {

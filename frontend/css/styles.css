@@ -2,7 +2,7 @@
 @import url('./layout.css');
 @import url('./components.css');
 
-/* ?¨å?æ¨?? */
+/* ?ï¿½ï¿½?ï¿½?? */
 * {
     margin: 0;
     padding: 0;
@@ -10,7 +10,7 @@
 }
 
 :root {
-    /* ä¸»è‰²èª¿ï?ç´«ç??­ï??¡å?æ´»å?ï¼?*/
+    /* ä¸»è‰²èª¿ï¿½?ç´«ï¿½??ï¿½ï¿½??ï¿½ï¿½?æ´»ï¿½?ï¿½?*/
     --color-primary-50: #F2F6FC;
     --color-primary-100: #E4ECF8;
     --color-primary-200: #C9D9F0;
@@ -21,7 +21,7 @@
     --color-primary-700: #1D3F76;
     --color-primary-800: #162F57;
 
-    /* è¼”è‰²ï¼šç«?°ç? */
+    /* è¼”è‰²ï¼šç«?ï¿½ï¿½? */
     --color-accent-50: #FDF2EE;
     --color-accent-100: #FCE4DA;
     --color-accent-200: #F8C9B2;
@@ -30,13 +30,13 @@
     --color-accent-500: #D63F2A;
     --color-accent-600: #B93523;
 
-    /* CTA ç¶?*/
+    /* CTA ï¿½?*/
     --color-cta-50: #EEF7F1;
     --color-cta-100: #D8ECE0;
     --color-cta-500: #2E7D4F;
     --color-cta-600: #256540;
 
-    /* ?Œæ™¯?‡ä??¢è‰² */
+    /* ?ï¿½æ™¯?ï¿½ï¿½??ï¿½è‰² */
     --color-bg-page: #F5F0E8;
     --color-bg-surface: #FFFCF7;
     --color-bg-subtle: #EDE8DC;
@@ -90,7 +90,7 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* ?­éƒ¨å°èˆª */
+/* ?ï¿½éƒ¨å°èˆª */
 header {
     background-color: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(14px);
@@ -120,6 +120,14 @@ nav {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    line-height: 1.2;
+}
+
+.logo__sub {
+    display: block;
+    font-size: 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
 }
 
 .nav-links {
@@ -209,7 +217,7 @@ nav {
     display: block;
 }
 
-/* ?‰é?æ¨?? */
+/* ?ï¿½ï¿½?ï¿½?? */
 .btn {
     padding: 0.65rem 1.4rem;
     border: none;
@@ -256,6 +264,19 @@ nav {
 .btn-cta:hover {
     background: linear-gradient(135deg, var(--color-cta-600), #15803D);
     box-shadow: 0 6px 18px rgba(34, 197, 94, 0.38);
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.28);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #15803d, #166534);
+    box-shadow: 0 6px 18px rgba(22, 163, 74, 0.38);
     transform: translateY(-1px);
 }
 
@@ -369,7 +390,7 @@ textarea {
     min-height: 120px;
 }
 
-/* ?±é??€??*/
+/* ?ï¿½ï¿½??ï¿½??*/
 .hero {
     background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-400) 60%, var(--color-primary-300) 100%);
     color: white;
@@ -409,7 +430,7 @@ textarea {
     line-height: 1.65;
 }
 
-/* ?¡ç? */
+/* ?ï¿½ï¿½? */
 .card {
     background: var(--surface);
     border-radius: 1rem;
@@ -874,7 +895,7 @@ textarea {
     border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
-/* å¾½ç? */
+/* å¾½ï¿½? */
 .badge {
     display: inline-flex;
     align-items: center;
@@ -886,6 +907,12 @@ textarea {
     font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
+}
+
+.badge-success {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: white;
+    border-color: transparent;
 }
 
 .badge-filter {
@@ -1287,7 +1314,7 @@ textarea {
     }
 }
 
-/* è­¦å?/?å?æ¶ˆæ¯ */
+/* è­¦ï¿½?/?ï¿½ï¿½?æ¶ˆæ¯ */
 .alert {
     padding: 1rem;
     border-radius: 0.5rem;
@@ -1313,7 +1340,7 @@ textarea {
     border: 1px solid var(--warning-color);
 }
 
-/* ?†é? */
+/* ?ï¿½ï¿½? */
 .pagination {
     display: flex;
     gap: 0.4rem;
@@ -1345,7 +1372,7 @@ textarea {
     box-shadow: 0 3px 8px rgba(42, 95, 181, 0.25);
 }
 
-/* ?´é?æ¬?*/
+/* ?ï¿½ï¿½?ï¿½?*/
 .sidebar {
     background-color: var(--light-gray);
     padding: 1.5rem;
@@ -1374,7 +1401,7 @@ textarea {
     color: var(--primary-color);
 }
 
-/* ?Ÿè?è©•ç? */
+/* ?ï¿½ï¿½?è©•ï¿½? */
 .rating {
     color: #fbbf24;
     font-size: 1.25rem;
@@ -1403,7 +1430,7 @@ textarea {
     color: #fbbf24;
 }
 
-/* ? è?ä¸?*/
+/* ?ï¿½ï¿½?ï¿½?*/
 .loading {
     text-align: center;
     padding: 2rem;
@@ -1429,7 +1456,7 @@ textarea {
     }
 }
 
-/* ?è…³ */
+/* ?ï¿½è…³ */
 footer {
     background: linear-gradient(135deg, var(--color-primary-800) 0%, var(--color-primary-700) 60%, #1A1714 100%);
     color: rgba(255,255,255,0.9);
@@ -1444,7 +1471,7 @@ footer p {
     margin: 0;
 }
 
-/* ?¿æ?å¼è¨­è¨?*/
+/* ?ï¿½ï¿½?å¼è¨­ï¿½?*/
 @media (max-width: 768px) {
     .container {
         padding: 1rem;
@@ -1474,7 +1501,7 @@ footer p {
     }
 }
 
-/* ç®¡ç??¡å?è¡¨æ¿å°ˆå±¬ */
+/* ç®¡ï¿½??ï¿½ï¿½?è¡¨æ¿å°ˆå±¬ */
 .admin-dashboard-page {
     font-family: 'IBM Plex Sans TC', 'Segoe UI', Tahoma, sans-serif;
     background:

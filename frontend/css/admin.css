@@ -1,4 +1,146 @@
 /* 管理頁層：管理員/幹部頁共用區塊（由 styles.css 漸進搬移） */
+
+/* ── Stats Bar ── */
+.admin-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 0.85rem;
+}
+
+.admin-stats-bar .metric-card {
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 0.9rem;
+    background: var(--surface, #fff);
+    padding: 0.9rem 1rem;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(30, 16, 58, 0.05);
+}
+
+.admin-stats-bar .metric-card p {
+    margin: 0 0 0.22rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.admin-stats-bar .metric-card strong {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: var(--color-primary-700, #5b21b6);
+    line-height: 1.1;
+}
+
+/* ── Tab Nav ── */
+.admin-tab-nav {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    padding: 0.35rem;
+    margin-bottom: 0.85rem;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 0.9rem;
+    background: var(--surface, #fff);
+}
+
+.admin-tab {
+    flex: 1 1 auto;
+    padding: 0.48rem 0.9rem;
+    border: 1px solid transparent;
+    border-radius: 0.62rem;
+    background: transparent;
+    color: var(--text-default, #374151);
+    font-size: 0.84rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-tab:hover {
+    background: var(--brand-soft, #ede9fe);
+    color: var(--brand-hover, #6d28d9);
+}
+
+.admin-tab.is-active {
+    background: var(--brand, #7c3aed);
+    border-color: var(--brand, #7c3aed);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(124, 58, 237, 0.3);
+}
+
+/* ── Tab Panels ── */
+.admin-tab-panel {
+    display: none;
+}
+
+.admin-tab-panel.is-active {
+    display: block;
+}
+
+/* ── Reports Sub-tabs ── */
+.admin-sub-tab-nav {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 0.85rem;
+    padding: 0.25rem;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 0.7rem;
+    background: var(--color-primary-50, #f5f3ff);
+    width: fit-content;
+}
+
+.admin-sub-tab {
+    padding: 0.36rem 0.9rem;
+    border: 1px solid transparent;
+    border-radius: 0.48rem;
+    background: transparent;
+    color: var(--text-muted, #64748b);
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-sub-tab:hover {
+    background: var(--surface, #fff);
+    color: var(--brand-hover, #6d28d9);
+}
+
+.admin-sub-tab.is-active {
+    background: var(--brand, #7c3aed);
+    border-color: var(--brand, #7c3aed);
+    color: #ffffff;
+    box-shadow: 0 1px 4px rgba(124, 58, 237, 0.25);
+}
+
+.admin-sub-panel {
+    display: none !important;
+}
+
+.admin-sub-panel.is-active {
+    display: grid !important;
+    gap: 0.75rem;
+}
+
+@media (max-width: 720px) {
+    .admin-stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .admin-tab {
+        flex: 0 1 auto;
+        font-size: 0.78rem;
+        padding: 0.42rem 0.7rem;
+    }
+}
+
+
 .admin-dashboard-page .admin-list,
 .club-admin-page .admin-list {
     display: grid;

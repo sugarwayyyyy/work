@@ -12,7 +12,7 @@
 <body>
     <header>
         <nav>
-            <a href="index.html" class="logo">校園社團平台</a>
+            <a href="index.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
             <ul class="nav-links">
                 <li><a href="index.html">首頁</a></li>
                 <li><a href="pages/club-list.html">社團</a></li>
@@ -75,12 +75,12 @@
 
                             <div id="events-filters" class="portal-search-filters portal-search-filters--hidden">
                                 <div class="portal-field">
-                                    <label for="event-date-from">活動日期起</label>
-                                    <input type="date" id="event-date-from">
+                                    <label for="event-reg-start">報名開始（起）</label>
+                                    <input type="date" id="event-reg-start">
                                 </div>
                                 <div class="portal-field">
-                                    <label for="event-date-to">活動日期迄</label>
-                                    <input type="date" id="event-date-to">
+                                    <label for="event-reg-end">報名截止（迄）</label>
+                                    <input type="date" id="event-reg-end">
                                 </div>
                                 <div class="portal-field">
                                     <label for="event-fee-range">費用區間</label>
@@ -90,6 +90,14 @@
                                         <option value="0-100">0-100</option>
                                         <option value="100+">100+</option>
                                     </select>
+                                </div>
+                                <div class="portal-field">
+                                    <label for="event-date-from">活動開始（起）</label>
+                                    <input type="date" id="event-date-from">
+                                </div>
+                                <div class="portal-field">
+                                    <label for="event-date-to">活動結束（迄）</label>
+                                    <input type="date" id="event-date-to">
                                 </div>
                             </div>
 
@@ -172,7 +180,7 @@
                         </div>
 
                         <div class="feed-footer">
-                            <button type="button" id="feed-more-btn" class="btn btn-secondary btn-sm">查看更多</button>
+                            <div id="feed-pagination" class="feed-pagination"></div>
                         </div>
                     </section>
                 </main>

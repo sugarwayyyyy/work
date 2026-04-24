@@ -209,9 +209,10 @@ class ClubAPI {
         }
     }
 
-    private static function calculateActivityBadge($clubId) {
-        $recentEvent = Database::getInstance()->fetchOne(
-            'SELECT COUNT(*) AS cnt
+    private static function calculateActivityBadge($clubId, $clubCreatedAt = null) {
+        $eventRow = Database::getInstance()->fetchOne(
+            'SELECT SUM(CASE WHEN COALESCE(e.published_at, e.created_at) >= DATE_SUB(NOW(), INTERVAL 90 DAY) THEN 1 ELSE 0 END) AS recent_cnt,
+                    MAX(COALESCE(e.published_at, e.created_at)) AS last_event_at
              FROM events e
              WHERE (
                     e.club_id = ?
@@ -221,23 +222,31 @@ class ClubAPI {
                         WHERE ce.participated_club_id = ? AND ce.status = "approved"
                     )
              )
-               AND e.event_status IN ("published", "ongoing", "completed")
-               AND COALESCE(e.published_at, e.created_at) >= DATE_SUB(NOW(), INTERVAL 90 DAY)',
+               AND e.event_status IN ("published", "ongoing", "completed")',
             [$clubId, $clubId]
         );
 
-        $recentPost = Database::getInstance()->fetchOne(
-            'SELECT COUNT(*) AS cnt
+        $qaRow = Database::getInstance()->fetchOne(
+            'SELECT SUM(CASE WHEN qa.created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY) THEN 1 ELSE 0 END) AS recent_cnt,
+                    MAX(qa.created_at) AS last_qa_at
              FROM q_and_a qa
-             WHERE qa.club_id = ?
-               AND qa.created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)',
+             WHERE qa.club_id = ?',
             [$clubId]
         );
 
-        $eventCount = (int)($recentEvent['cnt'] ?? 0);
-        $postCount = (int)($recentPost['cnt'] ?? 0);
+        $recentEvents = (int)($eventRow['recent_cnt'] ?? 0);
+        $recentPosts  = (int)($qaRow['recent_cnt'] ?? 0);
 
-        return ($eventCount + $postCount) >= 1 ? 'high_active' : 'no_recent_activity';
+        $times = array_filter([
+            $eventRow['last_event_at'] ?? null,
+            $qaRow['last_qa_at'] ?? null,
+            $clubCreatedAt,
+        ]);
+        $lastActivityAt = $times ? max($times) : null;
+
+        $badge = ($recentEvents + $recentPosts) >= 1 ? 'high_active' : 'no_recent_activity';
+
+        return ['badge' => $badge, 'last_activity_at' => $lastActivityAt];
     }
     
     /**
@@ -433,7 +442,9 @@ class ClubAPI {
                     $row['reviews_count'] = 0;
                 }
 
-                $row['activity_badge'] = self::calculateActivityBadge((int)$row['club_id']);
+                $activityInfo = self::calculateActivityBadge((int)$row['club_id'], $row['created_at'] ?? null);
+                $row['activity_badge']   = $activityInfo['badge'];
+                $row['last_activity_at'] = $activityInfo['last_activity_at'];
 
                 if ($useSearchRanking) {
                     $row['_search_score'] = self::scoreClubSearchResult($row, $tags_result, $search);
@@ -690,7 +701,9 @@ class ClubAPI {
             $club['average_rating'] = (float)($rating_result['avg_rating'] ?? 0);
             $club['reviews_count'] = (int)($rating_result['count'] ?? 0);
             $club['reviews'] = $reviews;
-            $club['activity_badge'] = self::calculateActivityBadge((int)$club_id);
+            $activityInfo = self::calculateActivityBadge((int)$club_id, $club['created_at'] ?? null);
+            $club['activity_badge']   = $activityInfo['badge'];
+            $club['last_activity_at'] = $activityInfo['last_activity_at'];
             
             // 取得成員數（社團平台定義為追蹤數）
             $member_count = Database::getInstance()->fetchOne(
@@ -900,7 +913,9 @@ class ClubAPI {
             );
 
             foreach ($clubs as &$club) {
-                $club['activity_badge'] = self::calculateActivityBadge((int)$club['club_id']);
+                $activityInfo = self::calculateActivityBadge((int)$club['club_id'], $club['created_at'] ?? null);
+                $club['activity_badge']   = $activityInfo['badge'];
+                $club['last_activity_at'] = $activityInfo['last_activity_at'];
             }
             unset($club);
 

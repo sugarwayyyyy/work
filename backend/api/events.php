@@ -394,7 +394,9 @@ class EventAPI {
             $search = $_GET['search'] ?? '';
             $filter = strtolower($_GET['filter'] ?? 'open');
             $event_start_from = $_GET['event_start_from'] ?? ($_GET['date_from'] ?? null);
-            $deadline_to = $_GET['deadline_to'] ?? ($_GET['date_to'] ?? null);
+            $event_end_to     = $_GET['event_end_to'] ?? null;
+            $deadline_to      = $_GET['deadline_to'] ?? ($_GET['date_to'] ?? null);
+            $reg_start_from   = $_GET['reg_start_from'] ?? null;
             $min_remaining = isset($_GET['min_remaining']) && $_GET['min_remaining'] !== ''
                 ? (int)$_GET['min_remaining']
                 : null;
@@ -436,6 +438,18 @@ class EventAPI {
                 $params[] = self::normalizeDatetimeInput($deadline_to, true);
             }
 
+            if ($reg_start_from) {
+                $regStart = strlen($reg_start_from) <= 10 ? $reg_start_from . ' 00:00:00' : str_replace('T', ' ', $reg_start_from) . ':00';
+                $conditions[] = '(events.registration_deadline IS NULL OR events.registration_deadline >= ?)';
+                $params[] = $regStart;
+            }
+
+            if ($event_end_to) {
+                $eventEnd = strlen($event_end_to) <= 10 ? $event_end_to . ' 23:59:59' : str_replace('T', ' ', $event_end_to) . ':59';
+                $conditions[] = 'events.event_date <= ?';
+                $params[] = $eventEnd;
+            }
+
             if ($min_remaining !== null) {
                 $conditions[] = "(events.capacity = 0 OR (events.capacity - (SELECT COUNT(*) FROM event_registrations er WHERE er.event_id = events.event_id)) >= ?)";
                 $params[] = $min_remaining;
@@ -443,6 +457,8 @@ class EventAPI {
 
             if ($filter === 'open') {
                 $conditions[] = '(events.is_registration_open = 1 AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW())';
+            } elseif ($filter === 'not_open') {
+                $conditions[] = '(events.is_registration_open = 0 AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW())';
             } elseif ($filter === 'closed') {
                 $conditions[] = '(events.is_registration_open = 0 OR (events.registration_deadline IS NOT NULL AND events.registration_deadline < NOW()) OR events.event_date < NOW())';
             }

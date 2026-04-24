@@ -836,175 +836,272 @@ function ensureGlobalFollowSidebarStyles() {
     style.id = 'global-follow-sidebar-style';
     style.textContent = `
         body.has-global-follow-sidebar {
-            --followed-rail-item-size: 48px;
-            --followed-rail-icon-size: 36px;
-            --followed-rail-panel-width: 132px;
-            --followed-rail-left: 0.6rem;
-            --followed-rail-gap: 0.34rem;
-            --followed-rail-reserve: 152px;
-            --followed-rail-top: 5.35rem;
+            --sidebar-icon-size: 38px;
+            --sidebar-avatar-size: 34px;
+            --sidebar-collapsed-w: 58px;
+            --sidebar-expanded-w: 212px;
+            --sidebar-left: 0.45rem;
+            --sidebar-top: 5.35rem;
+            --sidebar-gap: 0.22rem;
+        }
+
+        body.has-global-follow-sidebar .container {
+            padding-left: calc(var(--sidebar-left) + var(--sidebar-collapsed-w) + 0.9rem);
+            transition: padding-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.has-global-follow-sidebar.sidebar-expanded .container {
+            padding-left: calc(var(--sidebar-left) + var(--sidebar-expanded-w) + 0.9rem);
         }
 
         body.has-global-follow-sidebar #followed-clubs-section {
             position: fixed;
-            top: var(--followed-rail-top);
-            left: var(--followed-rail-left);
-            width: var(--followed-rail-panel-width);
+            top: var(--sidebar-top);
+            left: var(--sidebar-left);
+            width: var(--sidebar-collapsed-w);
             z-index: 95;
+            overflow: hidden;
+            border-radius: 0.8rem;
+            background: var(--surface);
+            border: 1px solid var(--color-border-light);
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.07);
+            padding: 0.45rem 0.3rem;
+            transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded {
+            width: var(--sidebar-expanded-w);
+        }
+
+        body.has-global-follow-sidebar .sidebar-toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 var(--sidebar-icon-size);
+            width: var(--sidebar-icon-size);
+            height: var(--sidebar-icon-size);
+            border: 0;
+            background: transparent;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            color: var(--text-default);
+            font-size: 1.05rem;
+            line-height: 1;
+            transition: background-color 0.15s ease;
+        }
+
+        body.has-global-follow-sidebar .sidebar-toggle-btn:hover {
+            background: var(--surface-subtle);
         }
 
         body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__toolbar {
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: flex-start;
-            gap: 0.3rem;
-            margin: 0 0 0.75rem;
-            padding: 0 0.08rem;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            margin: 0 0 0.45rem;
+            padding: 0;
             border: 0;
-            border-radius: 0;
             background: transparent;
             box-shadow: none;
+            overflow: hidden;
+            min-height: var(--sidebar-icon-size);
+            transition: gap 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded .home-follow-rail__toolbar {
+            justify-content: flex-start;
+            gap: 0.3rem;
         }
 
         body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__toolbar-title {
+            opacity: 0;
+            max-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            pointer-events: none;
             color: var(--text-default);
             font-size: 0.86rem;
             font-weight: 700;
             line-height: 1.15;
-            white-space: nowrap;
+            transition: opacity 0.18s ease, max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__all-link {
-            color: var(--text-muted);
-            display: inline-flex;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 0;
-            padding: 0;
-            text-decoration: none;
-            font-size: 0.74rem;
-            font-weight: 600;
-            line-height: 1.25;
-            border-radius: 0;
-            border: 0;
-            background: transparent;
-            white-space: nowrap;
-            transition: color 0.2s ease;
-        }
-
-        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__all-link:hover {
-            color: var(--brand-hover);
-        }
-
-        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__all-link:focus-visible {
-            outline: none;
-            border-radius: 0.35rem;
-            padding: 0.02rem 0.2rem;
-            margin-left: -0.2rem;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded .home-follow-rail__toolbar-title {
+            opacity: 1;
+            max-width: 130px;
+            pointer-events: auto;
         }
 
         body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__list {
-            justify-items: center;
-            gap: var(--followed-rail-gap);
-            max-height: calc(100vh - 6.4rem);
+            display: grid;
+            gap: var(--sidebar-gap);
+            max-height: calc(100vh - 12rem);
             overflow-y: auto;
             overflow-x: hidden;
-            padding: 0.1rem 0;
-        }
-
-        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__item,
-        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__message {
-            width: var(--followed-rail-item-size);
-            height: var(--followed-rail-item-size);
-        }
-
-        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__item--action {
-            width: auto;
-            min-width: var(--followed-rail-item-size);
-            padding: 0 0.65rem;
-            white-space: nowrap;
-        }
-
-        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__icon {
-            width: var(--followed-rail-icon-size);
-            height: var(--followed-rail-icon-size);
+            padding: 0.05rem 0;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
 
         body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__list::-webkit-scrollbar {
-            width: 0;
-            height: 0;
+            display: none;
         }
 
-        body.has-global-follow-sidebar .container {
-            padding-left: calc(2rem + var(--followed-rail-reserve));
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__item,
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__item--action {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            width: 100%;
+            height: auto;
+            min-height: var(--sidebar-icon-size);
+            padding: 0.18rem 0.22rem;
+            border-radius: 0.5rem;
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+            text-decoration: none;
+            color: inherit;
+            font-size: 0.81rem;
+            transition: background-color 0.15s ease, gap 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded .home-follow-rail__item,
+        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded .home-follow-rail__item--action {
+            justify-content: flex-start;
+            gap: 0.4rem;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__item:hover,
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__item--action:hover {
+            background: var(--surface-subtle);
+            border-color: transparent;
+            box-shadow: none;
+            transform: none;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__item--active {
+            background: var(--brand-soft);
+            border: 0;
+            box-shadow: none;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__icon {
+            flex: 0 0 var(--sidebar-avatar-size);
+            width: var(--sidebar-avatar-size);
+            height: var(--sidebar-avatar-size);
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded .home-follow-rail__icon {
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        body.has-global-follow-sidebar .sidebar-club-name {
+            opacity: 0;
+            max-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            font-size: 0.8rem;
+            color: var(--text-default);
+            pointer-events: none;
+            transition: opacity 0.18s ease 0.04s, max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded .sidebar-club-name {
+            opacity: 1;
+            max-width: 118px;
+            pointer-events: auto;
+        }
+
+        body.has-global-follow-sidebar .sidebar-club-dot {
+            flex-shrink: 0;
+            flex-grow: 0;
+            width: 0;
+            height: 7px;
+            border-radius: 50%;
+            background: #3B82F6;
+            margin-left: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: opacity 0.18s ease, width 0.25s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded .sidebar-club-dot {
+            width: 7px;
+            margin-left: auto;
+            opacity: 1;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__message {
+            opacity: 0;
+            max-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: 0.8rem;
+            transition: opacity 0.18s ease, max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded .home-follow-rail__message {
+            opacity: 1;
+            max-width: 130px;
+        }
+
+        body.has-global-follow-sidebar .sidebar-footer {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0.3rem;
+            transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+        }
+
+        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded .sidebar-footer {
+            max-height: 2.5rem;
+            opacity: 1;
+        }
+
+        body.has-global-follow-sidebar .sidebar-footer .home-follow-rail__all-link {
+            display: block;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.74rem;
+            font-weight: 600;
+            white-space: nowrap;
+            padding: 0.28rem 0.3rem;
+            border-radius: 0.45rem;
+            transition: color 0.15s ease, background-color 0.15s ease;
+        }
+
+        body.has-global-follow-sidebar .sidebar-footer .home-follow-rail__all-link:hover {
+            color: var(--brand-hover);
+            background: var(--surface-subtle);
         }
 
         @media (max-width: 1280px) {
             body.has-global-follow-sidebar {
-                --followed-rail-item-size: 42px;
-                --followed-rail-icon-size: 32px;
-                --followed-rail-panel-width: 120px;
-                --followed-rail-left: 0.45rem;
-                --followed-rail-gap: 0.28rem;
-                --followed-rail-reserve: 136px;
+                --sidebar-icon-size: 36px;
+                --sidebar-avatar-size: 30px;
+                --sidebar-collapsed-w: 54px;
+                --sidebar-expanded-w: 196px;
+                --sidebar-left: 0.35rem;
             }
         }
 
         @media (max-width: 900px) {
             body.has-global-follow-sidebar .container {
                 padding-left: 1rem;
+                transition: none;
             }
 
             body.has-global-follow-sidebar #followed-clubs-section {
-                position: static;
-                width: auto;
-                max-width: 1200px;
-                margin: 0 auto;
-                padding: 0.5rem 1rem 0;
-                z-index: auto;
-            }
-
-            body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__toolbar {
-                margin: 0 0 0.7rem;
-                padding: 0;
-            }
-
-            body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__toolbar-title {
-                font-size: 0.84rem;
-            }
-
-            body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__all-link {
-                padding: 0;
-                font-size: 0.72rem;
-            }
-
-            body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__list {
-                display: flex;
-                align-items: center;
-                gap: 0.32rem;
-                max-height: none;
-                overflow-x: auto;
-                overflow-y: hidden;
-                padding: 0.06rem 0.06rem 0.22rem;
-                scrollbar-width: none;
-                -ms-overflow-style: none;
-                -webkit-overflow-scrolling: touch;
-                overscroll-behavior-x: contain;
-                touch-action: pan-x;
-                scroll-snap-type: x proximity;
-            }
-
-            body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__item,
-            body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__message {
-                flex: 0 0 auto;
-                scroll-snap-align: start;
-            }
-
-            body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__list::-webkit-scrollbar {
-                width: 0;
-                height: 0;
+                display: none;
             }
         }
     `;
@@ -1015,11 +1112,14 @@ function getGlobalFollowSidebarMarkup() {
     const allFollowedClubsHref = `${window.location.origin}${APP_BASE_PATH}/frontend/pages/user-profile.html`;
     return `
         <div class="home-follow-rail__toolbar followed-club-float__toolbar">
+            <button type="button" class="sidebar-toggle-btn" aria-label="&#x5207;&#x63DB;&#x5074;&#x6B04;" title="&#x5207;&#x63DB;&#x5074;&#x6B04;">&#9776;</button>
             <span class="home-follow-rail__toolbar-title followed-club-float__toolbar-title">&#x8FFD;&#x8E64;&#x793E;&#x5718;</span>
-            <a id="followed-clubs-all-link" class="home-follow-rail__all-link followed-club-float__all-link" href="${allFollowedClubsHref}" title="&#x67E5;&#x770B;&#x5168;&#x90E8;" aria-label="&#x67E5;&#x770B;&#x5168;&#x90E8;">&#x67E5;&#x770B;&#x5168;&#x90E8; &rarr;</a>
         </div>
         <div id="followed-clubs-container" class="home-follow-rail__list followed-club-float__list" aria-label="Followed clubs rail">
             <div class="home-follow-rail__message followed-club-float__message" aria-hidden="true">...</div>
+        </div>
+        <div class="sidebar-footer">
+            <a id="followed-clubs-all-link" class="home-follow-rail__all-link followed-club-float__all-link" href="${allFollowedClubsHref}" title="&#x67E5;&#x770B;&#x5168;&#x90E8;" aria-label="&#x67E5;&#x770B;&#x5168;&#x90E8;">&#x67E5;&#x770B;&#x5168;&#x90E8; &rarr;</a>
         </div>
     `;
 }
@@ -1027,6 +1127,27 @@ function renderGlobalFollowSidebarMessage(nodes) {
     const container = document.getElementById('followed-clubs-container');
     if (!container) return;
     PageUtils.replaceFollowRailChildren(container, Array.isArray(nodes) ? nodes : [nodes]);
+}
+
+const SIDEBAR_STORAGE_KEY = 'followSidebarExpanded';
+
+function setupSidebarToggle(section) {
+    if (section.dataset.toggleSetup) return;
+    section.dataset.toggleSetup = 'true';
+
+    const savedExpanded = localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
+    if (savedExpanded) {
+        section.classList.add('sidebar-expanded');
+        document.body.classList.add('sidebar-expanded');
+    }
+
+    const btn = section.querySelector('.sidebar-toggle-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        const isExpanded = section.classList.toggle('sidebar-expanded');
+        document.body.classList.toggle('sidebar-expanded', isExpanded);
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, isExpanded ? 'true' : 'false');
+    });
 }
 
 async function renderGlobalFollowSidebar() {
@@ -1057,6 +1178,7 @@ async function renderGlobalFollowSidebar() {
     }
 
     document.body.classList.add('has-global-follow-sidebar');
+    setupSidebarToggle(section);
 
     if (!StorageUtils.isLoggedIn()) {
         renderGlobalFollowSidebarMessage(
@@ -1100,7 +1222,20 @@ async function renderGlobalFollowSidebar() {
             const clubId = Number(club.club_id) || 0;
             const href = `${getPageLink('club-detail.html')}?id=${clubId}`;
             const isActive = activeClubId > 0 && activeClubId === clubId;
-            return PageUtils.createFollowRailClubItem(club, href, isActive);
+            const item = PageUtils.createFollowRailClubItem(club, href, isActive);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'sidebar-club-name';
+            nameSpan.textContent = String(club.club_name || '').trim() || 'Club';
+            item.appendChild(nameSpan);
+
+            if (club.activity_badge === 'high_active') {
+                const dot = document.createElement('span');
+                dot.className = 'sidebar-club-dot';
+                item.appendChild(dot);
+            }
+
+            return item;
         });
         PageUtils.replaceFollowRailChildren(container, nodes);
     } catch (error) {
