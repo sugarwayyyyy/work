@@ -331,6 +331,14 @@
     background: var(--surface-subtle);
 }
 
+.home-follow-rail__item--action,
+.followed-club-float__item--action {
+    width: auto;
+    min-width: 48px;
+    padding: 0 0.65rem;
+    white-space: nowrap;
+}
+
 .home-follow-rail__more-label,
 .home-follow-rail__message,
 .followed-club-float__more-label,
@@ -339,6 +347,15 @@
     font-size: 0.75rem;
     font-weight: 700;
     line-height: 1;
+}
+
+.home-follow-rail__item > .home-follow-rail__message,
+.followed-club-float__item > .followed-club-float__message {
+    width: auto;
+    height: auto;
+    min-width: 0;
+    border: none;
+    background: transparent;
 }
 
 .home-follow-rail__icon,

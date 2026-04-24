@@ -255,11 +255,6 @@
 
         function renderFollowedClubRow(club) {
             const name = club.club_name || '未命名社團';
-            const logoUrl = club.logo_path ? `../${club.logo_path}` : null;
-            const initial = name.charAt(0).toUpperCase();
-            const avatarHtml = logoUrl
-                ? `<img src="${logoUrl}" alt="${name}">`
-                : initial;
 
             const badgeMap = {
                 high_active:        { label: '高活躍',   cls: 'club-active' },
@@ -271,7 +266,7 @@
             return `
                 <div class="followed-club-row">
                     <div class="followed-club-row__layout">
-                        <div class="followed-club-avatar">${avatarHtml}</div>
+                        ${PageUtils.renderClubAvatar(club, 40)}
                         <div>
                             <h3 class="followed-club-row__name">${name}</h3>
                             ${club.description ? `<p class="followed-club-row__desc">${club.description}</p>` : ''}

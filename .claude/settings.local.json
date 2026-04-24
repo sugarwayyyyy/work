@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 .codex/skills/ui-ux-pro-max/scripts/search.py \"campus club platform student community\" --design-system -p \"校園社團平台\")",
+      "Bash(py --version)",
+      "Bash(python .codex/skills/ui-ux-pro-max/scripts/search.py \"campus club platform student community\" --design-system -p \"校園社團平台\")",
+      "Bash(python .codex/skills/ui-ux-pro-max/scripts/search.py \"vibrant community youth energetic\" --domain style -n 2)",
+      "Bash(python .codex/skills/ui-ux-pro-max/scripts/search.py \"button card hover animation accessibility\" --domain ux -n 2)"
+    ]
+  }
+}

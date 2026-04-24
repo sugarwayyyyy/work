@@ -920,6 +920,13 @@ function ensureGlobalFollowSidebarStyles() {
             height: var(--followed-rail-item-size);
         }
 
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__item--action {
+            width: auto;
+            min-width: var(--followed-rail-item-size);
+            padding: 0 0.65rem;
+            white-space: nowrap;
+        }
+
         body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__icon {
             width: var(--followed-rail-icon-size);
             height: var(--followed-rail-icon-size);
@@ -1055,7 +1062,7 @@ async function renderGlobalFollowSidebar() {
         renderGlobalFollowSidebarMessage(
             PageUtils.createFollowRailActionItem({
                 href: getPageLink('login.html'),
-                label: 'L',
+                label: '前往登入',
                 title: 'Login to view followed clubs',
                 ariaLabel: 'Login to view followed clubs',
                 modifier: 'action'
