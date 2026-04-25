@@ -150,12 +150,18 @@ class APIClient {
 
         for (const baseUrl of candidateBaseUrls) {
             try {
-                const response = await fetch(`${baseUrl}/${endpoint}`, {
+                const fetchOptions = {
                     method,
                     headers,
                     credentials: 'include',
                     body: requestBody
-                });
+                };
+
+                if (method === 'GET') {
+                    fetchOptions.cache = 'no-store';
+                }
+
+                const response = await fetch(`${baseUrl}/${endpoint}`, fetchOptions);
 
                 let payload = null;
                 try {

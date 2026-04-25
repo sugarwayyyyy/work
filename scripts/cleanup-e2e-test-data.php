@@ -59,6 +59,20 @@ function deleteWhereIn(mysqli $conn, string $table, string $column, array $ids):
     return $affected;
 }
 
+function tableExists(mysqli $conn, string $table): bool {
+    $stmt = $conn->prepare(
+        'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+    );
+    if ($stmt === false) {
+        return false;
+    }
+    $stmt->bind_param('s', $table);
+    $stmt->execute();
+    $exists = $stmt->get_result()->num_rows > 0;
+    $stmt->close();
+    return $exists;
+}
+
 function deleteEventNotifications(mysqli $conn, array $eventIds): int {
     if (empty($eventIds)) {
         return 0;
@@ -111,7 +125,9 @@ try {
 
     if (!empty($eventIds)) {
         deleteEventNotifications($db, $eventIds);
-        deleteWhereIn($db, 'event_comments', 'event_id', $eventIds);
+        if (tableExists($db, 'event_comments')) {
+            deleteWhereIn($db, 'event_comments', 'event_id', $eventIds);
+        }
         deleteWhereIn($db, 'event_registrations', 'event_id', $eventIds);
         deleteWhereIn($db, 'collaborative_events', 'event_id', $eventIds);
         deleteWhereIn($db, 'event_tag_relations', 'event_id', $eventIds);
@@ -165,7 +181,9 @@ try {
         $seedEventIds = fetchColumnValues($db, 'events', 'event_name', 'event_id', $seededEventNames);
         if (!empty($seedEventIds)) {
             deleteEventNotifications($db, $seedEventIds);
-            deleteWhereIn($db, 'event_comments', 'event_id', $seedEventIds);
+            if (tableExists($db, 'event_comments')) {
+                deleteWhereIn($db, 'event_comments', 'event_id', $seedEventIds);
+            }
             deleteWhereIn($db, 'event_registrations', 'event_id', $seedEventIds);
             deleteWhereIn($db, 'collaborative_events', 'event_id', $seedEventIds);
             deleteWhereIn($db, 'event_tag_relations', 'event_id', $seedEventIds);
@@ -201,7 +219,9 @@ try {
             deleteWhereIn($db, 'club_followers', 'user_id', $fullSeededUserIds);
             deleteWhereIn($db, 'club_members', 'user_id', $fullSeededUserIds);
             deleteWhereIn($db, 'event_registrations', 'user_id', $fullSeededUserIds);
-            deleteWhereIn($db, 'event_comments', 'user_id', $fullSeededUserIds);
+            if (tableExists($db, 'event_comments')) {
+                deleteWhereIn($db, 'event_comments', 'user_id', $fullSeededUserIds);
+            }
             deleteWhereIn($db, 'reviews', 'user_id', $fullSeededUserIds);
         }
 

@@ -54,6 +54,7 @@
                             <input type="text" id="event-search" placeholder="輸入活動名稱或關鍵字…">
                         </div>
                         <button type="button" class="btn btn-primary btn-sm" onclick="loadEvents()">篩選</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="resetFilters()">重製</button>
                         <button type="button" id="advanced-toggle-btn" class="event-filter-toggle-btn" aria-expanded="false" aria-controls="event-advanced-filters">
                             進階篩選 <span class="toggle-arrow">&#9660;</span>
                         </button>
@@ -143,7 +144,7 @@
                             </div>
                             <div class="event-filter-toolbar__actions">
                                 <button class="btn btn-primary btn-sm" onclick="loadEvents()">套用篩選</button>
-                                <button class="btn btn-secondary btn-sm" onclick="resetFilters()">重置</button>
+                                <button class="btn btn-secondary btn-sm" onclick="resetFilters()">重製</button>
                             </div>
                         </div>
                     </div>

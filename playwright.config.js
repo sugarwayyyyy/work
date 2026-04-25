@@ -69,5 +69,6 @@ module.exports = defineConfig({
     reuseExistingServer: !process.env.CI,
   },
 
+  globalSetup: './tests/e2e/global-setup.js',
   globalTeardown: './tests/e2e/global-teardown.js',
 });
