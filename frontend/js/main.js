@@ -1095,13 +1095,41 @@ function ensureGlobalFollowSidebarStyles() {
         }
 
         @media (max-width: 900px) {
-            body.has-global-follow-sidebar .container {
+            body.has-global-follow-sidebar .container,
+            body.has-global-follow-sidebar.sidebar-expanded .container {
                 padding-left: 1rem;
                 transition: none;
             }
 
             body.has-global-follow-sidebar #followed-clubs-section {
+                left: 0.5rem;
+                width: var(--sidebar-collapsed-w);
+            }
+
+            body.has-global-follow-sidebar #followed-clubs-section:not(.sidebar-expanded) .home-follow-rail__list {
                 display: none;
+            }
+
+            body.has-global-follow-sidebar #followed-clubs-section:not(.sidebar-expanded) .home-follow-rail__toolbar {
+                margin-bottom: 0;
+            }
+
+            body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded {
+                width: var(--sidebar-expanded-w);
+                z-index: 96;
+            }
+
+            #sidebar-mobile-backdrop {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.32);
+                z-index: 94;
+                cursor: pointer;
+            }
+
+            #sidebar-mobile-backdrop.is-visible {
+                display: block;
             }
         }
     `;
@@ -1135,19 +1163,43 @@ function setupSidebarToggle(section) {
     if (section.dataset.toggleSetup) return;
     section.dataset.toggleSetup = 'true';
 
+    const isMobile = () => window.innerWidth <= 900;
+
+    // Restore desktop state only
     const savedExpanded = localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
-    if (savedExpanded) {
+    if (savedExpanded && !isMobile()) {
         section.classList.add('sidebar-expanded');
         document.body.classList.add('sidebar-expanded');
     }
 
+    // Backdrop for mobile overlay
+    let backdrop = document.getElementById('sidebar-mobile-backdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'sidebar-mobile-backdrop';
+        document.body.appendChild(backdrop);
+    }
+
+    function closeMobileSidebar() {
+        section.classList.remove('sidebar-expanded');
+        document.body.classList.remove('sidebar-expanded');
+        backdrop.classList.remove('is-visible');
+    }
+
     const btn = section.querySelector('.sidebar-toggle-btn');
     if (!btn) return;
+
     btn.addEventListener('click', () => {
         const isExpanded = section.classList.toggle('sidebar-expanded');
         document.body.classList.toggle('sidebar-expanded', isExpanded);
-        localStorage.setItem(SIDEBAR_STORAGE_KEY, isExpanded ? 'true' : 'false');
+        if (isMobile()) {
+            backdrop.classList.toggle('is-visible', isExpanded);
+        } else {
+            localStorage.setItem(SIDEBAR_STORAGE_KEY, isExpanded ? 'true' : 'false');
+        }
     });
+
+    backdrop.addEventListener('click', closeMobileSidebar);
 }
 
 async function renderGlobalFollowSidebar() {

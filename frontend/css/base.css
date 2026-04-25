@@ -123,10 +123,47 @@ textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(42, 95, 181, 0.18);
+    box-shadow: 0 0 0 3px rgba(42, 95, 181, 0.1);
 }
 
 textarea {
     resize: vertical;
     min-height: 120px;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    padding-right: 4.6rem;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.65rem;
+    transform: translateY(-50%);
+    border: 0;
+    background: transparent;
+    color: var(--primary-color);
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0.2rem 0.35rem;
+    line-height: 1;
+}
+
+.password-toggle:hover {
+    color: var(--color-primary-700);
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid rgba(42, 95, 181, 0.35);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
 }

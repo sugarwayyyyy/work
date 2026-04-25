@@ -449,7 +449,7 @@
                     }
 
                     container.innerHTML = questions.map(question => {
-                        const isSolved = question.is_solved;
+                        const isSolved = question.status === 'closed' || Number(question.is_solved) === 1;
                         const title = question.title || question.question_title || '未命名提問';
                         return `
                             <div class="profile-question-row">

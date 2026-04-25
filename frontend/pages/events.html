@@ -53,6 +53,7 @@
                         <div class="filter-field event-filter-keyword">
                             <input type="text" id="event-search" placeholder="輸入活動名稱或關鍵字…">
                         </div>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="loadEvents()">篩選</button>
                         <button type="button" id="advanced-toggle-btn" class="event-filter-toggle-btn" aria-expanded="false" aria-controls="event-advanced-filters">
                             進階篩選 <span class="toggle-arrow">&#9660;</span>
                         </button>
@@ -387,7 +388,7 @@
                 const safeEventId = Number(event.event_id) || 0;
 
                 const row = document.createElement('div');
-                row.className = 'event-result-row';
+                row.className = 'event-result-row card';
                 row.innerHTML = `
                     <div class="event-date-block">
                         <span class="event-date-block__month">${month}</span>

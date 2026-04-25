@@ -752,14 +752,18 @@ class QandAAPI {
 
         try {
             $questions = Database::getInstance()->fetchAll(
-                'SELECT qa.*, qa.question_title AS title, c.club_name,
-                        CASE WHEN qa.status = "closed" THEN 1 ELSE 0 END AS is_solved
+                'SELECT qa.*, qa.question_title AS title, c.club_name
                  FROM q_and_a qa
                  JOIN clubs c ON qa.club_id = c.club_id
                  WHERE qa.user_id = ?
                  ORDER BY qa.created_at DESC',
                 [Auth::getCurrentUserId()]
             );
+
+            foreach ($questions as &$row) {
+                $row['is_solved'] = (int)(($row['status'] ?? '') === 'closed');
+            }
+            unset($row);
 
             Helper::success('取得我的提問成功', ['questions' => $questions]);
 
