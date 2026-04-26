@@ -267,10 +267,10 @@ test.describe('US 1.5: 資料時間戳', () => {
     await page.fill('#event-search', eventName);
     await page.click('button:has-text("篩選")');
 
-    const eventCard = page.locator('#events-container .card').filter({ hasText: eventName }).first();
+    const eventCard = page.locator('#events-container .feed-item-card').filter({ hasText: eventName }).first();
     await expect(eventCard).toBeVisible({ timeout: 15000 });
 
-    await eventCard.locator('a[href*="event-detail.html?id="]').first().click();
+    await eventCard.locator('a.feed-item-link[href*="event-detail.html?id="]').first().click();
     await page.waitForURL('**/event-detail.html**');
     await page.waitForLoadState('networkidle');
 
@@ -336,7 +336,7 @@ test.describe('US 2.2: 社團活動發布', () => {
     await page.fill('#event-search', eventName);
     await page.click('button:has-text("篩選")');
 
-    const targetCard = page.locator('#events-container .card').filter({ hasText: eventName }).first();
+    const targetCard = page.locator('#events-container .feed-item-card').filter({ hasText: eventName }).first();
     await expect(targetCard).toBeVisible({ timeout: 15000 });
 
     const sortedCheck = await page.evaluate(async () => {
