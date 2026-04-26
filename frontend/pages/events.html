@@ -61,6 +61,14 @@
                         </button>
                     </div>
 
+                    <!-- 工具列：狀態 chip（位置與 QA 一致） -->
+                    <div class="event-filter-toolbar">
+                        <div class="event-filter-toolbar__status">
+                            <span class="event-filter-toolbar__label">活動狀態</span>
+                            <div id="event-filters" class="chip-cloud"></div>
+                        </div>
+                    </div>
+
                     <!-- 進階篩選（預設隱藏） -->
                     <div id="event-advanced-filters" class="event-advanced-filters" aria-hidden="true">
                         <div class="event-filter-grid event-filter-grid--advanced">
@@ -134,18 +142,6 @@
                                         <option value="30">半點</option>
                                     </select>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- 工具列：狀態 chip + 動作按鈕 -->
-                        <div class="event-filter-toolbar">
-                            <div class="event-filter-toolbar__status">
-                                <span class="event-filter-toolbar__label">活動狀態</span>
-                                <div id="event-filters" class="chip-cloud"></div>
-                            </div>
-                            <div class="event-filter-toolbar__actions">
-                                <button class="btn btn-primary btn-sm" onclick="loadEvents()">套用篩選</button>
-                                <button class="btn btn-secondary btn-sm" onclick="resetFilters()">重製</button>
                             </div>
                         </div>
                     </div>
