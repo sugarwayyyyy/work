@@ -170,7 +170,7 @@
 }
 
 .event-advanced-filters.is-open {
-    max-height: 700px;
+    max-height: 900px;
     margin-top: 0.75rem;
 }
 
@@ -564,5 +564,9 @@
 
     .event-datetime-group {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .event-advanced-filters.is-open {
+        max-height: 1600px;
     }
 }
