@@ -34,35 +34,135 @@
         }
 
         .qa-filter-card {
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .qa-filter-topbar {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .qa-filter-keyword {
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .qa-filter-keyword input {
+            width: 100%;
+        }
+
+        .qa-filter-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.52rem 0.88rem;
+            border: 1px solid var(--border);
+            border-radius: 0.7rem;
+            background: var(--surface);
+            color: var(--text-default);
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .qa-filter-toggle-btn:hover {
+            border-color: var(--brand);
+            color: var(--brand);
+        }
+
+        .qa-filter-toggle-btn.is-active {
+            border-color: var(--brand);
+            background: var(--brand-soft);
+            color: var(--brand-hover);
+        }
+
+        .qa-filter-toggle-btn .toggle-arrow {
+            display: inline-block;
+            font-size: 0.7rem;
+            transition: transform 0.22s ease;
+        }
+
+        .qa-filter-toggle-btn.is-active .toggle-arrow {
+            transform: rotate(180deg);
+        }
+
+        .qa-advanced-filters {
+            max-height: 0;
+            overflow: hidden;
+            margin-top: 0;
+            transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.28s ease;
+        }
+
+        .qa-advanced-filters.is-open {
+            max-height: 420px;
+            margin-top: 0.74rem;
         }
 
         .qa-filter-grid {
             display: grid;
-            grid-template-columns: 1.4fr 1fr 1fr auto;
-            gap: 1rem;
-            align-items: end;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.65rem;
         }
 
-        @media (max-width: 767px) {
+        .qa-filter-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            padding-top: 0.72rem;
+        }
+
+        .qa-filter-toolbar__status {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+        }
+
+        .qa-filter-toolbar__label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .qa-filter-actions {
+            display: flex;
+            gap: 0.5rem;
+            padding-top: 0.74rem;
+            margin-top: 0.74rem;
+            border-top: 1px solid var(--color-border-light);
+        }
+
+        @media (max-width: 720px) {
+            .qa-filter-topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .qa-filter-keyword {
+                min-width: 0;
+            }
+
+            .qa-filter-toggle-btn {
+                justify-content: center;
+            }
+
             .qa-filter-grid {
                 grid-template-columns: 1fr;
             }
 
             .qa-filter-actions {
-                flex-direction: row;
-                justify-content: flex-start;
-            }
-        }
-
-        @media (min-width: 768px) and (max-width: 960px) {
-            .qa-filter-grid {
-                grid-template-columns: 1fr 1fr;
+                flex-direction: column;
             }
 
-            .qa-filter-actions {
-                grid-column: 1 / -1;
-                justify-content: flex-start;
+            .qa-filter-toolbar {
+                align-items: stretch;
             }
         }
     </style>
@@ -92,28 +192,51 @@
         <h1>提問留言板</h1>
 
         <div class="card qa-filter-card">
-            <div class="qa-filter-grid">
-                <div>
+            <div class="qa-filter-topbar">
+                <div class="filter-field qa-filter-keyword">
                     <label for="qa-search">提問關鍵字</label>
                     <input type="text" id="qa-search" placeholder="搜尋標題、內容、社團名稱或類別...">
                 </div>
-                <div>
-                    <label for="qa-club-filter">社團篩選</label>
-                    <select id="qa-club-filter">
-                        <option value="">全部社團</option>
-                    </select>
+                <button id="qa-search-btn" class="btn btn-primary btn-sm" type="button">搜尋</button>
+                <button id="qa-reset-btn" class="btn btn-secondary btn-sm" type="button">重製</button>
+                <button
+                    id="qa-advanced-toggle-btn"
+                    class="qa-filter-toggle-btn"
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="qa-advanced-filters"
+                >
+                    進階篩選 <span class="toggle-arrow">&#9660;</span>
+                </button>
+            </div>
+
+            <div class="qa-filter-toolbar">
+                <div class="qa-filter-toolbar__status">
+                    <span class="qa-filter-toolbar__label">提問狀態</span>
+                    <div id="qa-status-filters" class="chip-cloud"></div>
                 </div>
-                <div>
-                    <label for="qa-status-filter">提問狀態</label>
-                    <select id="qa-status-filter">
-                        <option value="">全部</option>
-                        <option value="open">開放中</option>
-                        <option value="closed">已關閉</option>
-                    </select>
+            </div>
+
+            <div id="qa-advanced-filters" class="qa-advanced-filters" aria-hidden="true">
+                <div class="qa-filter-grid">
+                    <div class="filter-field">
+                        <label for="qa-club-filter">社團篩選</label>
+                        <select id="qa-club-filter">
+                            <option value="">全部社團</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label for="qa-status-filter">提問狀態</label>
+                        <select id="qa-status-filter">
+                            <option value="">全部</option>
+                            <option value="open">開放中</option>
+                            <option value="closed">已關閉</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="qa-filter-actions" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                    <button id="qa-search-btn" class="btn btn-primary" type="button">搜尋</button>
-                    <button id="qa-reset-btn" class="btn btn-secondary" type="button">重製</button>
+                <div class="qa-filter-actions">
+                    <button class="btn btn-primary btn-sm" type="button" onclick="loadQA()">套用篩選</button>
+                    <button class="btn btn-secondary btn-sm" type="button" onclick="resetQAFilters()">重製</button>
                 </div>
             </div>
         </div>
@@ -200,6 +323,11 @@
     <script>
         let qaTags = [];
         let selectedQATagIds = new Set();
+        const qaStatusOptions = [
+            { key: '', label: '全部' },
+            { key: 'open', label: '開放中' },
+            { key: 'closed', label: '已關閉' }
+        ];
 
         function getQAUrlParams() {
             const params = new URLSearchParams(window.location.search);
@@ -322,6 +450,64 @@
                 console.error('Error:', error);
                 document.getElementById('qa-container').innerHTML = '<p>發生錯誤</p>';
             }
+        }
+
+        function openQAAdvancedFilters() {
+            const panel = document.getElementById('qa-advanced-filters');
+            const btn = document.getElementById('qa-advanced-toggle-btn');
+            if (!panel || !btn) return;
+            panel.classList.add('is-open');
+            panel.setAttribute('aria-hidden', 'false');
+            btn.classList.add('is-active');
+            btn.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeQAAdvancedFilters() {
+            const panel = document.getElementById('qa-advanced-filters');
+            const btn = document.getElementById('qa-advanced-toggle-btn');
+            if (!panel || !btn) return;
+            panel.classList.remove('is-open');
+            panel.setAttribute('aria-hidden', 'true');
+            btn.classList.remove('is-active');
+            btn.setAttribute('aria-expanded', 'false');
+        }
+
+        function hasQAAdvancedFilters() {
+            const clubId = document.getElementById('qa-club-filter').value;
+            const status = document.getElementById('qa-status-filter').value;
+            return Boolean(clubId || status);
+        }
+
+        function resetQAFilters() {
+            document.getElementById('qa-search').value = '';
+            document.getElementById('qa-club-filter').value = '';
+            document.getElementById('qa-status-filter').value = '';
+            renderQAStatusFilters();
+            closeQAAdvancedFilters();
+            loadQA();
+        }
+
+        function renderQAStatusFilters() {
+            const container = document.getElementById('qa-status-filters');
+            const statusSelect = document.getElementById('qa-status-filter');
+            if (!container || !statusSelect) return;
+
+            const current = statusSelect.value || '';
+            container.innerHTML = '';
+
+            qaStatusOptions.forEach(option => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `badge badge-filter${current === option.key ? ' is-selected' : ''}`;
+                button.textContent = option.label;
+                button.addEventListener('click', () => {
+                    if (statusSelect.value === option.key) return;
+                    statusSelect.value = option.key;
+                    renderQAStatusFilters();
+                    loadQA();
+                });
+                container.appendChild(button);
+            });
         }
 
         function renderQA(questions) {
@@ -508,16 +694,37 @@
             }
         });
 
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', async function() {
             const params = getQAUrlParams();
             document.getElementById('qa-search').value = params.search;
             document.getElementById('qa-club-filter').value = params.club_id;
             document.getElementById('qa-status-filter').value = params.status;
 
-            loadClubFilterOptions();
+            await loadClubFilterOptions();
+            renderQAStatusFilters();
             loadQA();
             loadCategoriesForModal();
             loadQATags();
+
+            const advancedToggleBtn = document.getElementById('qa-advanced-toggle-btn');
+            if (advancedToggleBtn) {
+                advancedToggleBtn.addEventListener('click', () => {
+                    const panel = document.getElementById('qa-advanced-filters');
+                    if (!panel) return;
+                    if (panel.classList.contains('is-open')) {
+                        closeQAAdvancedFilters();
+                    } else {
+                        openQAAdvancedFilters();
+                    }
+                });
+            }
+
+            if (hasQAAdvancedFilters()) {
+                openQAAdvancedFilters();
+            } else {
+                closeQAAdvancedFilters();
+            }
+
             document.getElementById('ask-category').addEventListener('change', event => {
                 loadClubsByCategoryForModal(event.target.value);
             });
@@ -555,10 +762,7 @@
             });
 
             document.getElementById('qa-reset-btn').addEventListener('click', () => {
-                document.getElementById('qa-search').value = '';
-                document.getElementById('qa-club-filter').value = '';
-                document.getElementById('qa-status-filter').value = '';
-                loadQA();
+                resetQAFilters();
             });
 
             document.getElementById('qa-search').addEventListener('keydown', event => {
@@ -569,6 +773,7 @@
             });
 
             document.getElementById('qa-status-filter').addEventListener('change', () => {
+                renderQAStatusFilters();
                 loadQA();
             });
 
