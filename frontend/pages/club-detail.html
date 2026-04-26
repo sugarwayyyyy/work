@@ -252,10 +252,12 @@
             localStorage.setItem('club-follow-state-cache', JSON.stringify(cache));
         }
 
-        function getCachedFollowState(clubId) {
+        function clearFollowStateCache(clubId) {
             const cache = getFollowStateCache();
-            const value = cache[String(clubId)];
-            return typeof value === 'boolean' ? value : null;
+            const key = String(clubId);
+            if (!Object.prototype.hasOwnProperty.call(cache, key)) return;
+            delete cache[key];
+            localStorage.setItem('club-follow-state-cache', JSON.stringify(cache));
         }
 
         function updateReviewActionState() {
@@ -444,17 +446,17 @@
 
             const followBtn = document.getElementById('follow-btn');
             if (club.follow_state_known === false) {
-                const cachedState = getCachedFollowState(clubId);
-                if (cachedState === true) {
-                    followBtn.textContent = '已追蹤';
-                    followBtn.classList.remove('btn-primary');
-                    followBtn.classList.add('btn-secondary');
-                    followBtn.title = '目前為本機快取顯示，重新登入後會與伺服器同步';
-                } else {
+                const isLoggedIn = StorageUtils.isLoggedIn();
+                followBtn.classList.remove('btn-secondary');
+                followBtn.classList.add('btn-primary');
+
+                if (!isLoggedIn) {
+                    clearFollowStateCache(clubId);
                     followBtn.textContent = '登入後可查看追蹤狀態';
-                    followBtn.classList.remove('btn-secondary');
-                    followBtn.classList.add('btn-primary');
-                    followBtn.title = '登入狀態已失效，請重新登入後再查看或操作追蹤';
+                    followBtn.title = '請先登入後再查看或操作追蹤';
+                } else {
+                    followBtn.textContent = '追蹤狀態同步中';
+                    followBtn.title = '目前無法確認最新追蹤狀態，請稍後再試';
                 }
             } else if (club.is_following) {
                 followBtn.textContent = '已追蹤';
