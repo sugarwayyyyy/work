@@ -7,6 +7,7 @@
     <title>社團探索 - 校園社團平台</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/club-list.css">
+    <link rel="stylesheet" href="../css/home.css">
 </head>
 
 <body>
@@ -116,13 +117,13 @@
                     </div>
 
                     <!-- 社團卡片清單 -->
-                    <div class="club-results-surface">
-                        <div class="club-results-surface__head">
-                            <h2 class="club-results-surface__title">社團列表</h2>
-                            <span class="club-results-surface__subtitle" id="results-page-info"></span>
+                    <section class="portal-section portal-section--dynamic">
+                        <div class="portal-section-head">
+                            <h2 class="portal-section-title">社團列表</h2>
+                            <span id="results-page-info" style="font-size:0.78rem;color:var(--text-muted);"></span>
                         </div>
 
-                        <div id="clubs-container" class="club-list-grid">
+                        <div id="clubs-container" class="feed-stream-list">
                             <div class="club-state">
                                 <div class="loading">
                                     <div class="spinner"></div>
@@ -130,8 +131,10 @@
                             </div>
                         </div>
 
-                        <div id="pagination-container"></div>
-                    </div>
+                        <div class="feed-footer">
+                            <div id="pagination-container"></div>
+                        </div>
+                    </section>
                 </main>
             </div>
 
@@ -344,7 +347,7 @@
                 const response = await APIClient.get(url);
                 if (response.success) {
                     const pagination = response.data.pagination || {};
-                    const total = pagination.total_count ?? response.data.clubs.length;
+                    const total = pagination.total ?? response.data.clubs.length;
                     if (countEl) countEl.textContent = `共 ${total} 個社團`;
                     const metaEl = document.getElementById('result-count-meta');
                     if (metaEl) metaEl.textContent = `共 ${total} 個社團`;
@@ -380,55 +383,39 @@
             }
 
             clubs.forEach(club => {
-                const tagHtml = (club.tags || [])
-                    .map(tag => `<span class="tag tag-primary">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`)
-                    .join('');
+                const tagText = (club.tags || []).slice(0, 3)
+                    .map(t => `#${PageUtils.escapeHtml(t.tag_name || '')}`)
+                    .join('  ');
 
-                const logoHtml = PageUtils.renderClubAvatar(club, 44);
-
-                const statusClass = club.activity_badge === 'high_active'
-                    ? 'club-card-status--active'
+                const badgeClass = club.activity_badge === 'high_active'
+                    ? 'feed-item-badge--accent'
                     : (club.activity_badge === 'no_recent_activity'
-                        ? 'club-card-status--quiet'
-                        : 'club-card-status--steady');
+                        ? 'feed-item-badge--neutral'
+                        : '');
                 const statusLabel = club.activity_badge === 'high_active'
                     ? '高活躍'
                     : (club.activity_badge === 'no_recent_activity' ? '近期無活動' : '活躍中');
 
                 const rating = Number(club.average_rating) || 0;
-                const ratingStars = renderClubRatingStars(rating);
-
                 const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
                 const safeDescription = PageUtils.escapeHtml(club.description || '');
                 const safeClubId = Number(club.club_id) || 0;
 
-                const card = document.createElement('div');
-                card.className = 'card club-result-row';
+                const card = document.createElement('article');
+                card.className = 'feed-item-card';
                 card.innerHTML = `
-                    <div class="club-result-row__layout">
-                        <div class="club-result-row__avatar">
-                            ${logoHtml}
+                    <a href="club-detail.html?id=${safeClubId}" class="feed-item-link">
+                        <div class="feed-item-head">
+                            <h3 class="feed-item-title">${safeClubName}</h3>
+                            <span class="feed-item-badge ${badgeClass}">${statusLabel}</span>
                         </div>
-                        <div class="club-result-row__content">
-                            <div class="club-card-header">
-                                <h3 class="club-card-title">${safeClubName}</h3>
-                                <span class="club-card-status ${statusClass}">${statusLabel}</span>
-                            </div>
-                            <p class="club-card-description">${safeDescription}</p>
-                            <div class="club-card-tags">${tagHtml}</div>
-                            <div class="club-card-meta club-card-meta--inline">
-                                <span>${club.member_count || 0} 成員</span>
-                                <div class="club-rating">
-                                    <span class="club-rating-stars">${ratingStars}</span>
-                                    <span class="club-rating-score">${rating.toFixed(1)}</span>
-                                    <span class="club-rating-count">(${club.reviews_count || 0})</span>
-                                </div>
-                            </div>
+                        ${tagText ? `<div class="feed-item-subtitle">${tagText}</div>` : ''}
+                        <p class="feed-item-body">${safeDescription}</p>
+                        <div class="feed-item-meta">
+                            <span>${club.member_count || 0} 成員</span>
+                            <span>評分 ${rating.toFixed(1)}（${club.reviews_count || 0}）</span>
                         </div>
-                        <div class="club-card-footer">
-                            <a href="club-detail.html?id=${safeClubId}" class="btn btn-primary btn-sm">查看詳情</a>
-                        </div>
-                    </div>
+                    </a>
                 `;
                 container.appendChild(card);
             });

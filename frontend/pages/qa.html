@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>提問 - 社團平台</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/home.css">
     <style>
         #ask-modal {
             padding: 1rem;
@@ -30,6 +31,39 @@
 
         #ask-modal textarea {
             min-height: 96px;
+        }
+
+        .qa-filter-card {
+            margin-bottom: 2rem;
+        }
+
+        .qa-filter-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr auto;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        @media (max-width: 767px) {
+            .qa-filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .qa-filter-actions {
+                flex-direction: row;
+                justify-content: flex-start;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 960px) {
+            .qa-filter-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .qa-filter-actions {
+                grid-column: 1 / -1;
+                justify-content: flex-start;
+            }
         }
     </style>
 </head>
@@ -57,8 +91,8 @@
     <div class="container">
         <h1>提問留言板</h1>
 
-        <div class="card" style="margin-bottom: 2rem;">
-            <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr auto; gap: 1rem; align-items: end;">
+        <div class="card qa-filter-card">
+            <div class="qa-filter-grid">
                 <div>
                     <label for="qa-search">提問關鍵字</label>
                     <input type="text" id="qa-search" placeholder="搜尋標題、內容、社團名稱或類別...">
@@ -77,23 +111,26 @@
                         <option value="closed">已關閉</option>
                     </select>
                 </div>
-                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <div class="qa-filter-actions" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
                     <button id="qa-search-btn" class="btn btn-primary" type="button">搜尋</button>
                     <button id="qa-reset-btn" class="btn btn-secondary" type="button">重製</button>
                 </div>
             </div>
         </div>
 
-        <div style="margin-bottom: 2rem;">
-            <button id="ask-btn" class="btn btn-primary" onclick="openAskModal()">發布新提問</button>
-        </div>
-
-        <div id="qa-container">
-            <div class="loading">
-                <div class="spinner"></div>
-                <p>載入中...</p>
+        <section class="portal-section portal-section--dynamic">
+            <div class="portal-section-head">
+                <h2 class="portal-section-title">提問列表</h2>
+                <button id="ask-btn" class="btn btn-primary btn-sm" onclick="openAskModal()">發布新提問</button>
             </div>
-        </div>
+
+            <div id="qa-container" class="feed-stream-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>載入中...</p>
+                </div>
+            </div>
+        </section>
     </div>
 
     <div id="ask-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
@@ -297,50 +334,36 @@
             }
 
             questions.forEach(question => {
-                const tagsHtml = (question.tags || []).map(tag => `<span class="tag">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`).join('');
                 const author = PageUtils.escapeHtml(question.author_name || question.user_name || question.display_name || '匿名用戶');
                 const urgencyLabel = question.urgency_label || '一般';
-                const urgencyStyle = question.urgency_level === 'urgent'
-                    ? 'background: #c92a2a; color: white;'
-                    : (question.urgency_level === 'important'
-                        ? 'background: #f08c00; color: white;'
-                        : 'background: #868e96; color: white;');
                 const safeQuestionTitle = PageUtils.escapeHtml(question.question_title || '未命名提問');
                 const safeQuestionContent = PageUtils.escapeHtml(question.question_content || '');
                 const safeUrgencyLabel = PageUtils.escapeHtml(urgencyLabel);
                 const safeQaId = Number(question.qa_id) || 0;
-                const clubMeta = question.club_name
-                    ? `社團：${PageUtils.escapeHtml(question.club_name)}${question.category_name ? `（${PageUtils.escapeHtml(question.category_name)}）` : ''}`
-                    : '社團：未指定';
-                const html = `
-                    <div class="card" style="margin-bottom: 1.5rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div style="flex: 1;">
-                                <h3 style="margin: 0 0 0.5rem 0;">${safeQuestionTitle}</h3>
-                                <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">
-                                    提問者：${author} • ${PageUtils.timeAgo(question.created_at)}
-                                </p>
-                                <p style="margin: 0.35rem 0 0 0; color: var(--text-light); font-size: 0.9rem;">
-                                    ${clubMeta}
-                                </p>
-                            </div>
-                            <div style="display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end;">
-                                <span class="badge">${question.replies_count} 個回覆</span>
-                                <span class="badge" style="${urgencyStyle}">${safeUrgencyLabel}</span>
-                            </div>
+                const safeClubName = PageUtils.escapeHtml(question.club_name || '未指定社團');
+                const isSolved = question.status === 'closed' || Number(question.is_solved) === 1;
+                const urgencyBadgeClass = question.urgency_level === 'urgent'
+                    ? 'feed-item-badge--accent'
+                    : (question.urgency_level === 'important' ? '' : 'feed-item-badge--neutral');
+
+                const card = document.createElement('article');
+                card.className = 'feed-item-card';
+                card.innerHTML = `
+                    <a href="qa-detail.html?id=${safeQaId}" class="feed-item-link">
+                        <div class="feed-item-head">
+                            <h3 class="feed-item-title">${safeQuestionTitle}</h3>
+                            <span class="feed-item-badge ${isSolved ? 'feed-item-badge--neutral' : ''}">${isSolved ? '已解決' : '待解決'}</span>
                         </div>
-                        <div style="margin: 1rem 0;">
-                            ${tagsHtml}
-                        </div>
-                        <p style="color: var(--text-light);">${safeQuestionContent}</p>
-                        <div style="display: flex; gap: 1rem; font-size: 0.9rem; color: #999;">
+                        <div class="feed-item-subtitle">${safeClubName} • ${author} • ${PageUtils.timeAgo(question.created_at)}</div>
+                        <p class="feed-item-body">${safeQuestionContent}</p>
+                        <div class="feed-item-meta">
                             <span>👁️ ${question.views_count} 次瀏覽</span>
                             <span>💬 ${question.replies_count} 個回覆</span>
+                            ${question.urgency_level !== 'normal' ? `<span class="feed-item-badge ${urgencyBadgeClass}">${safeUrgencyLabel}</span>` : ''}
                         </div>
-                        <a href="qa-detail.html?id=${safeQaId}" class="btn btn-primary btn-sm" style="margin-top: 1rem;">查看詳情</a>
-                    </div>
+                    </a>
                 `;
-                container.innerHTML += html;
+                container.appendChild(card);
             });
         }
 
