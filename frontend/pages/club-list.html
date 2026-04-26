@@ -56,48 +56,64 @@
                             <div class="filter-card__subtitle">縮小範圍，找到最適合你的社團。</div>
                         </div>
                         <div class="filter-card__body">
-                            <div class="filter-grid filter-grid--clubs">
-                                <div class="filter-field filter-field-wide">
+                            <div class="club-filter-topbar">
+                                <div class="filter-field club-filter-keyword">
                                     <label for="club-search">社團關鍵字</label>
                                     <input id="club-search" type="text" placeholder="輸入名稱或關鍵字">
                                 </div>
-                                <div class="filter-field">
-                                    <label for="category-filter">社團類別</label>
-                                    <select id="category-filter">
-                                        <option value="">全部類別</option>
-                                    </select>
-                                </div>
-                                <div class="filter-field">
-                                    <label for="club-filter">社團</label>
-                                    <select id="club-filter" disabled>
-                                        <option value="">請先選擇類別</option>
-                                    </select>
-                                </div>
-                                <div class="filter-field">
-                                    <label for="club-fee-range">社費範圍</label>
-                                    <select id="club-fee-range">
-                                        <option value="">全部</option>
-                                        <option value="0-500">0–500 元</option>
-                                        <option value="500-1000">500–1000 元</option>
-                                        <option value="1000+">1000 元以上</option>
-                                    </select>
-                                </div>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="loadClubs()">篩選</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="resetFilters()">重製</button>
+                                <button
+                                    type="button"
+                                    id="club-advanced-toggle-btn"
+                                    class="club-filter-toggle-btn"
+                                    aria-expanded="false"
+                                    aria-controls="club-advanced-filters"
+                                >
+                                    進階篩選 <span class="toggle-arrow">&#9660;</span>
+                                </button>
                             </div>
 
-                            <div class="filter-toolbar">
-                                <div class="filter-toolbar__group">
-                                    <span class="filter-toolbar__label">熱門標籤</span>
-                                    <p id="popular-tags-helper" class="filter-hint">多選標籤採 OR 排序：符合較多標籤的社團排前面。</p>
-                                    <div id="popular-tags" class="chip-cloud"></div>
+                            <div id="club-advanced-filters" class="club-advanced-filters" aria-hidden="true">
+                                <div class="filter-grid club-filter-grid club-filter-grid--advanced">
+                                    <div class="filter-field">
+                                        <label for="category-filter">社團類別</label>
+                                        <select id="category-filter">
+                                            <option value="">全部類別</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-field">
+                                        <label for="club-filter">社團</label>
+                                        <select id="club-filter" disabled>
+                                            <option value="">請先選擇類別</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-field">
+                                        <label for="club-fee-range">社費範圍</label>
+                                        <select id="club-fee-range">
+                                            <option value="">全部</option>
+                                            <option value="0-500">0–500 元</option>
+                                            <option value="500-1000">500–1000 元</option>
+                                            <option value="1000+">1000 元以上</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="filter-toolbar__group subsearch-box">
-                                    <label for="tag-search-input">標籤副查詢</label>
-                                    <input id="tag-search-input" type="text" placeholder="輸入標籤關鍵字...">
-                                    <div id="tag-search-results" class="chip-cloud"></div>
-                                </div>
-                                <div class="filter-toolbar__actions">
-                                    <button class="btn btn-primary" onclick="loadClubs()">篩選</button>
-                                    <button class="btn btn-secondary" onclick="resetFilters()">重製</button>
+
+                                <div class="filter-toolbar">
+                                    <div class="filter-toolbar__group">
+                                        <span class="filter-toolbar__label">熱門標籤</span>
+                                        <p id="popular-tags-helper" class="filter-hint">多選標籤採 OR 排序：符合較多標籤的社團排前面。</p>
+                                        <div id="popular-tags" class="chip-cloud"></div>
+                                    </div>
+                                    <div class="filter-toolbar__group subsearch-box">
+                                        <label for="tag-search-input">標籤副查詢</label>
+                                        <input id="tag-search-input" type="text" placeholder="輸入標籤關鍵字...">
+                                        <div id="tag-search-results" class="chip-cloud"></div>
+                                    </div>
+                                    <div class="filter-toolbar__actions">
+                                        <button class="btn btn-primary btn-sm" onclick="loadClubs()">套用篩選</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="resetFilters()">重製</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -479,7 +495,35 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        function openAdvancedFilters() {
+            const panel = document.getElementById('club-advanced-filters');
+            const btn = document.getElementById('club-advanced-toggle-btn');
+            if (!panel || !btn) return;
+            panel.classList.add('is-open');
+            panel.setAttribute('aria-hidden', 'false');
+            btn.classList.add('is-active');
+            btn.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeAdvancedFilters() {
+            const panel = document.getElementById('club-advanced-filters');
+            const btn = document.getElementById('club-advanced-toggle-btn');
+            if (!panel || !btn) return;
+            panel.classList.remove('is-open');
+            panel.setAttribute('aria-hidden', 'true');
+            btn.classList.remove('is-active');
+            btn.setAttribute('aria-expanded', 'false');
+        }
+
+        function hasAdvancedFilters() {
+            const categoryId = document.getElementById('category-filter').value;
+            const clubId = document.getElementById('club-filter').value;
+            const feeRange = document.getElementById('club-fee-range').value;
+            return Boolean(categoryId || clubId || feeRange || selectedTagIds.length > 0);
+        }
+
         function resetFilters() {
+            closeAdvancedFilters();
             document.getElementById('category-filter').value = '';
             const clubSelect = document.getElementById('club-filter');
             clubSelect.disabled = true;
@@ -546,13 +590,39 @@
 
             renderPopularTags();
             renderTagSearchResults();
+
+            if (params.categoryId || params.clubId || params.minFee || params.maxFee || selectedTagIds.length > 0) {
+                openAdvancedFilters();
+            } else {
+                closeAdvancedFilters();
+            }
         }
 
         window.addEventListener('DOMContentLoaded', async function () {
+            const advancedToggleBtn = document.getElementById('club-advanced-toggle-btn');
+            if (advancedToggleBtn) {
+                advancedToggleBtn.addEventListener('click', () => {
+                    const panel = document.getElementById('club-advanced-filters');
+                    if (!panel) return;
+                    if (panel.classList.contains('is-open')) {
+                        closeAdvancedFilters();
+                    } else {
+                        openAdvancedFilters();
+                    }
+                });
+            }
+
             await loadCategories();
             await loadPopularTags();
             await loadAllTags();
             await applyClubFiltersFromUrl();
+            if (window.matchMedia('(min-width: 981px)').matches) {
+                openAdvancedFilters();
+            } else if (hasAdvancedFilters()) {
+                openAdvancedFilters();
+            } else {
+                closeAdvancedFilters();
+            }
             loadClubs();
         });
     </script>

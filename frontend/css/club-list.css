@@ -103,12 +103,28 @@
     padding: 0.82rem 0.88rem 0.88rem;
 }
 
-.club-filter-card .filter-grid {
+.club-filter-topbar {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.club-filter-topbar .club-filter-keyword {
+    flex: 1;
+    min-width: 190px;
+}
+
+.club-filter-topbar .club-filter-keyword input {
+    width: 100%;
+}
+
+.club-filter-card .club-filter-grid {
     gap: 0.58rem;
 }
 
-.club-filter-card .filter-grid--clubs {
-    grid-template-columns: 1fr;
+.club-filter-card .club-filter-grid--advanced {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .club-filter-card .filter-field,
@@ -139,6 +155,55 @@
 .club-filter-card .subsearch-box input:focus {
     border-color: var(--brand);
     box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+}
+
+.club-filter-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.52rem 0.88rem;
+    border: 1px solid var(--border);
+    border-radius: 0.7rem;
+    background: var(--surface);
+    color: var(--text-default);
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.club-filter-toggle-btn:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+}
+
+.club-filter-toggle-btn.is-active {
+    border-color: var(--brand);
+    background: var(--brand-soft);
+    color: var(--brand-hover);
+}
+
+.club-filter-toggle-btn .toggle-arrow {
+    display: inline-block;
+    font-size: 0.7rem;
+    transition: transform 0.22s ease;
+}
+
+.club-filter-toggle-btn.is-active .toggle-arrow {
+    transform: rotate(180deg);
+}
+
+.club-advanced-filters {
+    max-height: 0;
+    overflow: hidden;
+    margin-top: 0;
+    transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.28s ease;
+}
+
+.club-advanced-filters.is-open {
+    max-height: 1200px;
+    margin-top: 0.74rem;
 }
 
 .club-filter-card .filter-toolbar {
@@ -513,6 +578,19 @@
     color: #ffffff;
 }
 
+@media (min-width: 981px) {
+    .club-filter-toggle-btn {
+        display: none;
+    }
+
+    .club-advanced-filters,
+    .club-advanced-filters.is-open {
+        max-height: none;
+        overflow: visible;
+        margin-top: 0.74rem;
+    }
+}
+
 @media (max-width: 1200px) {
     .club-explorer-layout {
         grid-template-columns: 300px minmax(0, 1fr);
@@ -538,6 +616,10 @@
         max-width: none;
     }
 
+    .club-filter-card .club-filter-grid--advanced {
+        grid-template-columns: 1fr 1fr;
+    }
+
     .club-filter-card .filter-toolbar__actions {
         grid-template-columns: 1fr;
     }
@@ -546,6 +628,23 @@
 @media (max-width: 720px) {
     .club-list-container {
         padding-top: 0.75rem;
+    }
+
+    .club-filter-topbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .club-filter-topbar .club-filter-keyword {
+        min-width: 0;
+    }
+
+    .club-filter-toggle-btn {
+        justify-content: center;
+    }
+
+    .club-filter-card .club-filter-grid--advanced {
+        grid-template-columns: 1fr;
     }
 
     .club-list-hero,
