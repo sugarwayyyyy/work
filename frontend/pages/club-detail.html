@@ -6,6 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>社團詳情 - 社團平台</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/home.css">
+    <style>
+        .upcoming-event-item {
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .upcoming-event-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            border-radius: 0.72rem;
+            padding: 0.32rem 0.5rem;
+            transition: background-color 0.16s ease;
+        }
+
+        .upcoming-event-link:hover,
+        .upcoming-event-link:focus-visible {
+            background: var(--surface-subtle);
+            outline: none;
+        }
+    </style>
 </head>
 
 <body>
@@ -106,14 +128,16 @@
                     <div id="club-tags">-</div>
                 </div>
 
-                <div class="card" style="margin-bottom: 2rem;">
-                    <h3>近期活動</h3>
-                    <div id="upcoming-events">
+                <section class="portal-section portal-section--dynamic" style="margin-bottom: 2rem;">
+                    <div class="portal-section-head">
+                        <h2 class="portal-section-title">近期活動</h2>
+                    </div>
+                    <div id="upcoming-events" class="feed-stream-list">
                         <div class="loading">
                             <div class="spinner"></div>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 <div class="card">
                     <h3>用戶評價</h3>
@@ -484,29 +508,54 @@
 
         function renderUpcomingEvents(events) {
             const container = document.getElementById('upcoming-events');
+            container.innerHTML = '';
+
             if (events.length === 0) {
-                container.innerHTML = '<p style="color: var(--text-light);">目前尚無近期活動</p>';
+                container.innerHTML = '<p style="text-align:center;color:var(--text-light);">目前尚無近期活動</p>';
                 return;
             }
 
-            let html = '';
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+
             events.forEach(event => {
-                const eventDate = PageUtils.formatDate(event.event_date);
+                const eventId = Number(event.event_id || 0);
                 const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
                 const safeLocation = PageUtils.escapeHtml(event.location || '-');
-                html += `
-                    <div style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
-                                <h4 style="margin: 0 0 0.5rem 0;">${safeEventName}</h4>
-                        <p style="margin: 0.5rem 0; color: var(--text-light); font-size: 0.9rem;">
-                            <strong>時間：</strong>${eventDate}
-                        </p>
-                        <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">
-                            <strong>地點：</strong>${safeLocation}
-                        </p>
-                    </div>
+
+                const d = event.event_date
+                    ? new Date(String(event.event_date).replace(' ', 'T'))
+                    : null;
+                const month = d && !isNaN(d) ? d.getMonth() + 1 : null;
+                const day   = d && !isNaN(d) ? d.getDate() : null;
+                const weekday = d && !isNaN(d) ? weekdays[d.getDay()] : null;
+                const dateText = month ? `${month}月${day}日 週${weekday}` : '-';
+
+                const deadline = event.registration_deadline
+                    ? new Date(String(event.registration_deadline).replace(' ', 'T'))
+                    : null;
+                const isOpen = event.is_registration_open == 1
+                    || (deadline && deadline > new Date());
+
+                const capacity = Number(event.capacity) || 0;
+                const capacityText = capacity > 0 ? `名額 ${capacity}` : '';
+
+                const card = document.createElement('article');
+                card.className = 'feed-item-card';
+                card.innerHTML = `
+                    <a href="event-detail.html?id=${eventId}" class="feed-item-link">
+                        <div class="feed-item-head">
+                            <h3 class="feed-item-title">${safeEventName}</h3>
+                            <span class="feed-item-badge ${isOpen ? '' : 'feed-item-badge--neutral'}">${isOpen ? '報名中' : '已截止'}</span>
+                        </div>
+                        <div class="feed-item-meta">
+                            <span>${dateText}</span>
+                            <span>📍 ${safeLocation}</span>
+                            ${capacityText ? `<span>${capacityText}</span>` : ''}
+                        </div>
+                    </a>
                 `;
+                container.appendChild(card);
             });
-            container.innerHTML = html;
         }
 
         function renderReviews(reviews) {
