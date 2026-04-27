@@ -433,8 +433,12 @@ test.describe('Additional Regression: 會話與導向自檢', () => {
     await page.goto(`${BASE_URL}/pages/club-list.html`);
     await page.waitForLoadState('networkidle');
 
-    const detailLink = page.locator('a[href*="club-detail.html?id="]').first();
-    await expect(detailLink).toBeVisible();
+    // 使用第二個社團連結（而非第一個），避免與 AC1（US 1.3）並行時因 toggle 操作
+    // 造成共享追蹤狀態衝突——AC1 永遠點擊第一個社團，AR-27 使用第二個即可隔離。
+    const allDetailLinks = page.locator('a[href*="club-detail.html?id="]');
+    await expect(allDetailLinks.first()).toBeVisible();
+    const linkCount = await allDetailLinks.count();
+    const detailLink = allDetailLinks.nth(Math.min(1, linkCount - 1));
 
     const detailHref = await detailLink.getAttribute('href');
     expect(detailHref).toBeTruthy();
