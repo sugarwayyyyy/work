@@ -1263,7 +1263,7 @@ async function renderGlobalFollowSidebar() {
         if (clubs.length === 0) {
             renderGlobalFollowSidebarMessage(
                 PageUtils.createFollowRailActionItem({
-                    href: `${window.location.origin}${APP_BASE_PATH}/frontend/pages/user-profile.html`,
+                    href: `${window.location.origin}${APP_BASE_PATH}/frontend/pages/club-list.html`,
                     label: '+',
                     title: 'Explore club list',
                     ariaLabel: 'Explore club list',

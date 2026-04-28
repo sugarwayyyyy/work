@@ -347,6 +347,8 @@
     border: 1px solid rgba(203, 213, 225, 0.62);
     border-radius: 0.78rem;
     background: var(--surface);
+    color: inherit;
+    text-decoration: none;
     transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 

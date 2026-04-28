@@ -318,8 +318,11 @@
                         const isApproved = event.registration_status === 'approved';
                         const statusClass = isApproved ? 'approved' : 'pending';
                         const statusLabel = isApproved ? '已報名' : '待審核';
+                        const eventId = Number(event.event_id) || 0;
+                        const rowTag = eventId ? 'a' : 'div';
+                        const rowHref = eventId ? ` href="event-detail.html?id=${eventId}"` : '';
                         return `
-                            <div class="profile-event-row">
+                            <${rowTag} class="profile-event-row"${rowHref}>
                                 <div class="profile-event-row__info">
                                     <h4 class="profile-event-row__title">${event.event_name || '未命名活動'}</h4>
                                     <div class="profile-event-row__meta">
@@ -330,7 +333,7 @@
                                 <div class="profile-event-row__actions">
                                     <span class="profile-status-badge profile-status-badge--${statusClass}">${statusLabel}</span>
                                 </div>
-                            </div>
+                            </${rowTag}>
                         `;
                     }).join('');
                 }
