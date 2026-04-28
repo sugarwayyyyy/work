@@ -763,6 +763,8 @@ class EventAPI {
             self::validateEventLocationIfProvided($data['location'] ?? '');
             
             self::validateHalfHourField($data['event_date'] ?? '', '舉辦日期與時間只能選整點或半點', true);
+            self::validateHalfHourField($data['event_end_date'] ?? '', '活動結束時間只能選整點或半點', false);
+            self::validateHalfHourField($data['registration_start'] ?? '', '報名開始時間只能選整點或半點', false);
             self::validateHalfHourField($data['registration_deadline'] ?? '', '報名截止只能選整點或半點', false);
             // 檢查用戶權限
             $member = Database::getInstance()->fetchOne(
@@ -779,6 +781,8 @@ class EventAPI {
                 'event_name' => $data['event_name'],
                 'description' => $data['description'],
                 'event_date' => $data['event_date'],
+                'event_end_date' => $data['event_end_date'] ?? null,
+                'registration_start' => $data['registration_start'] ?? null,
                 'location' => $data['location'],
                 'capacity' => $data['capacity'] ?? 0,
                 'fee' => $data['fee'] ?? 0,
@@ -864,7 +868,12 @@ class EventAPI {
             if (isset($data['event_date'])) {
                 self::validateHalfHourField($data['event_date'], '日期只能選整點或半點', true);
             }
-
+            if (isset($data['event_end_date'])) {
+                self::validateHalfHourField($data['event_end_date'], '活動結束時間只能選整點或半點', false);
+            }
+            if (isset($data['registration_start'])) {
+                self::validateHalfHourField($data['registration_start'], '報名開始時間只能選整點或半點', false);
+            }
             if (isset($data['registration_deadline'])) {
                 self::validateHalfHourField($data['registration_deadline'], '報名截止只能選整點或半點', false);
             }
@@ -874,6 +883,8 @@ class EventAPI {
                 'event_name' => $data['event_name'] ?? $event['event_name'],
                 'description' => $data['description'] ?? $event['description'],
                 'event_date' => $data['event_date'] ?? $event['event_date'],
+                'event_end_date' => array_key_exists('event_end_date', $data) ? ($data['event_end_date'] ?: null) : $event['event_end_date'],
+                'registration_start' => array_key_exists('registration_start', $data) ? ($data['registration_start'] ?: null) : $event['registration_start'],
                 'location' => $data['location'] ?? $event['location'],
                 'capacity' => $data['capacity'] ?? $event['capacity'],
                 'fee' => $data['fee'] ?? $event['fee'],

@@ -397,6 +397,8 @@
     padding: 0.48rem 0.52rem;
     background: var(--surface);
     box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
+    min-width: 0;
+    overflow: hidden;
 }
 
 .home-summary-item--link {
@@ -426,6 +428,9 @@
 .home-summary-item__meta {
     color: var(--text-muted);
     font-size: 0.75rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .home-widget--tip {

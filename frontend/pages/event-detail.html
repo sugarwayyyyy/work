@@ -91,7 +91,10 @@
                                     </div>
                                     <div>
                                         <strong>📍 地點</strong>
-                                        <p id="event-location-detail"></p>
+                                        <div id="event-location-box" style="margin-top: 0.35rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                                            <div id="event-location-detail" style="line-height: 1.6;"></div>
+                                            <div id="event-location-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+                                        </div>
                                     </div>
                                     <div>
                                         <strong>👥 主辦社團</strong>
@@ -264,10 +267,54 @@
                 return `${y}-${m}-${day} ${hh}:${mm}`;
             };
 
+            const MAPS_URL_RE = /https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)/i;
+            const extractMapsUrl = (v) => { const m = String(v || '').match(MAPS_URL_RE); return m ? m[0] : null; };
+            const locationLabel  = (v) => String(v || '').replace(MAPS_URL_RE, '').trim();
+
+            const formatEventLocation = (locationValue) => {
+                const rawValue = String(locationValue || '').trim();
+                if (!rawValue) return '-';
+                const label = locationLabel(rawValue);
+                if (label) return label;
+                if (extractMapsUrl(rawValue)) return '主辦社團提供的 Google 地圖連結';
+                return rawValue;
+            };
+
+            const renderEventLocationActions = (locationValue) => {
+                const actions = document.getElementById('event-location-actions');
+                if (!actions) return;
+                const mapsUrl = extractMapsUrl(locationValue);
+                if (!mapsUrl) { actions.innerHTML = ''; return; }
+                const link = document.createElement('a');
+                link.className = 'btn btn-primary btn-sm';
+                link.href = mapsUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = '在 Google Maps 導航';
+                actions.innerHTML = '';
+                actions.appendChild(link);
+            };
+
+            const resolveAndUpdateLocation = async (locationValue) => {
+                const mapsUrl = extractMapsUrl(locationValue);
+                if (!mapsUrl) return;
+                if (locationLabel(locationValue)) return; // 已有文字地名，不需解析
+                try {
+                    const res = await APIClient.get(`location-preview.php?url=${encodeURIComponent(mapsUrl)}`);
+                    if (res && res.success && res.place_name) {
+                        const name = res.place_name;
+                        const elHeader = document.getElementById('event-location');
+                        const elDetail = document.getElementById('event-location-detail');
+                        if (elHeader) elHeader.textContent = name;
+                        if (elDetail) elDetail.textContent = name;
+                    }
+                } catch (e) {}
+            };
+
             document.getElementById('event-title').textContent = event.event_name;
             document.getElementById('event-club').textContent = event.club_name;
             document.getElementById('event-date').textContent = PageUtils.formatDate(event.event_date);
-            document.getElementById('event-location').textContent = event.location;
+            document.getElementById('event-location').textContent = formatEventLocation(event.location);
             const latestEventTime = event.updated_at || event.published_at || event.created_at || null;
             document.getElementById('event-last-updated').textContent = `最新上傳時間：${formatDateTime(latestEventTime)}`;
             document.getElementById('event-description').textContent = event.description;
@@ -287,7 +334,9 @@
                 ? String(capacity)
                 : '無上限';
             document.getElementById('event-datetime-detail').textContent = PageUtils.formatDate(event.event_date);
-            document.getElementById('event-location-detail').textContent = event.location;
+            document.getElementById('event-location-detail').textContent = formatEventLocation(event.location);
+            renderEventLocationActions(event.location);
+            resolveAndUpdateLocation(event.location);
             document.getElementById('event-club-detail').textContent = event.club_name;
             document.getElementById('event-fee').textContent = event.fee ? `NT$ ${event.fee}` : '免費';
             document.getElementById('event-contact').textContent = event.contact_info || '請聯繫社團幹部';

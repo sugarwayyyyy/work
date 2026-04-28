@@ -348,41 +348,19 @@
                 return `${y}-${m}-${day} ${hh}:${mm}`;
             };
 
-            const buildGoogleMapsUrl = (locationValue) => {
-                if (!locationValue) return '';
-
-                const rawValue = String(locationValue).trim();
-                if (!rawValue) return '';
-
-                if (/^https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[\/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)$/i.test(rawValue)) {
-                    return rawValue.startsWith('http') ? rawValue : `https://${rawValue}`;
-                }
-
-                return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rawValue)}`;
-            };
-
-            const isGoogleMapsUrl = (value) => /^https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[\/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)$/i.test(String(value || '').trim());
+            const MAPS_URL_RE = /https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)/i;
+            const extractMapsUrl   = (v) => { const m = String(v || '').match(MAPS_URL_RE); return m ? m[0] : null; };
+            const locationLabel    = (v) => String(v || '').replace(MAPS_URL_RE, '').trim();
 
             const renderLocationActions = (locationValue) => {
                 const actions = document.getElementById('meeting-location-actions');
                 if (!actions) return;
-
-                const rawValue = String(locationValue || '').trim();
-                if (!rawValue) {
-                    actions.innerHTML = '';
-                    return;
-                }
-
-                if (!isGoogleMapsUrl(rawValue)) {
-                    actions.innerHTML = '';
-                    return;
-                }
-
-                const googleMapsUrl = buildGoogleMapsUrl(rawValue);
+                const mapsUrl = extractMapsUrl(locationValue);
+                if (!mapsUrl) { actions.innerHTML = ''; return; }
                 actions.innerHTML = '';
                 const link = document.createElement('a');
                 link.className = 'btn btn-primary btn-sm';
-                link.href = googleMapsUrl;
+                link.href = mapsUrl;
                 link.target = '_blank';
                 link.rel = 'noopener noreferrer';
                 link.textContent = '在 Google Maps 導航';
@@ -392,7 +370,9 @@
             const formatMeetingLocation = (locationValue) => {
                 const rawValue = String(locationValue || '').trim();
                 if (!rawValue) return '-';
-                if (isGoogleMapsUrl(rawValue)) return '幹部提供的 Google 地圖連結';
+                const label = locationLabel(rawValue);
+                if (label) return label;
+                if (extractMapsUrl(rawValue)) return '幹部提供的 Google 地圖連結';
                 return rawValue;
             };
 

@@ -245,7 +245,7 @@
                             <label>活動時間區間 <span class="required">*</span></label>
                             <div class="cad-date-time-grid">
                                 <div>
-                                    <div class="cad-time-caption">開始時間</div>
+                                    <div class="cad-time-caption">開始時間 <span class="required">*</span></div>
                                     <input type="hidden" id="event-date">
                                     <div class="cad-datetime-split">
                                         <input type="date" id="event-date-date" required>
@@ -255,9 +255,40 @@
                                             <option value="30">半點（30）</option>
                                         </select>
                                     </div>
+                                    <div id="err-event-date" class="field-error"></div>
                                 </div>
                                 <div>
-                                    <div class="cad-time-caption">結束時間（目前作為報名截止）</div>
+                                    <div class="cad-time-caption">結束時間</div>
+                                    <input type="hidden" id="event-end">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="event-end-date">
+                                        <select id="event-end-hour"></select>
+                                        <select id="event-end-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點。</small>
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label>報名期間</label>
+                            <div class="cad-date-time-grid">
+                                <div>
+                                    <div class="cad-time-caption">報名開始</div>
+                                    <input type="hidden" id="event-reg-start">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="event-reg-start-date">
+                                        <select id="event-reg-start-hour"></select>
+                                        <select id="event-reg-start-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="cad-time-caption">報名截止</div>
                                     <input type="hidden" id="event-deadline">
                                     <div class="cad-datetime-split">
                                         <input type="date" id="event-deadline-date">
@@ -269,8 +300,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點。</small>
-                            <div id="err-event-date" class="field-error"></div>
+                            <small class="cad-help-text">均為選填。未設報名截止時，活動開始前均可報名。</small>
                         </div>
                         <div class="form-field">
                             <label for="event-location">地點 <span class="required">*</span></label>
@@ -352,7 +382,7 @@
                             <label>活動時間區間 <span class="required">*</span></label>
                             <div class="cad-date-time-grid">
                                 <div>
-                                    <div class="cad-time-caption">開始時間</div>
+                                    <div class="cad-time-caption">開始時間 <span class="required">*</span></div>
                                     <input type="hidden" id="update-event-date">
                                     <div class="cad-datetime-split">
                                         <input type="date" id="update-event-date-date" required>
@@ -365,7 +395,37 @@
                                     <div id="err-update-event-date" class="field-error"></div>
                                 </div>
                                 <div>
-                                    <div class="cad-time-caption">結束時間（目前作為報名截止）</div>
+                                    <div class="cad-time-caption">結束時間</div>
+                                    <input type="hidden" id="update-event-end">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="update-event-end-date">
+                                        <select id="update-event-end-hour"></select>
+                                        <select id="update-event-end-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點。</small>
+                        </div>
+                        <div class="form-field admin-span-2">
+                            <label>報名期間</label>
+                            <div class="cad-date-time-grid">
+                                <div>
+                                    <div class="cad-time-caption">報名開始</div>
+                                    <input type="hidden" id="update-event-reg-start">
+                                    <div class="cad-datetime-split">
+                                        <input type="date" id="update-event-reg-start-date">
+                                        <select id="update-event-reg-start-hour"></select>
+                                        <select id="update-event-reg-start-minute">
+                                            <option value="00">整點（00）</option>
+                                            <option value="30">半點（30）</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="cad-time-caption">報名截止</div>
                                     <input type="hidden" id="update-event-deadline">
                                     <div class="cad-datetime-split">
                                         <input type="date" id="update-event-deadline-date">
@@ -375,10 +435,9 @@
                                             <option value="30">半點（30）</option>
                                         </select>
                                     </div>
-                                    <div id="err-update-event-deadline" class="field-error"></div>
                                 </div>
                             </div>
-                            <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點。</small>
+                            <small class="cad-help-text">均為選填。未設報名截止時，活動開始前均可報名。</small>
                         </div>
                         <div class="form-field">
                             <label for="update-event-location">地點 <span class="required">*</span></label>

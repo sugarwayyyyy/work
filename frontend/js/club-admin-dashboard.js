@@ -669,6 +669,8 @@
         function validateEventForm(prefix = '') {
             let ok = true;
             syncDateTimeFromParts(`${prefix}event-date`, true);
+            syncDateTimeFromParts(`${prefix}event-end`, false);
+            syncDateTimeFromParts(`${prefix}event-reg-start`, false);
             syncDateTimeFromParts(`${prefix}event-deadline`, false);
 
             const required = [`${prefix}event-name`, `${prefix}event-description`, `${prefix}event-date`, `${prefix}event-location`];
@@ -682,21 +684,17 @@
                 }
             });
 
-            const dateFieldId = `${prefix}event-date`;
-            const deadlineFieldId = `${prefix}event-deadline`;
-            if (!validateHalfHourField(dateFieldId, '舉辦時間只能選整點或半點')) {
-                ok = false;
-            }
+            if (!validateHalfHourField(`${prefix}event-date`, '舉辦時間只能選整點或半點')) ok = false;
 
-            const deadlineField = document.getElementById(deadlineFieldId);
-            if (deadlineField && deadlineField.value.trim()) {
-                if (!isHalfHourAligned(deadlineField.value.trim())) {
-                    setFieldError(deadlineFieldId, '報名截止只能選整點或半點');
+            [`${prefix}event-end`, `${prefix}event-reg-start`, `${prefix}event-deadline`].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.value.trim() && !isHalfHourAligned(el.value.trim())) {
+                    setFieldError(id, '只能選整點或半點時間');
                     ok = false;
-                } else {
-                    setFieldError(deadlineFieldId, '');
+                } else if (el) {
+                    setFieldError(id, '');
                 }
-            }
+            });
             return ok;
         }
 
@@ -1023,10 +1021,14 @@
             document.getElementById('update-event-description').value = event.description || '';
             setDateTimeParts('update-event-date', toDatetimeLocal(event.event_date));
             syncDateTimeFromParts('update-event-date', true);
+            setDateTimeParts('update-event-end', toDatetimeLocal(event.event_end_date));
+            syncDateTimeFromParts('update-event-end', false);
             document.getElementById('update-event-location').value = event.location || '';
             document.getElementById('update-event-capacity').value = event.capacity || '';
             document.getElementById('update-event-fee').value = event.fee || '';
             document.getElementById('update-event-registration-open').checked = Number(event.is_registration_open) === 1;
+            setDateTimeParts('update-event-reg-start', toDatetimeLocal(event.registration_start));
+            syncDateTimeFromParts('update-event-reg-start', false);
             setDateTimeParts('update-event-deadline', toDatetimeLocal(event.registration_deadline));
             syncDateTimeFromParts('update-event-deadline', false);
 
@@ -1187,6 +1189,8 @@
                 formData.append('event_name', document.getElementById('event-name').value);
                 formData.append('description', document.getElementById('event-description').value);
                 formData.append('event_date', document.getElementById('event-date').value);
+                formData.append('event_end_date', document.getElementById('event-end').value);
+                formData.append('registration_start', document.getElementById('event-reg-start').value);
                 formData.append('location', document.getElementById('event-location').value);
                 formData.append('capacity', document.getElementById('event-capacity').value);
                 formData.append('fee', document.getElementById('event-fee').value);
@@ -1275,6 +1279,8 @@
                 formData.append('event_name', document.getElementById('update-event-name').value);
                 formData.append('description', document.getElementById('update-event-description').value);
                 formData.append('event_date', document.getElementById('update-event-date').value);
+                formData.append('event_end_date', document.getElementById('update-event-end').value);
+                formData.append('registration_start', document.getElementById('update-event-reg-start').value);
                 formData.append('location', document.getElementById('update-event-location').value);
                 formData.append('capacity', document.getElementById('update-event-capacity').value);
                 formData.append('fee', document.getElementById('update-event-fee').value);
@@ -1394,7 +1400,8 @@
         });
         setClubMeetingTimeFromValue('');
 
-        ['event-date', 'event-deadline', 'update-event-date', 'update-event-deadline'].forEach(baseId => {
+        ['event-date', 'event-end', 'event-reg-start', 'event-deadline',
+         'update-event-date', 'update-event-end', 'update-event-reg-start', 'update-event-deadline'].forEach(baseId => {
             initHourSelect(`${baseId}-hour`);
             const dateInput = document.getElementById(`${baseId}-date`);
             const hourSelect = document.getElementById(`${baseId}-hour`);

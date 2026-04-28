@@ -59,6 +59,9 @@ function buildClubCard(club) {
 function buildEventCard(event, globalIndex) {
     const eventId = Number(event.event_id) || 0;
     const title = normalizeEventTitle(event.event_name, eventId, globalIndex + 1);
+    const locStr   = String(event.location || '').trim();
+    const _mapsUrl = extractMapsUrl(locStr);
+    const mapsAttr = (_mapsUrl && !locationLabel(locStr)) ? ` data-maps-url="${escapeHtml(_mapsUrl)}"` : '';
     const card = document.createElement('article');
     card.className = 'feed-item-card';
     card.innerHTML = `
@@ -71,7 +74,7 @@ function buildEventCard(event, globalIndex) {
             <p class="feed-item-body">${escapeHtml(event.description || '')}</p>
             <div class="feed-item-meta">
                 <span>${safeDate(event.event_date)}</span>
-                <span>${escapeHtml(formatLocation(event.location))}</span>
+                <span${mapsAttr}>${escapeHtml(formatLocation(locStr))}</span>
             </div>
         </a>
     `;
@@ -143,6 +146,7 @@ function renderFeedPage(panelKey) {
         container.appendChild(card);
     });
 
+    if (panelKey === 'events') resolveMapLocations(container);
     renderPagination(panelKey);
 }
 
@@ -256,14 +260,18 @@ function renderUpcomingEventsSummary(events) {
     container.innerHTML = target.map((item, index) => {
         const eventId = Number(item.event_id) || 0;
         const title = normalizeEventTitle(item.event_name, eventId, index + 1);
+        const locStr   = String(item.location || '').trim();
+        const _mapsUrl = extractMapsUrl(locStr);
+        const mapsAttr = (_mapsUrl && !locationLabel(locStr)) ? ` data-maps-url="${escapeHtml(_mapsUrl)}"` : '';
         return `
             <a href="pages/event-detail.html?id=${eventId}" class="home-summary-item home-summary-item--link">
                 <div class="home-summary-item__title">${escapeHtml(title)}</div>
                 <div class="home-summary-item__time">${safeDate(item.event_date)}</div>
-                <div class="home-summary-item__meta">${escapeHtml(formatLocation(item.location))}</div>
+                <div class="home-summary-item__meta"${mapsAttr}>${escapeHtml(formatLocation(locStr))}</div>
             </a>
         `;
     }).join('');
+    resolveMapLocations(container);
 }
 
 /* ── Search ── */
@@ -384,9 +392,35 @@ function normalizeEventTitle(title, eventId, index) {
     return raw;
 }
 
+const MAPS_URL_RE   = /https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)/i;
+const extractMapsUrl = (v) => { const m = String(v || '').match(MAPS_URL_RE); return m ? m[0] : null; };
+const locationLabel  = (v) => String(v || '').replace(MAPS_URL_RE, '').trim();
+
 function formatLocation(location) {
     const value = String(location || '').trim();
-    return value || '待確認地點';
+    if (!value) return '待確認地點';
+    const label = locationLabel(value);
+    if (label) return label;
+    if (extractMapsUrl(value)) return 'Google 地圖';
+    return value;
+}
+
+async function resolveMapLocation(mapsUrl) {
+    try {
+        const res = await APIClient.get(`location-preview.php?url=${encodeURIComponent(mapsUrl)}`);
+        if (res && res.success && res.place_name) return res.place_name;
+    } catch (e) {}
+    return null;
+}
+
+async function resolveMapLocations(container) {
+    const els = container.querySelectorAll('[data-maps-url]');
+    if (!els.length) return;
+    await Promise.all(Array.from(els).map(async el => {
+        const url = el.getAttribute('data-maps-url');
+        const name = await resolveMapLocation(url);
+        if (name) { el.textContent = name; el.removeAttribute('data-maps-url'); }
+    }));
 }
 
 /* ── Init ── */
