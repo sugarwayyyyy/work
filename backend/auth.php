@@ -8,14 +8,58 @@ require_once 'db.php';
 require_once 'content_filter.php';
 
 class Helper {
+    private static function getCorsAllowedOrigins() {
+        $configured = getenv('CORS_ALLOWED_ORIGINS') ?: '';
+        $origins = array_values(array_filter(array_map('trim', explode(',', (string)$configured))));
+
+        $appUrl = defined('APP_URL') ? trim((string)APP_URL) : '';
+        if ($appUrl !== '') {
+            $scheme = parse_url($appUrl, PHP_URL_SCHEME);
+            $host = parse_url($appUrl, PHP_URL_HOST);
+            $port = parse_url($appUrl, PHP_URL_PORT);
+            if (!empty($scheme) && !empty($host)) {
+                $appOrigin = $scheme . '://' . $host;
+                if (!empty($port)) {
+                    $appOrigin .= ':' . $port;
+                }
+                $origins[] = $appOrigin;
+            }
+        }
+
+        return array_values(array_unique($origins));
+    }
+
+    private static function isAllowedCorsOrigin($origin) {
+        if (!is_string($origin) || trim($origin) === '') {
+            return false;
+        }
+
+        $origin = trim($origin);
+        foreach (self::getCorsAllowedOrigins() as $allowed) {
+            if (strcasecmp($origin, $allowed) === 0) {
+                return true;
+            }
+        }
+
+        return preg_match('#^https?://(localhost|127\\.0\\.0\\.1)(:\\d+)?$#i', $origin) === 1;
+    }
+
+    public static function applyCorsHeaders() {
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        if (self::isAllowedCorsOrigin($origin)) {
+            header('Access-Control-Allow-Origin: ' . $origin);
+            header('Vary: Origin');
+        }
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
+        header('Access-Control-Allow-Credentials: true');
+    }
+
     // 返回JSON格式響應
     public static function response($success, $message = '', $data = null, $http_code = 200) {
         http_response_code($http_code);
         header('Content-Type: application/json; charset=utf-8');
-        header('Access-Control-Allow-Origin: http://localhost:8000');
-        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
-        header('Access-Control-Allow-Credentials: true');
+        self::applyCorsHeaders();
         
         $response = [
             'success' => $success,

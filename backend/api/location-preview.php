@@ -1,11 +1,15 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 /**
  * Google Maps URL 地點名稱解析端點
  * GET ?url=https://maps.app.goo.gl/xxx
  * 回傳 { success: true, place_name: "..." }
  */
 
-header('Access-Control-Allow-Origin: http://localhost:8000');
+require_once __DIR__ . '/../auth.php';
+Helper::applyCorsHeaders();
 header('Access-Control-Allow-Credentials: true');
 header('Content-Type: application/json; charset=utf-8');
 

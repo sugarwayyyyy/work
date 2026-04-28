@@ -44,8 +44,7 @@ function resolveApiBaseCandidates() {
     // PHP 內建伺服器跑在 frontend(:8000) 時，後端可能不在同一個 doc root。
     if (window.location.port === '8000') {
         // 一鍵啟動腳本預設後端在 :8080，先走同一來源可避免候選切換導致狀態錯讀。
-        candidates.push('http://localhost:8080/api');
-        candidates.push(`${window.location.protocol}//${window.location.hostname}/社團活動資訊統整平台/backend/api`);
+        candidates.push(`${window.location.protocol}//${window.location.hostname}:8080/api`);
     }
 
     return Array.from(new Set(candidates));
@@ -462,7 +461,7 @@ class PageUtils {
 
         if (pixelLogoUrl) {
             const safePixelUrl = PageUtils.escapeAttribute(pixelLogoUrl);
-            return `<span class="club-avatar" style="width: ${dimension}; height: ${dimension};"><img src="${safePixelUrl}" alt="${safeClubName} 像素 logo" class="club-avatar__img" style="image-rendering: pixelated;"></span>`;
+            return `<span class="club-avatar" style="width: ${dimension}; height: ${dimension};"><img src="${safePixelUrl}" alt="${safeClubName} logo" class="club-avatar__img" style="image-rendering: pixelated;" onerror="this.onerror=null;this.style.display='none'"></span>`;
         }
 
         const fallbackContent = emoji || initials;
