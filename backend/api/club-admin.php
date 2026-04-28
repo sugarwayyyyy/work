@@ -16,6 +16,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 class ClubAdminAPI {
+    private static function validateEventLocationIfProvided($location) {
+        $value = trim((string)$location);
+        if ($value === '') {
+            return;
+        }
+
+        if (preg_match('/https?:\/\/|www\./i', $value) && !ContentFilter::isGoogleMapsUrl($value)) {
+            Helper::error('活動地點若為連結，僅接受 Google 地圖分享網址', 400);
+        }
+
+        if (ContentFilter::containsRestrictedLanguageAllowingUrls($value)) {
+            Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
+        }
+    }
 
     public static function requireClubAdmin() {
         if (!Auth::isClubAdmin() && !Auth::isAdmin()) {
@@ -95,9 +109,10 @@ class ClubAdminAPI {
         $errors = Helper::validateRequired($data, ['club_id', 'event_name', 'event_date', 'location']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
-        if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description', 'location'])) {
+        if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description'])) {
             Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
         }
+        self::validateEventLocationIfProvided($data['location'] ?? '');
 
         $club_id = (int)$data['club_id'];
         $isMember = Database::getInstance()->fetchOne(

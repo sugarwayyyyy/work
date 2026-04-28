@@ -188,6 +188,10 @@ class UserAPI {
         
         try {
             $user_id = Auth::getCurrentUserId();
+            $current_user = Auth::getCurrentUser();
+            if (!$current_user) {
+                Helper::error('使用者不存在', 404);
+            }
             $update_data = [];
             
             if (isset($data['name'])) {
@@ -202,6 +206,9 @@ class UserAPI {
             }
 
             if (isset($data['student_id'])) {
+                if (($current_user['role'] ?? '') === 'student') {
+                    Helper::error('學生帳號不可修改學號', 403);
+                }
                 $student_id = trim((string)$data['student_id']);
                 if ($student_id !== '') {
                     $existing = Database::getInstance()->fetchOne(

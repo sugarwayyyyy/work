@@ -21,6 +21,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 class EventAPI {
+    private static function validateEventLocationIfProvided($location) {
+        $value = trim((string)$location);
+        if ($value === '') {
+            return;
+        }
+
+        if (preg_match('/https?:\/\/|www\./i', $value) && !ContentFilter::isGoogleMapsUrl($value)) {
+            Helper::error('活動地點若為連結，僅接受 Google 地圖分享網址', 400);
+        }
+
+        if (ContentFilter::containsRestrictedLanguageAllowingUrls($value)) {
+            Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
+        }
+    }
 
     private static function splitSearchTokens($search) {
         $text = trim((string)$search);
@@ -743,9 +757,10 @@ class EventAPI {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
 
-            if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description', 'location'])) {
+            if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description'])) {
                 Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
             }
+            self::validateEventLocationIfProvided($data['location'] ?? '');
             
             self::validateHalfHourField($data['event_date'] ?? '', '舉辦日期與時間只能選整點或半點', true);
             self::validateHalfHourField($data['registration_deadline'] ?? '', '報名截止只能選整點或半點', false);
@@ -839,8 +854,11 @@ class EventAPI {
                 Helper::error('您無權限編輯此活動', 403);
             }
 
-            if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description', 'location'])) {
+            if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description'])) {
                 Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
+            }
+            if (isset($data['location'])) {
+                self::validateEventLocationIfProvided($data['location']);
             }
 
             if (isset($data['event_date'])) {

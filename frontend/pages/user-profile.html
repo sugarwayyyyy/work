@@ -214,7 +214,15 @@
             document.getElementById('hero-student-id').textContent = user.student_id ? `學號：${user.student_id}` : '';
 
             document.getElementById('edit-name').value = user.name || '';
-            document.getElementById('edit-student-id').value = user.student_id || '';
+            const studentIdInput = document.getElementById('edit-student-id');
+            studentIdInput.value = user.student_id || '';
+            if (user.role === 'student') {
+                studentIdInput.readOnly = true;
+                studentIdInput.title = '學生帳號不可修改學號';
+            } else {
+                studentIdInput.readOnly = false;
+                studentIdInput.removeAttribute('title');
+            }
             document.getElementById('edit-phone').value = user.phone || '';
         }
 
@@ -522,7 +530,10 @@
                     }
                 }
 
-                const updateData = { name, student_id: studentId, phone };
+                const updateData = { name, phone };
+                if (currentUser && currentUser.role !== 'student') {
+                    updateData.student_id = studentId;
+                }
                 if (avatarPath) updateData.avatar_path = avatarPath;
 
                 const response = await APIClient.put('auth.php?action=update', updateData);

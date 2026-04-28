@@ -110,7 +110,7 @@
                             </div>
                             <div class="form-group">
                                 <label>
-                                    <input type="checkbox" id="is-official-reply"> 官方回覆（社團幹部）
+                                    <input type="checkbox" id="is-official-reply"> 官方回覆（該社團幹部）
                                 </label>
                             </div>
                             <button type="submit" class="btn btn-primary">提交回覆</button>
@@ -249,6 +249,23 @@
             const reportQuestionBtn = document.getElementById('report-question-btn');
             if (reportQuestionBtn) {
                 reportQuestionBtn.style.display = question.can_report ? 'inline-block' : 'none';
+            }
+
+            updateOfficialReplyVisibility();
+        }
+
+        function updateOfficialReplyVisibility() {
+            const user = StorageUtils.getUser();
+            const officialCheckbox = document.getElementById('is-official-reply');
+            if (!officialCheckbox) return;
+
+            const officialField = officialCheckbox.parentElement;
+            if (!officialField) return;
+
+            const canOfficialReply = Boolean(user && currentQuestion && currentQuestion.can_official_reply);
+            officialField.style.display = canOfficialReply ? 'block' : 'none';
+            if (!canOfficialReply) {
+                officialCheckbox.checked = false;
             }
         }
 
@@ -642,15 +659,10 @@
             if (user) {
                 document.getElementById('reply-form-section').style.display = 'none';
                 document.getElementById('reply-form').style.display = 'block';
-
-                // 檢查是否為社團幹部
-                if (user.role === 'club_admin' || user.role === 'platform_admin') {
-                    document.getElementById('is-official-reply').parentElement.style.display = 'block';
-                } else {
-                    document.getElementById('is-official-reply').parentElement.style.display = 'none';
-                }
-
                 document.getElementById('add-reply-form').dataset.parentReplyId = '';
+                updateOfficialReplyVisibility();
+            } else {
+                updateOfficialReplyVisibility();
             }
         });
     </script>

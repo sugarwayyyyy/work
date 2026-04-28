@@ -17,6 +17,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 class QandAAPI {
     private static $replyParentColumnExists = null;
+    private static $clubAdminRoles = ['president', 'vice_president', 'director', 'public_relations', 'treasurer'];
+
+    private static function canOfficialReplyForClub($userId, $clubId) {
+        if (!$userId || !$clubId) {
+            return false;
+        }
+
+        if (Auth::isAdmin()) {
+            return true;
+        }
+
+        $roleList = '"' . implode('","', self::$clubAdminRoles) . '"';
+        $row = Database::getInstance()->fetchOne(
+            'SELECT 1
+             FROM club_members
+             WHERE user_id = ?
+               AND club_id = ?
+               AND is_active = 1
+               AND role IN (' . $roleList . ')
+             LIMIT 1',
+            [(int)$userId, (int)$clubId]
+        );
+
+        return !empty($row);
+    }
 
     private static function validateReplyParent($qa_id, $parent_reply_id) {
         if (!$parent_reply_id || !self::hasReplyParentColumn()) {
@@ -41,6 +66,19 @@ class QandAAPI {
         $parent_reply_id = isset($data['parent_reply_id']) && $data['parent_reply_id'] !== ''
             ? (int)$data['parent_reply_id']
             : null;
+        $isOfficial = !empty($data['is_official']);
+
+        $question = Database::getInstance()->fetchOne(
+            'SELECT qa_id, club_id FROM q_and_a WHERE qa_id = ?',
+            [(int)$qa_id]
+        );
+        if (!$question) {
+            Helper::error('提問不存在', 404);
+        }
+
+        if ($isOfficial && !self::canOfficialReplyForClub(Auth::getCurrentUserId(), (int)$question['club_id'])) {
+            Helper::error('只有該社團幹部可使用官方回覆', 403);
+        }
 
         self::validateReplyParent($qa_id, $parent_reply_id);
 
@@ -48,7 +86,7 @@ class QandAAPI {
             'qa_id' => (int)$qa_id,
             'user_id' => Auth::getCurrentUserId(),
             'reply_content' => $data['content'],
-            'is_official_answer' => $data['is_official'] ?? false
+            'is_official_answer' => $isOfficial ? 1 : 0
         ];
 
         if (self::hasReplyParentColumn() && $parent_reply_id) {
@@ -433,6 +471,8 @@ class QandAAPI {
                 && ((int)Auth::getCurrentUserId() === (int)$question['user_id']);
             $question['can_report'] = Auth::isLoggedIn()
                 && ((int)Auth::getCurrentUserId() !== (int)$question['user_id']);
+            $question['can_official_reply'] = Auth::isLoggedIn()
+                && self::canOfficialReplyForClub(Auth::getCurrentUserId(), (int)$question['club_id']);
 
             if (!Auth::isAdmin() && !empty($question['is_anonymous'])) {
                 unset($question['user_id']);
