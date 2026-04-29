@@ -5,7 +5,15 @@
       "Bash(py --version)",
       "Bash(python .codex/skills/ui-ux-pro-max/scripts/search.py \"campus club platform student community\" --design-system -p \"校園社團平台\")",
       "Bash(python .codex/skills/ui-ux-pro-max/scripts/search.py \"vibrant community youth energetic\" --domain style -n 2)",
-      "Bash(python .codex/skills/ui-ux-pro-max/scripts/search.py \"button card hover animation accessibility\" --domain ux -n 2)"
+      "Bash(python .codex/skills/ui-ux-pro-max/scripts/search.py \"button card hover animation accessibility\" --domain ux -n 2)",
+      "Bash(npx playwright *)",
+      "Bash(php d:/app/appserv/www/work-main/scripts/cleanup-e2e-test-data.php --full)",
+      "Bash(php d:/app/appserv/www/work-main/scripts/seed-e2e-test-data.php)",
+      "Bash(xargs grep *)",
+      "Bash(mysql -u root work_main_db -e \"SHOW COLUMNS FROM events LIKE 'event_end_date';\")",
+      "Bash(mysql -u root -p12345678 work_main_db -e \"SHOW COLUMNS FROM events;\")",
+      "Bash(mysql -u root -p12345678 club_platform -e \"SHOW COLUMNS FROM events;\")",
+      "Bash(mysql -u root -p12345678 club_platform)"
     ]
   }
 }

@@ -57,9 +57,10 @@ const FRONTEND_HOME_URL = resolveFrontendHomeUrl();
 function resolveFrontendAssetUrl(relativePath) {
     const normalizedPath = String(relativePath || '').replace(/^\/+/, '');
     const path = window.location.pathname || '';
+    const basePath = APP_BASE_PATH || '';
 
-    if (path.includes('/frontend/')) {
-        return `${window.location.origin}${APP_BASE_PATH}/frontend/${normalizedPath}`;
+    if (path.includes('/frontend/') || basePath !== '') {
+        return `${window.location.origin}${basePath}/frontend/${normalizedPath}`;
     }
 
     return `${window.location.origin}/${normalizedPath}`;
@@ -528,7 +529,7 @@ class PageUtils {
         if (!/^\d{3}$/.test(code)) return '';
         // Bump this version when bulk-updating logos to avoid stale browser cache.
         const logoVersion = '20260410';
-        return PageUtils.resolveMediaUrl(`frontend/assets/pixel-logos/clubs/${code}.svg?v=${logoVersion}`);
+        return resolveFrontendAssetUrl(`assets/pixel-logos/clubs/${code}.svg?v=${logoVersion}`);
     }
 
     static getClubAvatarEmoji(clubName = '', clubCategory = '', clubDescription = '') {
@@ -1208,6 +1209,18 @@ function setupSidebarToggle(section) {
 }
 
 async function renderGlobalFollowSidebar() {
+    const user = StorageUtils.getUser();
+    const shouldHideForPlatformAdminProfile = !!(user && user.role === 'platform_admin' && isUserProfilePage());
+    if (shouldHideForPlatformAdminProfile) {
+        const existingSection = document.getElementById('followed-clubs-section');
+        if (existingSection) {
+            existingSection.remove();
+        }
+        document.body.classList.remove('has-global-follow-sidebar');
+        document.body.classList.remove('sidebar-expanded');
+        return;
+    }
+
     if (!shouldRenderGlobalFollowSidebar()) return;
 
     ensureGlobalFollowSidebarStyles();

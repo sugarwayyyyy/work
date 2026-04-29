@@ -522,6 +522,27 @@
     color: #ffffff;
 }
 
+/* 地點為 Google Maps 網址時的連結樣式 */
+.feed-item-map-link {
+    color: var(--brand);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.feed-item-map-link:hover {
+    color: var(--brand-hover);
+    text-decoration: underline;
+}
+
+.event-list-page .feed-item-title a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.event-list-page .feed-item-title a:hover {
+    color: var(--brand-hover);
+}
+
 /* ── RWD ── */
 @media (max-width: 980px) {
     .event-filter-grid {

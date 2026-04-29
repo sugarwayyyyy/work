@@ -143,7 +143,7 @@
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>
 
-    <script src="../js/main.js?v=20260428d"></script>
+    <script src="../js/main.js?v=20260428f"></script>
     <script>
         let currentUser = null;
 
@@ -171,6 +171,36 @@
             });
         }
 
+        function applyProfileTabsByRole(user) {
+            const tabs = document.querySelectorAll('.profile-tab');
+            const panels = document.querySelectorAll('.profile-tab-panel');
+            const exportBtn = document.getElementById('export-proof-btn');
+            const isPlatformAdmin = user && user.role === 'platform_admin';
+
+            if (!isPlatformAdmin) {
+                return;
+            }
+
+            tabs.forEach(tab => {
+                const isEdit = tab.dataset.tab === 'edit-profile';
+                tab.style.display = isEdit ? '' : 'none';
+                tab.classList.toggle('is-active', isEdit);
+                tab.setAttribute('aria-selected', isEdit ? 'true' : 'false');
+            });
+
+            panels.forEach(panel => {
+                panel.hidden = panel.id !== 'panel-edit-profile';
+            });
+
+            if (exportBtn) {
+                exportBtn.style.display = 'none';
+            }
+
+            const sidebar = document.getElementById('followed-clubs-section');
+            if (sidebar) sidebar.remove();
+            document.body.classList.remove('has-global-follow-sidebar', 'sidebar-expanded');
+        }
+
         /* ── 主載入 ── */
         async function loadUserProfile() {
             try {
@@ -179,10 +209,14 @@
                     currentUser = response.data;
                     StorageUtils.setUser(currentUser);
                     displayUserProfile(currentUser);
-                    loadFollowedClubs();
-                    loadUserEvents();
-                    loadFollowedFeed();
-                    loadUserQuestions();
+                    applyProfileTabsByRole(currentUser);
+
+                    if (currentUser.role !== 'platform_admin') {
+                        loadFollowedClubs();
+                        loadUserEvents();
+                        loadFollowedFeed();
+                        loadUserQuestions();
+                    }
                 } else {
                     PageUtils.showAlert('載入用戶資料失敗', 'error');
                     window.location.href = 'login.html';

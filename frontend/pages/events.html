@@ -179,7 +179,7 @@
         <p>&copy; 2026 校園社團平台</p>
     </footer>
 
-    <script src="../js/main.js?v=20260428d"></script>
+    <script src="../js/main.js?v=20260428f"></script>
     <script>
         let currentPage = 1;
         let selectedFilter = 'open';
@@ -384,13 +384,23 @@
 
                 const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
                 const safeClubName = PageUtils.escapeHtml(event.club_name || '-');
-                const safeLocation = PageUtils.escapeHtml(event.location || '-');
+                const rawLocation = event.location || '';
                 const safeEventId = Number(event.event_id) || 0;
+                const eventDetailHref = `event-detail.html?id=${safeEventId}`;
+
+                const locationIsUrl = /^https?:\/\//i.test(rawLocation);
+                const locationHtml = locationIsUrl
+                    ? `<a href="${PageUtils.escapeHtml(rawLocation)}" target="_blank" rel="noopener noreferrer" class="feed-item-map-link">📍 Google 地圖</a>`
+                    : `<span>📍 ${PageUtils.escapeHtml(rawLocation || '-')}</span>`;
 
                 const card = document.createElement('article');
                 card.className = 'feed-item-card';
+                card.style.cursor = 'pointer';
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('a')) window.location.href = eventDetailHref;
+                });
                 card.innerHTML = `
-                    <a href="event-detail.html?id=${safeEventId}" class="feed-item-link">
+                    <div class="feed-item-link">
                         <div class="feed-item-head">
                             <h3 class="feed-item-title">${safeEventName}</h3>
                             <span class="feed-item-badge ${isOpen ? '' : 'feed-item-badge--neutral'}">${isOpen ? '報名中' : '已截止'}</span>
@@ -398,11 +408,11 @@
                         <div class="feed-item-subtitle">${safeClubName}</div>
                         <div class="feed-item-meta">
                             <span>${month}月${day}日 週${weekday}</span>
-                            <span>📍 ${safeLocation}</span>
+                            ${locationHtml}
                             <span>${capacityText}</span>
                             ${deadlineText ? `<span>${deadlineText}</span>` : ''}
                         </div>
-                    </a>
+                    </div>
                 `;
                 container.appendChild(card);
             });
