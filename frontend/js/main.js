@@ -43,8 +43,12 @@ function resolveApiBaseCandidates() {
 
     // PHP 內建伺服器跑在 frontend(:8000) 時，後端可能不在同一個 doc root。
     if (window.location.port === '8000') {
-        // 一鍵啟動腳本預設後端在 :8080，先走同一來源可避免候選切換導致狀態錯讀。
+        // 一鍵啟動腳本預設後端在 :8080。
         candidates.push(`${window.location.protocol}//${window.location.hostname}:8080/api`);
+        // dev-router 模式（e2e 測試）下 /backend/api 在同一 origin，作為備援。
+        if (!candidates.includes(sameOriginApi)) {
+            candidates.push(sameOriginApi);
+        }
     }
 
     return Array.from(new Set(candidates));

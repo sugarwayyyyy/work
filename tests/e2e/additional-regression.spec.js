@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 const BASE_URL = 'http://localhost:8000';
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'http://localhost:8000/backend/api';
 
 const STUDENT = {
   email: 'student@univ.edu',

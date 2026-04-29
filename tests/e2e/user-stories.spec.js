@@ -270,7 +270,7 @@ test.describe('US 1.5: 資料時間戳', () => {
     const eventCard = page.locator('#events-container .feed-item-card').filter({ hasText: eventName }).first();
     await expect(eventCard).toBeVisible({ timeout: 15000 });
 
-    await eventCard.locator('a.feed-item-link[href*="event-detail.html?id="]').first().click();
+    await eventCard.locator('.feed-item-title a[href*="event-detail.html?id="]').first().click();
     await page.waitForURL('**/event-detail.html**');
     await page.waitForLoadState('networkidle');
 

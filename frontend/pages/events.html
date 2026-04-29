@@ -402,7 +402,7 @@
                 card.innerHTML = `
                     <div class="feed-item-link">
                         <div class="feed-item-head">
-                            <h3 class="feed-item-title">${safeEventName}</h3>
+                            <h3 class="feed-item-title"><a href="${eventDetailHref}">${safeEventName}</a></h3>
                             <span class="feed-item-badge ${isOpen ? '' : 'feed-item-badge--neutral'}">${isOpen ? '報名中' : '已截止'}</span>
                         </div>
                         <div class="feed-item-subtitle">${safeClubName}</div>
