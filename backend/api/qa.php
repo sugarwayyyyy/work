@@ -560,7 +560,7 @@ class QandAAPI {
                     'user_id' => $adminId,
                     'title' => '收到新的學生提問',
                     'message' => '你的社團有新提問，請前往留言板回覆。',
-                    'notification_type' => 'qa_reply',
+                    'notification_type' => 'qa_question',
                     'related_type' => 'qa',
                     'related_id' => $qa_id,
                     'is_read' => 0,

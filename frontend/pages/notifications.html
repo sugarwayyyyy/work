@@ -78,12 +78,20 @@
             let html = '<div style="display: grid; gap: 1rem;">';
             notifications.forEach(notification => {
                 const isRead = notification.is_read ? 'read' : '';
+                const notificationId = Number(notification.notification_id) || 0;
+                const title = PageUtils.escapeHtml(notification.title || '通知');
+                const message = PageUtils.escapeHtml(notification.message || '');
+                const targetUrl = getNotificationTargetUrl(notification);
+                const safeTargetUrl = PageUtils.escapeAttribute(targetUrl || '');
+                const clickAttr = targetUrl
+                    ? ` onclick="handleNotificationClick(${notificationId}, '${safeTargetUrl}', ${notification.is_read ? 'true' : 'false'})"`
+                    : (!notification.is_read ? ` onclick="handleNotificationClick(${notificationId}, '', false)"` : '');
                 html += `
-                    <div class="card notification-card ${isRead}" onclick="markAsRead(${notification.notification_id})">
+                    <div class="card notification-card ${isRead}"${clickAttr}>
                         <div style="display: flex; justify-content: space-between; align-items: start;">
                             <div style="flex: 1;">
-                                <h4 style="margin: 0 0 0.5rem 0;">${notification.title || '通知'}</h4>
-                                <p style="margin: 0 0 0.5rem 0;">${notification.message}</p>
+                                <h4 style="margin: 0 0 0.5rem 0;">${title}</h4>
+                                <p style="margin: 0 0 0.5rem 0;">${message}</p>
                                 <small style="color: var(--text-light);">${PageUtils.timeAgo(notification.created_at)}</small>
                             </div>
                             ${!notification.is_read ? '<span class="badge badge-primary">新</span>' : ''}
@@ -93,6 +101,16 @@
             });
             html += '</div>';
             container.innerHTML = html;
+        }
+
+        function getNotificationTargetUrl(notification) {
+            const relatedType = String(notification.related_type || '').toLowerCase();
+            const relatedId = Number(notification.related_id) || 0;
+            if (!relatedId) return '';
+
+            if (relatedType === 'event') return `event-detail.html?id=${relatedId}`;
+            if (relatedType === 'qa') return `qa-detail.html?id=${relatedId}`;
+            return '';
         }
 
         async function markAsRead(notificationId) {
@@ -105,6 +123,17 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
+            }
+        }
+
+        async function handleNotificationClick(notificationId, targetUrl, alreadyRead) {
+            if (!alreadyRead && notificationId > 0) {
+                await markAsRead(notificationId);
+            }
+            if (targetUrl) {
+                window.location.href = targetUrl;
+            } else if (!alreadyRead) {
+                loadNotifications();
             }
         }
 
