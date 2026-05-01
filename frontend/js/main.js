@@ -1,4 +1,4 @@
-// 共用 JavaScript 工具與 API 入口。
+﻿// ?璇? JavaScript ?????API ?鈭??
 function detectAppBasePath() {
     const path = window.location.pathname || '';
     const frontendIndex = path.indexOf('/frontend/');
@@ -23,7 +23,7 @@ function resolveFrontendHomeUrl() {
         return `${window.location.origin}${APP_BASE_PATH}/frontend/index.html`;
     }
 
-    // 在 frontend 目錄直接啟動 php -S 時，首頁位於 /index.html。
+    // ??frontend ?獢??皝??賹? php -S ?蹇?????選?謘?/index.html??
     return `${window.location.origin}/index.html`;
 }
 
@@ -36,16 +36,16 @@ function resolveApiBaseCandidates() {
         && !pathname.includes('/frontend/')
         && !pathname.includes('/backend/');
 
-    // frontend 目錄直接啟動時不存在 /backend/api 路徑，避免先打到必定 404 的候選。
+    // frontend ?獢??皝??賹??蹇??殉朱謓?/backend/api ???蹓?????伐??對? 404 ??謕???
     if (!isFrontendDocRootMode) {
         candidates.push(sameOriginApi);
     }
 
-    // PHP 內建伺服器跑在 frontend(:8000) 時，後端可能不在同一個 doc root。
+    // PHP ??寥?∠捂??????frontend(:8000) ?蹇??綽???迎???謓?????doc root??
     if (window.location.port === '8000') {
-        // 一鍵啟動腳本預設後端在 :8080。
+        // ??????ｇ?蟡??桀???∟謓?:8080??
         candidates.push(`${window.location.protocol}//${window.location.hostname}:8080/api`);
-        // dev-router 模式（e2e 測試）下 /backend/api 在同一 origin，作為備援。
+        // dev-router ???2e ??撗怠??? /backend/api ???? origin???蝞??瘞玲?
         if (!candidates.includes(sameOriginApi)) {
             candidates.push(sameOriginApi);
         }
@@ -171,7 +171,7 @@ class APIClient {
                 try {
                     payload = await response.json();
                 } catch (parseError) {
-                    // 404 HTML 或非 JSON 回應視為此候選不可用，繼續嘗試下一個。
+                    // 404 HTML ?謖? JSON ?豯??秋▽蹌剔??謕???????????謅疵??????
                     continue;
                 }
 
@@ -188,23 +188,23 @@ class APIClient {
                 if (payload?.success === false) {
                     if (response.status === 401 || response.status === 403) {
                         if (isCurrentSessionProbe) {
-                            // current probe 可能先打到沒有共享 session 的候選主機，
-                            // 必須繼續試完其他候選後再決定是否真的未登入。
+                            // current probe ??迎????????????session ??謕??????
+                            // ?對?????啗??????謕??綽??????秋??賹???堊貝?銋?
                             lastFailurePayload = lastFailurePayload || payload;
                             continue;
                         }
 
-                        // 若首個候選配置錯誤，保留認證失敗結果但持續嘗試其他候選。
+                        // ?隞???謕?????芰????謕??隞?謅??謚??蹓??謅疵????謕???
                         authFailurePayload = authFailurePayload || payload;
                         continue;
                     }
 
-                    // same-origin 候選通常為正確後端，優先採納以降低跨域噪音。
+                    // same-origin ?謕??謍啗??蝞貉縣?????∟?????????遛??遴?璆?賹????
                     if (baseUrl === API_BASE_CANDIDATES[0]) {
                         return payload;
                     }
 
-                    // 其餘候選再保留最後一個失敗回應。
+                    // ????謕?????謕??綽?????謅???¯?
                     lastFailurePayload = payload;
                     continue;
                 }
@@ -245,7 +245,7 @@ class APIClient {
     }
 
     /**
-     * 轉換為認證 header（如需 token）
+     * ?改??蝞???header????? token??
      */
     static getAuthHeaders() {
         const token = StorageUtils.getToken();
@@ -354,7 +354,6 @@ class PageUtils {
 
         return html;
     }
-
     static resolveMediaUrl(path) {
         if (!path) return '';
 
@@ -405,7 +404,6 @@ class PageUtils {
 
         return `${window.location.origin}${APP_BASE_PATH}/${normalized}`;
     }
-
     static getAlternateUploadsUrl(url) {
         if (!url) return '';
 
@@ -441,7 +439,7 @@ class PageUtils {
         const emoji = PageUtils.getClubAvatarEmoji(clubName, clubCategory, clubDescription);
         const initials = PageUtils.getInitial(clubName);
         const dimension = `${size}px`;
-        const safeClubName = PageUtils.escapeAttribute(clubName || '社團');
+        const safeClubName = PageUtils.escapeAttribute(clubName || '?瑟??');
 
         if (logoUrl) {
             const safeLogoUrl = PageUtils.escapeAttribute(logoUrl);
@@ -1343,36 +1341,198 @@ function setRestrictedDashboardNav(role) {
     }
 }
 
+function getNavIconPath(fileName) {
+    const pathname = window.location.pathname || '';
+    const inPagesDir = pathname.includes('/pages/');
+    const prefix = inPagesDir ? '../assets/icons/nav/' : 'assets/icons/nav/';
+    return `${prefix}${fileName}`;
+}
+
+function toRelativeFrontendPath(url) {
+    if (!url) return '';
+
+    const pathname = window.location.pathname || '';
+    const inPagesDir = pathname.includes('/pages/');
+    const prefix = inPagesDir ? '../' : '';
+
+    let normalized = String(url).trim();
+    if (!normalized) return '';
+
+    if (/^(https?:)?\/\//i.test(normalized)) {
+        try {
+            const parsed = new URL(normalized, window.location.origin);
+            normalized = parsed.pathname || '';
+        } catch (_) {
+            return normalized;
+        }
+    }
+
+    normalized = normalized.replace(/^\/+/, '');
+
+    const frontendRootMarker = '社團活動資訊統整平台/frontend/';
+    const markerIndex = normalized.indexOf(frontendRootMarker);
+    if (markerIndex >= 0) {
+        normalized = normalized.slice(markerIndex + frontendRootMarker.length);
+    }
+
+    if (normalized.startsWith('frontend/')) {
+        normalized = normalized.slice('frontend/'.length);
+    }
+
+    normalized = normalized.replace(/^\.?\//, '');
+    if (!normalized) return '';
+
+    if (normalized.startsWith('../') || normalized.startsWith('./')) {
+        return normalized;
+    }
+
+    return `${prefix}${normalized}`;
+}
+
+function ensureNavDropdownStyles() {
+    if (document.getElementById('nav-dropdown-style')) return;
+
+    const st = document.createElement('style');
+    st.id = 'nav-dropdown-style';
+    st.textContent = '.nav-user-widget{position:relative;display:inline-flex;align-items:center;gap:6px}'
+        + '.nav-bell-btn,.nav-avatar-trigger{display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;border-radius:999px;color:#374151}'
+        + '.nav-bell-btn{width:32px;height:32px}'
+        + '.nav-bell-btn:hover,.nav-avatar-trigger:hover{background:#f3f4f6}'
+        + '.nav-bell-icon{width:18px;height:18px;display:block}'
+        + '.nav-avatar-trigger{padding:2px 6px 2px 2px;gap:6px}'
+        + '.nav-avatar-img{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb;display:block}'
+        + '.nav-avatar-fallback{display:inline-flex;width:32px;height:32px;border-radius:50%;background:var(--primary-color);color:#fff;align-items:center;justify-content:center;font-weight:700;border:2px solid #e5e7eb}'
+        + '.nav-dd-caret{width:14px;height:14px;opacity:.75}'
+        + '.nav-dd-panel{position:absolute;top:calc(100% + 10px);right:0;width:260px;max-width:calc(100vw - 16px);background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 12px 28px rgba(0,0,0,.14);z-index:9999;overflow:hidden}'
+        + '.ndp-head{display:flex;gap:10px;padding:12px;border-bottom:1px solid #f1f5f9;background:#fafafa}'
+        + '.ndp-avatar-lg{width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1px solid #e5e7eb;background:#fff}'
+        + '.ndp-avatar-lg img{width:100%;height:100%;object-fit:cover;display:block}'
+        + '.ndp-avatar-lg-fallback{display:flex;width:100%;height:100%;align-items:center;justify-content:center;font-weight:700;color:#fff;background:var(--primary-color)}'
+        + '.ndp-name{font-weight:700;color:#111827;line-height:1.2}'
+        + '.ndp-mail{font-size:12px;color:#6b7280;word-break:break-all;margin-top:2px}'
+        + '.ndp-menu a,.ndp-logout-btn{display:flex;align-items:center;gap:9px;padding:10px 12px;color:#111827;text-decoration:none;font-size:14px;border:none;background:#fff;width:100%;cursor:pointer}'
+        + '.ndp-menu a:hover,.ndp-logout-btn:hover{background:#f8fafc}'
+        + '.ndp-menu-icon{width:16px;height:16px;flex-shrink:0;display:block;opacity:.86}'
+        + '.ndp-logout-wrap{border-top:1px solid #f1f5f9}'
+        + '@media(max-width:640px){.nav-dd-panel{right:-4px}}';
+    document.head.appendChild(st);
+}
+
+function closeNavDropdown() {
+    const panel = document.getElementById('nav-dd-panel');
+    const trigger = document.getElementById('nav-avatar-trigger');
+    if (panel) panel.style.display = 'none';
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+}
+
 function updateNavigation() {
     const user = StorageUtils.getUser();
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const userDropdown = document.getElementById('user-dropdown');
 
-    const avatarUrl = user && user.avatar_path
-        ? PageUtils.resolveMediaUrl(user.avatar_path)
-        : null;
+    const avatarUrl = user && user.avatar_path ? PageUtils.resolveMediaUrl(user.avatar_path) : '';
+    const relativeAvatarUrl = toRelativeFrontendPath(avatarUrl);
 
     if (user) {
         if (loginBtn) loginBtn.style.display = 'none';
-        if (logoutBtn) logoutBtn.style.display = 'inline-block';
-        if (userDropdown) {
-            const initial = (user.name || '?').charAt(0).toUpperCase();
-            const safeAvatarUrl = PageUtils.escapeAttribute(avatarUrl || '');
-            const safeInitial = PageUtils.escapeHtml(initial || '?');
-            userDropdown.innerHTML = avatarUrl
-                ? `<img src="${safeAvatarUrl}" alt="個人資料" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;">`
-                : `<span style="display: inline-flex; width: 32px; height: 32px; border-radius: 50%; background: var(--primary-color); color: #fff; align-items: center; justify-content: center; font-weight: 700; border: 2px solid #e5e7eb;">${safeInitial}</span>`;
-            userDropdown.style.display = 'inline-block';
-            userDropdown.style.cursor = 'pointer';
-            userDropdown.title = '前往個人資料';
-            userDropdown.onclick = () => {
-                window.location.href = getPageLink('user-profile.html');
-            };
+        if (logoutBtn) logoutBtn.style.display = 'none';
 
-            // 幹部頁要求：頭像在登出按鈕右側
-            if (isClubAdminDashboardPage() && logoutBtn && logoutBtn.parentNode) {
-                logoutBtn.insertAdjacentElement('afterend', userDropdown);
+        if (userDropdown) {
+            ensureNavDropdownStyles();
+
+            const initial = (user.name || '?').charAt(0).toUpperCase();
+            const safeInitial = PageUtils.escapeHtml(initial || '?');
+            const safeAvatarUrl = PageUtils.escapeAttribute(relativeAvatarUrl || '');
+            const bellIcon = PageUtils.escapeAttribute(getNavIconPath('bell.svg'));
+            const caretIcon = PageUtils.escapeAttribute(getNavIconPath('chevron-down.svg'));
+            const personIcon = PageUtils.escapeAttribute(getNavIconPath('person.svg'));
+            const dashboardIcon = PageUtils.escapeAttribute(getNavIconPath('dashboard.svg'));
+            const logoutIcon = PageUtils.escapeAttribute(getNavIconPath('logout.svg'));
+
+            const profileAvatar = relativeAvatarUrl
+                ? `<img src="${safeAvatarUrl}" alt="">`
+                : `<span class="ndp-avatar-lg-fallback">${safeInitial}</span>`;
+
+            const roleLink = user.role === 'platform_admin'
+                ? `<a href="${getPageLink('admin-dashboard.html')}"><img class="ndp-menu-icon" src="${dashboardIcon}" alt="">管理員後台</a>`
+                : (user.role === 'club_admin'
+                    ? `<a href="${getPageLink('club-admin-dashboard.html')}"><img class="ndp-menu-icon" src="${dashboardIcon}" alt="">幹部後台</a>`
+                    : '');
+
+            const avatarTriggerContent = relativeAvatarUrl
+                ? `<img class="nav-avatar-img" src="${safeAvatarUrl}" alt="個人頭像">`
+                : `<span class="nav-avatar-fallback">${safeInitial}</span>`;
+
+            userDropdown.innerHTML = '<div class="nav-user-widget">'
+                + `<button class="nav-bell-btn" id="nav-bell-btn" aria-label="通知"><img class="nav-bell-icon" src="${bellIcon}" alt=""></button>`
+                + `<button class="nav-avatar-trigger" id="nav-avatar-trigger" aria-haspopup="true" aria-expanded="false">${avatarTriggerContent}<img class="nav-dd-caret" src="${caretIcon}" alt=""></button>`
+                + '<div class="nav-dd-panel" id="nav-dd-panel" style="display:none">'
+                + '<div class="ndp-head">'
+                + `<div class="ndp-avatar-lg">${profileAvatar}</div>`
+                + '<div class="ndp-user-meta">'
+                + `<div class="ndp-name">${PageUtils.escapeHtml(user.name || '')}</div>`
+                + `<div class="ndp-mail">${PageUtils.escapeHtml(user.email || '')}</div>`
+                + '</div></div>'
+                + '<div class="ndp-menu">'
+                + `<a href="${getPageLink('user-profile.html')}"><img class="ndp-menu-icon" src="${personIcon}" alt="">個人資料</a>`
+                + roleLink
+                + '</div>'
+                + '<div class="ndp-logout-wrap">'
+                + `<button type="button" class="ndp-logout-btn" id="ndp-logout-btn"><img class="ndp-menu-icon" src="${logoutIcon}" alt="">登出</button>`
+                + '</div></div></div>';
+
+            userDropdown.style.display = 'inline-block';
+            userDropdown.style.cursor = 'default';
+            userDropdown.title = '';
+            userDropdown.onclick = null;
+
+            const bellBtn = document.getElementById('nav-bell-btn');
+            const avatarTrigger = document.getElementById('nav-avatar-trigger');
+            const ddPanel = document.getElementById('nav-dd-panel');
+            const logoutInlineBtn = document.getElementById('ndp-logout-btn');
+
+            if (bellBtn) {
+                bellBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.location.href = getPageLink('notifications.html');
+                };
+            }
+
+            if (avatarTrigger && ddPanel) {
+                avatarTrigger.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const open = ddPanel.style.display === 'block';
+                    ddPanel.style.display = open ? 'none' : 'block';
+                    avatarTrigger.setAttribute('aria-expanded', open ? 'false' : 'true');
+                };
+
+                if (!document.body.dataset.navDropdownBound) {
+                    document.addEventListener('click', (evt) => {
+                        const widget = document.querySelector('.nav-user-widget');
+                        if (!widget) return;
+                        if (!widget.contains(evt.target)) {
+                            closeNavDropdown();
+                        }
+                    });
+                    document.body.dataset.navDropdownBound = '1';
+                }
+            }
+
+            if (ddPanel) {
+                ddPanel.querySelectorAll('a').forEach((a) => {
+                    a.addEventListener('click', () => closeNavDropdown());
+                });
+            }
+
+            if (logoutInlineBtn) {
+                logoutInlineBtn.onclick = (e) => {
+                    e.preventDefault();
+                    closeNavDropdown();
+                    handleLogout();
+                };
             }
         }
 
@@ -1413,10 +1573,6 @@ function updateNavigation() {
             }
         }
 
-        if (isAdminDashboardPage() && logoutBtn && logoutBtn.parentNode && userDropdown) {
-            logoutBtn.insertAdjacentElement('afterend', userDropdown);
-        }
-
         const profileShortcut = document.getElementById('user-profile-shortcut');
         if (profileShortcut) profileShortcut.remove();
     } else {
@@ -1437,7 +1593,6 @@ function updateNavigation() {
         if (clubAdminLink) clubAdminLink.remove();
     }
 }
-
 async function handleLogout() {
     try {
         const response = await APIClient.post('auth.php?action=logout', {});
@@ -1461,3 +1616,7 @@ window.Validator = Validator;
 window.FormUtils = FormUtils;
 window.StorageUtils = StorageUtils;
 window.refreshGlobalFollowSidebar = renderGlobalFollowSidebar;
+
+
+
+
