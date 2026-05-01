@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>個人設定 — 輔大社團</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',system-ui,sans-serif;background:#f2f2f7;color:#1c1c1e;min-height:100vh}
+
+/* ── NAV ─────────────────────────────────── */
+header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid #e5e7eb}
+nav{display:flex;justify-content:space-between;align-items:center;padding:.65rem 1rem;gap:.5rem;max-width:480px;margin:0 auto}
+.logo{font-size:1.05rem;font-weight:800;letter-spacing:-.02em;background:linear-gradient(135deg,#7C3AED,#9d5cf5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap;text-decoration:none;flex-shrink:0}
+.logo span{display:block;font-size:.45rem;font-weight:600;letter-spacing:.12em;margin-top:1px}
+.nav-right{display:flex;align-items:center;gap:4px;flex-shrink:0;position:relative}
+.nav-icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:none;background:transparent;border-radius:50%;cursor:pointer;color:#4b5563;padding:0;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.nav-icon-btn:active{background:rgba(0,0,0,.07)}
+.nav-icon-btn svg{width:20px;height:20px}
+.nav-badge{position:absolute;top:3px;right:3px;min-width:16px;height:16px;border-radius:8px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;line-height:16px;text-align:center;padding:0 3px;border:2px solid #fff}
+.nav-vdivider{width:1px;height:18px;background:#d1d5db;margin:0 2px;flex-shrink:0}
+.nav-avatar-trigger{display:inline-flex;align-items:center;gap:5px;cursor:pointer;border-radius:20px;padding:3px 6px 3px 3px;-webkit-tap-highlight-color:transparent;transition:background .15s;user-select:none;-webkit-user-select:none}
+.nav-avatar-trigger:active{background:rgba(0,0,0,.07)}
+.nav-avatar-circle{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#0D9488,#0891b2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;overflow:hidden}
+.nav-avatar-circle img{width:100%;height:100%;object-fit:cover}
+.nav-username{font-size:.75rem;font-weight:600;color:#374151;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-chevron{width:13px;height:13px;color:#9ca3af;transition:transform .2s;flex-shrink:0}
+.nav-chevron.open{transform:rotate(180deg)}
+
+/* ── DROPDOWN PANEL ──────────────────────── */
+.nav-dd-panel{position:absolute;top:calc(100% + 8px);right:0;width:250px;background:#fff;border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.07),0 16px 40px rgba(0,0,0,.13);overflow:hidden;z-index:200;transform-origin:top right;transition:opacity .15s,transform .15s}
+.nav-dd-panel[hidden]{display:none}
+.ndp-profile{background:linear-gradient(135deg,#0D9488 0%,#0891b2 100%);padding:22px 16px 18px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.ndp-avatar-large{width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;margin-bottom:4px;overflow:hidden;border:2.5px solid rgba(255,255,255,.45)}
+.ndp-avatar-large img{width:100%;height:100%;object-fit:cover}
+.ndp-masked-name{color:#fff;font-size:.875rem;font-weight:700;letter-spacing:.18em}
+.ndp-student-id{color:rgba(255,255,255,.78);font-size:.72rem;margin-top:1px;font-weight:500}
+.ndp-section-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#9ca3af;padding:11px 16px 5px}
+.ndp-item{display:flex;align-items:center;gap:11px;padding:11px 16px;font-size:.85rem;color:#374151;text-decoration:none;background:transparent;border:none;width:100%;cursor:pointer;font-family:inherit;text-align:left;-webkit-tap-highlight-color:transparent}
+.ndp-item:active{background:#f3f4f6}
+.ndp-item-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ndp-item-icon svg{width:16px;height:16px}
+.ndp-item-label{flex:1;font-weight:500}
+.ndp-item-chevron{width:14px;height:14px;color:#c7c7cc;flex-shrink:0}
+.ndp-divider{height:1px;background:#f3f4f6;margin:3px 0}
+.ndp-logout{color:#ef4444}
+.ndp-logout .ndp-item-icon{background:#fef2f2;color:#ef4444}
+
+/* ── PAGE CONTENT ────────────────────────── */
+.page{max-width:480px;margin:0 auto;padding:16px 12px 32px}
+
+/* Profile card */
+.profile-card{background:#fff;border-radius:18px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.profile-avatar-wrap{position:relative;margin-bottom:6px}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#0D9488 0%,#0891b2 100%);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;overflow:hidden;border:3px solid rgba(13,148,136,.15)}
+.profile-avatar img{width:100%;height:100%;object-fit:cover}
+.profile-name{font-size:1.1rem;font-weight:700;color:#1c1c1e;letter-spacing:-.01em}
+.profile-id-tag{display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:600;color:#166534}
+.profile-role-tag{display:inline-flex;align-items:center;gap:4px;background:#ede9fe;border:1px solid #ddd6fe;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:600;color:#6d28d9}
+
+/* Settings groups */
+.section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8e8e93;padding:0 6px;margin-bottom:6px;margin-top:4px}
+.settings-group{background:#fff;border-radius:14px;overflow:hidden;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.settings-item{display:flex;align-items:center;gap:12px;padding:13px 16px;text-decoration:none;color:#1c1c1e;background:transparent;border:none;width:100%;cursor:pointer;font-family:inherit;font-size:.9rem;-webkit-tap-highlight-color:transparent;position:relative}
+.settings-item:active{background:#f2f2f7}
+.settings-item+.settings-item::before{content:'';position:absolute;top:0;left:58px;right:0;height:1px;background:#e5e5ea}
+.settings-item-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.settings-item-icon svg{width:18px;height:18px;color:#fff}
+.settings-item-body{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0}
+.settings-item-label{font-size:.9rem;font-weight:500;color:#1c1c1e}
+.settings-item-desc{font-size:.73rem;color:#8e8e93}
+.settings-item-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.settings-item-right-text{font-size:.82rem;color:#8e8e93}
+.settings-chevron{width:14px;height:14px;color:#c7c7cc;flex-shrink:0}
+.settings-item--logout{color:#ef4444}
+.settings-item--logout .settings-item-label{color:#ef4444;font-weight:600}
+
+/* Icon colors */
+.icon-teal{background:#0D9488}
+.icon-blue{background:#2563eb}
+.icon-orange{background:#f97316}
+.icon-red{background:#ef4444}
+.icon-purple{background:#7c3aed}
+.icon-gray{background:#6b7280}
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="#" class="logo">輔大社團<span>FJCU CLUBS</span></a>
+    <div class="nav-right">
+
+      <!-- Bell -->
+      <button class="nav-icon-btn" aria-label="通知" id="nav-bell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span class="nav-badge">3</span>
+      </button>
+
+      <!-- Help -->
+      <button class="nav-icon-btn" aria-label="說明">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </button>
+
+      <div class="nav-vdivider"></div>
+
+      <!-- Avatar trigger -->
+      <div class="nav-avatar-trigger" id="nav-trigger" role="button" aria-expanded="false" aria-haspopup="true" tabindex="0">
+        <div class="nav-avatar-circle" id="nav-avatar-sm">張</div>
+        <span class="nav-username" id="nav-uname">張小明</span>
+        <svg class="nav-chevron" id="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+
+      <!-- Dropdown panel -->
+      <div class="nav-dd-panel" id="nav-dd" hidden>
+        <div class="ndp-profile">
+          <div class="ndp-avatar-large" id="ndp-avatar-lg">張</div>
+          <div class="ndp-masked-name">&#x25CF;&#x25CF;&#x25CF;&#x25CF;&#x25CF;</div>
+          <div class="ndp-student-id" id="ndp-sid">B11234567</div>
+        </div>
+
+        <div class="ndp-section-label">個人設定</div>
+
+        <a href="user-profile.html" class="ndp-item">
+          <span class="ndp-item-icon" style="background:#ede9fe;color:#7c3aed">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <span class="ndp-item-label">個人資料</span>
+          <svg class="ndp-item-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+
+        <div class="ndp-divider"></div>
+
+        <button class="ndp-item ndp-logout" onclick="alert('登出')">
+          <span class="ndp-item-icon" style="background:#fef2f2;color:#ef4444">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </span>
+          <span class="ndp-item-label">登出</span>
+        </button>
+      </div>
+
+    </div><!-- /.nav-right -->
+  </nav>
+</header>
+
+<main class="page">
+
+  <!-- Profile card -->
+  <div class="profile-card">
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar" id="page-avatar">張</div>
+    </div>
+    <div class="profile-name" id="page-name">張小明</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:2px">
+      <span class="profile-id-tag" id="page-sid">&#x1F393; B11234567</span>
+      <span class="profile-role-tag">學生</span>
+    </div>
+  </div>
+
+  <!-- Settings section -->
+  <div class="section-label">個人設定</div>
+  <div class="settings-group">
+
+    <a href="user-profile.html" class="settings-item">
+      <span class="settings-item-icon icon-purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </span>
+      <div class="settings-item-body">
+        <span class="settings-item-label">個人資料</span>
+        <span class="settings-item-desc">編輯姓名、學號、頭像</span>
+      </div>
+      <div class="settings-item-right">
+        <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </a>
+
+    <a href="notifications.html" class="settings-item">
+      <span class="settings-item-icon icon-teal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </span>
+      <div class="settings-item-body">
+        <span class="settings-item-label">通知</span>
+        <span class="settings-item-desc">管理平台通知訊息</span>
+      </div>
+      <div class="settings-item-right">
+        <span class="settings-item-right-text">3 則未讀</span>
+        <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </a>
+
+    <a href="club-list.html" class="settings-item">
+      <span class="settings-item-icon icon-blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </span>
+      <div class="settings-item-body">
+        <span class="settings-item-label">追蹤中的社團</span>
+        <span class="settings-item-desc">查看已追蹤社團</span>
+      </div>
+      <div class="settings-item-right">
+        <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- Logout -->
+  <div class="settings-group">
+    <button class="settings-item settings-item--logout" onclick="alert('登出')">
+      <span class="settings-item-icon icon-red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </span>
+      <div class="settings-item-body">
+        <span class="settings-item-label">登出</span>
+      </div>
+    </button>
+  </div>
+
+</main>
+
+<script>
+// Demo user data — in production this comes from StorageUtils.getUser()
+const demoUser = {
+  name: '張小明',
+  student_id: 'B11234567',
+  user_id: 42,
+  role: 'student',
+  avatar_path: null
+};
+
+(function init() {
+  const initial = (demoUser.name || '?').charAt(0);
+  const displayId = demoUser.student_id || ('#' + demoUser.user_id);
+
+  // Nav small avatar
+  document.getElementById('nav-avatar-sm').textContent = initial;
+  document.getElementById('nav-uname').textContent = demoUser.name;
+
+  // Dropdown large avatar
+  document.getElementById('ndp-avatar-lg').textContent = initial;
+  document.getElementById('ndp-sid').textContent = displayId;
+
+  // Page content
+  document.getElementById('page-avatar').textContent = initial;
+  document.getElementById('page-name').textContent = demoUser.name;
+  document.getElementById('page-sid').textContent = '🎓 ' + displayId;
+
+  // Dropdown toggle
+  const trigger = document.getElementById('nav-trigger');
+  const panel   = document.getElementById('nav-dd');
+  const chevron = document.getElementById('nav-chevron');
+
+  trigger.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const open = !panel.hidden;
+    panel.hidden = open;
+    chevron.classList.toggle('open', !open);
+    trigger.setAttribute('aria-expanded', String(!open));
+  });
+
+  trigger.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger.click(); }
+    if (e.key === 'Escape') { panel.hidden = true; chevron.classList.remove('open'); }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!document.querySelector('.nav-right').contains(e.target)) {
+      panel.hidden = true;
+      chevron.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+  });
+})();
+</script>
+</body>
+</html>
