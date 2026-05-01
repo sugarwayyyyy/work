@@ -1369,6 +1369,11 @@ function toRelativeFrontendPath(url) {
 
     normalized = normalized.replace(/^\/+/, '');
 
+    const appBaseNoSlash = String(APP_BASE_PATH || '').replace(/^\/+|\/+$/g, '');
+    if (appBaseNoSlash && normalized.startsWith(`${appBaseNoSlash}/`)) {
+        normalized = normalized.slice(appBaseNoSlash.length + 1);
+    }
+
     const frontendRootMarker = '社團活動資訊統整平台/frontend/';
     const markerIndex = normalized.indexOf(frontendRootMarker);
     if (markerIndex >= 0) {
