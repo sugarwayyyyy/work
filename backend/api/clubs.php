@@ -849,15 +849,25 @@ class ClubAPI {
                 Helper::error('聯絡信箱格式錯誤', 400);
             }
 
+            $current = Database::getInstance()->fetchOne('SELECT club_name, last_updated FROM clubs WHERE club_id = ?', [$club_id]);
+            if (!$current) {
+                Helper::error('社團不存在', 404);
+            }
+
+            if (!Auth::isAdmin() && array_key_exists('club_name', $data)) {
+                $incomingClubName = trim((string)$data['club_name']);
+                $existingClubName = trim((string)($current['club_name'] ?? ''));
+                if ($incomingClubName !== '' && $incomingClubName !== $existingClubName) {
+                    Helper::error('社團管理員無權修改社團名稱', 403);
+                }
+            }
             if (isset($data['last_updated'])) {
-                $current = Database::getInstance()->fetchOne('SELECT last_updated FROM clubs WHERE club_id = ?', [$club_id]);
                 if (!empty($current['last_updated']) && $current['last_updated'] !== $data['last_updated']) {
                     Helper::error('資料已被其他幹部更新，請重新整理後再儲存', 409);
                 }
             }
 
             $update_data = [
-                'club_name' => $data['club_name'] ?? '',
                 'description' => $data['description'] ?? '',
                 'meeting_day' => $data['meeting_day'] ?? '',
                 'meeting_time' => $data['meeting_time'] ?? '',
@@ -868,6 +878,9 @@ class ClubAPI {
                 'last_updated' => date('Y-m-d H:i:s')
             ];
 
+            if (Auth::isAdmin()) {
+                $update_data['club_name'] = $data['club_name'] ?? '';
+            }
             if (isset($data['logo_path'])) {
                 $update_data['logo_path'] = $data['logo_path'];
             }

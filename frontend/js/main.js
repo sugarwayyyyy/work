@@ -882,11 +882,24 @@ function ensureGlobalFollowSidebarStyles() {
             color: var(--text-default);
             font-size: 1.05rem;
             line-height: 1;
-            transition: background-color 0.15s ease;
+            transition: background-color 0.15s ease, transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body.has-global-follow-sidebar .sidebar-toggle-btn:hover {
             background: var(--surface-subtle);
+        }
+
+        body.has-global-follow-sidebar .sidebar-toggle-btn:active {
+            transform: scale(0.82);
+            background: var(--color-border-light);
+        }
+
+        body.sidebar-expanded .sidebar-toggle-btn {
+            transform: rotate(90deg);
+        }
+
+        body.sidebar-expanded .sidebar-toggle-btn:active {
+            transform: rotate(90deg) scale(0.82);
         }
 
         body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__toolbar {

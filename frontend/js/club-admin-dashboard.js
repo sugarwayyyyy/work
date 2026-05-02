@@ -634,7 +634,7 @@
             let ok = true;
             syncClubMeetingTimeValue();
 
-            ['update-club-name', 'update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'].forEach(id => {
+            ['update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'].forEach(id => {
                 const value = document.getElementById(id).value.trim();
                 if (!value) {
                     setFieldError(id, '此為必填欄位');
@@ -699,7 +699,7 @@
         }
 
         function refreshClubPreview() {
-            const name = document.getElementById('update-club-name').value.trim() || '未填寫';
+            const name = (currentClubName || '').trim() || '未填寫';
             const desc = document.getElementById('update-club-description').value.trim() || '未填寫';
             const time = document.getElementById('update-club-meeting-time').value.trim() || '未填寫';
             const rawLoc = document.getElementById('update-club-location').value.trim();
@@ -867,7 +867,6 @@
             document.getElementById('club-subtitle').textContent = club.club_name || '';
             document.getElementById('update-club-id').value = club.club_id;
             document.getElementById('event-club-id').value = club.club_id;
-            document.getElementById('update-club-name').value = club.club_name || '';
             document.getElementById('update-club-description').value = club.description || '';
             setClubMeetingTimeFromValue(club.meeting_time || '');
             document.getElementById('update-club-location').value = club.meeting_location || '';
@@ -1109,7 +1108,6 @@
                 }
 
                 const formData = new FormData();
-                formData.append('club_name', document.getElementById('update-club-name').value);
                 formData.append('description', document.getElementById('update-club-description').value);
                 formData.append('meeting_time', document.getElementById('update-club-meeting-time').value);
                 formData.append('meeting_location', document.getElementById('update-club-location').value);
@@ -1382,7 +1380,7 @@
             }
         });
 
-        ['update-club-name', 'update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'].forEach(id => {
+        ['update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', refreshClubPreview);
         });

@@ -495,12 +495,21 @@
                 return;
             }
 
+            const MAPS_URL_RE = /https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)/i;
             const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
 
             events.forEach(event => {
                 const eventId = Number(event.event_id || 0);
                 const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
-                const safeLocation = PageUtils.escapeHtml(event.location || '-');
+                const rawLocation = String(event.location || '').trim();
+                const locationText = (() => {
+                    if (!rawLocation) return '-';
+                    const mapsMatch = rawLocation.match(MAPS_URL_RE);
+                    if (!mapsMatch) return rawLocation;
+                    const label = rawLocation.replace(MAPS_URL_RE, '').trim();
+                    return label || 'Google 地圖';
+                })();
+                const safeLocation = PageUtils.escapeHtml(locationText);
 
                 const d = event.event_date
                     ? new Date(String(event.event_date).replace(' ', 'T'))
