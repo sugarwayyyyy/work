@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>社團探索 - 校園社團平台</title>
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/club-list.css">
-    <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/styles.css?v=20260502j">
+    <link rel="stylesheet" href="../css/club-list.css?v=20260502j">
+    <link rel="stylesheet" href="../css/home.css?v=20260502j">
 </head>
 
 <body>
@@ -33,18 +33,6 @@
     <div class="club-list-page">
         <div class="container club-list-container">
 
-            <!-- 頁首 Hero -->
-            <div class="club-list-hero">
-                <div class="club-list-hero__head">
-                    <div>
-                        <span class="club-list-kicker">社團探索</span>
-                        <h1 class="club-list-title">探索所有社團</h1>
-                        <p class="club-list-subtitle">從關鍵字、類別、社費到標籤，精準找到你的校園圈子。</p>
-                    </div>
-                    <p class="club-list-meta" id="result-count-meta"></p>
-                </div>
-            </div>
-
             <!-- 雙欄探索器：左側篩選 + 右側結果 -->
             <div class="club-explorer-layout">
 
@@ -52,8 +40,11 @@
                 <aside class="club-filter-column">
                     <div class="club-filter-card filter-card">
                         <div class="filter-card__header">
-                            <div class="filter-card__title">篩選社團</div>
-                            <div class="filter-card__subtitle">縮小範圍，找到最適合你的社團。</div>
+                            <div>
+                                <div class="filter-card__title">篩選社團</div>
+                                <div class="filter-card__subtitle">縮小範圍，找到最適合你的社團。</div>
+                            </div>
+                            <button type="button" id="layout-toggle-btn" class="club-layout-toggle-btn" aria-label="切換篩選欄位置"></button>
                         </div>
                         <div class="filter-card__body">
                             <div class="club-filter-topbar">
@@ -157,7 +148,7 @@
         <p>&copy; 2026 校園社團平台</p>
     </footer>
 
-    <script src="../js/main.js?v=20260502g"></script>
+    <script src="../js/main.js?v=20260502j"></script>
     <script>
         let currentPage = 1;
         let selectedTagIds = [];
@@ -598,7 +589,41 @@
             }
         }
 
+        function initLayoutToggle() {
+            const layout = document.querySelector('.club-explorer-layout');
+            const btn = document.getElementById('layout-toggle-btn');
+            if (!layout || !btn) return;
+
+            const PREF_KEY = 'club_filter_layout_v1';
+
+            const iconSidebar = '<svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="4" height="14" rx="1" fill="currentColor" opacity="0.85"/><rect x="6.5" y="0.5" width="8" height="14" rx="1" fill="currentColor" opacity="0.4"/></svg>';
+            const iconTop = '<svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="14" height="4" rx="1" fill="currentColor" opacity="0.85"/><rect x="0.5" y="6.5" width="14" height="8" rx="1" fill="currentColor" opacity="0.4"/></svg>';
+
+            function applyLayout(mode) {
+                if (mode === 'sidebar') {
+                    layout.classList.add('club-explorer-layout--sidebar');
+                    btn.innerHTML = iconTop + '<span>上方篩選</span>';
+                    btn.title = '切換至上方篩選';
+                } else {
+                    layout.classList.remove('club-explorer-layout--sidebar');
+                    btn.innerHTML = iconSidebar + '<span>左側篩選</span>';
+                    btn.title = '切換至左側篩選';
+                }
+                try { localStorage.setItem(PREF_KEY, mode); } catch (e) {}
+            }
+
+            btn.addEventListener('click', () => {
+                applyLayout(layout.classList.contains('club-explorer-layout--sidebar') ? 'top' : 'sidebar');
+            });
+
+            let saved = 'top';
+            try { saved = localStorage.getItem(PREF_KEY) || 'top'; } catch (e) {}
+            applyLayout(saved);
+        }
+
         window.addEventListener('DOMContentLoaded', async function () {
+            initLayoutToggle();
+
             const advancedToggleBtn = document.getElementById('club-advanced-toggle-btn');
             if (advancedToggleBtn) {
                 advancedToggleBtn.addEventListener('click', () => {
@@ -616,7 +641,8 @@
             await loadPopularTags();
             await loadAllTags();
             await applyClubFiltersFromUrl();
-            if (window.matchMedia('(min-width: 981px)').matches) {
+            const isSidebar = document.querySelector('.club-explorer-layout--sidebar');
+            if (window.matchMedia('(min-width: 981px)').matches && isSidebar) {
                 openAdvancedFilters();
             } else if (hasAdvancedFilters()) {
                 openAdvancedFilters();

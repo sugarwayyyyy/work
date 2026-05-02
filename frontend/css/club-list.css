@@ -62,12 +62,20 @@
 
 .club-explorer-layout {
     display: grid;
-    grid-template-columns: 340px minmax(0, 1fr);
+    grid-template-columns: 1fr;
     gap: 0.8rem;
     align-items: start;
 }
 
+.club-explorer-layout--sidebar {
+    grid-template-columns: 340px minmax(0, 1fr);
+}
+
 .club-filter-column {
+    position: static;
+}
+
+.club-explorer-layout--sidebar .club-filter-column {
     position: sticky;
     top: 5.4rem;
 }
@@ -84,6 +92,38 @@
     padding: 0.82rem 0.88rem 0.72rem;
     border-bottom: 1px solid var(--color-border-light);
     background: linear-gradient(180deg, rgba(237, 233, 254, 0.72), rgba(255, 255, 255, 0.92));
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.club-layout-toggle-btn {
+    display: none;
+    align-items: center;
+    gap: 0.28rem;
+    padding: 0.3rem 0.58rem;
+    border: 1px solid var(--border);
+    border-radius: 0.6rem;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.club-layout-toggle-btn:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+    background: var(--brand-soft);
+}
+
+.club-layout-toggle-btn svg {
+    flex-shrink: 0;
 }
 
 .club-filter-card .filter-card__title {
@@ -600,20 +640,24 @@
 }
 
 @media (min-width: 981px) {
-    .club-filter-toggle-btn {
+    .club-explorer-layout--sidebar .club-filter-toggle-btn {
         display: none;
     }
 
-    .club-advanced-filters,
-    .club-advanced-filters.is-open {
+    .club-explorer-layout--sidebar .club-advanced-filters,
+    .club-explorer-layout--sidebar .club-advanced-filters.is-open {
         max-height: none;
         overflow: visible;
         margin-top: 0.74rem;
     }
+
+    .club-layout-toggle-btn {
+        display: inline-flex;
+    }
 }
 
 @media (max-width: 1200px) {
-    .club-explorer-layout {
+    .club-explorer-layout--sidebar {
         grid-template-columns: 300px minmax(0, 1fr);
     }
 
@@ -624,12 +668,19 @@
 
 @media (max-width: 980px) {
     .club-explorer-layout {
-        grid-template-columns: 1fr;
         gap: 0.7rem;
+    }
+
+    .club-explorer-layout--sidebar {
+        grid-template-columns: 1fr;
     }
 
     .club-filter-column {
         position: static;
+    }
+
+    .club-layout-toggle-btn {
+        display: none !important;
     }
 
     .club-list-meta {
