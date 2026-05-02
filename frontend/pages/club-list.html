@@ -135,7 +135,7 @@
                             <span id="results-page-info" style="font-size:0.78rem;color:var(--text-muted);"></span>
                         </div>
 
-                        <div id="clubs-container" class="feed-stream-list">
+                        <div id="clubs-container" class="feed-stream-list club-list-feed">
                             <div class="club-state">
                                 <div class="loading">
                                     <div class="spinner"></div>
@@ -157,7 +157,7 @@
         <p>&copy; 2026 校園社團平台</p>
     </footer>
 
-    <script src="../js/main.js?v=20260502f"></script>
+    <script src="../js/main.js?v=20260502g"></script>
     <script>
         let currentPage = 1;
         let selectedTagIds = [];
@@ -413,19 +413,24 @@
                 const safeDescription = PageUtils.escapeHtml(club.description || '');
                 const safeClubId = Number(club.club_id) || 0;
 
+                const avatarHtml = PageUtils.renderClubAvatar(club, 44);
+
                 const card = document.createElement('article');
                 card.className = 'feed-item-card';
                 card.innerHTML = `
                     <a href="club-detail.html?id=${safeClubId}" class="feed-item-link">
-                        <div class="feed-item-head">
-                            <h3 class="feed-item-title">${safeClubName}</h3>
-                            <span class="feed-item-badge ${badgeClass}">${statusLabel}</span>
-                        </div>
-                        ${tagText ? `<div class="feed-item-subtitle">${tagText}</div>` : ''}
-                        <p class="feed-item-body">${safeDescription}</p>
-                        <div class="feed-item-meta">
-                            <span>${club.member_count || 0} 成員</span>
-                            <span>評分 ${rating.toFixed(1)}（${club.reviews_count || 0}）</span>
+                        <div class="feed-item-avatar">${avatarHtml}</div>
+                        <div class="feed-item-text">
+                            <div class="feed-item-head">
+                                <h3 class="feed-item-title">${safeClubName}</h3>
+                                <span class="feed-item-badge ${badgeClass}">${statusLabel}</span>
+                            </div>
+                            ${tagText ? `<div class="feed-item-subtitle">${tagText}</div>` : ''}
+                            <p class="feed-item-body">${safeDescription}</p>
+                            <div class="feed-item-meta">
+                                <span>${club.member_count || 0} 成員</span>
+                                <span>評分 ${rating.toFixed(1)}（${club.reviews_count || 0}）</span>
+                            </div>
                         </div>
                     </a>
                 `;
