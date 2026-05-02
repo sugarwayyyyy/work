@@ -321,6 +321,9 @@
 
                         const shell = document.createElement('div');
                         shell.className = depth === 0 ? 'dcard-reply-shell' : 'dcard-reply-child-shell';
+                        if (Number(reply.reply_id) > 0) {
+                            shell.id = `reply-${Number(reply.reply_id)}`;
+                        }
 
                         const top = document.createElement('div');
                         top.className = 'dcard-reply-top';
@@ -486,6 +489,20 @@
                     });
                     container.innerHTML = '';
                     container.appendChild(fragment);
+
+                    const hash = window.location.hash || '';
+                    if (hash.startsWith('#reply-')) {
+                        const target = document.getElementById(hash.slice(1));
+                        if (target) {
+                            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            const oldBg = target.style.backgroundColor;
+                            target.style.transition = 'background-color 0.8s ease';
+                            target.style.backgroundColor = 'rgba(255, 245, 157, 0.45)';
+                            setTimeout(() => {
+                                target.style.backgroundColor = oldBg || '';
+                            }, 1400);
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Error loading replies:', error);

@@ -1,11 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>通知中心 - 社團平台</title>
-    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/styles.css?v=20260502k">
+    <link rel="stylesheet" href="../css/home.css?v=20260502k">
 </head>
 
 <body>
@@ -19,7 +20,7 @@
                 <li><a href="qa.html">提問</a></li>
             </ul>
             <div class="nav-right">
-                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href = 'login.html'">登入</button>
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href='login.html'" style="display:none;">登入</button>
                 <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
                 <span id="user-dropdown" style="display: none;"></span>
             </div>
@@ -28,21 +29,22 @@
 
     <div id="alert-container"></div>
 
-    <div class="container">
-        <h1>通知中心</h1>
-
-        <div class="card">
-            <div class="card-header">
-                <h3>最新通知</h3>
-            </div>
-            <div class="card-body">
-                <div id="notifications-list">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>載入通知中...</p>
+    <div class="home-shell">
+        <div class="container home-container">
+            <section class="portal-section portal-section--dynamic">
+                <div class="portal-section-head">
+                    <h2 class="portal-section-title">通知中心</h2>
+                    <span id="notif-unread-count" style="font-size:0.78rem;color:var(--text-muted);"></span>
+                </div>
+                <div id="notifications-list" class="feed-stream-list">
+                    <div class="feed-item-card" style="display:flex;justify-content:center;padding:2rem 0;">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>載入通知中...</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
     </div>
 
@@ -50,14 +52,13 @@
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>
 
-    <script src="../js/main.js?v=20260502f"></script>
+    <script src="../js/main.js?v=20260502k"></script>
     <script>
         async function loadNotifications() {
             try {
                 const response = await APIClient.get('notifications.php');
                 if (response.success) {
-                    const notifications = response.data.notifications;
-                    displayNotifications(notifications);
+                    displayNotifications(response.data.notifications);
                 } else {
                     PageUtils.showAlert(response.message, 'error');
                 }
@@ -69,46 +70,72 @@
 
         function displayNotifications(notifications) {
             const container = document.getElementById('notifications-list');
+            const unreadCountEl = document.getElementById('notif-unread-count');
 
             if (notifications.length === 0) {
-                container.innerHTML = '<p>目前沒有新通知</p>';
+                container.innerHTML = '<div class="feed-item-card" style="text-align:center;padding:2.5rem 0;color:var(--text-muted);">目前沒有新通知</div>';
+                if (unreadCountEl) unreadCountEl.textContent = '';
                 return;
             }
 
-            let html = '<div style="display: grid; gap: 1rem;">';
+            const unreadCount = notifications.filter(n => !n.is_read).length;
+            if (unreadCountEl) unreadCountEl.textContent = unreadCount > 0 ? `${unreadCount} 則未讀` : '全部已讀';
+
+            let html = '';
             notifications.forEach(notification => {
-                const isRead = notification.is_read ? 'read' : '';
                 const notificationId = Number(notification.notification_id) || 0;
                 const title = PageUtils.escapeHtml(notification.title || '通知');
                 const message = PageUtils.escapeHtml(notification.message || '');
+                const timeAgo = PageUtils.timeAgo(notification.created_at);
                 const targetUrl = getNotificationTargetUrl(notification);
                 const safeTargetUrl = PageUtils.escapeAttribute(targetUrl || '');
+                const isUnread = !notification.is_read;
+                const alreadyRead = notification.is_read ? 'true' : 'false';
+                const isClickable = !!(targetUrl || isUnread);
+
                 const clickAttr = targetUrl
-                    ? ` onclick="handleNotificationClick(${notificationId}, '${safeTargetUrl}', ${notification.is_read ? 'true' : 'false'})"`
-                    : (!notification.is_read ? ` onclick="handleNotificationClick(${notificationId}, '', false)"` : '');
-                html += `
-                    <div class="card notification-card ${isRead}"${clickAttr}>
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div style="flex: 1;">
-                                <h4 style="margin: 0 0 0.5rem 0;">${title}</h4>
-                                <p style="margin: 0 0 0.5rem 0;">${message}</p>
-                                <small style="color: var(--text-light);">${PageUtils.timeAgo(notification.created_at)}</small>
+                    ? ` onclick="handleNotificationClick(${notificationId}, '${safeTargetUrl}', ${alreadyRead})"`
+                    : (isUnread ? ` onclick="handleNotificationClick(${notificationId}, '', false)"` : '');
+
+                if (isClickable) {
+                    html += `
+                    <div class="feed-item-card">
+                        <button class="feed-item-link feed-item-link--announcement"${clickAttr}>
+                            <div class="feed-item-head">
+                                <h3 class="feed-item-title"${isUnread ? '' : ' style="color:var(--text-muted);font-weight:400;"'}>${title}</h3>
+                                ${isUnread ? '<span class="feed-item-badge">新</span>' : ''}
                             </div>
-                            ${!notification.is_read ? '<span class="badge badge-primary">新</span>' : ''}
+                            ${message ? `<p class="feed-item-body">${message}</p>` : ''}
+                            <time class="feed-item-time">${timeAgo}</time>
+                        </button>
+                    </div>`;
+                } else {
+                    html += `
+                    <div class="feed-item-card">
+                        <div class="feed-item-link" style="cursor:default;">
+                            <div class="feed-item-head">
+                                <h3 class="feed-item-title" style="color:var(--text-muted);font-weight:400;">${title}</h3>
+                            </div>
+                            ${message ? `<p class="feed-item-body">${message}</p>` : ''}
+                            <time class="feed-item-time">${timeAgo}</time>
                         </div>
-                    </div>
-                `;
+                    </div>`;
+                }
             });
-            html += '</div>';
             container.innerHTML = html;
         }
 
         function getNotificationTargetUrl(notification) {
+            const notificationType = String(notification.notification_type || '').toLowerCase();
             const relatedType = String(notification.related_type || '').toLowerCase();
             const relatedId = Number(notification.related_id) || 0;
             if (!relatedId) return '';
 
             if (relatedType === 'event') return `event-detail.html?id=${relatedId}`;
+            if (notificationType === 'qa_reply') {
+                const qaId = Number(notification.qa_id_from_reply) || 0;
+                if (qaId > 0) return `qa-detail.html?id=${qaId}#reply-${relatedId}`;
+            }
             if (relatedType === 'qa') return `qa-detail.html?id=${relatedId}`;
             return '';
         }
@@ -118,9 +145,7 @@
                 const response = await APIClient.post('notifications.php?action=mark_read', {
                     notification_id: notificationId
                 });
-                if (response.success) {
-                    loadNotifications();
-                }
+                if (response.success) loadNotifications();
             } catch (error) {
                 console.error('Error:', error);
             }
@@ -137,7 +162,7 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', function () {
             loadNotifications();
         });
     </script>

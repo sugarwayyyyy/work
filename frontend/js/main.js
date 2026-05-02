@@ -684,6 +684,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function initializePage() {
     ensureSiteFavicon();
+    applyActiveNavLink();
     await hydrateUserFromSession();
     updateNavigation();
     await renderGlobalFollowSidebar();
@@ -1327,6 +1328,59 @@ function setRestrictedDashboardNav(role) {
     }
 }
 
+function getNavActiveSection(pathname) {
+    const path = String(pathname || '').toLowerCase().replace(/\/+$/, '');
+    const fileName = (path.split('/').pop() || '').toLowerCase();
+
+    if (!fileName || fileName === 'frontend' || fileName === 'index.html') {
+        return 'index.html';
+    }
+    if (fileName === 'club-list.html' || fileName === 'club-detail.html') {
+        return 'club-list.html';
+    }
+    if (fileName === 'events.html' || fileName === 'event-detail.html') {
+        return 'events.html';
+    }
+    if (fileName === 'qa.html' || fileName === 'qa-detail.html') {
+        return 'qa.html';
+    }
+    if (fileName === 'club-admin-dashboard.html') {
+        return 'club-admin-dashboard.html';
+    }
+
+    // Fallback for unusual Apache path rewrites.
+    if (path.includes('/club-admin-dashboard.html')) return 'club-admin-dashboard.html';
+    if (path.includes('/club-list.html') || path.includes('/club-detail.html')) return 'club-list.html';
+    if (path.includes('/events.html') || path.includes('/event-detail.html')) return 'events.html';
+    if (path.includes('/qa.html') || path.includes('/qa-detail.html')) return 'qa.html';
+
+    return '';
+}
+
+function applyActiveNavLink() {
+    const navLinks = document.querySelector('.nav-links');
+    if (!navLinks) return;
+
+    const links = Array.from(navLinks.querySelectorAll('a[href]'));
+    links.forEach((link) => link.classList.remove('active'));
+
+    const section = getNavActiveSection(window.location.pathname || '');
+    if (!section) return;
+
+    let target = null;
+    if (section === 'index.html') {
+        target = links.find((link) => /index\.html(?:$|\?)/i.test(String(link.getAttribute('href') || '')));
+    } else if (section === 'club-admin-dashboard.html') {
+        target = links.find((link) => String(link.getAttribute('href') || '').includes('club-admin-dashboard.html'));
+    } else {
+        target = links.find((link) => String(link.getAttribute('href') || '').includes(section));
+    }
+
+    if (target) {
+        target.classList.add('active');
+    }
+}
+
 function getFrontendAssetPath(assetPath) {
     if (!assetPath) return '';
     const cleanPath = String(assetPath).replace(/^\.?\//, '');
@@ -1399,7 +1453,8 @@ function ensureNavDropdownStyles() {
         + '.nav-avatar-trigger{padding:2px 6px 2px 2px;gap:6px}'
         + '.nav-avatar-img{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb;display:block}'
         + '.nav-avatar-fallback{display:inline-flex;width:32px;height:32px;border-radius:50%;background:var(--primary-color);color:#fff;align-items:center;justify-content:center;font-weight:700;border:2px solid #e5e7eb}'
-        + '.nav-dd-caret{width:14px;height:14px;opacity:.75}'
+        + '.nav-dd-caret{width:14px;height:14px;opacity:.75;transition:transform 0.22s cubic-bezier(0.4,0,0.2,1)}'
+        + '.nav-avatar-trigger[aria-expanded="true"] .nav-dd-caret{transform:rotate(180deg)}'
         + '.nav-dd-panel{position:absolute;top:calc(100% + 10px);right:0;width:260px;max-width:calc(100vw - 16px);background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 12px 28px rgba(0,0,0,.14);z-index:9999;overflow:hidden}'
         + '.ndp-head{display:flex;gap:10px;padding:12px;border-bottom:1px solid #f1f5f9;background:#fafafa}'
         + '.ndp-avatar-lg{width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1px solid #e5e7eb;background:#fff}'
@@ -1602,6 +1657,8 @@ function updateNavigation() {
         if (adminLink) adminLink.remove();
         if (clubAdminLink) clubAdminLink.remove();
     }
+
+    applyActiveNavLink();
 }
 async function handleLogout() {
     try {

@@ -135,7 +135,14 @@ class NotificationAPI {
 
         try {
             $notifications = Database::getInstance()->fetchAll(
-                'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50',
+                'SELECT n.*, qr.qa_id AS qa_id_from_reply
+                 FROM notifications n
+                 LEFT JOIN qa_replies qr
+                   ON n.notification_type = "qa_reply"
+                  AND n.related_id = qr.reply_id
+                 WHERE n.user_id = ?
+                 ORDER BY n.created_at DESC
+                 LIMIT 50',
                 [Auth::getCurrentUserId()]
             );
 

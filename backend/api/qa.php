@@ -69,7 +69,7 @@ class QandAAPI {
         $isOfficial = !empty($data['is_official']);
 
         $question = Database::getInstance()->fetchOne(
-            'SELECT qa_id, club_id FROM q_and_a WHERE qa_id = ?',
+            'SELECT qa_id, club_id, user_id, question_title FROM q_and_a WHERE qa_id = ?',
             [(int)$qa_id]
         );
         if (!$question) {
@@ -96,6 +96,36 @@ class QandAAPI {
         $reply_id = dbInsert('qa_replies', $replyData);
         if (!$reply_id) {
             Helper::error('回覆失敗', 500);
+        }
+
+        $questionOwnerId = (int)($question['user_id'] ?? 0);
+        $replierId = (int)Auth::getCurrentUserId();
+
+        // 回覆他人提問時，通知提問者；自己回自己的提問不通知。
+        if ($questionOwnerId > 0 && $questionOwnerId !== $replierId) {
+            $questionTitle = trim((string)($question['question_title'] ?? ''));
+            $replyPreview = trim((string)($data['content'] ?? ''));
+            if (function_exists('mb_substr')) {
+                $replyPreview = mb_substr($replyPreview, 0, 60, 'UTF-8');
+            } else {
+                $replyPreview = substr($replyPreview, 0, 60);
+            }
+
+            $message = $questionTitle !== ''
+                ? '你的提問「' . $questionTitle . '」收到新回覆：' . $replyPreview
+                : '你的提問收到新回覆：' . $replyPreview;
+
+            dbInsert('notifications', [
+                'user_id' => $questionOwnerId,
+                'title' => '提問有新回覆',
+                'message' => $message,
+                'notification_type' => 'qa_reply',
+                'related_type' => 'qa',
+                // qa_reply 通知以 related_id 儲存 reply_id，方便前端定位到特定回覆。
+                'related_id' => (int)$reply_id,
+                'is_read' => 0,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
         }
 
         return $reply_id;
