@@ -3,6 +3,7 @@ require_once __DIR__ . '/../backend/db.php';
 require_once __DIR__ . '/../backend/config.php';
 
 $eventPrefixes = ['US15-TS-', 'US22-PUB-', 'US22-LIST-'];
+$eventDescriptionNeedle = 'E2E 自動化建立活動：';
 $seededUserEmails = ['admin@univ.edu', 'clubadmin@univ.edu', 'student@univ.edu'];
 $seededFollowClubCodes = ['CSC001', '090'];
 $seededEventNames = ['程式社期初說明會', '演算法工作坊', '羽球新生體驗日', '上學期舊活動（過期）'];
@@ -33,6 +34,30 @@ function fetchIdsByLike(mysqli $conn, string $table, string $column, array $pref
     $rows = [];
     while ($row = $result->fetch_assoc()) {
         $rows[] = (int)$row[$column];
+    }
+    $stmt->close();
+
+    return $rows;
+}
+
+function fetchEventIdsByDescriptionNeedle(mysqli $conn, string $needle): array {
+    $needle = trim($needle);
+    if ($needle === '') {
+        return [];
+    }
+
+    $stmt = $conn->prepare('SELECT event_id FROM events WHERE description LIKE ?');
+    if ($stmt === false) {
+        throw new RuntimeException($conn->error);
+    }
+
+    $like = '%' . $needle . '%';
+    $stmt->bind_param('s', $like);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = [];
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = (int)$row['event_id'];
     }
     $stmt->close();
 
@@ -121,7 +146,10 @@ try {
     $db = Database::getInstance()->getConnection();
     $db->begin_transaction();
 
-    $eventIds = fetchIdsByLike($db, 'events', 'event_id', $eventPrefixes);
+    $eventIds = array_values(array_unique(array_merge(
+        fetchIdsByLike($db, 'events', 'event_id', $eventPrefixes),
+        fetchEventIdsByDescriptionNeedle($db, $eventDescriptionNeedle)
+    )));
 
     if (!empty($eventIds)) {
         deleteEventNotifications($db, $eventIds);

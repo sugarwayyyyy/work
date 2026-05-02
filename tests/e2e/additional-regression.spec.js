@@ -18,6 +18,26 @@ async function login(page, email, password) {
   ]);
 }
 
+async function openUserMenu(page) {
+  const avatarButton = page.getByRole('button', { name: /個人頭像|使用者|帳號/ });
+  await expect(avatarButton).toBeVisible();
+  await avatarButton.click();
+  await expect(avatarButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#nav-dd-panel')).toBeVisible();
+}
+
+async function logoutViaUserMenu(page) {
+  await openUserMenu(page);
+
+  const logoutBtn = page.locator('#nav-dd-panel').getByRole('button', { name: /登出/ });
+  await expect(logoutBtn).toBeVisible();
+
+  await Promise.all([
+    page.waitForURL(/\/(index\.html|frontend\/index\.html)$/),
+    logoutBtn.click()
+  ]);
+}
+
 async function collectFailedResponses(page, action) {
   const failures = [];
   const listener = (response) => {
@@ -383,15 +403,11 @@ test.describe('Additional Regression: 會話與導向自檢', () => {
     await page.goto(`${BASE_URL}/index.html`);
     await page.waitForLoadState('networkidle');
 
-    const logoutBtn = page.locator('#logout-btn');
-    await expect(logoutBtn).toBeVisible();
-
-    await Promise.all([
-      page.waitForURL(/\/(index\.html|frontend\/index\.html)$/),
-      logoutBtn.click()
-    ]);
+    await logoutViaUserMenu(page);
 
     await expect(page.locator('#login-btn')).toBeVisible();
+    await expect(page.locator('#user-dropdown')).toBeHidden();
+    await expect(page.locator('#nav-dd-panel')).toBeHidden();
     await expect(page.locator('#logout-btn')).toBeHidden();
 
     const currentUserResp = await page.evaluate(async () => {
@@ -405,10 +421,7 @@ test.describe('Additional Regression: 會話與導向自檢', () => {
     await page.goto(`${BASE_URL}/index.html`);
     await page.waitForLoadState('networkidle');
 
-    await Promise.all([
-      page.waitForURL(/\/(index\.html|frontend\/index\.html)$/),
-      page.click('#logout-btn')
-    ]);
+    await logoutViaUserMenu(page);
 
     expect(page.url().includes('/index.html/index.html')).toBeFalsy();
   });
@@ -462,12 +475,7 @@ test.describe('Additional Regression: 會話與導向自檢', () => {
       await expect(page.locator('#follow-btn')).toContainText('已追蹤');
     }
 
-    const logoutBtn = page.locator('#logout-btn');
-    await expect(logoutBtn).toBeVisible();
-    await Promise.all([
-      page.waitForURL(/\/(index\.html|frontend\/index\.html)$/),
-      logoutBtn.click()
-    ]);
+    await logoutViaUserMenu(page);
 
     await login(page, STUDENT.email, STUDENT.password);
     await page.goto(`${BASE_URL}/pages/club-detail.html?id=${clubId}`);

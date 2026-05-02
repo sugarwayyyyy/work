@@ -1535,7 +1535,7 @@ function updateNavigation() {
 
             userDropdown.innerHTML = '<div class="nav-user-widget">'
                 + `<button class="nav-bell-btn" id="nav-bell-btn" aria-label="通知"><img class="nav-bell-icon" src="${bellIcon}" alt=""></button>`
-                + `<button class="nav-avatar-trigger" id="nav-avatar-trigger" aria-haspopup="true" aria-expanded="false">${avatarTriggerContent}<img class="nav-dd-caret" src="${caretIcon}" alt=""></button>`
+                + `<button class="nav-avatar-trigger" id="nav-avatar-trigger" aria-label="個人頭像" aria-controls="nav-dd-panel" aria-haspopup="true" aria-expanded="false">${avatarTriggerContent}<img class="nav-dd-caret" src="${caretIcon}" alt=""></button>`
                 + '<div class="nav-dd-panel" id="nav-dd-panel" style="display:none">'
                 + '<div class="ndp-head">'
                 + `<div class="ndp-avatar-lg">${profileAvatar}</div>`
