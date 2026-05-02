@@ -60,14 +60,7 @@ const FRONTEND_HOME_URL = resolveFrontendHomeUrl();
 
 function resolveFrontendAssetUrl(relativePath) {
     const normalizedPath = String(relativePath || '').replace(/^\/+/, '');
-    const path = window.location.pathname || '';
-    const basePath = APP_BASE_PATH || '';
-
-    if (path.includes('/frontend/') || basePath !== '') {
-        return `${window.location.origin}${basePath}/frontend/${normalizedPath}`;
-    }
-
-    return `${window.location.origin}/${normalizedPath}`;
+    return (isPagesDir() ? '../' : '') + normalizedPath;
 }
 
 let csrfTokenCache = null;
@@ -366,17 +359,13 @@ class PageUtils {
 
         let normalized = raw.replace(/\\/g, '/').replace(/^\.?\//, '');
 
-        const pathname = window.location.pathname || '';
-        const isFrontendDocRootMode = window.location.port === '8000'
-            && !pathname.includes('/frontend/')
-            && !pathname.includes('/backend/');
-
         if (normalized.startsWith('社團活動資訊統整平台/')) {
             normalized = normalized.replace(/^社團活動資訊統整平台\//, '');
         }
 
-        if (normalized.startsWith(`${APP_BASE_PATH.replace(/^\//, '')}/`)) {
-            normalized = normalized.replace(new RegExp(`^${APP_BASE_PATH.replace(/^\//, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\/`), '');
+        const basePart = APP_BASE_PATH.replace(/^\//, '');
+        if (basePart && normalized.startsWith(basePart + '/')) {
+            normalized = normalized.slice(basePart.length + 1);
         }
 
         if (normalized.startsWith('frontend/')) {
@@ -389,32 +378,29 @@ class PageUtils {
             normalized = `assets/uploads/${normalized}`;
         }
 
-        if (isFrontendDocRootMode) {
-            if (normalized.startsWith('assets/uploads/')) {
-                // 某些本機環境下，舊上傳檔 ACL 會導致 php -S 無法直接讀取 uploads；
-                // 開發模式優先走 Apache 靜態路徑，避免頁面持續 404。
-                return `${window.location.protocol}//${window.location.hostname}/社團活動資訊統整平台/frontend/${normalized}`;
-            }
-            return resolveFrontendAssetUrl(normalized);
-        }
-
-        if (normalized.startsWith('assets/uploads/')) {
-            normalized = `frontend/${normalized}`;
-        }
-
-        return `${window.location.origin}${APP_BASE_PATH}/${normalized}`;
+        return (isPagesDir() ? '../' : '') + normalized;
     }
     static getAlternateUploadsUrl(url) {
         if (!url) return '';
 
+        // Relative path: swap ../assets/uploads ↔ assets/uploads as a cross-environment fallback.
+        if (!url.startsWith('http')) {
+            if (url.startsWith('../assets/uploads/')) {
+                return 'assets/uploads/' + url.slice('../assets/uploads/'.length);
+            }
+            if (url.startsWith('assets/uploads/')) {
+                return '../assets/uploads/' + url.slice('assets/uploads/'.length);
+            }
+            return '';
+        }
+
+        // Legacy: absolute URLs stored in cache or returned by older code paths.
         try {
             const parsed = new URL(url, window.location.origin);
             const path = parsed.pathname || '';
-
             if (path.includes('/frontend/assets/uploads/')) {
                 return `${parsed.origin}${path.replace('/frontend/assets/uploads/', '/assets/uploads/')}${parsed.search}`;
             }
-
             if (path.includes('/assets/uploads/')) {
                 return `${parsed.origin}${path.replace('/assets/uploads/', '/frontend/assets/uploads/')}${parsed.search}`;
             }
@@ -1341,11 +1327,17 @@ function setRestrictedDashboardNav(role) {
     }
 }
 
-function getNavIconPath(fileName) {
+function getFrontendAssetPath(assetPath) {
+    if (!assetPath) return '';
+    const cleanPath = String(assetPath).replace(/^\.?\//, '');
     const pathname = window.location.pathname || '';
     const inPagesDir = pathname.includes('/pages/');
-    const prefix = inPagesDir ? '../assets/icons/nav/' : 'assets/icons/nav/';
-    return `${prefix}${fileName}`;
+    return inPagesDir ? `../${cleanPath}` : cleanPath;
+}
+
+function getNavIconPath(fileName) {
+    if (!fileName) return '';
+    return getFrontendAssetPath(`assets/icons/nav/${fileName}`);
 }
 
 function toRelativeFrontendPath(url) {
