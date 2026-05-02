@@ -1411,14 +1411,18 @@ function ensureNavDropdownStyles() {
         + '.ndp-menu a:hover,.ndp-logout-btn:hover{background:#f8fafc}'
         + '.ndp-menu-icon{width:16px;height:16px;flex-shrink:0;display:block;opacity:.86}'
         + '.ndp-logout-wrap{border-top:1px solid #f1f5f9}'
-        + '@media(max-width:640px){.nav-dd-panel{right:-4px}}';
+        + '@media(max-width:767px){.nav-dd-panel{position:fixed;top:auto;right:auto}}';
     document.head.appendChild(st);
 }
 
 function closeNavDropdown() {
     const panel = document.getElementById('nav-dd-panel');
     const trigger = document.getElementById('nav-avatar-trigger');
-    if (panel) panel.style.display = 'none';
+    if (panel) {
+        panel.style.display = 'none';
+        panel.style.top = '';
+        panel.style.right = '';
+    }
     if (trigger) trigger.setAttribute('aria-expanded', 'false');
 }
 
@@ -1502,8 +1506,17 @@ function updateNavigation() {
                     e.preventDefault();
                     e.stopPropagation();
                     const open = ddPanel.style.display === 'block';
-                    ddPanel.style.display = open ? 'none' : 'block';
-                    avatarTrigger.setAttribute('aria-expanded', open ? 'false' : 'true');
+                    if (open) {
+                        closeNavDropdown();
+                    } else {
+                        if (window.innerWidth <= 767) {
+                            const rect = avatarTrigger.getBoundingClientRect();
+                            ddPanel.style.top = (rect.bottom + 8) + 'px';
+                            ddPanel.style.right = (window.innerWidth - rect.right) + 'px';
+                        }
+                        ddPanel.style.display = 'block';
+                        avatarTrigger.setAttribute('aria-expanded', 'true');
+                    }
                 };
 
                 if (!document.body.dataset.navDropdownBound) {

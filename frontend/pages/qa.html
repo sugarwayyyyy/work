@@ -35,6 +35,12 @@
 
         .qa-filter-card {
             margin-bottom: 1rem;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .qa-filter-card .filter-card__body {
+            padding: 0.88rem;
         }
 
         .qa-filter-topbar {
@@ -192,46 +198,48 @@
         <h1>提問留言板</h1>
 
         <div class="card qa-filter-card">
-            <div class="qa-filter-topbar">
-                <div class="filter-field qa-filter-keyword">
-                    <label for="qa-search">提問關鍵字</label>
-                    <input type="text" id="qa-search" placeholder="搜尋標題、內容、社團名稱或類別...">
-                </div>
-                <button id="qa-search-btn" class="btn btn-primary btn-sm" type="button">搜尋</button>
-                <button id="qa-reset-btn" class="btn btn-secondary btn-sm" type="button">重製</button>
-                <button
-                    id="qa-advanced-toggle-btn"
-                    class="qa-filter-toggle-btn"
-                    type="button"
-                    aria-expanded="false"
-                    aria-controls="qa-advanced-filters"
-                >
-                    進階篩選 <span class="toggle-arrow">&#9660;</span>
-                </button>
-            </div>
-
-            <div class="qa-filter-toolbar">
-                <div class="qa-filter-toolbar__status">
-                    <span class="qa-filter-toolbar__label">提問狀態</span>
-                    <div id="qa-status-filters" class="chip-cloud"></div>
-                </div>
-            </div>
-
-            <div id="qa-advanced-filters" class="qa-advanced-filters" aria-hidden="true">
-                <div class="qa-filter-grid">
-                    <div class="filter-field">
-                        <label for="qa-club-filter">社團篩選</label>
-                        <select id="qa-club-filter">
-                            <option value="">全部社團</option>
-                        </select>
+            <div class="filter-card__body">
+                <div class="qa-filter-topbar">
+                    <div class="filter-field qa-filter-keyword">
+                        <label for="qa-search">提問關鍵字</label>
+                        <input type="text" id="qa-search" placeholder="搜尋標題、內容、社團名稱或類別...">
                     </div>
-                    <div class="filter-field">
-                        <label for="qa-status-filter">提問狀態</label>
-                        <select id="qa-status-filter">
-                            <option value="">全部</option>
-                            <option value="open">開放中</option>
-                            <option value="closed">已關閉</option>
-                        </select>
+                    <button id="qa-search-btn" class="btn btn-primary btn-sm" type="button">搜尋</button>
+                    <button id="qa-reset-btn" class="btn btn-secondary btn-sm" type="button">重製</button>
+                    <button
+                        id="qa-advanced-toggle-btn"
+                        class="qa-filter-toggle-btn"
+                        type="button"
+                        aria-expanded="false"
+                        aria-controls="qa-advanced-filters"
+                    >
+                        進階篩選 <span class="toggle-arrow">&#9660;</span>
+                    </button>
+                </div>
+
+                <div class="qa-filter-toolbar">
+                    <div class="qa-filter-toolbar__status">
+                        <span class="qa-filter-toolbar__label">提問狀態</span>
+                        <div id="qa-status-filters" class="chip-cloud"></div>
+                    </div>
+                </div>
+
+                <div id="qa-advanced-filters" class="qa-advanced-filters" aria-hidden="true">
+                    <div class="qa-filter-grid">
+                        <div class="filter-field">
+                            <label for="qa-club-filter">社團篩選</label>
+                            <select id="qa-club-filter">
+                                <option value="">全部社團</option>
+                            </select>
+                        </div>
+                        <div class="filter-field">
+                            <label for="qa-status-filter">提問狀態</label>
+                            <select id="qa-status-filter">
+                                <option value="">全部</option>
+                                <option value="open">開放中</option>
+                                <option value="closed">已關閉</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -315,7 +323,7 @@
         <p>&copy; 2026 社團活動資訊統整平台</p>
     </footer>
 
-    <script src="../js/main.js?v=20260502e"></script>
+    <script src="../js/main.js?v=20260502f"></script>
     <script>
         let qaTags = [];
         let selectedQATagIds = new Set();
