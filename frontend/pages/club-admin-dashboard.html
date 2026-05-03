@@ -4,9 +4,36 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>社團幹部後台</title>
-    <link rel="stylesheet" href="../css/styles.css?v=20260502j" />
-    <link rel="stylesheet" href="../css/admin.css?v=20260502j" />
-    <link rel="stylesheet" href="../css/club-admin-dashboard.css?v=20260502j" />
+    <link rel="stylesheet" href="../css/styles.css?v=20260502k" />
+    <link rel="stylesheet" href="../css/admin.css?v=20260502k" />
+    <link rel="stylesheet" href="../css/club-admin-dashboard.css?v=20260502k" />
+    <style>
+        .admin-selected-club-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            background: var(--brand-soft, #ede9fe);
+            color: var(--brand-hover, #5b21b6);
+            border-radius: 0.75rem;
+            padding: 0.55rem 0.9rem;
+            font-size: 0.88rem;
+            margin-bottom: 0.75rem;
+        }
+        .admin-tab.is-locked {
+            opacity: 0.38;
+            cursor: not-allowed;
+        }
+        .admin-tab.is-locked-flash {
+            outline: 2px solid rgba(124, 58, 237, 0.35);
+            outline-offset: 2px;
+        }
+        .admin-club-select-hint {
+            margin: 0.5rem 0 0;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+    </style>
 </head>
 <body class="admin-dashboard-page club-admin-page">
     <header>
@@ -37,13 +64,19 @@
             <article class="metric-card"><p>目前管理</p><strong id="stat-current-club">—</strong></article>
         </div>
 
+        <!-- 已選社團提示列 -->
+        <div id="selected-club-banner" class="admin-selected-club-banner" style="display:none;">
+            <span>目前管理：<strong id="selected-club-name">-</strong></span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.hideManagementPanels()">切換社團</button>
+        </div>
+
         <!-- 分頁導覽 -->
         <nav class="admin-tab-nav" role="tablist" aria-label="幹部管理分頁">
-            <button class="admin-tab is-active" data-tab="my-clubs"     role="tab" aria-selected="true">我的社團</button>
-            <button class="admin-tab"            data-tab="club-manage" role="tab" aria-selected="false">社團管理</button>
-            <button class="admin-tab"            data-tab="create-event" role="tab" aria-selected="false">建立活動</button>
-            <button class="admin-tab"            data-tab="events-list" role="tab" aria-selected="false">活動列表</button>
-            <button class="admin-tab"            data-tab="transfer"    role="tab" aria-selected="false">帳戶轉讓</button>
+            <button class="admin-tab is-active" data-tab="my-clubs"                         role="tab" aria-selected="true">我的社團</button>
+            <button class="admin-tab is-locked" data-tab="club-manage"  data-requires-club  role="tab" aria-selected="false" title="請先在「我的社團」選擇社團">社團管理</button>
+            <button class="admin-tab is-locked" data-tab="create-event" data-requires-club  role="tab" aria-selected="false" title="請先在「我的社團」選擇社團">建立活動</button>
+            <button class="admin-tab is-locked" data-tab="events-list"  data-requires-club  role="tab" aria-selected="false" title="請先在「我的社團」選擇社團">活動列表</button>
+            <button class="admin-tab is-locked" data-tab="transfer"     data-requires-club  role="tab" aria-selected="false" title="請先在「我的社團」選擇社團">帳戶轉讓</button>
         </nav>
 
         <!-- ── 我的社團面板 ── -->
@@ -51,23 +84,16 @@
             <section class="card admin-panel reveal-up">
                 <div class="admin-panel-head">
                     <h2>我的社團</h2>
-                    <span class="admin-panel-subtext">選擇管理的社團</span>
+                    <span class="admin-panel-subtext">選擇社團以開始管理</span>
                 </div>
                 <div id="my-clubs-container" class="club-admin-clubs"></div>
+                <p class="admin-club-select-hint">點選「管理社團」後，即可使用上方其他功能標籤。</p>
             </section>
 
-            <section class="card admin-panel reveal-up" id="club-action-selector" style="display:none;">
-                <div class="admin-panel-head">
-                    <h2>管理功能</h2>
-                    <span class="admin-panel-subtext" id="club-action-subtitle">請選擇要開啟的管理項目</span>
-                </div>
-                <div class="admin-form-wrapper cad-actions-wrap">
-                    <button type="button" class="btn btn-primary" onclick="showManagementPanel('club')">社團管理</button>
-                    <button type="button" class="btn btn-primary" onclick="showManagementPanel('event')">建立活動</button>
-                    <button type="button" class="btn btn-primary" onclick="showManagementPanel('transfer')">帳戶轉讓申請</button>
-                    <button type="button" class="btn btn-primary" onclick="showManagementPanel('events')">社團活動列表</button>
-                </div>
-            </section>
+            <!-- 保留此元素供 club-admin-dashboard.js 內部使用，不對外顯示 -->
+            <div id="club-action-selector" style="display:none;" aria-hidden="true">
+                <span id="club-action-subtitle"></span>
+            </div>
         </div>
 
         <!-- ── 社團管理 ── -->
@@ -507,7 +533,7 @@
 
     </div>
 
-    <script src="../js/main.js?v=20260502j"></script>
+    <script src="../js/main.js?v=20260502k"></script>
     <script src="../js/club-admin-dashboard.js"></script>
     <script>
         // ── Tab 切換邏輯 ──
@@ -519,6 +545,8 @@
             'transfer-request-section'
         ];
 
+        let hasSelectedClub = false;
+
         function switchAdminTab(key) {
             document.querySelectorAll('.admin-tab').forEach(t => {
                 const active = t.dataset.tab === key;
@@ -527,14 +555,26 @@
             });
         }
 
+        function setClubSelected(clubName) {
+            hasSelectedClub = true;
+            document.querySelectorAll('.admin-tab[data-requires-club]').forEach(tab => {
+                tab.classList.remove('is-locked');
+                tab.removeAttribute('title');
+            });
+            const banner = document.getElementById('selected-club-banner');
+            const nameEl = document.getElementById('selected-club-name');
+            if (nameEl) nameEl.textContent = clubName || '-';
+            if (banner) banner.style.display = '';
+        }
+
         // 覆寫 hideManagementPanels — 隱藏所有功能 section，顯示我的社團面板
         window.hideManagementPanels = function () {
             ALL_MGMT_SECTIONS.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
-            const myPanel = document.getElementById('panel-my-clubs');
-            if (myPanel) myPanel.style.display = '';
+            document.getElementById('panel-my-clubs').style.display = '';
+            switchAdminTab('my-clubs');
         };
 
         // 覆寫 showManagementPanel — 切換 section + tab
@@ -543,8 +583,7 @@
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
-            const myPanel = document.getElementById('panel-my-clubs');
-            if (myPanel) myPanel.style.display = 'none';
+            document.getElementById('panel-my-clubs').style.display = 'none';
 
             const sectionMap = {
                 club:     'club-management-section',
@@ -568,27 +607,40 @@
         document.querySelectorAll('.admin-tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 const key = tab.dataset.tab;
+                if (tab.dataset.requiresClub !== undefined && !hasSelectedClub) {
+                    tab.classList.add('is-locked-flash');
+                    setTimeout(() => tab.classList.remove('is-locked-flash'), 350);
+                    return;
+                }
                 if (key === 'my-clubs') {
-                    ALL_MGMT_SECTIONS.forEach(id => {
-                        const el = document.getElementById(id);
-                        if (el) el.style.display = 'none';
-                    });
-                    const myPanel = document.getElementById('panel-my-clubs');
-                    if (myPanel) myPanel.style.display = '';
-                    switchAdminTab('my-clubs');
+                    window.hideManagementPanels();
                 } else {
                     const panelMap = {
-                        'club-manage':   'club',
-                        'create-event':  'event',
-                        'transfer':      'transfer',
-                        'events-list':   'events'
+                        'club-manage':  'club',
+                        'create-event': 'event',
+                        'transfer':     'transfer',
+                        'events-list':  'events'
                     };
                     window.showManagementPanel(panelMap[key]);
                 }
             });
         });
 
-        // 統計：所屬社團數（MutationObserver 等 loadMyClubs 填入後更新）
+        // 攔截 loadClubDetails：選社團後自動跳至社團管理 tab
+        (function () {
+            const orig = window.loadClubDetails;
+            if (typeof orig !== 'function') return;
+            window.loadClubDetails = async function (clubId) {
+                await orig.call(this, clubId);
+                // 取得社團名稱（由 club-action-subtitle 已被原函式設定）
+                const subtitle = document.getElementById('club-action-subtitle');
+                const match = (subtitle?.textContent || '').match(/目前管理社團：(.+)/);
+                setClubSelected(match ? match[1].trim() : '-');
+                window.showManagementPanel('club');
+            };
+        })();
+
+        // 統計：所屬社團數
         (function () {
             const container = document.getElementById('my-clubs-container');
             const statEl = document.getElementById('stat-my-clubs');
@@ -600,7 +652,7 @@
             obs.observe(container, { childList: true });
         })();
 
-        // 統計：目前管理社團名稱（攔截 loadClubDetails 的 subtitle 更新）
+        // 統計：目前管理社團名稱
         (function () {
             const subtitleEl = document.getElementById('club-action-subtitle');
             const statEl = document.getElementById('stat-current-club');

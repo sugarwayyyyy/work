@@ -28,6 +28,76 @@
 
     <div class="container admin-dashboard-container">
 
+        <!-- 儀表板摘要 -->
+        <section id="dashboard-summary" class="dashboard-summary reveal-up">
+            <div class="dashboard-summary-header">
+                <span class="dashboard-summary-title">儀表板摘要</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="loadDashboardSummary()">重新整理</button>
+                <span class="dsm-updated">資料時間：<time id="dsm-generated-at">載入中…</time></span>
+            </div>
+            <div class="dashboard-summary-grid">
+
+                <!-- 用戶 -->
+                <div class="dsm-card">
+                    <h3 class="dsm-card-title">用戶</h3>
+                    <div class="dsm-metrics">
+                        <div class="dsm-metric"><small>總用戶</small><strong id="dsm-u-total">-</strong></div>
+                        <div class="dsm-metric"><small>學生</small><strong id="dsm-u-students">-</strong></div>
+                        <div class="dsm-metric"><small>社團幹部</small><strong id="dsm-u-club-admins">-</strong></div>
+                        <div class="dsm-metric"><small>平台管理員</small><strong id="dsm-u-platform-admins">-</strong></div>
+                        <div class="dsm-metric dsm-metric--positive"><small>本週新增</small><strong id="dsm-u-new">-</strong></div>
+                    </div>
+                </div>
+
+                <!-- 社團 -->
+                <div class="dsm-card">
+                    <h3 class="dsm-card-title">社團</h3>
+                    <div class="dsm-metrics">
+                        <div class="dsm-metric"><small>社團總數</small><strong id="dsm-c-total">-</strong></div>
+                        <div class="dsm-metric dsm-metric--positive"><small>活躍社團</small><strong id="dsm-c-active">-</strong></div>
+                        <div class="dsm-metric dsm-metric--warn"><small>停用社團</small><strong id="dsm-c-inactive">-</strong></div>
+                        <div class="dsm-metric dsm-metric--warn"><small>幽靈社團</small><strong id="dsm-c-ghost">-</strong></div>
+                        <div class="dsm-metric dsm-metric--warn"><small>久未更新</small><strong id="dsm-c-stale">-</strong></div>
+                    </div>
+                </div>
+
+                <!-- 活動 -->
+                <div class="dsm-card">
+                    <h3 class="dsm-card-title">活動</h3>
+                    <div class="dsm-metrics">
+                        <div class="dsm-metric"><small>活動總數</small><strong id="dsm-e-total">-</strong></div>
+                        <div class="dsm-metric dsm-metric--positive"><small>即將舉行</small><strong id="dsm-e-upcoming">-</strong></div>
+                        <div class="dsm-metric"><small>已發布</small><strong id="dsm-e-published">-</strong></div>
+                        <div class="dsm-metric dsm-metric--warn"><small>已取消</small><strong id="dsm-e-cancelled">-</strong></div>
+                        <div class="dsm-metric"><small>總報名人數</small><strong id="dsm-e-registrations">-</strong></div>
+                        <div class="dsm-metric"><small>平均評分</small><strong id="dsm-e-rating">-</strong></div>
+                    </div>
+                </div>
+
+                <!-- 待處理 -->
+                <div class="dsm-card dsm-card--alert">
+                    <h3 class="dsm-card-title">待處理</h3>
+                    <div class="dsm-metrics">
+                        <div class="dsm-metric dsm-metric--alert"><small>待審檢舉</small><strong id="dsm-p-reports">-</strong></div>
+                        <div class="dsm-metric dsm-metric--alert"><small>待審轉讓</small><strong id="dsm-p-transfers">-</strong></div>
+                        <div class="dsm-metric dsm-metric--warn"><small>待審評價</small><strong id="dsm-p-reviews">-</strong></div>
+                        <div class="dsm-metric dsm-metric--warn"><small>未回答 Q&amp;A</small><strong id="dsm-p-qa">-</strong></div>
+                    </div>
+                </div>
+
+                <!-- 公告 -->
+                <div class="dsm-card">
+                    <h3 class="dsm-card-title">公告</h3>
+                    <div class="dsm-metrics">
+                        <div class="dsm-metric"><small>生效公告</small><strong id="dsm-a-active">-</strong></div>
+                        <div class="dsm-metric"><small>置頂公告</small><strong id="dsm-a-pinned">-</strong></div>
+                        <div class="dsm-metric dsm-metric--warn"><small>即將到期</small><strong id="dsm-a-expiring">-</strong></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
         <!-- 統計摘要列 -->
         <div class="admin-stats-bar reveal-up">
             <article class="metric-card"><p>用戶總數</p><strong id="stat-users">-</strong></article>
@@ -1148,6 +1218,54 @@
             }
         });
 
+        async function loadDashboardSummary() {
+            try {
+                const response = await APIClient.get('dashboard.php');
+                if (!response.success) return;
+                const { users, clubs, events, pending, announcements, generated_at } = response.data;
+
+                const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+                set('dsm-u-total',           users.total);
+                set('dsm-u-students',        users.students);
+                set('dsm-u-club-admins',     users.club_admins);
+                set('dsm-u-platform-admins', users.platform_admins);
+                set('dsm-u-new',             users.new_this_week);
+
+                set('dsm-c-total',    clubs.total);
+                set('dsm-c-active',   clubs.active);
+                set('dsm-c-inactive', clubs.inactive);
+                set('dsm-c-ghost',    clubs.ghost);
+                set('dsm-c-stale',    clubs.stale);
+
+                set('dsm-e-total',         events.total);
+                set('dsm-e-upcoming',      events.upcoming);
+                set('dsm-e-published',     events.published);
+                set('dsm-e-cancelled',     events.cancelled);
+                set('dsm-e-registrations', events.total_registrations);
+                set('dsm-e-rating',        events.avg_rating !== null ? events.avg_rating + ' ★' : '-');
+
+                set('dsm-p-reports',   pending.reports);
+                set('dsm-p-transfers', pending.transfers);
+                set('dsm-p-reviews',   pending.reviews);
+                set('dsm-p-qa',        pending.unanswered_qa);
+
+                set('dsm-a-active',    announcements.active);
+                set('dsm-a-pinned',    announcements.pinned);
+                set('dsm-a-expiring',  announcements.expiring_soon);
+
+                const timeEl = document.getElementById('dsm-generated-at');
+                if (timeEl && generated_at) timeEl.textContent = formatDateTime(generated_at);
+
+                // 同步舊統計列
+                set('stat-users', users.total);
+                set('stat-clubs', clubs.total);
+            } catch (err) {
+                console.error('載入儀表板摘要失敗:', err);
+            }
+        }
+
+        loadDashboardSummary();
         loadClubCategories();
         loadUsers();
         loadClubAdminAssignments();
