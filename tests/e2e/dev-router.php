@@ -49,27 +49,56 @@ foreach ($candidates as $candidate) {
     }
 }
 
-if ($target === null) {
-    http_response_code(404);
-    header('Content-Type: text/plain; charset=UTF-8');
-    echo 'Not Found';
-    exit;
-}
+ $ext = strtolower(pathinfo($uri, PATHINFO_EXTENSION));
+ $mimeMap = [
+     'css' => 'text/css; charset=UTF-8',
+     'js' => 'application/javascript; charset=UTF-8',
+     'json' => 'application/json; charset=UTF-8',
+     'svg' => 'image/svg+xml',
+     'png' => 'image/png',
+     'jpg' => 'image/jpeg',
+     'jpeg' => 'image/jpeg',
+     'gif' => 'image/gif',
+     'webp' => 'image/webp',
+     'html' => 'text/html; charset=UTF-8',
+     'php' => 'text/html; charset=UTF-8'
+ ];
 
-$ext = strtolower(pathinfo($target, PATHINFO_EXTENSION));
-$mimeMap = [
-    'css' => 'text/css; charset=UTF-8',
-    'js' => 'application/javascript; charset=UTF-8',
-    'json' => 'application/json; charset=UTF-8',
-    'svg' => 'image/svg+xml',
-    'png' => 'image/png',
-    'jpg' => 'image/jpeg',
-    'jpeg' => 'image/jpeg',
-    'gif' => 'image/gif',
-    'webp' => 'image/webp',
-    'html' => 'text/html; charset=UTF-8',
-    'php' => 'text/html; charset=UTF-8'
-];
+if ($target === null || !is_readable($target)) {
+    $isUploadAsset = preg_match('#^/assets/uploads/#', $uri) === 1;
+    $isFrontendUploadAsset = preg_match('#^/frontend/assets/uploads/#', $uri) === 1;
+    if ($isUploadAsset || $isFrontendUploadAsset) {
+        $projectName = basename($root);
+        $apacheBase = 'http://localhost/' . rawurlencode($projectName) . '/frontend';
+        $remoteUrl = $isFrontendUploadAsset
+            ? $apacheBase . $uri
+            : $apacheBase . $uri;
+
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'timeout' => 3,
+                'ignore_errors' => true,
+            ],
+        ]);
+
+        $remoteData = @file_get_contents($remoteUrl, false, $context);
+        if ($remoteData !== false) {
+            if (isset($mimeMap[$ext])) {
+                header('Content-Type: ' . $mimeMap[$ext]);
+            }
+            echo $remoteData;
+            exit;
+        }
+    }
+
+    if ($target === null) {
+        http_response_code(404);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'Not Found';
+        exit;
+    }
+}
 
 if (isset($mimeMap[$ext])) {
     header('Content-Type: ' . $mimeMap[$ext]);
