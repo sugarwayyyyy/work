@@ -8,39 +8,131 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/home.css">
     <style>
+        /* ── Filter Card ── */
+        .qa-filter-card {
+            margin-bottom: 1rem;
+        }
+
+        .qa-filter-card .filter-card__body {
+            padding: 0.9rem 1.1rem 1rem;
+        }
+
+        /* ── Ask Modal ── */
         #ask-modal {
             padding: 1rem;
         }
 
-        #ask-modal .card {
+        .qa-modal-dialog {
+            background: var(--surface, #fff);
+            border-radius: 1.1rem;
+            box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(15, 23, 42, 0.08);
             width: min(520px, 92vw);
-            max-height: 82vh;
-            overflow-y: auto;
-            padding: 1.1rem 1.2rem;
-            margin-bottom: 0;
-        }
-
-        #ask-modal h2 {
-            margin-bottom: 0.9rem;
-            font-size: 1.25rem;
-        }
-
-        #ask-modal .form-group {
-            margin-bottom: 1rem;
-        }
-
-        #ask-modal textarea {
-            min-height: 96px;
-        }
-
-        .qa-filter-card {
-            margin-bottom: 1rem;
-            padding: 0;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
 
-        .qa-filter-card .filter-card__body {
-            padding: 0.88rem;
+        .qa-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem 0.75rem;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(99, 102, 241, 0.04));
+        }
+
+        .qa-modal-header h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-default, #374151);
+        }
+
+        .qa-modal-close {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border: 1px solid transparent;
+            border-radius: 0.5rem;
+            background: transparent;
+            color: var(--text-muted, #64748b);
+            font-size: 1.1rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .qa-modal-close:hover {
+            background: var(--brand-soft, #ede9fe);
+            border-color: var(--brand, #7c3aed);
+            color: var(--brand, #7c3aed);
+        }
+
+        .qa-modal-body {
+            padding: 1.1rem 1.25rem 1.25rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .qa-modal-footer {
+            display: flex;
+            gap: 0.75rem;
+            padding-top: 0.9rem;
+            margin-top: 0.1rem;
+            border-top: 1px solid var(--border, #e2e8f0);
+        }
+
+        .qa-modal-body .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .qa-modal-body textarea {
+            min-height: 96px;
+        }
+
+        /* ── Urgency chips ── */
+        .urgency-chip-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .urgency-btn {
+            padding: 0.36rem 0.9rem;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: 2rem;
+            background: var(--surface, #fff);
+            color: var(--text-muted, #64748b);
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .urgency-btn:hover {
+            border-color: var(--brand, #7c3aed);
+            color: var(--brand, #7c3aed);
+        }
+
+        .urgency-btn.is-active {
+            background: var(--brand, #7c3aed);
+            border-color: var(--brand, #7c3aed);
+            color: #fff;
+        }
+
+        .urgency-btn[data-urgency="important"].is-active {
+            background: #d97706;
+            border-color: #d97706;
+        }
+
+        .urgency-btn[data-urgency="urgent"].is-active {
+            background: #dc2626;
+            border-color: #dc2626;
         }
 
         .qa-filter-topbar {
@@ -212,7 +304,7 @@
     <div id="alert-container"></div>
 
     <div class="container">
-        <div class="card qa-filter-card">
+        <div class="filter-card qa-filter-card">
             <div class="filter-card__body">
                 <div class="qa-filter-topbar">
                     <div class="filter-field event-filter-keyword qa-filter-keyword">
@@ -274,62 +366,67 @@
         </section>
     </div>
 
-    <div id="ask-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div class="card">
-            <h2>發布提問</h2>
-            <form id="ask-form">
-                <div class="form-group">
-                    <label for="ask-category">選擇社團類別</label>
-                    <select id="ask-category" required>
-                        <option value="">-- 請先選擇類別 --</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="ask-club">選擇社團</label>
-                    <select id="ask-club" required disabled>
-                        <option value="">-- 請先選擇類別 --</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="ask-title">提問標題</label>
-                    <input type="text" id="ask-title" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="ask-content">提問內容</label>
-                    <textarea id="ask-content" required></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>抓字推薦標籤</label>
-                    <div id="ask-tag-hint" style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">輸入標題或內容後，系統會自動抓字推薦標籤。</div>
-                    <div id="ask-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
-                </div>
-
-                <div class="form-group">
-                    <label>緊急程度</label>
-                    <input type="hidden" id="ask-urgency" value="normal">
-                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-secondary btn-sm urgency-btn is-active" data-urgency="normal">一般</button>
-                        <button type="button" class="btn btn-secondary btn-sm urgency-btn" data-urgency="important">重要</button>
-                        <button type="button" class="btn btn-secondary btn-sm urgency-btn" data-urgency="urgent">緊急</button>
+    <div id="ask-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.55); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+        <div class="qa-modal-dialog">
+            <div class="qa-modal-header">
+                <h2>發布提問</h2>
+                <button type="button" class="qa-modal-close" onclick="closeAskModal()" aria-label="關閉">&#x2715;</button>
+            </div>
+            <div class="qa-modal-body">
+                <form id="ask-form">
+                    <div class="form-group">
+                        <label for="ask-category">選擇社團類別</label>
+                        <select id="ask-category" required>
+                            <option value="">-- 請先選擇類別 --</option>
+                        </select>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="ask-anonymous">
-                        匿名提問
-                    </label>
-                </div>
+                    <div class="form-group">
+                        <label for="ask-club">選擇社團</label>
+                        <select id="ask-club" required disabled>
+                            <option value="">-- 請先選擇類別 --</option>
+                        </select>
+                    </div>
 
-                <div style="display: flex; gap: 1rem;">
-                    <button type="submit" class="btn btn-primary">發布</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeAskModal()">取消</button>
-                </div>
-            </form>
+                    <div class="form-group">
+                        <label for="ask-title">提問標題</label>
+                        <input type="text" id="ask-title" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ask-content">提問內容</label>
+                        <textarea id="ask-content" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>推薦標籤</label>
+                        <div id="ask-tag-hint" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.55rem;">輸入標題或內容後，系統會自動推薦標籤。</div>
+                        <div id="ask-tags" style="display: flex; flex-wrap: wrap; gap: 0.45rem;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>緊急程度</label>
+                        <input type="hidden" id="ask-urgency" value="normal">
+                        <div class="urgency-chip-row">
+                            <button type="button" class="urgency-btn is-active" data-urgency="normal">一般</button>
+                            <button type="button" class="urgency-btn" data-urgency="important">重要</button>
+                            <button type="button" class="urgency-btn" data-urgency="urgent">緊急</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500;">
+                            <input type="checkbox" id="ask-anonymous">
+                            匿名提問
+                        </label>
+                    </div>
+
+                    <div class="qa-modal-footer">
+                        <button type="submit" class="btn btn-primary">發布提問</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeAskModal()">取消</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -628,10 +725,7 @@
         function setUrgencyLevel(level) {
             document.getElementById('ask-urgency').value = level;
             document.querySelectorAll('.urgency-btn').forEach(button => {
-                const active = button.dataset.urgency === level;
-                button.classList.toggle('btn-primary', active);
-                button.classList.toggle('btn-secondary', !active);
-                button.classList.toggle('is-active', active);
+                button.classList.toggle('is-active', button.dataset.urgency === level);
             });
         }
 
