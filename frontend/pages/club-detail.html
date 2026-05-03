@@ -395,7 +395,14 @@
             document.getElementById('review-count').textContent = club.reviews_count || 0;
 
             const tags = Array.isArray(club.tags) ? club.tags : [];
-            const tagsHtml = tags.map(tag => `<span class="tag tag-primary">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`).join('');
+            const tagsHtml = tags.map(tag => {
+                const safeTagName = PageUtils.escapeHtml(tag.tag_name || '');
+                const tagId = Number(tag.tag_id || 0);
+                const href = tagId > 0
+                    ? `club-list.html?tags=${tagId}`
+                    : `club-list.html?search=${encodeURIComponent(tag.tag_name || '')}`;
+                return `<a class="tag tag-primary" href="${href}" style="text-decoration: none;">#${safeTagName}</a>`;
+            }).join('');
             document.getElementById('club-tags').innerHTML = tagsHtml || '暫無標籤';
 
             const badgesHtml = `<span class="badge">${club.activity_badge === 'high_active' ? '高活躍' : (club.activity_badge === 'no_recent_activity' ? '近期無活動' : '活躍中')}</span>`;

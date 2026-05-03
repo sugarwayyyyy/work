@@ -283,6 +283,7 @@
                 </div>
                 <div class="admin-form-wrapper">
                     <form id="create-announcement-form" class="admin-form-grid">
+                        <input type="hidden" id="announcement-id" value="" />
                         <div class="form-field admin-span-2">
                             <label for="announcement-title">公告標題</label>
                             <input type="text" id="announcement-title" required />
@@ -305,7 +306,8 @@
                             <input type="checkbox" id="announcement-sticky" />
                         </div>
                         <div class="form-actions admin-span-2">
-                            <button type="submit" class="btn btn-primary">發佈公告</button>
+                            <button type="submit" id="announcement-submit-btn" class="btn btn-primary">發佈公告</button>
+                            <button type="button" id="announcement-cancel-edit-btn" class="btn btn-secondary" style="display:none;">取消編輯</button>
                         </div>
                     </form>
                 </div>
@@ -351,7 +353,7 @@
         const usersState = { rows: [], query: '', sort: 'name_asc', page: 1 };
         const clubsState = { rows: [], query: '', sort: 'club_code_asc', page: 1 };
         const clubAdminAssignmentsState = { rows: [], query: '' };
-        const announcementsState = { rows: [], query: '', sort: 'created_desc', page: 1 };
+        const announcementsState = { rows: [], query: '', sort: 'created_desc', page: 1, editingId: null };
         let clubCategories = [];
 
         function escapeHtml(value) {
@@ -1122,10 +1124,20 @@
                     <p class="admin-item-content">${safeContent}</p>
                     <div class="admin-item-footer">
                         <span class="admin-item-time">${safeCreatedAt}</span>
-                        <button class="btn btn-secondary btn-sm" data-announcement-delete="${safeAnnouncementId}">刪除</button>
+                        <div class="row-actions">
+                            <button class="btn btn-secondary btn-sm" data-announcement-edit="${safeAnnouncementId}">編輯</button>
+                            ${isPinned ? `<button class="btn btn-secondary btn-sm" data-announcement-unpin="${safeAnnouncementId}">取消置頂</button>` : ''}
+                            <button class="btn btn-secondary btn-sm" data-announcement-delete="${safeAnnouncementId}">刪除</button>
+                        </div>
                     </div>
                 `;
                 container.appendChild(card);
+            });
+            container.querySelectorAll('button[data-announcement-edit]').forEach(btn => {
+                btn.addEventListener('click', () => { startAnnouncementEdit(btn.dataset.announcementEdit); });
+            });
+            container.querySelectorAll('button[data-announcement-unpin]').forEach(btn => {
+                btn.addEventListener('click', async () => { await unpinAnnouncement(btn.dataset.announcementUnpin); });
             });
             container.querySelectorAll('button[data-announcement-delete]').forEach(btn => {
                 btn.addEventListener('click', async () => { await deleteAnnouncement(btn.dataset.announcementDelete); });
@@ -1138,9 +1150,49 @@
             const response = await APIClient.delete('admin.php?action=delete_announcement&id=' + id);
             if (response.success) {
                 PageUtils.showAlert('公告刪除成功', 'success');
+                if (announcementsState.editingId === Number(id)) {
+                    resetAnnouncementFormMode();
+                }
                 loadAnnouncements();
             } else {
                 PageUtils.showAlert('刪除公告失敗：' + response.message, 'error');
+            }
+        }
+
+        function resetAnnouncementFormMode() {
+            announcementsState.editingId = null;
+            document.getElementById('announcement-id').value = '';
+            document.getElementById('announcement-submit-btn').textContent = '發佈公告';
+            document.getElementById('announcement-cancel-edit-btn').style.display = 'none';
+            document.getElementById('create-announcement-form').reset();
+        }
+
+        function startAnnouncementEdit(id) {
+            const announcementId = Number(id || 0);
+            if (!announcementId) return;
+            const item = announcementsState.rows.find(row => Number(row.announcement_id) === announcementId);
+            if (!item) return;
+
+            announcementsState.editingId = announcementId;
+            document.getElementById('announcement-id').value = String(announcementId);
+            document.getElementById('announcement-title').value = item.title || '';
+            document.getElementById('announcement-content').value = item.content || '';
+            document.getElementById('announcement-type').value = item.announcement_type || item.type || 'important';
+            document.getElementById('announcement-sticky').checked = Boolean(item.is_pinned ?? item.is_sticky);
+            document.getElementById('announcement-submit-btn').textContent = '儲存變更';
+            document.getElementById('announcement-cancel-edit-btn').style.display = 'inline-flex';
+            document.getElementById('announcement-title').focus();
+        }
+
+        async function unpinAnnouncement(id) {
+            const announcementId = Number(id || 0);
+            if (!announcementId) return;
+            const response = await APIClient.post('admin.php?action=unpin_announcement', { announcement_id: announcementId });
+            if (response.success) {
+                PageUtils.showAlert('公告已取消置頂', 'success');
+                loadAnnouncements();
+            } else {
+                PageUtils.showAlert('取消置頂失敗：' + response.message, 'error');
             }
         }
 
@@ -1207,15 +1259,30 @@
 
         document.getElementById('create-announcement-form').addEventListener('submit', async event => {
             event.preventDefault();
-            const payload = { title: document.getElementById('announcement-title').value, content: document.getElementById('announcement-content').value, type: document.getElementById('announcement-type').value, is_sticky: document.getElementById('announcement-sticky').checked ? 1 : 0 };
-            const response = await APIClient.post('admin.php?action=create_announcement', payload);
+            const editingId = Number(document.getElementById('announcement-id').value || 0);
+            const payload = {
+                title: document.getElementById('announcement-title').value,
+                content: document.getElementById('announcement-content').value,
+                type: document.getElementById('announcement-type').value,
+                is_sticky: document.getElementById('announcement-sticky').checked ? 1 : 0
+            };
+            if (editingId) {
+                payload.announcement_id = editingId;
+            }
+
+            const action = editingId ? 'update_announcement' : 'create_announcement';
+            const response = await APIClient.post('admin.php?action=' + action, payload);
             if (response.success) {
-                PageUtils.showAlert('公告發佈成功', 'success');
-                event.target.reset();
+                PageUtils.showAlert(editingId ? '公告更新成功' : '公告發佈成功', 'success');
+                resetAnnouncementFormMode();
                 loadAnnouncements();
             } else {
-                PageUtils.showAlert('發佈公告失敗：' + response.message, 'error');
+                PageUtils.showAlert((editingId ? '更新公告失敗：' : '發佈公告失敗：') + response.message, 'error');
             }
+        });
+
+        document.getElementById('announcement-cancel-edit-btn').addEventListener('click', () => {
+            resetAnnouncementFormMode();
         });
 
         async function loadDashboardSummary() {

@@ -490,6 +490,65 @@ class AdminAPI {
         Helper::success('公告刪除成功');
     }
 
+    public static function updateAnnouncement($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['announcement_id', 'title', 'content', 'type']);
+        if (!empty($errors)) Helper::error('欄位驗證失敗: ' . implode(', ', $errors), 400);
+
+        if (ContentFilter::hasRestrictedInFields($data, ['title', 'content'])) {
+            Helper::error('公告內容包含不適當字眼，請修改後再送出', 400);
+        }
+
+        $announcementId = (int)$data['announcement_id'];
+        if ($announcementId <= 0) {
+            Helper::error('公告 ID 格式錯誤', 400);
+        }
+
+        $existing = Database::getInstance()->fetchOne(
+            'SELECT announcement_id FROM system_announcements WHERE announcement_id = ? LIMIT 1',
+            [$announcementId]
+        );
+        if (!$existing) {
+            Helper::error('公告不存在', 404);
+        }
+
+        $updateData = [
+            'title' => trim($data['title']),
+            'content' => trim($data['content']),
+            'announcement_type' => in_array($data['type'], ['event', 'maintenance', 'update', 'important']) ? $data['type'] : 'important',
+            'is_pinned' => isset($data['is_sticky']) ? (int)$data['is_sticky'] : 0
+        ];
+
+        dbUpdate('system_announcements', $updateData, 'announcement_id = ?', [$announcementId]);
+        Helper::success('公告更新成功');
+    }
+
+    public static function unpinAnnouncement($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['announcement_id']);
+        if (!empty($errors)) Helper::error('欄位驗證失敗: ' . implode(', ', $errors), 400);
+
+        $announcementId = (int)$data['announcement_id'];
+        if ($announcementId <= 0) {
+            Helper::error('公告 ID 格式錯誤', 400);
+        }
+
+        $existing = Database::getInstance()->fetchOne(
+            'SELECT announcement_id FROM system_announcements WHERE announcement_id = ? LIMIT 1',
+            [$announcementId]
+        );
+        if (!$existing) {
+            Helper::error('公告不存在', 404);
+        }
+
+        dbUpdate('system_announcements', [
+            'is_pinned' => 0,
+            'display_priority' => 0
+        ], 'announcement_id = ?', [$announcementId]);
+
+        Helper::success('公告已取消置頂');
+    }
+
     public static function getTransferRequests() {
         self::requireAdmin();
         $requests = Database::getInstance()->fetchAll(
@@ -702,6 +761,10 @@ if ($method === 'POST') {
         AdminAPI::softDeleteClub($data);
     } elseif ($action === 'create_announcement') {
         AdminAPI::createAnnouncement($data);
+    } elseif ($action === 'update_announcement') {
+        AdminAPI::updateAnnouncement($data);
+    } elseif ($action === 'unpin_announcement') {
+        AdminAPI::unpinAnnouncement($data);
     } elseif ($action === 'review_transfer_request') {
         AdminAPI::reviewTransferRequest($data);
     } elseif ($action === 'review_report') {

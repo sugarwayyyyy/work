@@ -894,12 +894,8 @@ function ensureGlobalFollowSidebarStyles() {
             background: var(--color-border-light);
         }
 
-        body.sidebar-expanded .sidebar-toggle-btn {
-            transform: rotate(90deg);
-        }
-
         body.sidebar-expanded .sidebar-toggle-btn:active {
-            transform: rotate(90deg) scale(0.82);
+            transform: scale(0.82);
         }
 
         body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__toolbar {
@@ -1173,6 +1169,12 @@ function setupSidebarToggle(section) {
 
     const isMobile = () => window.innerWidth <= 900;
 
+    function setSidebarBtnIcon(btn, isExpanded) {
+        btn.innerHTML = isExpanded ? '&#x2715;' : '&#9776;';
+        btn.setAttribute('aria-label', isExpanded ? '收合側欄' : '展開側欄');
+        btn.title = isExpanded ? '收合側欄' : '展開側欄';
+    }
+
     // Restore desktop state only
     const savedExpanded = localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
     if (savedExpanded && !isMobile()) {
@@ -1192,14 +1194,18 @@ function setupSidebarToggle(section) {
         section.classList.remove('sidebar-expanded');
         document.body.classList.remove('sidebar-expanded');
         backdrop.classList.remove('is-visible');
+        if (btn) setSidebarBtnIcon(btn, false);
     }
 
     const btn = section.querySelector('.sidebar-toggle-btn');
     if (!btn) return;
 
+    setSidebarBtnIcon(btn, savedExpanded && !isMobile());
+
     btn.addEventListener('click', () => {
         const isExpanded = section.classList.toggle('sidebar-expanded');
         document.body.classList.toggle('sidebar-expanded', isExpanded);
+        setSidebarBtnIcon(btn, isExpanded);
         if (isMobile()) {
             backdrop.classList.toggle('is-visible', isExpanded);
         } else {
