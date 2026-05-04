@@ -1410,7 +1410,7 @@ function getFrontendAssetPath(assetPath) {
 
 function getNavIconPath(fileName) {
     if (!fileName) return '';
-    return getFrontendAssetPath(`assets/icons/nav/${fileName}`);
+    return getFrontendAssetPath(`assets/icons/nav/${fileName}?v=20260504a`);
 }
 
 function toRelativeFrontendPath(url) {
