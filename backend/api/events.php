@@ -68,15 +68,48 @@ class EventAPI {
         return stripos($haystack, $needle) !== false;
     }
 
+    /**
+     * Single source of truth for registration state.
+     * Returns 'open' | 'not_open' | 'closed'.
+     * Filter SQL conditions in getEvents() must mirror this logic exactly.
+     *
+     * Priority:
+     *   1. Event ended (not ongoing) → always 'closed', cannot override.
+     *   2. is_registration_open = 1  → 'open'; admin's explicit flag wins over deadline.
+     *   3. is_registration_open = 0  → 'closed' if deadline passed, else 'not_open'.
+     */
+    private static function computeRegistrationState(array $row): string {
+        $now       = time();
+        $deadline  = !empty($row['registration_deadline']) ? strtotime((string)$row['registration_deadline']) : false;
+        $eventTs   = !empty($row['event_date'])            ? strtotime((string)$row['event_date'])            : false;
+        $isOpen    = (int)($row['is_registration_open'] ?? 0) === 1;
+        $isOngoing = ($row['event_status'] ?? '') === 'ongoing';
+
+        // Hard close: event is over and not still ongoing
+        if (!$isOngoing && $eventTs !== false && $eventTs < $now) {
+            return 'closed';
+        }
+
+        // Admin's is_registration_open is the authoritative current state.
+        // If set to 1, honor it — deadline is for auto-scheduling, not a hard override.
+        if ($isOpen) {
+            return 'open';
+        }
+
+        // Registration is off — deadline distinguishes "not yet open" from "closed"
+        $deadlinePassed = $deadline !== false && $deadline < $now;
+        return $deadlinePassed ? 'closed' : 'not_open';
+    }
+
     private static function isOpenEventRow($row) {
-        $isOpen = (int)($row['is_registration_open'] ?? 0) === 1;
-        $registrationDeadline = !empty($row['registration_deadline']) ? strtotime((string)$row['registration_deadline']) : false;
-        $eventDate = !empty($row['event_date']) ? strtotime((string)$row['event_date']) : false;
-        return $isOpen && ($registrationDeadline === false || $registrationDeadline >= time()) && ($eventDate === false || $eventDate >= time());
+        return self::computeRegistrationState($row) === 'open';
     }
 
     private static function getEventStatusLabel($row) {
-        return self::isOpenEventRow($row) ? '報名中' : '已截止';
+        $state = self::computeRegistrationState($row);
+        if ($state === 'open') return '報名中';
+        if ($state === 'not_open') return '尚未開放';
+        return '已截止';
     }
 
     private static function scoreEventSearchResult($row, $tags, $clubName, $categoryName, $search) {
@@ -404,7 +437,7 @@ class EventAPI {
                     $club_keyword = trim((string)$club_id_raw);
                 }
             }
-            $status = $_GET['status'] ?? 'published';
+            $status = $_GET['status'] ?? '';
             $search = $_GET['search'] ?? '';
             $filter = strtolower($_GET['filter'] ?? 'open');
             $event_start_from = $_GET['event_start_from'] ?? ($_GET['date_from'] ?? null);
@@ -422,8 +455,14 @@ class EventAPI {
             $useSearchRanking = trim((string)$search) !== '';
             $selectColumns = 'events.*';
             
-            $conditions = ["events.event_status = ?"];
-            $params = [$status];
+            // Default public listing: show both published and ongoing events
+            if ($status === '' || $status === 'published') {
+                $conditions = ['(events.event_status = "published" OR events.event_status = "ongoing")'];
+                $params = [];
+            } else {
+                $conditions = ['events.event_status = ?'];
+                $params = [$status];
+            }
             
             if ($club_id) {
                 $conditions[] = '(events.club_id = ? OR events.event_id IN (
@@ -470,11 +509,14 @@ class EventAPI {
             }
 
             if ($filter === 'open') {
-                $conditions[] = '(events.is_registration_open = 1 AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW())';
+                // is_registration_open=1 wins; event must not have ended
+                $conditions[] = '(events.is_registration_open = 1 AND (events.event_status = "ongoing" OR events.event_date >= NOW()))';
             } elseif ($filter === 'not_open') {
-                $conditions[] = '(events.is_registration_open = 0 AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND events.event_date >= NOW())';
+                // registration off, deadline not passed (or no deadline), event not ended
+                $conditions[] = '(events.is_registration_open = 0 AND (events.registration_deadline IS NULL OR events.registration_deadline >= NOW()) AND (events.event_status = "ongoing" OR events.event_date >= NOW()))';
             } elseif ($filter === 'closed') {
-                $conditions[] = '(events.is_registration_open = 0 OR (events.registration_deadline IS NOT NULL AND events.registration_deadline < NOW()) OR events.event_date < NOW())';
+                // event ended, OR registration is off AND deadline passed
+                $conditions[] = '((events.event_date < NOW() AND events.event_status != "ongoing") OR (events.is_registration_open = 0 AND events.registration_deadline IS NOT NULL AND events.registration_deadline < NOW()))';
             }
 
             if ($min_fee !== null) {
@@ -624,7 +666,13 @@ class EventAPI {
             if ($useSearchRanking) {
                 $events = array_slice($events, $offset, $per_page);
             }
-            
+
+            // Stamp every row with the authoritative registration_state
+            foreach ($events as &$ev) {
+                $ev['registration_state'] = self::computeRegistrationState($ev);
+            }
+            unset($ev);
+
             // 取得總數
             $count_stmt = Database::getInstance()->prepare(
                 "SELECT COUNT(*) as total FROM events WHERE $where"

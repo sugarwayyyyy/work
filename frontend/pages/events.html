@@ -342,14 +342,10 @@
 
             events.forEach(event => {
                 const eventDateObj = new Date(event.event_date);
-                const registrationDeadline = event.registration_deadline
-                    ? new Date(event.registration_deadline)
-                    : null;
-                const now = new Date();
 
-                const isOpen = Number(event.is_registration_open) === 1
-                    && (!registrationDeadline || (!Number.isNaN(registrationDeadline.getTime()) && registrationDeadline >= now))
-                    && (!Number.isNaN(eventDateObj.getTime()) && eventDateObj >= now);
+                // Use the backend's authoritative registration_state (single source of truth)
+                const regStatus = event.registration_state || 'closed';
+                const isOpen = regStatus === 'open';
 
                 const month = MONTHS_ZH[eventDateObj.getMonth()] ?? '';
                 const day = eventDateObj.getDate();
@@ -362,9 +358,8 @@
                     ? `${registeredCount} / ${capacity} 人`
                     : `${registeredCount} 人報名`;
 
-                const deadlineText = registrationDeadline && !Number.isNaN(registrationDeadline.getTime())
-                    ? `截止 ${PageUtils.formatDate(event.registration_deadline)}`
-                    : '';
+                const formattedDeadline = event.registration_deadline ? PageUtils.formatDate(event.registration_deadline) : '';
+                const deadlineText = formattedDeadline ? `截止 ${formattedDeadline}` : '';
 
                 const tagsHtml = (event.tags || [])
                     .map(tag => `<span class="tag tag-primary">#${PageUtils.escapeHtml(tag.tag_name || '')}</span>`)
@@ -391,7 +386,7 @@
                     <div class="feed-item-link">
                         <div class="feed-item-head">
                             <h3 class="feed-item-title"><a href="${eventDetailHref}">${safeEventName}</a></h3>
-                            <span class="feed-item-badge ${isOpen ? '' : 'feed-item-badge--neutral'}">${isOpen ? '報名中' : '已截止'}</span>
+                            <span class="feed-item-badge ${regStatus === 'open' ? '' : 'feed-item-badge--neutral'}">${regStatus === 'open' ? '報名中' : regStatus === 'not_open' ? '尚未開放' : '已截止'}</span>
                         </div>
                         <div class="feed-item-subtitle">${safeClubName}</div>
                         <div class="feed-item-meta">

@@ -307,9 +307,12 @@
                         <small class="cad-help-text">未勾選時，前台僅顯示活動資訊，不開放報名。</small>
                     </div>
                     <div class="form-field admin-span-2">
-                        <label for="event-collaborative-clubs">協辦社團（可複選）</label>
-                        <select id="event-collaborative-clubs" multiple size="6"></select>
-                        <small class="cad-help-text">按住 Ctrl（Windows）可複選，送出後活動會同時出現在協辦社團前台。</small>
+                        <label>協辦社團（可複選）</label>
+                        <div class="cad-collab-dropdown">
+                            <button type="button" class="cad-collab-dropdown-trigger" data-collab-trigger="event-collaborative-clubs" aria-expanded="false" aria-controls="event-collaborative-clubs">請選擇協辦社團</button>
+                            <div id="event-collaborative-clubs" class="cad-collab-dropdown-panel cad-collab-club-list" role="group" aria-label="協辦社團（可複選）" hidden></div>
+                        </div>
+                        <small class="cad-help-text">可直接勾選多個社團，送出後活動會同時出現在協辦社團前台。</small>
                     </div>
                     <div class="form-field admin-span-2">
                         <label for="event-description">活動內容說明 <span class="required">*</span></label>
@@ -453,9 +456,12 @@
                         <small class="cad-help-text">可隨時切換是否接受新報名。</small>
                     </div>
                     <div class="form-field admin-span-2">
-                        <label for="update-event-collaborative-clubs">協辦社團（可複選）</label>
-                        <select id="update-event-collaborative-clubs" multiple size="6"></select>
-                        <small class="cad-help-text">按住 Ctrl（Windows）可複選，更新後會同步到協辦社團頁面。</small>
+                        <label>協辦社團（可複選）</label>
+                        <div class="cad-collab-dropdown">
+                            <button type="button" class="cad-collab-dropdown-trigger" data-collab-trigger="update-event-collaborative-clubs" aria-expanded="false" aria-controls="update-event-collaborative-clubs">請選擇協辦社團</button>
+                            <div id="update-event-collaborative-clubs" class="cad-collab-dropdown-panel cad-collab-club-list" role="group" aria-label="協辦社團（可複選）" hidden></div>
+                        </div>
+                        <small class="cad-help-text">可直接勾選多個社團，更新後會同步到協辦社團頁面。</small>
                     </div>
                     <div class="form-field admin-span-2">
                         <label for="update-event-description">描述 <span class="required">*</span></label>

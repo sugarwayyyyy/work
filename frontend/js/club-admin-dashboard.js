@@ -816,9 +816,9 @@
         }
 
         async function loadCollaborativeClubOptions(currentManagedClubId) {
-            const createSelect = document.getElementById('event-collaborative-clubs');
-            const updateSelect = document.getElementById('update-event-collaborative-clubs');
-            if (!createSelect || !updateSelect) return;
+            const createContainer = document.getElementById('event-collaborative-clubs');
+            const updateContainer = document.getElementById('update-event-collaborative-clubs');
+            if (!createContainer || !updateContainer) return;
 
             try {
                 const response = await APIClient.get('clubs.php?action=all_for_filter');
@@ -827,30 +827,154 @@
                 }
 
                 const clubs = (response.data?.clubs || []).filter(club => Number(club.club_id) !== Number(currentManagedClubId));
-                const options = clubs
-                    .map(club => `<option value="${Number(club.club_id)}">${PageUtils.escapeHtml(club.club_name || '-')}</option>`)
-                    .join('');
-
-                createSelect.innerHTML = options;
-                updateSelect.innerHTML = options;
+                renderCollaborativeClubCheckboxes(createContainer, clubs, 'create-collab-club');
+                renderCollaborativeClubCheckboxes(updateContainer, clubs, 'update-collab-club');
+                bindCollaborativeClubDropdown('event-collaborative-clubs');
+                bindCollaborativeClubDropdown('update-event-collaborative-clubs');
             } catch (error) {
                 console.error('載入協辦社團清單失敗:', error);
             }
         }
 
-        function getSelectedCollaborativeClubIds(selectId) {
-            const select = document.getElementById(selectId);
-            if (!select) return [];
-            return Array.from(select.selectedOptions || []).map(option => Number(option.value)).filter(id => id > 0);
+        function getCollaborativeClubDropdownRefs(containerId) {
+            return {
+                container: document.getElementById(containerId),
+                trigger: document.querySelector(`[data-collab-trigger="${containerId}"]`)
+            };
         }
 
-        function setSelectedCollaborativeClubIds(selectId, clubIds) {
-            const select = document.getElementById(selectId);
-            if (!select) return;
-            const selected = new Set((clubIds || []).map(id => Number(id)));
-            Array.from(select.options).forEach(option => {
-                option.selected = selected.has(Number(option.value));
+        function setCollaborativeClubDropdownSummary(containerId) {
+            const refs = getCollaborativeClubDropdownRefs(containerId);
+            if (!refs.container || !refs.trigger) return;
+
+            const checkedInputs = Array.from(refs.container.querySelectorAll('input[type="checkbox"][data-collab-club-id]:checked'));
+            if (checkedInputs.length === 0) {
+                refs.trigger.textContent = '請選擇協辦社團';
+                refs.trigger.title = '';
+                return;
+            }
+
+            const names = checkedInputs.map(input => {
+                const label = input.closest('label');
+                const text = label ? label.textContent : '';
+                return (text || '').trim();
+            }).filter(Boolean);
+
+            refs.trigger.textContent = names.length <= 2 ? names.join('、') : `已選 ${names.length} 個社團`;
+            refs.trigger.title = names.join('、');
+        }
+
+        function closeCollaborativeClubDropdown(containerId) {
+            const refs = getCollaborativeClubDropdownRefs(containerId);
+            if (!refs.container || !refs.trigger) return;
+            refs.container.hidden = true;
+            refs.trigger.setAttribute('aria-expanded', 'false');
+        }
+
+        function closeAllCollaborativeClubDropdowns(exceptId = '') {
+            document.querySelectorAll('.cad-collab-dropdown-trigger[data-collab-trigger]').forEach(trigger => {
+                const targetId = trigger.getAttribute('data-collab-trigger') || '';
+                if (targetId && targetId !== exceptId) {
+                    closeCollaborativeClubDropdown(targetId);
+                }
             });
+        }
+
+        function isClickInsideCollaborativeDropdown(event) {
+            if (!event) return false;
+            if (typeof event.composedPath === 'function') {
+                return event.composedPath().some(node => {
+                    return node && node.classList && node.classList.contains('cad-collab-dropdown');
+                });
+            }
+
+            let current = event.target;
+            while (current) {
+                if (current.classList && current.classList.contains('cad-collab-dropdown')) {
+                    return true;
+                }
+                current = current.parentElement;
+            }
+            return false;
+        }
+
+        function bindCollaborativeClubDropdown(containerId) {
+            const refs = getCollaborativeClubDropdownRefs(containerId);
+            if (!refs.container || !refs.trigger) return;
+
+            if (refs.trigger.dataset.bound !== '1') {
+                refs.trigger.addEventListener('click', event => {
+                    event.stopPropagation();
+                    const shouldOpen = refs.container.hidden;
+                    closeAllCollaborativeClubDropdowns(containerId);
+                    refs.container.hidden = !shouldOpen;
+                    refs.trigger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+                });
+                refs.trigger.dataset.bound = '1';
+            }
+
+            if (refs.container.dataset.bound !== '1') {
+                refs.container.addEventListener('change', event => {
+                    if (event.target && event.target.matches('input[type="checkbox"][data-collab-club-id]')) {
+                        setCollaborativeClubDropdownSummary(containerId);
+                    }
+                });
+                refs.container.dataset.bound = '1';
+            }
+
+            if (document.body.dataset.collabDropdownOutsideBound !== '1') {
+                document.addEventListener('click', event => {
+                    if (!isClickInsideCollaborativeDropdown(event)) {
+                        closeAllCollaborativeClubDropdowns();
+                    }
+                });
+                document.addEventListener('keydown', event => {
+                    if (event.key === 'Escape') {
+                        closeAllCollaborativeClubDropdowns();
+                    }
+                });
+                document.body.dataset.collabDropdownOutsideBound = '1';
+            }
+
+            setCollaborativeClubDropdownSummary(containerId);
+        }
+
+        function renderCollaborativeClubCheckboxes(container, clubs, inputIdPrefix) {
+            if (!container) return;
+            if (!clubs.length) {
+                container.innerHTML = '<p class="cad-help-text">目前沒有可選的協辦社團。</p>';
+                return;
+            }
+
+            container.innerHTML = clubs
+                .map(club => {
+                    const clubId = Number(club.club_id);
+                    const inputId = `${inputIdPrefix}-${clubId}`;
+                    const clubName = PageUtils.escapeHtml(club.club_name || '-');
+                    return `<label class="cad-collab-club-item" for="${inputId}">
+                        <input type="checkbox" id="${inputId}" value="${clubId}" data-collab-club-id="${clubId}">
+                        <span>${clubName}</span>
+                    </label>`;
+                })
+                .join('');
+        }
+
+        function getSelectedCollaborativeClubIds(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return [];
+            return Array.from(container.querySelectorAll('input[type="checkbox"][data-collab-club-id]:checked'))
+                .map(input => Number(input.value))
+                .filter(id => id > 0);
+        }
+
+        function setSelectedCollaborativeClubIds(containerId, clubIds) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const selected = new Set((clubIds || []).map(id => Number(id)));
+            Array.from(container.querySelectorAll('input[type="checkbox"][data-collab-club-id]')).forEach(input => {
+                input.checked = selected.has(Number(input.value));
+            });
+            setCollaborativeClubDropdownSummary(containerId);
         }
 
         async function loadClubDetails(clubId) {

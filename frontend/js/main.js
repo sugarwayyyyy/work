@@ -296,8 +296,16 @@ class PageUtils {
         }
     }
 
+    static parseDate(dateString) {
+        // MySQL datetime uses a space separator ('YYYY-MM-DD HH:MM:SS') which Safari
+        // and Firefox reject. Normalize to ISO 8601 ('T' separator) before parsing.
+        const normalized = String(dateString || '').trim().replace(' ', 'T');
+        return new Date(normalized);
+    }
+
     static formatDate(dateString) {
-        const date = new Date(dateString);
+        const date = PageUtils.parseDate(dateString);
+        if (Number.isNaN(date.getTime())) return '';
         return date.toLocaleDateString('zh-TW', {
             year: 'numeric',
             month: '2-digit',
@@ -308,7 +316,7 @@ class PageUtils {
     }
 
     static timeAgo(dateString) {
-        const date = new Date(dateString);
+        const date = PageUtils.parseDate(dateString);
         const now = new Date();
         const seconds = Math.floor((now - date) / 1000);
 

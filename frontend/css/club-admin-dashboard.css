@@ -149,3 +149,87 @@
 .cad-preview-image {
     display: none;
 }
+
+.cad-collab-club-list {
+    padding: 0.6rem;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 0.7rem;
+    background: var(--surface, #fff);
+    max-height: 200px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.45rem 0.6rem;
+}
+
+/* Prevent display:grid from overriding the [hidden] attribute */
+.cad-collab-club-list[hidden] {
+    display: none !important;
+}
+
+.cad-collab-club-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.87rem;
+    color: var(--text-default, #374151);
+    cursor: pointer;
+}
+
+.cad-collab-club-item input[type="checkbox"] {
+    accent-color: var(--brand, #7c3aed);
+    cursor: pointer;
+}
+
+.cad-collab-dropdown {
+    position: relative;
+}
+
+.cad-collab-dropdown-trigger {
+    width: 100%;
+    padding: 0.52rem 2rem 0.52rem 0.75rem;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 0.7rem;
+    background: var(--surface, #fff);
+    text-align: left;
+    font-size: 0.87rem;
+    font-family: inherit;
+    color: var(--text-default, #374151);
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cad-collab-dropdown-trigger::after {
+    content: "▾";
+    position: absolute;
+    right: 0.7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted, #64748b);
+    pointer-events: none;
+    transition: transform 0.18s ease;
+}
+
+.cad-collab-dropdown-trigger[aria-expanded="true"]::after {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.cad-collab-dropdown-trigger:hover {
+    border-color: var(--brand, #7c3aed);
+}
+
+.cad-collab-dropdown-trigger[aria-expanded="true"] {
+    border-color: var(--brand, #7c3aed);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+.cad-collab-dropdown-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    margin-top: 4px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
