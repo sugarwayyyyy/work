@@ -34,7 +34,10 @@
             <section class="portal-section portal-section--dynamic">
                 <div class="portal-section-head">
                     <h2 class="portal-section-title">通知中心</h2>
-                    <span id="notif-unread-count" style="font-size:0.78rem;color:var(--text-muted);"></span>
+                    <div style="display:flex;align-items:center;gap:0.6rem;">
+                        <span id="notif-unread-count" style="font-size:0.78rem;color:var(--text-muted);"></span>
+                        <button id="mark-all-read-btn" class="btn btn-secondary btn-sm" onclick="markAllAsRead()" style="display:none;">全部已讀</button>
+                    </div>
                 </div>
                 <div id="notifications-list" class="feed-stream-list">
                     <div class="feed-item-card" style="display:flex;justify-content:center;padding:2rem 0;">
@@ -75,11 +78,15 @@
             if (notifications.length === 0) {
                 container.innerHTML = '<div class="feed-item-card" style="text-align:center;padding:2.5rem 0;color:var(--text-muted);">目前沒有新通知</div>';
                 if (unreadCountEl) unreadCountEl.textContent = '';
+                const markAllBtn = document.getElementById('mark-all-read-btn');
+                if (markAllBtn) markAllBtn.style.display = 'none';
                 return;
             }
 
             const unreadCount = notifications.filter(n => !n.is_read).length;
             if (unreadCountEl) unreadCountEl.textContent = unreadCount > 0 ? `${unreadCount} 則未讀` : '全部已讀';
+            const markAllBtn = document.getElementById('mark-all-read-btn');
+            if (markAllBtn) markAllBtn.style.display = unreadCount > 0 ? '' : 'none';
 
             let html = '';
             notifications.forEach(notification => {
@@ -159,6 +166,24 @@
                 window.location.href = targetUrl;
             } else if (!alreadyRead) {
                 loadNotifications();
+            }
+        }
+
+        async function markAllAsRead() {
+            const btn = document.getElementById('mark-all-read-btn');
+            if (btn) { btn.disabled = true; btn.textContent = '處理中…'; }
+            try {
+                const response = await APIClient.post('notifications.php?action=mark_all_read', {});
+                if (response.success) {
+                    loadNotifications();
+                } else {
+                    PageUtils.showAlert(response.message || '操作失敗', 'error');
+                    if (btn) { btn.disabled = false; btn.textContent = '全部已讀'; }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('操作失敗', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = '全部已讀'; }
             }
         }
 

@@ -154,6 +154,25 @@ class NotificationAPI {
     }
 
     /**
+     * 一鍵全部標記為已讀
+     * POST /api/notifications.php?action=mark_all_read
+     */
+    public static function markAllAsRead() {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        try {
+            dbUpdate('notifications', ['is_read' => 1], 'user_id = ? AND is_read = 0', [
+                Auth::getCurrentUserId()
+            ]);
+            Helper::success('全部標記已讀成功');
+        } catch (Exception $e) {
+            Helper::error('標記已讀失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * 標記通知為已讀
      * POST /api/notifications.php?action=mark_read
      */
@@ -198,7 +217,9 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
-    if ($action === 'mark_read') {
+    if ($action === 'mark_all_read') {
+        NotificationAPI::markAllAsRead();
+    } elseif ($action === 'mark_read') {
         NotificationAPI::markAsRead($data);
     }
 }
