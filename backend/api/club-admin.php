@@ -203,6 +203,47 @@ class ClubAdminAPI {
         Helper::success('轉讓申請已送出，待管理員審核', ['request_id' => $requestId]);
     }
 
+    public static function getClubStats($club_id) {
+        self::requireClubAdmin();
+
+        $club_id = (int)$club_id;
+        if (!$club_id) {
+            Helper::error('缺少社團 ID', 400);
+        }
+
+        if (!Auth::isAdmin()) {
+            $isMember = Database::getInstance()->fetchOne(
+                'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
+                [$club_id, Auth::getCurrentUserId()]
+            );
+            if (!$isMember) {
+                Helper::error('您無權限查看此社團統計', 403);
+            }
+        }
+
+        $db = Database::getInstance();
+
+        $followers       = $db->fetchOne('SELECT COUNT(*) AS cnt FROM club_followers WHERE club_id = ?', [$club_id]);
+        $totalEvents     = $db->fetchOne('SELECT COUNT(*) AS cnt FROM events WHERE club_id = ?', [$club_id]);
+        $upcomingEvents  = $db->fetchOne('SELECT COUNT(*) AS cnt FROM events WHERE club_id = ? AND event_date >= NOW() AND event_status IN ("published", "ongoing")', [$club_id]);
+        $publishedEvents = $db->fetchOne('SELECT COUNT(*) AS cnt FROM events WHERE club_id = ? AND event_status = "published"', [$club_id]);
+        $cancelledEvents = $db->fetchOne('SELECT COUNT(*) AS cnt FROM events WHERE club_id = ? AND event_status = "cancelled"', [$club_id]);
+        $totalRegs       = $db->fetchOne('SELECT COUNT(*) AS cnt FROM event_registrations er JOIN events e ON er.event_id = e.event_id WHERE e.club_id = ?', [$club_id]);
+        $rating          = $db->fetchOne('SELECT ROUND(AVG(rating), 1) AS avg FROM reviews WHERE club_id = ? AND review_status = "approved"', [$club_id]);
+        $unansweredQA    = $db->fetchOne('SELECT COUNT(*) AS cnt FROM q_and_a qa WHERE qa.club_id = ? AND qa.status = "open" AND NOT EXISTS (SELECT 1 FROM qa_replies qr WHERE qr.qa_id = qa.qa_id)', [$club_id]);
+
+        Helper::success('取得社團統計成功', [
+            'follower_count'    => (int)($followers['cnt']       ?? 0),
+            'total_events'      => (int)($totalEvents['cnt']     ?? 0),
+            'upcoming_events'   => (int)($upcomingEvents['cnt']  ?? 0),
+            'published_events'  => (int)($publishedEvents['cnt'] ?? 0),
+            'cancelled_events'  => (int)($cancelledEvents['cnt'] ?? 0),
+            'total_registrations' => (int)($totalRegs['cnt']     ?? 0),
+            'average_rating'    => isset($rating['avg']) && $rating['avg'] !== null ? (float)$rating['avg'] : null,
+            'unanswered_qa'     => (int)($unansweredQA['cnt']    ?? 0),
+        ]);
+    }
+
     public static function getMyTransferRequests() {
         self::requireClubAdmin();
         $user_id = Auth::getCurrentUserId();
@@ -236,6 +277,8 @@ if ($method === 'GET') {
         ClubAdminAPI::getClubEvents($club_id);
     } elseif ($action === 'my_transfer_requests') {
         ClubAdminAPI::getMyTransferRequests();
+    } elseif ($action === 'club_stats' && $club_id) {
+        ClubAdminAPI::getClubStats($club_id);
     }
 }
 

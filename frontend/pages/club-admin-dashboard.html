@@ -8,6 +8,119 @@
     <link rel="stylesheet" href="../css/admin.css?v=20260502k" />
     <link rel="stylesheet" href="../css/club-admin-dashboard.css?v=20260502k" />
     <style>
+        /* ── Stats bar：桌機 / 平板 → 橫向扁平一列 ── */
+        .club-admin-page .admin-stats-bar {
+            display: flex;
+            align-items: stretch;
+            flex-wrap: nowrap;          /* 不換行，不足時橫向捲動 */
+            gap: 0;
+            background: var(--surface, #fff);
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: 0.75rem;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: none;      /* Firefox：隱藏捲動條 */
+        }
+
+        .club-admin-page .admin-stats-bar::-webkit-scrollbar {
+            display: none;              /* Chrome/Safari：隱藏捲動條 */
+        }
+
+        .club-admin-page .admin-stats-bar .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.62rem 1rem;
+            border-right: 1px solid var(--border, #e2e8f0);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .club-admin-page .admin-stats-bar .stat-item:last-child {
+            border-right: none;
+        }
+
+        .club-admin-page .admin-stats-bar .stat-item strong {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--brand, #7c3aed);
+            line-height: 1;
+        }
+
+        .club-admin-page .admin-stats-bar .stat-item .stat-club-name {
+            font-size: 0.88rem;
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .club-admin-page .admin-stats-bar .stat-item span {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted, #64748b);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* 未選社團時社團專屬欄位淡顯 */
+        .stat-club-only {
+            opacity: 0.25;
+            transition: opacity 0.35s ease;
+        }
+
+        .stat-club-only.is-loaded {
+            opacity: 1;
+        }
+
+        /* 未回答 Q&A 警示紅 */
+        .stat-alert {
+            color: #dc2626 !important;
+        }
+
+        /* ── 手機（≤ 600px）：改為二欄 grid ── */
+        @media (max-width: 600px) {
+            .club-admin-page .admin-stats-bar {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                overflow-x: visible;
+                overflow-y: visible;
+            }
+
+            .club-admin-page .admin-stats-bar .stat-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.1rem;
+                padding: 0.65rem 0.85rem;
+                border-right: none;
+                border-bottom: 1px solid var(--border, #e2e8f0);
+                white-space: normal;
+                flex-shrink: unset;
+            }
+
+            /* 左欄（奇數）補右邊分隔線 */
+            .club-admin-page .admin-stats-bar .stat-item:nth-child(odd) {
+                border-right: 1px solid var(--border, #e2e8f0);
+            }
+
+            /* 最後一列兩格去掉底線 */
+            .club-admin-page .admin-stats-bar .stat-item:nth-last-child(-n+2) {
+                border-bottom: none;
+            }
+
+            .club-admin-page .admin-stats-bar .stat-item strong {
+                font-size: 1.3rem;
+            }
+
+            .club-admin-page .admin-stats-bar .stat-item .stat-club-name {
+                font-size: 0.82rem;
+                max-width: 100%;
+            }
+
+            .club-admin-page .admin-stats-bar .stat-item span {
+                font-size: 0.68rem;
+            }
+        }
+
         .admin-selected-club-banner {
             display: flex;
             align-items: center;
@@ -60,8 +173,16 @@
 
         <!-- 統計摘要列 -->
         <div class="admin-stats-bar reveal-up">
-            <article class="metric-card"><p>所屬社團</p><strong id="stat-my-clubs">-</strong></article>
-            <article class="metric-card"><p>目前管理</p><strong id="stat-current-club">—</strong></article>
+            <div class="stat-item"><strong id="stat-my-clubs">-</strong><span>所屬社團</span></div>
+            <div class="stat-item"><strong id="stat-current-club" class="stat-club-name">—</strong><span>目前管理</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-followers">-</strong><span>追蹤數</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-total-events">-</strong><span>活動總數</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-upcoming">-</strong><span>即將舉行</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-published">-</strong><span>已發布</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-cancelled">-</strong><span>已取消</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-registrations">-</strong><span>總報名</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-avg-rating">-</strong><span>平均評分</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-unanswered-qa">-</strong><span>未回答 Q&amp;A</span></div>
         </div>
 
         <!-- 已選社團提示列 -->
@@ -642,9 +763,36 @@
                 const subtitle = document.getElementById('club-action-subtitle');
                 const match = (subtitle?.textContent || '').match(/目前管理社團：(.+)/);
                 setClubSelected(match ? match[1].trim() : '-');
+                loadClubAdminStats(clubId);
                 window.showManagementPanel('club');
             };
         })();
+
+        // 載入社團統計數據並更新 stats bar
+        async function loadClubAdminStats(clubId) {
+            try {
+                const res = await APIClient.get(`club-admin.php?action=club_stats&id=${clubId}`);
+                if (!res.success) return;
+                const s = res.data;
+
+                document.getElementById('stat-followers').textContent       = s.follower_count ?? '-';
+                document.getElementById('stat-total-events').textContent    = s.total_events ?? '-';
+                document.getElementById('stat-upcoming').textContent        = s.upcoming_events ?? '-';
+                document.getElementById('stat-published').textContent       = s.published_events ?? '-';
+                document.getElementById('stat-cancelled').textContent       = s.cancelled_events ?? '-';
+                document.getElementById('stat-registrations').textContent   = s.total_registrations ?? '-';
+                document.getElementById('stat-avg-rating').textContent      = s.average_rating !== null ? Number(s.average_rating).toFixed(1) : '-';
+
+                const qaEl = document.getElementById('stat-unanswered-qa');
+                qaEl.textContent = s.unanswered_qa ?? '-';
+                // 有未回答提問時保持紅色警示
+                qaEl.classList.toggle('stat-alert', (s.unanswered_qa ?? 0) > 0);
+
+                document.querySelectorAll('.stat-club-only').forEach(el => el.classList.add('is-loaded'));
+            } catch (e) {
+                console.error('loadClubAdminStats error', e);
+            }
+        }
 
         // 統計：所屬社團數
         (function () {
