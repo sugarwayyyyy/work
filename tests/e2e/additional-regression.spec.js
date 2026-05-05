@@ -8,6 +8,11 @@ const STUDENT = {
   password: 'Test123456'
 };
 
+const CLUB_ADMIN = {
+  email: 'clubadmin@univ.edu',
+  password: 'Test123456'
+};
+
 async function login(page, email, password) {
   await page.goto(`${BASE_URL}/pages/login.html`);
   await page.fill('input[name="email"]', email);
@@ -19,7 +24,7 @@ async function login(page, email, password) {
 }
 
 async function openUserMenu(page) {
-  const avatarButton = page.getByRole('button', { name: /個人頭像|使用者|帳號/ });
+  const avatarButton = page.locator('#nav-avatar-trigger');
   await expect(avatarButton).toBeVisible();
   await avatarButton.click();
   await expect(avatarButton).toHaveAttribute('aria-expanded', 'true');
@@ -29,13 +34,95 @@ async function openUserMenu(page) {
 async function logoutViaUserMenu(page) {
   await openUserMenu(page);
 
-  const logoutBtn = page.locator('#nav-dd-panel').getByRole('button', { name: /登出/ });
+  const logoutBtn = page.locator('#ndp-logout-btn');
   await expect(logoutBtn).toBeVisible();
 
   await Promise.all([
     page.waitForURL(/\/(index\.html|frontend\/index\.html)$/),
     logoutBtn.click()
   ]);
+}
+
+async function fetchMyManagedClubId(page) {
+  return await page.evaluate(async () => {
+    const myClubsResp = await window.APIClient.get('club-admin.php?action=my_clubs');
+    if (!myClubsResp?.success) return null;
+    const firstClub = Array.isArray(myClubsResp?.data?.clubs) ? myClubsResp.data.clubs[0] : null;
+    return Number(firstClub?.club_id || 0) || null;
+  });
+}
+
+async function fetchClubDetailById(page, clubId) {
+  return await page.evaluate(async ({ cid }) => {
+    const resp = await window.APIClient.get(`clubs.php?action=detail&id=${cid}`);
+    if (!resp?.success) return null;
+    return resp.data || null;
+  }, { cid: clubId });
+}
+
+async function apiPutJson(page, endpoint, payload) {
+  return await page.evaluate(async ({ endpointPath, body }) => {
+    const csrfHeaders = await window.APIClient.getCSRFHeaders();
+    const response = await fetch(`${window.APIClient.getBaseUrl()}/${endpointPath}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        ...csrfHeaders
+      },
+      body: JSON.stringify(body || {})
+    });
+
+    let json = null;
+    try {
+      json = await response.json();
+    } catch (_) {
+      json = { success: false, message: 'NON_JSON_RESPONSE' };
+    }
+
+    return { status: response.status, body: json };
+  }, { endpointPath: endpoint, body: payload });
+}
+
+async function apiPostJson(page, endpoint, payload) {
+  return await page.evaluate(async ({ endpointPath, body }) => {
+    const csrfHeaders = await window.APIClient.getCSRFHeaders();
+    const response = await fetch(`${window.APIClient.getBaseUrl()}/${endpointPath}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        ...csrfHeaders
+      },
+      body: JSON.stringify(body || {})
+    });
+
+    let json = null;
+    try {
+      json = await response.json();
+    } catch (_) {
+      json = { success: false, message: 'NON_JSON_RESPONSE' };
+    }
+
+    return { status: response.status, body: json };
+  }, { endpointPath: endpoint, body: payload });
+}
+
+async function openManagedClubAdminPanel(page, tabKey = 'club-manage') {
+  await page.goto(`${BASE_URL}/pages/club-admin-dashboard.html`);
+  await page.waitForLoadState('networkidle');
+
+  const manageBtn = page.locator('#my-clubs-container .admin-item-card button').first();
+  await expect(manageBtn).toBeVisible({ timeout: 15000 });
+  await manageBtn.click();
+  await expect(page.locator('#selected-club-banner')).toBeVisible({ timeout: 10000 });
+
+  const tab = page.locator(`.admin-tab[data-tab="${tabKey}"]`).first();
+  await expect(tab).toBeVisible({ timeout: 10000 });
+  await expect(tab).not.toHaveClass(/is-locked/, { timeout: 10000 });
+  await tab.click();
 }
 
 async function collectFailedResponses(page, action) {
@@ -86,6 +173,29 @@ async function fetchPagedIds(endpoint, listKey) {
   }
 
   return Array.from(new Set(ids));
+}
+
+async function fetchPagedItems(endpoint, listKey) {
+  const rows = [];
+  let currentPage = 1;
+  let totalPages = 1;
+
+  while (currentPage <= totalPages) {
+    const response = await fetch(`${API_BASE_URL}/${endpoint}${endpoint.includes('?') ? '&' : '?'}page=${currentPage}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${endpoint} page ${currentPage}: ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const pageItems = payload?.data?.[listKey] || [];
+    rows.push(...pageItems);
+
+    const pagination = payload?.data?.pagination || {};
+    totalPages = Number(pagination.total_pages || 1);
+    currentPage += 1;
+  }
+
+  return rows;
 }
 
 async function scanDetailPagesForUploads404(page, urls) {
@@ -193,7 +303,9 @@ test.describe('Additional Regression: 社團列表篩選與導覽', () => {
 
     await page.fill('#club-search', '程式');
     await page.selectOption('#club-fee-range', '1000+');
-    await page.click('button:has-text("重製")');
+    const resetBtn = page.getByRole('button', { name: /重製/ });
+    await expect(resetBtn).toBeVisible();
+    await resetBtn.click();
 
     await expect(page.locator('#club-search')).toHaveValue('');
     await expect(page.locator('#club-fee-range')).toHaveValue('');
@@ -482,5 +594,240 @@ test.describe('Additional Regression: 會話與導向自檢', () => {
     await page.waitForLoadState('networkidle');
 
     await expect(page.locator('#follow-btn')).toContainText('已追蹤');
+  });
+});
+
+test.describe('Additional Regression: Data Integrity & Safety', () => {
+  test('AR-28 should reject stale last_updated on concurrent club update', async ({ page }) => {
+    test.setTimeout(60000);
+    await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+
+    const clubId = await fetchMyManagedClubId(page);
+    expect(clubId).toBeTruthy();
+
+    const snapshot = await fetchClubDetailById(page, clubId);
+    expect(snapshot).toBeTruthy();
+    expect(snapshot.last_updated).toBeTruthy();
+
+    const staleLastUpdated = snapshot.last_updated;
+    const payloadA = {
+      description: `${snapshot.description || ''}\n[AR-28-A-${Date.now()}]`,
+      meeting_day: snapshot.meeting_day || '',
+      meeting_time: snapshot.meeting_time || '',
+      meeting_location: snapshot.meeting_location || '',
+      contact_email: snapshot.contact_email || 'clubadmin@univ.edu',
+      contact_phone: snapshot.contact_phone || '',
+      club_fee: snapshot.club_fee || 0,
+      last_updated: staleLastUpdated
+    };
+
+    const payloadB = {
+      ...payloadA,
+      description: `${snapshot.description || ''}\n[AR-28-B-${Date.now()}]`,
+      last_updated: staleLastUpdated
+    };
+
+    const firstUpdate = await apiPutJson(page, `clubs.php?action=update&id=${clubId}`, payloadA);
+    expect(firstUpdate.status).toBe(200);
+    expect(firstUpdate.body?.success).toBeTruthy();
+
+    const secondUpdate = await apiPutJson(page, `clubs.php?action=update&id=${clubId}`, payloadB);
+    expect(secondUpdate.body?.success).toBeFalsy();
+    expect(secondUpdate.status).toBe(409);
+    expect(String(secondUpdate.body?.message || '').length).toBeGreaterThan(0);
+  });
+
+  test('AR-29 follow request failure should not show fake success state', async ({ page }) => {
+    await login(page, STUDENT.email, STUDENT.password);
+    await page.goto(`${BASE_URL}/pages/club-list.html`);
+    await page.waitForLoadState('networkidle');
+
+    const detailLink = page.locator('a[href*="club-detail.html?id="]').first();
+    await expect(detailLink).toBeVisible();
+    await detailLink.click();
+    await page.waitForURL('**/club-detail.html**');
+    await page.waitForLoadState('networkidle');
+
+    const followBtn = page.locator('#follow-btn');
+    await expect(followBtn).toBeVisible();
+    const beforeText = (await followBtn.innerText()).trim();
+
+    await page.route('**/clubs.php?action=toggle_follow**', route => route.abort('internetdisconnected'));
+    await followBtn.click();
+
+    await expect(page.locator('#alert-container')).toContainText(/\u64cd\u4f5c|\u5931\u6557|error|fail/i, { timeout: 10000 });
+    await expect(followBtn).toHaveText(beforeText);
+    await page.unroute('**/clubs.php?action=toggle_follow**');
+  });
+
+  test('AR-30 club profile minimum fields should block empty submit', async ({ page }) => {
+    await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    await openManagedClubAdminPanel(page, 'club-manage');
+
+    await expect(page.locator('#update-club-form')).toBeVisible();
+    let updateRequestCount = 0;
+    const requestListener = request => {
+      if (request.url().includes('/clubs.php?action=update&id=')) {
+        updateRequestCount += 1;
+      }
+    };
+    page.on('request', requestListener);
+
+    await page.fill('#update-club-description', '');
+    await page.fill('#update-club-email', '');
+    await page.click('#update-club-form button[type="submit"]');
+
+    const formIsValid = await page.locator('#update-club-form').evaluate(form => form.checkValidity());
+    const descriptionIsValid = await page.locator('#update-club-description').evaluate(el => el.checkValidity());
+    const emailIsValid = await page.locator('#update-club-email').evaluate(el => el.checkValidity());
+
+    expect(formIsValid).toBeFalsy();
+    expect(descriptionIsValid).toBeFalsy();
+    expect(emailIsValid).toBeFalsy();
+    await expect.poll(() => updateRequestCount).toBe(0);
+    await expect(page.locator('#alert-container .alert-success')).toHaveCount(0);
+
+    page.off('request', requestListener);
+  });
+
+  test('AR-31 tag/keyword no-result flow should stay navigable', async ({ page }) => {
+    await page.goto(`${BASE_URL}/pages/club-list.html?tags=99999999`);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.locator('#clubs-container')).toBeVisible();
+    await expect(page.locator('#popular-tags')).toBeVisible();
+    await expect(page).not.toHaveURL(/404/i);
+
+    await page.fill('#club-search', `__NO_RESULT__${Date.now()}`);
+    await page.evaluate(() => {
+      if (typeof loadClubs === 'function') {
+        loadClubs();
+      }
+    });
+    await expect(page.locator('#clubs-container')).toBeVisible();
+    await expect(page.locator('#popular-tags')).toBeVisible();
+  });
+
+  test('AR-32 upload should reject forged extension file', async ({ page }) => {
+    await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    const clubId = await fetchMyManagedClubId(page);
+    expect(clubId).toBeTruthy();
+
+    const uploadResult = await page.evaluate(async ({ cid }) => {
+      const csrfHeaders = await window.APIClient.getCSRFHeaders();
+      const fakeFile = new File([new Blob(['this is not an image'])], 'fake.jpg', { type: 'text/plain' });
+      const formData = new FormData();
+      formData.append('logo', fakeFile);
+      formData.append('club_id', String(cid));
+
+      const response = await fetch(`${window.APIClient.getBaseUrl()}/upload.php?action=upload_club_logo`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          ...csrfHeaders
+        },
+        body: formData
+      });
+
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch (_) {
+        payload = { success: false, message: 'NON_JSON_RESPONSE' };
+      }
+
+      return { status: response.status, payload };
+    }, { cid: clubId });
+
+    expect(uploadResult.payload?.success).toBeFalsy();
+    expect(String(uploadResult.payload?.message || '')).toMatch(/\u4e0d\u652f\u63f4|\u6587\u4ef6|\u985e\u578b|type|mime|invalid|unsupported/i);
+  });
+
+  test('AR-33 club admin cannot modify tags of non-owned clubs', async ({ page }) => {
+    await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+
+    const ownedClubIds = await page.evaluate(async () => {
+      const resp = await window.APIClient.get('club-admin.php?action=my_clubs');
+      if (!resp?.success) return [];
+      return (resp?.data?.clubs || []).map(item => Number(item.club_id)).filter(id => id > 0);
+    });
+    expect(ownedClubIds.length).toBeGreaterThan(0);
+
+    const allClubIds = await fetchPagedIds('clubs.php', 'clubs');
+    const foreignClubId = allClubIds.find(id => !ownedClubIds.includes(Number(id)));
+    test.skip(!foreignClubId, 'No foreign club available for privilege-isolation test.');
+
+    const forbiddenTagUpdate = await apiPostJson(page, 'clubs.php?action=update_tags', {
+      club_id: Number(foreignClubId),
+      tag_ids: []
+    });
+
+    expect(forbiddenTagUpdate.status).toBe(403);
+    expect(forbiddenTagUpdate.body?.success).toBeFalsy();
+    expect(String(forbiddenTagUpdate.body?.message || '').length).toBeGreaterThan(0);
+  });
+
+  test('AR-34 club admin cannot archive events of non-owned clubs', async ({ page }) => {
+    await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+
+    const ownedClubIds = await page.evaluate(async () => {
+      const resp = await window.APIClient.get('club-admin.php?action=my_clubs');
+      if (!resp?.success) return [];
+      return (resp?.data?.clubs || []).map(item => Number(item.club_id)).filter(id => id > 0);
+    });
+    expect(ownedClubIds.length).toBeGreaterThan(0);
+
+    const events = await fetchPagedItems('events.php', 'events');
+    const foreignEvent = events.find(event => {
+      const eventClubId = Number(event?.club_id || 0);
+      return eventClubId > 0 && !ownedClubIds.includes(eventClubId);
+    });
+    expect(foreignEvent).toBeTruthy();
+
+    const forbiddenEventArchive = await apiPutJson(page, `events.php?action=archive&id=${Number(foreignEvent.event_id)}`, {});
+    expect(forbiddenEventArchive.status).toBe(403);
+    expect(forbiddenEventArchive.body?.success).toBeFalsy();
+    expect(String(forbiddenEventArchive.body?.message || '').length).toBeGreaterThan(0);
+  });
+
+  test('AR-35 club update should be visible immediately to student (no stale cache)', async ({ page, browser }) => {
+    test.setTimeout(90000);
+    await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+
+    const clubId = await fetchMyManagedClubId(page);
+    expect(clubId).toBeTruthy();
+
+    const snapshot = await fetchClubDetailById(page, clubId);
+    expect(snapshot).toBeTruthy();
+    expect(snapshot.last_updated).toBeTruthy();
+
+    const marker = `[AR-35-${Date.now()}]`;
+    const nextDescription = `${snapshot.description || ''}\n${marker}`;
+
+    const updatePayload = {
+      description: nextDescription,
+      meeting_day: snapshot.meeting_day || '',
+      meeting_time: snapshot.meeting_time || '',
+      meeting_location: snapshot.meeting_location || '',
+      contact_email: snapshot.contact_email || 'clubadmin@univ.edu',
+      contact_phone: snapshot.contact_phone || '',
+      club_fee: snapshot.club_fee || 0,
+      last_updated: snapshot.last_updated
+    };
+
+    const updateResult = await apiPutJson(page, `clubs.php?action=update&id=${clubId}`, updatePayload);
+    expect(updateResult.status).toBe(200);
+    expect(updateResult.body?.success).toBeTruthy();
+
+    const studentContext = await browser.newContext();
+    const studentPage = await studentContext.newPage();
+    try {
+      await login(studentPage, STUDENT.email, STUDENT.password);
+      await studentPage.goto(`${BASE_URL}/pages/club-detail.html?id=${clubId}`);
+      await studentPage.waitForLoadState('networkidle');
+      await expect(studentPage.locator('#club-description')).toContainText(marker, { timeout: 15000 });
+    } finally {
+      await studentContext.close();
+    }
   });
 });
