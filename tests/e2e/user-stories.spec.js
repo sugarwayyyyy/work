@@ -66,18 +66,38 @@ async function openCreateEventFormFromClubAdminDashboard(page) {
   await page.goto(`${BASE_URL}/pages/club-admin-dashboard.html`);
   await page.waitForLoadState('networkidle');
 
-  const manageClubBtn = page.locator('#my-clubs-container button:has-text("管理社團")').first();
+  const manageClubBtn = page.locator('#my-clubs-container .admin-item-card button').first();
   await expect(manageClubBtn).toBeVisible({ timeout: 15000 });
   await manageClubBtn.click();
 
-  const actionSelector = page.locator('#club-action-selector');
-  await expect(actionSelector).toBeVisible();
+  await expect(page.locator('#selected-club-banner')).toBeVisible({ timeout: 10000 });
+  await openClubAdminTab(page, '建立活動', '#create-event-form', 'create-event');
+}
 
-  const createEventBtn = page.locator('#club-action-selector button:has-text("建立活動")');
-  await expect(createEventBtn).toBeVisible();
-  await createEventBtn.click();
+async function openClubAdminTab(page, tabName, panelSelector, tabKey = '') {
+  let tab;
+  if (tabKey) {
+    tab = page.locator(`.admin-tab[data-tab="${tabKey}"]`);
+  } else {
+    tab = page.getByRole('tab', { name: tabName, exact: true });
+  }
 
-  await expect(page.locator('#create-event-form')).toBeVisible();
+  if ((await tab.count()) === 0) {
+    tab = page.getByRole('tab', { name: tabName, exact: true });
+  }
+
+  if ((await tab.count()) === 0) {
+    tab = page.locator('.admin-tab').filter({ hasText: tabName });
+  }
+
+  const targetTab = tab.first();
+  await expect(targetTab).toBeVisible({ timeout: 10000 });
+  await expect(targetTab).not.toHaveClass(/is-locked/, { timeout: 10000 });
+  await targetTab.click();
+
+  if (panelSelector) {
+    await expect(page.locator(panelSelector)).toBeVisible({ timeout: 10000 });
+  }
 }
 
 async function publishEventAsClubAdmin(page, eventName) {
@@ -317,9 +337,7 @@ test.describe('US 2.2: 社團活動發布', () => {
     const eventName = `US22-PUB-${Date.now()}`;
     await publishEventAsClubAdmin(page, eventName);
 
-    const eventsPanelBtn = page.locator('#club-action-selector button:has-text("社團活動列表")');
-    await expect(eventsPanelBtn).toBeVisible();
-    await eventsPanelBtn.click();
+    await openClubAdminTab(page, '活動列表', '#club-events-section', 'events-list');
 
     const createdEventCard = page.locator('#club-events-container .admin-item-card').filter({ hasText: eventName }).first();
     await expect(createdEventCard).toBeVisible({ timeout: 15000 });

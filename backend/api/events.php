@@ -275,7 +275,33 @@ class EventAPI {
         );
 
         if ((int)($row['cnt'] ?? 0) < 1) {
-            Helper::error('評論功能未初始化，請先執行 migration', 500);
+            $created = dbQuery(
+                'CREATE TABLE IF NOT EXISTS event_comments (
+                    comment_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    event_id INT UNSIGNED NOT NULL,
+                    user_id INT UNSIGNED NOT NULL,
+                    rating TINYINT UNSIGNED NOT NULL,
+                    comment TEXT NOT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uniq_event_user (event_id, user_id),
+                    KEY idx_event_created (event_id, created_at),
+                    KEY idx_user_created (user_id, created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+            );
+
+            if (!$created) {
+                Helper::error('評論功能初始化失敗，請稍後再試', 500);
+            }
+
+            $row = Database::getInstance()->fetchOne(
+                'SELECT COUNT(*) AS cnt FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1',
+                ['event_comments']
+            );
+
+            if ((int)($row['cnt'] ?? 0) < 1) {
+                Helper::error('評論功能初始化失敗，請稍後再試', 500);
+            }
         }
 
         $checked = true;
@@ -1316,7 +1342,7 @@ class EventAPI {
     }
     public static function addComment($data) {
         if (!Auth::isLoggedIn()) {
-            Helper::error('請先登入', 401);
+            Helper::error('隢??餃', 401);
         }
 
         self::ensureEventCommentsTable();
@@ -1324,12 +1350,28 @@ class EventAPI {
         try {
             $errors = Helper::validateRequired($data, ['event_id', 'rating', 'comment']);
             if (!empty($errors)) {
-                Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+                Helper::error('欄位驗證失敗: ' . implode(', ', $errors), 400);
+            }
+
+            $eventId = (int)($data['event_id'] ?? 0);
+            $rating = (int)($data['rating'] ?? 0);
+            $commentText = trim((string)($data['comment'] ?? ''));
+
+            if ($eventId <= 0) {
+                Helper::error('活動 ID 不正確', 400);
+            }
+
+            if ($rating < 1 || $rating > 5) {
+                Helper::error('評分必須介於 1 到 5 分', 400);
+            }
+
+            if ($commentText === '') {
+                Helper::error('評論內容不可為空', 400);
             }
 
             $event = Database::getInstance()->fetchOne(
                 'SELECT event_id, event_date FROM events WHERE event_id = ?',
-                [$data['event_id']]
+                [$eventId]
             );
 
             if (!$event) {
@@ -1340,35 +1382,33 @@ class EventAPI {
                 Helper::error('活動尚未結束，需參與完成後才能評論', 403);
             }
 
-            // 檢查用戶是否參加過活動
             $participated = Database::getInstance()->fetchOne(
-                'SELECT * FROM event_registrations WHERE event_id = ? AND user_id = ? AND status = "approved"',
-                [$data['event_id'], Auth::getCurrentUserId()]
+                'SELECT registration_id FROM event_registrations WHERE event_id = ? AND user_id = ? AND status = "approved" LIMIT 1',
+                [$eventId, Auth::getCurrentUserId()]
             );
 
             if (!$participated) {
                 Helper::error('只有參加過活動的用戶才能評論', 403);
             }
 
-            // 檢查是否已評論
             $existing = Database::getInstance()->fetchOne(
-                'SELECT * FROM event_comments WHERE event_id = ? AND user_id = ?',
-                [$data['event_id'], Auth::getCurrentUserId()]
+                'SELECT comment_id FROM event_comments WHERE event_id = ? AND user_id = ? LIMIT 1',
+                [$eventId, Auth::getCurrentUserId()]
             );
 
             if ($existing) {
                 Helper::error('您已經評論過此活動', 409);
             }
 
-            if (ContentFilter::hasRestrictedInFields($data, ['comment'])) {
+            if (ContentFilter::hasRestrictedInFields(['comment' => $commentText], ['comment'])) {
                 Helper::error('評論內容包含不適當字眼，請修改後再送出', 400);
             }
 
             $comment_id = dbInsert('event_comments', [
-                'event_id' => $data['event_id'],
+                'event_id' => $eventId,
                 'user_id' => Auth::getCurrentUserId(),
-                'rating' => $data['rating'],
-                'comment' => $data['comment']
+                'rating' => $rating,
+                'comment' => $commentText
             ]);
 
             if (!$comment_id) {

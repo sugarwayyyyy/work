@@ -1,5 +1,9 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(node --check \"d:\\\\app\\\\appserv\\\\www\\\\work-main\\\\tests\\\\e2e\\\\user-stories.spec.js\")",
+      "Bash(php -l \"d:\\\\app\\\\appserv\\\\www\\\\work-main\\\\backend\\\\api\\\\events.php\")"
+    ],
     "additionalDirectories": [
       "D:\\app\\appserv\\www\\work-main\\frontend\\pages"
     ]
