@@ -29,84 +29,6 @@
 
     <div class="container admin-dashboard-container">
 
-        <!-- 儀表板摘要 -->
-        <section id="dashboard-summary" class="dashboard-summary reveal-up">
-            <div class="dashboard-summary-header">
-                <span class="dashboard-summary-title">儀表板摘要</span>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="loadDashboardSummary()">重新整理</button>
-                <span class="dsm-updated">資料時間：<time id="dsm-generated-at">載入中…</time></span>
-            </div>
-            <div class="dashboard-summary-grid">
-
-                <!-- 用戶 -->
-                <div class="dsm-card">
-                    <h3 class="dsm-card-title">用戶</h3>
-                    <div class="dsm-metrics">
-                        <div class="dsm-metric"><small>總用戶</small><strong id="dsm-u-total">-</strong></div>
-                        <div class="dsm-metric"><small>學生</small><strong id="dsm-u-students">-</strong></div>
-                        <div class="dsm-metric"><small>社團幹部</small><strong id="dsm-u-club-admins">-</strong></div>
-                        <div class="dsm-metric"><small>平台管理員</small><strong id="dsm-u-platform-admins">-</strong></div>
-                        <div class="dsm-metric dsm-metric--positive"><small>本週新增</small><strong id="dsm-u-new">-</strong></div>
-                    </div>
-                </div>
-
-                <!-- 社團 -->
-                <div class="dsm-card">
-                    <h3 class="dsm-card-title">社團</h3>
-                    <div class="dsm-metrics">
-                        <div class="dsm-metric"><small>社團總數</small><strong id="dsm-c-total">-</strong></div>
-                        <div class="dsm-metric dsm-metric--positive"><small>活躍社團</small><strong id="dsm-c-active">-</strong></div>
-                        <div class="dsm-metric dsm-metric--warn"><small>停用社團</small><strong id="dsm-c-inactive">-</strong></div>
-                        <div class="dsm-metric dsm-metric--warn"><small>幽靈社團</small><strong id="dsm-c-ghost">-</strong></div>
-                        <div class="dsm-metric dsm-metric--warn"><small>久未更新</small><strong id="dsm-c-stale">-</strong></div>
-                    </div>
-                </div>
-
-                <!-- 活動 -->
-                <div class="dsm-card">
-                    <h3 class="dsm-card-title">活動</h3>
-                    <div class="dsm-metrics">
-                        <div class="dsm-metric"><small>活動總數</small><strong id="dsm-e-total">-</strong></div>
-                        <div class="dsm-metric dsm-metric--positive"><small>即將舉行</small><strong id="dsm-e-upcoming">-</strong></div>
-                        <div class="dsm-metric"><small>已發布</small><strong id="dsm-e-published">-</strong></div>
-                        <div class="dsm-metric dsm-metric--warn"><small>已取消</small><strong id="dsm-e-cancelled">-</strong></div>
-                        <div class="dsm-metric"><small>總報名人數</small><strong id="dsm-e-registrations">-</strong></div>
-                        <div class="dsm-metric"><small>平均評分</small><strong id="dsm-e-rating">-</strong></div>
-                    </div>
-                </div>
-
-                <!-- 待處理 -->
-                <div class="dsm-card dsm-card--alert">
-                    <h3 class="dsm-card-title">待處理</h3>
-                    <div class="dsm-metrics">
-                        <div class="dsm-metric dsm-metric--alert"><small>待審檢舉</small><strong id="dsm-p-reports">-</strong></div>
-                        <div class="dsm-metric dsm-metric--alert"><small>待審轉讓</small><strong id="dsm-p-transfers">-</strong></div>
-                        <div class="dsm-metric dsm-metric--warn"><small>待審評價</small><strong id="dsm-p-reviews">-</strong></div>
-                        <div class="dsm-metric dsm-metric--warn"><small>未回答 Q&amp;A</small><strong id="dsm-p-qa">-</strong></div>
-                    </div>
-                </div>
-
-                <!-- 公告 -->
-                <div class="dsm-card">
-                    <h3 class="dsm-card-title">公告</h3>
-                    <div class="dsm-metrics">
-                        <div class="dsm-metric"><small>生效公告</small><strong id="dsm-a-active">-</strong></div>
-                        <div class="dsm-metric"><small>置頂公告</small><strong id="dsm-a-pinned">-</strong></div>
-                        <div class="dsm-metric dsm-metric--warn"><small>即將到期</small><strong id="dsm-a-expiring">-</strong></div>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- 統計摘要列 -->
-        <div class="admin-stats-bar reveal-up">
-            <article class="metric-card"><p>用戶總數</p><strong id="stat-users">-</strong></article>
-            <article class="metric-card"><p>社團總數</p><strong id="stat-clubs">-</strong></article>
-            <article class="metric-card"><p>公告數量</p><strong id="stat-announcements">-</strong></article>
-            <article class="metric-card"><p>轉讓紀錄</p><strong id="stat-transfers">-</strong></article>
-        </div>
-
         <!-- 分頁導覽 -->
         <nav class="admin-tab-nav" role="tablist" aria-label="管理分頁">
             <button class="admin-tab is-active" data-tab="users"         role="tab" aria-selected="true">用戶管理</button>
@@ -544,7 +466,6 @@
                     <p class="admin-item-content">職稱：${safeRoleLabel}</p>
                     <div class="admin-item-footer">
                         <span class="admin-item-time">加入時間：${safeJoinDate}</span>
-                        <span class="admin-item-time">Member ID：${safeMemberId}</span>
                     </div>
                     <div class="row-actions" style="margin-top: 12px;">
                         <button class="btn btn-primary btn-sm" data-admin-edit="${safeMemberId}" data-club-id="${safeClubId}" data-user-key="${safeUserId}" data-role="${safeRole}" data-active="${safeActive}">編輯</button>
@@ -606,7 +527,8 @@
             const response = await APIClient.get('admin.php?action=users');
             if (!response.success) return console.error(response.message);
             usersState.rows = response.data.users || [];
-            document.getElementById('stat-users').textContent = usersState.rows.length;
+            const usersStatEl = document.getElementById('stat-users');
+            if (usersStatEl) usersStatEl.textContent = usersState.rows.length;
             renderClubAdminUserOptions();
             renderUsersTable();
         }
@@ -615,7 +537,8 @@
             const response = await APIClient.get('admin.php?action=clubs');
             if (!response.success) return console.error(response.message);
             clubsState.rows = response.data.clubs || [];
-            document.getElementById('stat-clubs').textContent = clubsState.rows.length;
+            const clubsStatEl = document.getElementById('stat-clubs');
+            if (clubsStatEl) clubsStatEl.textContent = clubsState.rows.length;
             renderClubAdminClubOptions();
             renderClubsTable();
         }
@@ -645,7 +568,8 @@
             const response = await APIClient.get('admin.php?action=announcements');
             if (!response.success) return console.error(response.message);
             announcementsState.rows = response.data.announcements || [];
-            document.getElementById('stat-announcements').textContent = announcementsState.rows.length;
+            const announcementsStatEl = document.getElementById('stat-announcements');
+            if (announcementsStatEl) announcementsStatEl.textContent = announcementsState.rows.length;
             renderAnnouncementsList();
         }
 
@@ -653,7 +577,8 @@
             const response = await APIClient.get('admin.php?action=transfer_history');
             if (!response.success) return console.error(response.message);
             const rows = response.data.transfers || [];
-            document.getElementById('stat-transfers').textContent = rows.length;
+            const transfersStatEl = document.getElementById('stat-transfers');
+            if (transfersStatEl) transfersStatEl.textContent = rows.length;
             const container = document.getElementById('transfer-history');
             container.innerHTML = '';
             if (rows.length === 0) {
@@ -666,8 +591,6 @@
                 const safeClubCode = escapeHtml(transfer.club_code || '-');
                 const safeFromName = escapeHtml(transfer.from_user_name || '-');
                 const safeToName = escapeHtml(transfer.to_user_name || '-');
-                const safeFromId = Number(transfer.from_user_id) || 0;
-                const safeToId = Number(transfer.to_user_id) || 0;
                 const safeAdminName = escapeHtml(transfer.admin_name || '-');
                 const safeReason = escapeHtml(transfer.reason || '未填寫原因');
                 const card = document.createElement('div');
@@ -678,7 +601,7 @@
                         <span class="status-chip chip-warning">${safeTransferredAt}</span>
                     </div>
                     <p class="admin-item-content">社團：${safeClubName}（${safeClubCode}）</p>
-                    <p class="admin-item-content">從用戶 ${safeFromName} (${safeFromId}) 轉讓到用戶 ${safeToName} (${safeToId})</p>
+                    <p class="admin-item-content">從用戶 ${safeFromName} 轉讓到用戶 ${safeToName}</p>
                     <div class="admin-item-footer">
                         <span class="admin-item-time">操作者：${safeAdminName}</span>
                         <span class="status-chip">${safeReason}</span>
@@ -711,10 +634,8 @@
                 const safeClubCode = escapeHtml(item.club_code || '-');
                 const safeStatus = escapeHtml(transferRequestStatusLabel(item.request_status));
                 const safeRequesterName = escapeHtml(item.requester_name || '-');
-                const safeRequesterId = Number(item.requester_user_id) || 0;
                 const safeRequesterStudentId = escapeHtml(item.requester_student_id || '-');
                 const safeTargetName = escapeHtml(item.target_name || '-');
-                const safeTargetId = Number(item.target_user_id) || 0;
                 const safeTargetStudentId = escapeHtml(item.target_student_id || '-');
                 const safeReason = escapeHtml(item.reason || '-');
                 const safeHandover = escapeHtml(item.handover_note || '');
@@ -729,8 +650,8 @@
                         <h4>${safeClubName}（${safeClubCode}）</h4>
                         <span class="status-chip ${isPending ? 'chip-warning' : 'chip-success'}">${safeStatus}</span>
                     </div>
-                    <p class="admin-item-content">轉讓者：${safeRequesterName}（ID:${safeRequesterId} / 學號:${safeRequesterStudentId}）</p>
-                    <p class="admin-item-content">目標者：${safeTargetName}（ID:${safeTargetId} / 學號:${safeTargetStudentId}）</p>
+                    <p class="admin-item-content">轉讓者：${safeRequesterName}（學號:${safeRequesterStudentId}）</p>
+                    <p class="admin-item-content">目標者：${safeTargetName}（學號:${safeTargetStudentId}）</p>
                     <p class="admin-item-content">轉讓原因：${safeReason}</p>
                     ${safeHandover ? `<p class="admin-item-content">補充：${safeHandover}</p>` : ''}
                     ${safeReviewNote ? `<p class="admin-item-content">審核意見：${safeReviewNote}</p>` : ''}

@@ -818,14 +818,17 @@ function shouldRenderGlobalFollowSidebar() {
         '/login.html',
         '/register.html',
         '/admin-dashboard.html',
+        '/admin-overview.html',
         '/club-admin-dashboard.html',
         '/frontend/pages/login.html',
         '/frontend/pages/register.html',
         '/frontend/pages/admin-dashboard.html',
+        '/frontend/pages/admin-overview.html',
         '/frontend/pages/club-admin-dashboard.html',
         '/pages/login.html',
         '/pages/register.html',
         '/pages/admin-dashboard.html',
+        '/pages/admin-overview.html',
         '/pages/club-admin-dashboard.html'
     ];
 

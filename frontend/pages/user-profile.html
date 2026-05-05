@@ -7,6 +7,122 @@
     <title>個人檔案 - 社團平台</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/user-profile.css">
+    <style>
+        /* ── 危險區域 ── */
+        .danger-zone {
+            margin-top: 2rem;
+            padding: 1.1rem 1.25rem;
+            border: 1px solid #fca5a5;
+            border-radius: 0.75rem;
+            background: #fff8f8;
+        }
+
+        .danger-zone__title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #dc2626;
+            margin: 0 0 0.35rem;
+        }
+
+        .danger-zone__desc {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin: 0 0 0.85rem;
+            line-height: 1.5;
+        }
+
+        /* ── 註銷確認 Modal ── */
+        #deactivate-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .deactivate-modal-card {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+            width: min(480px, 100%);
+            max-height: calc(100vh - 2rem);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .deactivate-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.1rem 1.4rem 0.9rem;
+            flex-shrink: 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .deactivate-modal-title {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #dc2626;
+        }
+
+        .deactivate-modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9ca3af;
+            font-size: 1.1rem;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: color 0.15s, background 0.15s;
+        }
+
+        .deactivate-modal-close:hover {
+            color: #374151;
+            background: #f3f4f6;
+        }
+
+        .deactivate-modal-body {
+            padding: 1.2rem 1.4rem 1.4rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .deactivate-warning-box {
+            background: #fff5f5;
+            border: 1px solid #fecaca;
+            border-radius: 0.6rem;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1.2rem;
+            font-size: 0.85rem;
+            color: #7f1d1d;
+            line-height: 1.55;
+        }
+
+        .deactivate-warning-box strong {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .deactivate-modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.1rem;
+            flex-wrap: wrap;
+        }
+    </style>
 </head>
 
 <body>
@@ -130,6 +246,12 @@
                                     </div>
                                     <button type="submit" class="btn btn-primary">更新資料</button>
                                 </form>
+
+                                <div id="danger-zone" class="danger-zone" style="display: none;">
+                                    <p class="danger-zone__title">⚠ 危險區域</p>
+                                    <p class="danger-zone__desc">註銷帳號後，您將無法登入此帳號。若需重新啟用，請聯繫平台管理員。</p>
+                                    <button type="button" class="btn btn-danger-outline btn-sm" onclick="openDeactivateModal()">註銷帳號</button>
+                                </div>
                             </div>
 
                         </div>
@@ -137,6 +259,32 @@
                 </main>
             </div>
 
+        </div>
+    </div>
+
+    <!-- 註銷帳號確認 Modal -->
+    <div id="deactivate-modal" style="display: none;">
+        <div class="deactivate-modal-card">
+            <div class="deactivate-modal-header">
+                <h2 class="deactivate-modal-title">確認註銷帳號</h2>
+                <button type="button" class="deactivate-modal-close" onclick="closeDeactivateModal()" aria-label="關閉">✕</button>
+            </div>
+            <div class="deactivate-modal-body">
+                <div class="deactivate-warning-box">
+                    <strong>此操作無法撤銷</strong>
+                    帳號一旦註銷，您將立即登出且無法再使用此帳號登入。所有追蹤社團、報名紀錄、提問等資料將保留但無法存取，如需重新啟用請聯繫管理員。
+                </div>
+                <form id="deactivate-form">
+                    <div class="form-group">
+                        <label for="deactivate-password">請輸入目前帳號密碼以確認</label>
+                        <input type="password" id="deactivate-password" placeholder="輸入密碼" autocomplete="current-password" required>
+                    </div>
+                    <div class="deactivate-modal-actions">
+                        <button type="submit" class="btn btn-danger">確認註銷帳號</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeDeactivateModal()">取消</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -177,6 +325,10 @@
             const panels = document.querySelectorAll('.profile-tab-panel');
             const exportBtn = document.getElementById('export-proof-btn');
             const isPlatformAdmin = user && user.role === 'platform_admin';
+
+            // 非管理員才顯示危險區域
+            const dangerZone = document.getElementById('danger-zone');
+            if (dangerZone) dangerZone.style.display = isPlatformAdmin ? 'none' : 'block';
 
             if (!isPlatformAdmin) {
                 return;
@@ -584,10 +736,59 @@
             }
         }
 
+        /* ── 註銷帳號 ── */
+        function openDeactivateModal() {
+            document.getElementById('deactivate-password').value = '';
+            document.getElementById('deactivate-modal').style.display = 'flex';
+            document.getElementById('deactivate-password').focus();
+        }
+
+        function closeDeactivateModal() {
+            document.getElementById('deactivate-modal').style.display = 'none';
+            document.getElementById('deactivate-password').value = '';
+        }
+
+        async function handleDeactivateSubmit(e) {
+            e.preventDefault();
+            const password = document.getElementById('deactivate-password').value;
+            if (!password) {
+                PageUtils.showAlert('請輸入密碼', 'error');
+                return;
+            }
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '處理中…';
+
+            try {
+                const response = await APIClient.post('auth.php?action=deactivate_account', { password });
+                if (response.success) {
+                    closeDeactivateModal();
+                    StorageUtils.clearUser();
+                    PageUtils.showAlert('帳號已成功註銷，即將跳轉至登入頁', 'success');
+                    setTimeout(() => { window.location.href = 'login.html'; }, 1800);
+                } else {
+                    PageUtils.showAlert(response.message || '註銷失敗', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '確認註銷帳號';
+                }
+            } catch (err) {
+                console.error('Deactivate error:', err);
+                PageUtils.showAlert('發生錯誤，請稍後再試', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '確認註銷帳號';
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', function () {
             initTabs();
             loadUserProfile();
             document.getElementById('edit-profile-form').addEventListener('submit', handleProfileUpdate);
+            document.getElementById('deactivate-form').addEventListener('submit', handleDeactivateSubmit);
+            // 點擊遮罩關閉 modal
+            document.getElementById('deactivate-modal').addEventListener('click', function (e) {
+                if (e.target === this) closeDeactivateModal();
+            });
         });
     </script>
 </body>

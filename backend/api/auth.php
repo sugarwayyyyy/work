@@ -250,6 +250,40 @@ class UserAPI {
     }
     
     /**
+     * 註銷帳號（軟刪除）
+     * POST /api/auth.php?action=deactivate_account
+     */
+    public static function deactivateAccount($data) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        $errors = Helper::validateRequired($data, ['password']);
+        if (!empty($errors)) {
+            Helper::error('請輸入目前密碼', 400);
+        }
+
+        $user = Auth::getCurrentUser();
+
+        if (($user['role'] ?? '') === 'platform_admin') {
+            Helper::error('平台管理員帳號無法自行註銷，請聯繫系統維護人員', 403);
+        }
+
+        if (!Helper::verifyPassword($data['password'], $user['password'])) {
+            Helper::error('密碼錯誤，無法執行註銷', 401);
+        }
+
+        try {
+            dbUpdate('users', ['is_active' => 0], 'user_id = ?', [$user['user_id']]);
+            Auth::logout();
+            Helper::success('帳號已成功註銷');
+        } catch (Exception $e) {
+            Helper::logError('帳號註銷失敗: ' . $e->getMessage());
+            Helper::error('帳號註銷失敗', 500);
+        }
+    }
+
+    /**
      * 變更密碼
      * POST /api/auth.php?action=change_password
      */
@@ -316,6 +350,9 @@ switch ($action) {
         break;
     case 'change_password':
         UserAPI::changePassword($data);
+        break;
+    case 'deactivate_account':
+        UserAPI::deactivateAccount($data);
         break;
     default:
         Helper::error('無效的操作', 400);

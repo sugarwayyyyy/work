@@ -83,6 +83,30 @@
     border-color: var(--brand);
 }
 
+.btn-danger {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.28);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #b91c1c, #991b1b);
+    box-shadow: 0 6px 18px rgba(220, 38, 38, 0.38);
+    transform: translateY(-1px);
+}
+
+.btn-danger-outline {
+    background: transparent;
+    color: #dc2626;
+    border: 1.5px solid #fca5a5;
+}
+
+.btn-danger-outline:hover {
+    background: #fff5f5;
+    border-color: #dc2626;
+}
+
 .btn-sm {
     padding: 0.4rem 0.9rem;
     font-size: 0.825rem;
