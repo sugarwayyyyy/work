@@ -15,8 +15,8 @@ define('CSRF_TOKEN_LENGTH', 32);
 
 define('PROJECT_ROOT', dirname(__DIR__));
 define('UPLOAD_DIR', PROJECT_ROOT . '/frontend/assets/uploads/');
-define('MAX_FILE_SIZE', 5242880); // 5MB
-define('ALLOWED_IMAGE_TYPES', ['image/jpeg', 'image/png', 'image/gif']);
+define('MAX_FILE_SIZE', 10485760); // 10MB
+define('ALLOWED_IMAGE_TYPES', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
 define('ITEMS_PER_PAGE', 15);
 

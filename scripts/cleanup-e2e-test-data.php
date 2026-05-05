@@ -2,15 +2,15 @@
 require_once __DIR__ . '/../backend/db.php';
 require_once __DIR__ . '/../backend/config.php';
 
-$eventPrefixes = ['US15-TS-', 'US22-PUB-', 'US22-LIST-'];
-$eventDescriptionNeedle = 'E2E 自動化建立活動：';
+$eventNamePrefixes = ['US15-TS-', 'US22-PUB-', 'US22-LIST-', 'US22 活動 '];
+$eventDescriptionNeedles = ['E2E 自動化建立活動：', 'Automated E2E event ', 'US22 活動內容'];
 $seededUserEmails = ['admin@univ.edu', 'clubadmin@univ.edu', 'student@univ.edu'];
 $seededFollowClubCodes = ['CSC001', '090'];
 $seededEventNames = ['程式社期初說明會', '演算法工作坊', '羽球新生體驗日', '上學期舊活動（過期）'];
 $seededAnnouncementTitles = ['社團博覽會公告', '平台維護通知'];
 $fullCleanup = in_array('--full', $argv, true);
 
-function fetchIdsByLike(mysqli $conn, string $table, string $column, array $prefixes): array {
+function fetchIdsByLike(mysqli $conn, string $table, string $matchColumn, string $returnColumn, array $prefixes): array {
     if (empty($prefixes)) {
         return [];
     }
@@ -18,11 +18,11 @@ function fetchIdsByLike(mysqli $conn, string $table, string $column, array $pref
     $conditions = [];
     $params = [];
     foreach ($prefixes as $prefix) {
-        $conditions[] = "$column LIKE ?";
+        $conditions[] = "$matchColumn LIKE ?";
         $params[] = $prefix . '%';
     }
 
-    $stmt = $conn->prepare('SELECT ' . $column . ' FROM ' . $table . ' WHERE ' . implode(' OR ', $conditions));
+    $stmt = $conn->prepare('SELECT ' . $returnColumn . ' FROM ' . $table . ' WHERE ' . implode(' OR ', $conditions));
     if ($stmt === false) {
         throw new RuntimeException($conn->error);
     }
@@ -33,26 +33,35 @@ function fetchIdsByLike(mysqli $conn, string $table, string $column, array $pref
     $result = $stmt->get_result();
     $rows = [];
     while ($row = $result->fetch_assoc()) {
-        $rows[] = (int)$row[$column];
+        $rows[] = (int)$row[$returnColumn];
     }
     $stmt->close();
 
     return $rows;
 }
 
-function fetchEventIdsByDescriptionNeedle(mysqli $conn, string $needle): array {
-    $needle = trim($needle);
-    if ($needle === '') {
+function fetchEventIdsByDescriptionNeedles(mysqli $conn, array $needles): array {
+    $normalized = array_values(array_filter(array_map(static function ($needle) {
+        return trim((string)$needle);
+    }, $needles)));
+    if (empty($normalized)) {
         return [];
     }
 
-    $stmt = $conn->prepare('SELECT event_id FROM events WHERE description LIKE ?');
+    $conditions = [];
+    $params = [];
+    foreach ($normalized as $needle) {
+        $conditions[] = 'description LIKE ?';
+        $params[] = '%' . $needle . '%';
+    }
+
+    $stmt = $conn->prepare('SELECT event_id FROM events WHERE ' . implode(' OR ', $conditions));
     if ($stmt === false) {
         throw new RuntimeException($conn->error);
     }
 
-    $like = '%' . $needle . '%';
-    $stmt->bind_param('s', $like);
+    $types = str_repeat('s', count($params));
+    $stmt->bind_param($types, ...$params);
     $stmt->execute();
     $result = $stmt->get_result();
     $rows = [];
@@ -62,6 +71,31 @@ function fetchEventIdsByDescriptionNeedle(mysqli $conn, string $needle): array {
     $stmt->close();
 
     return $rows;
+}
+
+function cleanupAcceptanceStoryClubPollution(mysqli $conn): void {
+    $fallbackName = '程式社';
+    $fallbackDescription = '介紹本學期課程與專題方向';
+    $stmt = $conn->prepare(
+        'UPDATE clubs
+         SET club_name = ?,
+             description = ?,
+             last_updated = NOW()
+         WHERE club_code = "CSC001"
+           AND (
+             club_name LIKE "US21 Valid %"
+             OR club_name LIKE "US21 Invalid %"
+             OR description LIKE "US21 更新內文%"
+             OR description LIKE "%[AR-28-A-%"
+             OR description LIKE "%[AR-35-%"
+           )'
+    );
+    if ($stmt === false) {
+        throw new RuntimeException($conn->error);
+    }
+    $stmt->bind_param('ss', $fallbackName, $fallbackDescription);
+    $stmt->execute();
+    $stmt->close();
 }
 
 function deleteWhereIn(mysqli $conn, string $table, string $column, array $ids): int {
@@ -147,8 +181,8 @@ try {
     $db->begin_transaction();
 
     $eventIds = array_values(array_unique(array_merge(
-        fetchIdsByLike($db, 'events', 'event_id', $eventPrefixes),
-        fetchEventIdsByDescriptionNeedle($db, $eventDescriptionNeedle)
+        fetchIdsByLike($db, 'events', 'event_name', 'event_id', $eventNamePrefixes),
+        fetchEventIdsByDescriptionNeedles($db, $eventDescriptionNeedles)
     )));
 
     if (!empty($eventIds)) {
@@ -161,6 +195,8 @@ try {
         deleteWhereIn($db, 'event_tag_relations', 'event_id', $eventIds);
         deleteWhereIn($db, 'events', 'event_id', $eventIds);
     }
+
+    cleanupAcceptanceStoryClubPollution($db);
 
     $userStmt = $db->prepare('SELECT user_id, email FROM users WHERE email IN (?, ?, ?)');
     if ($userStmt === false) {

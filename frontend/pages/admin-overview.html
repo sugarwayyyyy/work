@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>系統總覽 — 管理員</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+        body { background: #f4f3f8; }
+
+        /* ── Layout ── */
+        .ov-wrap {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 1.75rem 1.25rem 4rem;
+        }
+
+        /* ── Page heading ── */
+        .ov-head {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .ov-head-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #1a0d3b;
+            margin: 0;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .ov-head-time {
+            margin-left: auto;
+            font-size: 0.72rem;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        /* ── KPI strip ── */
+        .ov-kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.65rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .ov-kpi {
+            background: #fff;
+            border: 1px solid #e4e0f0;
+            border-radius: 1rem;
+            padding: 1.1rem 1.15rem 0.95rem;
+            box-shadow: 0 2px 8px rgba(30, 16, 58, 0.06);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ov-kpi::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 3px;
+            border-radius: 1rem 1rem 0 0;
+            background: var(--kpi-color, #7c3aed);
+        }
+
+        .ov-kpi.kpi-purple { --kpi-color: #7c3aed; }
+        .ov-kpi.kpi-green  { --kpi-color: #16a34a; }
+        .ov-kpi.kpi-blue   { --kpi-color: #2563eb; }
+        .ov-kpi.kpi-amber  { --kpi-color: #d97706; }
+
+        .ov-kpi-label {
+            font-size: 0.67rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #94a3b8;
+            margin: 0 0 0.45rem;
+        }
+
+        .ov-kpi-value {
+            font-size: 2.1rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #1a0d3b;
+            font-family: 'Space Grotesk', sans-serif;
+            margin: 0 0 0.3rem;
+        }
+
+        .ov-kpi-sub {
+            font-size: 0.72rem;
+            color: #94a3b8;
+        }
+
+        .ov-kpi-sub b { font-weight: 700; }
+        .ov-kpi-sub b.pos { color: #16a34a; }
+        .ov-kpi-sub b.warn { color: #d97706; }
+
+        /* ── Alert bar ── */
+        .ov-alert-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1rem;
+            border-radius: 0.85rem;
+            border: 1px solid #fecaca;
+            background: #fff8f8;
+            margin-bottom: 0.65rem;
+            flex-wrap: wrap;
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        .ov-alert-bar.is-clear {
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+        }
+
+        .ov-alert-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #dc2626;
+            white-space: nowrap;
+            margin-right: 0.15rem;
+        }
+
+        .ov-alert-bar.is-clear .ov-alert-label { color: #16a34a; }
+
+        .ov-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: opacity 0.15s;
+            cursor: default;
+        }
+
+        .ov-chip:hover { opacity: 0.82; }
+        .ov-chip.chip-red    { background: #dc2626; color: #fff; }
+        .ov-chip.chip-amber  { background: #d97706; color: #fff; }
+        .ov-chip.chip-zero   { background: #e8e4f2; color: #94a3b8; }
+        a.ov-chip { cursor: pointer; }
+
+        /* ── Quick nav ── */
+        .ov-quick-nav {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.1rem;
+        }
+
+        .ov-quick-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.34rem 0.85rem;
+            border-radius: 999px;
+            border: 1px solid #ddd6fe;
+            background: #faf9ff;
+            color: #6d28d9;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+
+        .ov-quick-link:hover {
+            background: #ede9fe;
+            border-color: #a78bfa;
+            color: #4c1d95;
+        }
+
+        /* ── Detail grid ── */
+        .ov-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.65rem;
+        }
+
+        .ov-card {
+            background: #fff;
+            border: 1px solid #e4e0f0;
+            border-radius: 1rem;
+            padding: 1rem 1.1rem;
+            box-shadow: 0 2px 8px rgba(30, 16, 58, 0.06);
+        }
+
+        .ov-card-title {
+            font-size: 0.67rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+            margin: 0 0 0.7rem;
+        }
+
+        .ov-metric-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .ov-metric {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.32rem 0.4rem;
+            border-radius: 0.5rem;
+        }
+
+        .ov-metric:hover { background: #f8f6fd; }
+
+        .ov-metric + .ov-metric-sep {
+            margin: 0.35rem 0;
+            border: none;
+            border-top: 1px solid #f0edf8;
+        }
+
+        .ov-metric-name {
+            font-size: 0.8rem;
+            color: #4b5563;
+        }
+
+        .ov-metric-value {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #1a0d3b;
+            font-family: 'Space Grotesk', sans-serif;
+            white-space: nowrap;
+        }
+
+        .ov-metric-value.v-pos   { color: #16a34a; }
+        .ov-metric-value.v-warn  { color: #d97706; }
+        .ov-metric-value.v-alert { color: #dc2626; }
+
+        hr.ov-sep {
+            margin: 0.45rem 0.4rem;
+            border: none;
+            border-top: 1px solid #f0edf8;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 860px) {
+            .ov-kpi-strip { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 580px) {
+            .ov-kpi-value { font-size: 1.75rem; }
+            .ov-detail-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="admin-dashboard.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
+            <ul class="nav-links">
+                <li><a href="admin-overview.html">系統總覽</a></li>
+                <li><a href="admin-dashboard.html">管理後台</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="ov-wrap">
+
+        <!-- 標題列 -->
+        <div class="ov-head">
+            <h1 class="ov-head-title">系統總覽</h1>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="loadOverview()">重新整理</button>
+            <span class="ov-head-time">資料時間：<time id="ov-generated-at">載入中…</time></span>
+        </div>
+
+        <!-- KPI 大數字列 -->
+        <div class="ov-kpi-strip">
+            <div class="ov-kpi kpi-purple">
+                <p class="ov-kpi-label">總用戶</p>
+                <div class="ov-kpi-value" id="ov-u-total">-</div>
+                <div class="ov-kpi-sub">本週新增 <b class="pos" id="ov-u-new">-</b></div>
+            </div>
+            <div class="ov-kpi kpi-green">
+                <p class="ov-kpi-label">活躍社團</p>
+                <div class="ov-kpi-value" id="ov-c-active">-</div>
+                <div class="ov-kpi-sub">共 <b id="ov-c-total">-</b> 社團</div>
+            </div>
+            <div class="ov-kpi kpi-blue">
+                <p class="ov-kpi-label">即將舉行活動</p>
+                <div class="ov-kpi-value" id="ov-e-upcoming">-</div>
+                <div class="ov-kpi-sub"><b id="ov-e-published">-</b> 已發布</div>
+            </div>
+            <div class="ov-kpi kpi-amber">
+                <p class="ov-kpi-label">生效公告</p>
+                <div class="ov-kpi-value" id="ov-a-active">-</div>
+                <div class="ov-kpi-sub">置頂 <b class="warn" id="ov-a-pinned">-</b></div>
+            </div>
+        </div>
+
+        <!-- 待處理警示列 -->
+        <div id="ov-alert-bar" class="ov-alert-bar">
+            <span class="ov-alert-label" id="ov-alert-label">⚠ 待處理</span>
+            <a href="admin-dashboard.html" class="ov-chip chip-red"   id="ov-chip-reports">待審檢舉 -</a>
+            <a href="admin-dashboard.html" class="ov-chip chip-amber" id="ov-chip-transfers">待審轉讓 -</a>
+            <a href="admin-dashboard.html" class="ov-chip chip-amber" id="ov-chip-reviews">待審評價 -</a>
+            <span                          class="ov-chip chip-amber" id="ov-chip-qa">未回答 Q&amp;A -</span>
+        </div>
+
+        <!-- 快捷導覽 -->
+        <div class="ov-quick-nav">
+            <a href="admin-dashboard.html" class="ov-quick-link">用戶管理 →</a>
+            <a href="admin-dashboard.html" class="ov-quick-link">社團幹部 →</a>
+            <a href="admin-dashboard.html" class="ov-quick-link">社團管理 →</a>
+            <a href="admin-dashboard.html" class="ov-quick-link">報告管理 →</a>
+            <a href="admin-dashboard.html" class="ov-quick-link">系統公告 →</a>
+            <a href="admin-dashboard.html" class="ov-quick-link">帳戶轉讓 →</a>
+        </div>
+
+        <!-- 詳細數據 2×2 -->
+        <div class="ov-detail-grid">
+
+            <!-- 用戶分佈 -->
+            <div class="ov-card">
+                <p class="ov-card-title">用戶分佈</p>
+                <div class="ov-metric-list">
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">總用戶數</span>
+                        <span class="ov-metric-value" id="ov-d-u-total">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">學生</span>
+                        <span class="ov-metric-value" id="ov-d-u-students">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">社團幹部</span>
+                        <span class="ov-metric-value" id="ov-d-u-club-admins">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">平台管理員</span>
+                        <span class="ov-metric-value" id="ov-d-u-platform-admins">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">本週新增</span>
+                        <span class="ov-metric-value v-pos" id="ov-d-u-new">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 社團健康度 -->
+            <div class="ov-card">
+                <p class="ov-card-title">社團健康度</p>
+                <div class="ov-metric-list">
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">社團總數</span>
+                        <span class="ov-metric-value" id="ov-d-c-total">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">活躍社團</span>
+                        <span class="ov-metric-value v-pos" id="ov-d-c-active">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">停用社團</span>
+                        <span class="ov-metric-value v-warn" id="ov-d-c-inactive">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">幽靈社團</span>
+                        <span class="ov-metric-value v-warn" id="ov-d-c-ghost">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">久未更新</span>
+                        <span class="ov-metric-value v-warn" id="ov-d-c-stale">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 活動概覽 -->
+            <div class="ov-card">
+                <p class="ov-card-title">活動概覽</p>
+                <div class="ov-metric-list">
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">活動總數</span>
+                        <span class="ov-metric-value" id="ov-d-e-total">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">即將舉行</span>
+                        <span class="ov-metric-value v-pos" id="ov-d-e-upcoming">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">已發布</span>
+                        <span class="ov-metric-value" id="ov-d-e-published">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">已取消</span>
+                        <span class="ov-metric-value v-warn" id="ov-d-e-cancelled">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">總報名人數</span>
+                        <span class="ov-metric-value" id="ov-d-e-registrations">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">平均評分</span>
+                        <span class="ov-metric-value" id="ov-d-e-rating">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 公告 & 待處理 -->
+            <div class="ov-card">
+                <p class="ov-card-title">公告 &amp; 待處理</p>
+                <div class="ov-metric-list">
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">生效公告</span>
+                        <span class="ov-metric-value" id="ov-d-a-active">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">置頂公告</span>
+                        <span class="ov-metric-value" id="ov-d-a-pinned">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">即將到期</span>
+                        <span class="ov-metric-value v-warn" id="ov-d-a-expiring">-</span>
+                    </div>
+                </div>
+                <hr class="ov-sep">
+                <div class="ov-metric-list">
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">待審檢舉</span>
+                        <span class="ov-metric-value v-alert" id="ov-d-p-reports">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">待審轉讓</span>
+                        <span class="ov-metric-value v-warn" id="ov-d-p-transfers">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">待審評價</span>
+                        <span class="ov-metric-value v-warn" id="ov-d-p-reviews">-</span>
+                    </div>
+                    <div class="ov-metric">
+                        <span class="ov-metric-name">未回答 Q&amp;A</span>
+                        <span class="ov-metric-value v-warn" id="ov-d-p-qa">-</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
+    </footer>
+
+    <script src="../js/main.js?v=20260502f"></script>
+    <script>
+        function formatDateTime(value) {
+            if (!value) return '-';
+            return new Intl.DateTimeFormat('zh-TW', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            }).format(new Date(value));
+        }
+
+        async function loadOverview() {
+            try {
+                const res = await APIClient.get('dashboard.php');
+                if (!res.success) return;
+                const { users, clubs, events, pending, announcements, generated_at } = res.data;
+
+                const set = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = val ?? '-';
+                };
+
+                // KPI strip
+                set('ov-u-total',    users.total);
+                set('ov-u-new',      (users.new_this_week > 0 ? '+' : '') + users.new_this_week);
+                set('ov-c-active',   clubs.active);
+                set('ov-c-total',    clubs.total);
+                set('ov-e-upcoming', events.upcoming);
+                set('ov-e-published', events.published);
+                set('ov-a-active',   announcements.active);
+                set('ov-a-pinned',   announcements.pinned);
+
+                // Detail cards
+                set('ov-d-u-total',            users.total);
+                set('ov-d-u-students',         users.students);
+                set('ov-d-u-club-admins',      users.club_admins);
+                set('ov-d-u-platform-admins',  users.platform_admins);
+                set('ov-d-u-new',              (users.new_this_week > 0 ? '+' : '') + users.new_this_week);
+
+                set('ov-d-c-total',   clubs.total);
+                set('ov-d-c-active',  clubs.active);
+                set('ov-d-c-inactive', clubs.inactive);
+                set('ov-d-c-ghost',   clubs.ghost);
+                set('ov-d-c-stale',   clubs.stale);
+
+                set('ov-d-e-total',         events.total);
+                set('ov-d-e-upcoming',      events.upcoming);
+                set('ov-d-e-published',     events.published);
+                set('ov-d-e-cancelled',     events.cancelled);
+                set('ov-d-e-registrations', events.total_registrations);
+                set('ov-d-e-rating',        events.avg_rating !== null ? events.avg_rating + ' ★' : '-');
+
+                set('ov-d-a-active',   announcements.active);
+                set('ov-d-a-pinned',   announcements.pinned);
+                set('ov-d-a-expiring', announcements.expiring_soon);
+                set('ov-d-p-reports',  pending.reports);
+                set('ov-d-p-transfers', pending.transfers);
+                set('ov-d-p-reviews',  pending.reviews);
+                set('ov-d-p-qa',       pending.unanswered_qa);
+
+                // Alert bar chips
+                const chipData = [
+                    { id: 'ov-chip-reports',   val: pending.reports,          label: '待審檢舉',    base: 'chip-red' },
+                    { id: 'ov-chip-transfers', val: pending.transfers,        label: '待審轉讓',    base: 'chip-amber' },
+                    { id: 'ov-chip-reviews',   val: pending.reviews,          label: '待審評價',    base: 'chip-amber' },
+                    { id: 'ov-chip-qa',        val: pending.unanswered_qa,    label: '未回答 Q&A', base: 'chip-amber' },
+                ];
+
+                chipData.forEach(({ id, val, label, base }) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    const n = Number(val ?? 0);
+                    el.textContent = `${label} ${n}`;
+                    el.className = 'ov-chip ' + (n > 0 ? base : 'chip-zero');
+                });
+
+                const totalPending = ['reports', 'transfers', 'reviews', 'unanswered_qa']
+                    .reduce((s, k) => s + Number(pending[k] ?? 0), 0);
+                const alertBar  = document.getElementById('ov-alert-bar');
+                const alertLabel = document.getElementById('ov-alert-label');
+                if (alertBar) alertBar.classList.toggle('is-clear', totalPending === 0);
+                if (alertLabel) alertLabel.textContent = totalPending === 0 ? '✓ 無待處理項目' : '⚠ 待處理';
+
+                const timeEl = document.getElementById('ov-generated-at');
+                if (timeEl && generated_at) timeEl.textContent = formatDateTime(generated_at);
+
+            } catch (err) {
+                console.error('載入總覽失敗:', err);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', loadOverview);
+    </script>
+</body>
+</html>

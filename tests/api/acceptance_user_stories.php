@@ -492,6 +492,21 @@ try {
     out('FAIL: ' . $e->getMessage());
 }
 
+$cleanupScript = realpath(__DIR__ . '/../../scripts/cleanup-e2e-test-data.php');
+if ($cleanupScript && is_file($cleanupScript)) {
+    $cmd = 'php ' . escapeshellarg($cleanupScript);
+    $cleanupOutput = [];
+    $cleanupExitCode = 0;
+    exec($cmd, $cleanupOutput, $cleanupExitCode);
+    foreach ($cleanupOutput as $line) {
+        out($line);
+    }
+    if ($cleanupExitCode !== 0) {
+        $stats['fail']++;
+        out('FAIL: 驗收後自動清理失敗，請手動執行 scripts/cleanup-e2e-test-data.php');
+    }
+}
+
 out('=== Acceptance Test (PHP) Summary ===');
 out('PASS=' . $stats['pass']);
 out('FAIL=' . $stats['fail']);

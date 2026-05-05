@@ -243,8 +243,9 @@ class UploadAPI {
     }
 
     private function processUpload($file, $prefix) {
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            return ['success' => false, 'message' => '文件上傳錯誤'];
+        $uploadError = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($uploadError !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'message' => $this->getUploadErrorMessage($uploadError)];
         }
 
         if ($file['size'] > $this->maxFileSize) {
@@ -291,6 +292,27 @@ class UploadAPI {
             ];
         } else {
             return ['success' => false, 'message' => '文件保存失敗'];
+        }
+    }
+
+    private function getUploadErrorMessage($errorCode) {
+        switch ((int)$errorCode) {
+            case UPLOAD_ERR_INI_SIZE:
+                return '文件超過伺服器上傳大小限制（upload_max_filesize）';
+            case UPLOAD_ERR_FORM_SIZE:
+                return '文件超過表單允許大小限制';
+            case UPLOAD_ERR_PARTIAL:
+                return '文件僅部分上傳，請檢查網路後重試';
+            case UPLOAD_ERR_NO_FILE:
+                return '未收到上傳文件';
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return '伺服器缺少暫存目錄';
+            case UPLOAD_ERR_CANT_WRITE:
+                return '伺服器無法寫入上傳文件';
+            case UPLOAD_ERR_EXTENSION:
+                return '上傳被伺服器擴充套件中止';
+            default:
+                return '文件上傳錯誤（錯誤碼：' . (int)$errorCode . '）';
         }
     }
 }

@@ -1334,6 +1334,11 @@ function isAdminDashboardPage() {
     return path.endsWith('/frontend/pages/admin-dashboard.html') || path.endsWith('/pages/admin-dashboard.html');
 }
 
+function isAdminOverviewPage() {
+    const path = window.location.pathname || '';
+    return path.endsWith('/frontend/pages/admin-overview.html') || path.endsWith('/pages/admin-overview.html');
+}
+
 function isClubAdminDashboardPage() {
     const path = window.location.pathname || '';
     return path.endsWith('/frontend/pages/club-admin-dashboard.html') || path.endsWith('/pages/club-admin-dashboard.html');
@@ -1371,11 +1376,15 @@ function getNavActiveSection(pathname) {
     if (fileName === 'qa.html' || fileName === 'qa-detail.html') {
         return 'qa.html';
     }
+    if (fileName === 'admin-dashboard.html') return 'admin-dashboard.html';
+    if (fileName === 'admin-overview.html')  return 'admin-overview.html';
     if (fileName === 'club-admin-dashboard.html') {
         return 'club-admin-dashboard.html';
     }
 
     // Fallback for unusual Apache path rewrites.
+    if (path.includes('/admin-dashboard.html')) return 'admin-dashboard.html';
+    if (path.includes('/admin-overview.html'))  return 'admin-overview.html';
     if (path.includes('/club-admin-dashboard.html')) return 'club-admin-dashboard.html';
     if (path.includes('/club-list.html') || path.includes('/club-detail.html')) return 'club-list.html';
     if (path.includes('/events.html') || path.includes('/event-detail.html')) return 'events.html';
@@ -1630,8 +1639,11 @@ function updateNavigation() {
 
         const navLinks = document.querySelector('.nav-links');
         if (navLinks) {
-            if (isAdminDashboardPage()) {
-                navLinks.innerHTML = `<li id="admin-dashboard-link"><a href="${getPageLink('admin-dashboard.html')}">管理員</a></li>`;
+            if (isAdminDashboardPage() || isAdminOverviewPage()) {
+                navLinks.innerHTML = `
+                    <li><a href="${getPageLink('admin-overview.html')}">系統總覽</a></li>
+                    <li id="admin-dashboard-link"><a href="${getPageLink('admin-dashboard.html')}">管理後台</a></li>
+                `;
             }
 
             if (isUserProfilePage() && user.role === 'platform_admin') {

@@ -144,21 +144,21 @@ class ClubAdminAPI {
     public static function submitTransferRequest($data) {
         self::requireClubAdmin();
 
-        $errors = Helper::validateRequired($data, ['club_id', 'target_user_id', 'reason']);
+        $errors = Helper::validateRequired($data, ['club_id', 'reason']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+        if (empty($data['target_user_email']) && empty($data['target_user_id'])) {
+            Helper::error('驗證失敗: target_user_email', 400);
+        }
 
         $club_id = (int)$data['club_id'];
         $requester_user_id = (int)Auth::getCurrentUserId();
-        $target_user_id = (int)$data['target_user_id'];
         $reason = trim($data['reason']);
         $handover_note = trim($data['handover_note'] ?? '');
+        $target_user_id = 0;
+        $target_user_email = '';
 
         if (ContentFilter::hasRestrictedInFields($data, ['reason', 'handover_note'])) {
             Helper::error('轉讓申請內容包含不適當字眼，請修改後再送出', 400);
-        }
-
-        if ($requester_user_id === $target_user_id) {
-            Helper::error('轉讓對象不可為本人', 400);
         }
 
         $club = Database::getInstance()->fetchOne('SELECT club_id, club_name FROM clubs WHERE club_id = ?', [$club_id]);
@@ -172,12 +172,30 @@ class ClubAdminAPI {
             Helper::error('您無權限對此社團送出轉讓申請', 403);
         }
 
-        $targetUser = Database::getInstance()->fetchOne(
-            'SELECT user_id, name, student_id, is_active FROM users WHERE user_id = ?',
-            [$target_user_id]
-        );
+        if (!empty($data['target_user_email'])) {
+            $target_user_email = strtolower(trim((string)$data['target_user_email']));
+            if (!filter_var($target_user_email, FILTER_VALIDATE_EMAIL)) {
+                Helper::error('目標 Email 格式不正確', 400);
+            }
+            $targetUser = Database::getInstance()->fetchOne(
+                'SELECT user_id, name, student_id, is_active, email FROM users WHERE LOWER(email) = ? LIMIT 1',
+                [$target_user_email]
+            );
+        } else {
+            $target_user_id = (int)$data['target_user_id'];
+            $targetUser = Database::getInstance()->fetchOne(
+                'SELECT user_id, name, student_id, is_active, email FROM users WHERE user_id = ?',
+                [$target_user_id]
+            );
+        }
+
         if (!$targetUser || (int)$targetUser['is_active'] !== 1) {
             Helper::error('目標帳戶不存在或未啟用', 400);
+        }
+        $target_user_id = (int)$targetUser['user_id'];
+
+        if ($requester_user_id === $target_user_id) {
+            Helper::error('轉讓對象不可為本人', 400);
         }
 
         $pendingRequest = Database::getInstance()->fetchOne(

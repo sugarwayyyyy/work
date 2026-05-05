@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -8,26 +8,6 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/home.css">
     <style>
-        .upcoming-event-item {
-            padding: 1rem 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .upcoming-event-link {
-            display: block;
-            text-decoration: none;
-            color: inherit;
-            border-radius: 0.72rem;
-            padding: 0.32rem 0.5rem;
-            transition: background-color 0.16s ease;
-        }
-
-        .upcoming-event-link:hover,
-        .upcoming-event-link:focus-visible {
-            background: var(--surface-subtle);
-            outline: none;
-        }
-
         #review-modal {
             position: fixed;
             inset: 0;
@@ -142,125 +122,132 @@
     <div id="alert-container"></div>
 
     <div class="container">
-        <div id="club-header" class="card" style="margin-bottom: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: start;">
-                <div style="flex: 1;">
-                    <h1 id="club-name" style="margin: 0 0 1rem 0;"></h1>
-                    <div id="club-last-updated-banner" style="margin: -0.25rem 0 0.85rem 0; color: var(--text-light); font-size: 0.92rem;">最後更新時間：-</div>
-                    <div id="club-badges" style="margin-bottom: 1rem;"></div>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin: 1rem 0;">
-                        <div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">👥 成員數</div>
-                            <div style="font-size: 1.5rem; font-weight: bold;" id="member-count">-</div>
-                        </div>
-                        <div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">⭐ 平均評分</div>
-                            <div style="display: flex; align-items: baseline; gap: 0.5rem;">
-                                <div id="avg-rating-stars" style="font-size: 1.1rem;">-</div>
-                                <div style="font-size: 1.1rem; font-weight: bold;" id="avg-rating-value">-</div>
-                            </div>
-                        </div>
-                        <div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">💬 評價數</div>
-                            <div style="font-size: 1.5rem; font-weight: bold;" id="review-count">-</div>
-                        </div>
-                    </div>
-                </div>
-                <button id="follow-btn" class="btn btn-primary" onclick="toggleFollow()">追蹤社團</button>
-            </div>
+        <div id="loading" class="loading" style="display: block;">
+            <div class="spinner"></div>
+            <p>載入社團詳情...</p>
         </div>
 
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-            <div>
-                <div class="card" style="margin-bottom: 2rem;">
-                    <h3>基本信息</h3>
-                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div id="club-detail" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h1 id="club-name"></h1>
+                    <div id="club-last-updated-banner" style="margin-top: 0.35rem; color: var(--text-light); font-size: 0.92rem;">最後更新時間：-</div>
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+                        <span id="club-badges"></span>
+                        <button id="follow-btn" class="btn btn-primary" onclick="toggleFollow()">追蹤社團</button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem;">
+                        <!-- 主要內容 -->
                         <div>
-                            <strong>社團分類：</strong>
-                            <span id="club-category">-</span>
-                        </div>
-                        <div>
-                            <strong>社費：</strong>
-                            <span id="club-fee">-</span>
-                        </div>
-                        <div>
-                            <strong>社課時間：</strong>
-                            <span id="meeting-time">-</span>
-                        </div>
-                        <div>
-                            <strong>社課地點：</strong>
-                            <div id="meeting-location-box" style="margin-top: 0.35rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                                <div id="meeting-location" style="line-height: 1.6;">-</div>
-                                <div id="meeting-location-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                                <div class="stat-card">
+                                    <div class="stat-label">👥 成員數</div>
+                                    <div class="stat-number" id="member-count">-</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">⭐ 平均評分</div>
+                                    <div class="stat-number" id="avg-rating-value">-</div>
+                                    <div id="avg-rating-stars" style="font-size: 0.9rem; margin-top: 0.25rem;">-</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">💬 評價數</div>
+                                    <div class="stat-number" id="review-count">-</div>
+                                </div>
                             </div>
+
+                            <h3>社團簡介</h3>
+                            <p id="club-description" style="line-height: 1.6; margin-bottom: 2rem;">-</p>
+
+                            <h3>基本資訊</h3>
+                            <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
+                                <div>
+                                    <strong>社團分類：</strong>
+                                    <span id="club-category">-</span>
+                                </div>
+                                <div>
+                                    <strong>社費：</strong>
+                                    <span id="club-fee">-</span>
+                                </div>
+                                <div>
+                                    <strong>社課時間：</strong>
+                                    <span id="meeting-time">-</span>
+                                </div>
+                                <div>
+                                    <strong>社課地點：</strong>
+                                    <div id="meeting-location-box" style="margin-top: 0.35rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <div id="meeting-location" style="line-height: 1.6;">-</div>
+                                        <div id="meeting-location-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <strong>聯絡郵箱：</strong>
+                                    <span id="contact-email">-</span>
+                                </div>
+                                <div>
+                                    <strong>聯絡電話：</strong>
+                                    <span id="contact-phone">-</span>
+                                </div>
+                                <div>
+                                    <strong>最後更新時間：</strong>
+                                    <span id="last-updated">-</span>
+                                </div>
+                            </div>
+
+                            <h3>社團標籤</h3>
+                            <div id="club-tags">-</div>
                         </div>
+
+                        <!-- 側邊欄 -->
                         <div>
-                            <strong>聯絡郵箱：</strong>
-                            <span id="contact-email">-</span>
-                        </div>
-                        <div>
-                            <strong>聯絡電話：</strong>
-                            <span id="contact-phone">-</span>
-                        </div>
-                        <div>
-                            <strong>最後更新時間：</strong>
-                            <span id="last-updated">-</span>
-                        </div>
-                    </div>
-                </div>
+                            <div class="card">
+                                <h4>社團 Logo</h4>
+                                <div id="club-logo-wrapper" style="display: flex; justify-content: center; align-items: center; min-height: 160px;">
+                                    <img id="club-logo-img" src="" alt="社團 Logo" style="display: none; max-width: 100%; max-height: 220px; border-radius: 12px; object-fit: contain;">
+                                    <div id="club-logo-placeholder" style="display: none; flex-direction: column; align-items: center; justify-content: center; gap: 0.7rem; width: 100%; min-height: 160px;">
+                                        <span id="club-logo-placeholder-avatar" class="club-avatar club-avatar--emoji" aria-hidden="true" style="width: 120px; height: 120px; font-size: 3rem;"></span>
+                                        <div id="club-logo-placeholder-label" style="color: var(--text-light); font-size: 0.9rem;">預設社團頭像</div>
+                                    </div>
+                                </div>
+                                <p id="club-logo-note" style="display: none; margin-top: 0.75rem; color: var(--text-light); font-size: 0.85rem; line-height: 1.5;"></p>
+                            </div>
 
-                <div class="card" style="margin-bottom: 2rem;">
-                    <h3>社團簡介</h3>
-                    <p id="club-description">-</p>
-                </div>
+                            <div class="card" style="margin-top: 1rem;">
+                                <h4>主要幹部</h4>
+                                <div id="club-admins">-</div>
+                            </div>
 
-                <div class="card" style="margin-bottom: 2rem;">
-                    <h3>社團標籤</h3>
-                    <div id="club-tags">-</div>
-                </div>
-
-                <section class="portal-section portal-section--dynamic" style="margin-bottom: 2rem;">
-                    <div class="portal-section-head">
-                        <h2 class="portal-section-title">近期活動</h2>
-                    </div>
-                    <div id="upcoming-events" class="feed-stream-list">
-                        <div class="loading">
-                            <div class="spinner"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <div class="card">
-                    <h3>用戶評價</h3>
-                    <div id="reviews-section">
-                        <div class="loading">
-                            <div class="spinner"></div>
+                            <div class="card" style="margin-top: 1rem;">
+                                <h4>評價此社團</h4>
+                                <button id="review-btn" class="btn btn-primary" style="width: 100%;" onclick="openReviewModal()">發布評價</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div>
-                <div class="card" style="margin-bottom: 2rem;">
-                    <h3>社團 Logo</h3>
-                    <div id="club-logo-wrapper" style="display: flex; justify-content: center; align-items: center; min-height: 160px;">
-                        <img id="club-logo-img" src="" alt="社團 Logo" style="display: none; max-width: 100%; max-height: 220px; border-radius: 12px; object-fit: contain;">
-                        <div id="club-logo-placeholder" style="display: none; flex-direction: column; align-items: center; justify-content: center; gap: 0.7rem; width: 100%; min-height: 160px;">
-                            <span id="club-logo-placeholder-avatar" class="club-avatar club-avatar--emoji" aria-hidden="true" style="width: 120px; height: 120px; font-size: 3rem;"></span>
-                            <div id="club-logo-placeholder-label" style="color: var(--text-light); font-size: 0.9rem;">預設社團頭像</div>
-                        </div>
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3>近期活動</h3>
+                </div>
+                <div class="card-body">
+                    <div id="upcoming-events">
+                        <div class="loading"><div class="spinner"></div></div>
                     </div>
-                    <p id="club-logo-note" style="display: none; margin-top: 0.75rem; color: var(--text-light); font-size: 0.85rem; line-height: 1.5;"></p>
                 </div>
+            </div>
 
-                <div class="card" style="margin-bottom: 2rem;">
-                    <h3>主要幹部</h3>
-                    <div id="club-admins">-</div>
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3>用戶評價</h3>
+                    <div id="reviews-rating-summary" style="margin-top: 0.5rem; color: var(--text-light); font-size: 0.9rem;">⭐ 0.0（0 人評分）</div>
                 </div>
-
-                <div class="card">
-                    <h3>評價此社團</h3>
-                    <button id="review-btn" class="btn btn-primary" style="width: 100%;" onclick="openReviewModal()">發布評價</button>
+                <div class="card-body">
+                    <div id="reviews-section">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -428,6 +415,9 @@
             } catch (error) {
                 console.error('Error:', error);
                 document.querySelector('.container').innerHTML = '<p>發生錯誤</p>';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('club-detail').style.display = 'block';
             }
         }
 
@@ -489,6 +479,12 @@
             document.getElementById('avg-rating-stars').innerHTML = starsHtml;
             document.getElementById('avg-rating-value').textContent = Number.isFinite(avgRating) ? avgRating.toFixed(1) : '0.0';
             document.getElementById('review-count').textContent = club.reviews_count || 0;
+
+            const summaryEl = document.getElementById('reviews-rating-summary');
+            if (summaryEl) {
+                const ratingDisplay = Number.isFinite(avgRating) ? avgRating.toFixed(1) : '0.0';
+                summaryEl.textContent = `⭐ ${ratingDisplay}（${club.reviews_count || 0} 人評分）`;
+            }
 
             const tags = Array.isArray(club.tags) ? club.tags : [];
             const tagsHtml = tags.map(tag => {
@@ -803,7 +799,6 @@
                         await window.refreshGlobalFollowSidebar();
                     }
 
-                    // 背景同步整份詳情資料，避免左側數字之外的資訊殘留舊狀態。
                     loadClubDetail();
                     return;
                 } else {
@@ -860,13 +855,12 @@
             document.getElementById('review-modal').style.display = 'none';
         }
 
-        // 星號評分
         document.querySelectorAll('.star-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 selectedRating = parseInt(btn.dataset.rating);
                 document.getElementById('review-rating').value = selectedRating;
-                
+
                 document.querySelectorAll('.star-btn').forEach((b, idx) => {
                     if (idx < selectedRating) {
                         b.style.color = '#fbbf24';

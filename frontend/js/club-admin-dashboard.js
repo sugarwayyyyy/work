@@ -773,7 +773,7 @@
                         <h4>${safeClubName}（${safeClubCode}）</h4>
                         <span class="status-chip">${safeStatus}</span>
                     </div>
-                    <p class="admin-item-content">目標對象：${safeTargetName}（ID:${Number(item.target_user_id || 0)} / 學號:${safeTargetStudentId}）</p>
+                    <p class="admin-item-content">目標對象：${safeTargetName}（學號:${safeTargetStudentId}）</p>
                     <p class="admin-item-content">原因：${safeReason}</p>
                     ${safeReviewNote ? `<p class="admin-item-content">審核意見：${safeReviewNote}</p>` : ''}
                     <div class="admin-item-footer">
@@ -1478,18 +1478,25 @@
                 return;
             }
 
-            const targetUserId = document.getElementById('transfer-target-user-id').value.trim();
+            const targetUserEmail = document.getElementById('transfer-target-user-email').value.trim().toLowerCase();
             const reason = document.getElementById('transfer-request-reason').value.trim();
             const studentId = document.getElementById('transfer-target-student-id').value.trim();
             const note = document.getElementById('transfer-request-note').value.trim();
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-            setFieldError('transfer-target-user-id', targetUserId ? '' : '此為必填欄位');
+            if (!targetUserEmail) {
+                setFieldError('transfer-target-user-email', '此為必填欄位');
+            } else if (!emailPattern.test(targetUserEmail)) {
+                setFieldError('transfer-target-user-email', 'Email 格式不正確');
+            } else {
+                setFieldError('transfer-target-user-email', '');
+            }
             setFieldError('transfer-request-reason', reason ? '' : '此為必填欄位');
-            if (!targetUserId || !reason) return;
+            if (!targetUserEmail || !emailPattern.test(targetUserEmail) || !reason) return;
 
             const payload = {
                 club_id: currentClubId,
-                target_user_id: Number(targetUserId),
+                target_user_email: targetUserEmail,
                 reason,
                 handover_note: [studentId ? `目標學號：${studentId}` : '', note].filter(Boolean).join('｜')
             };

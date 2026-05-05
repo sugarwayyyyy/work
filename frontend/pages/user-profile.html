@@ -122,7 +122,8 @@
                                     </div>
                                     <div class="form-group">
                                         <label for="avatar-upload">更換頭像</label>
-                                        <input type="file" id="avatar-upload" name="avatar" accept="image/*" onchange="previewAvatar(event)">
+                                        <input type="file" id="avatar-upload" name="avatar" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" onchange="previewAvatar(event)">
+                                        <small>檔案限制：支援 JPG/JPEG/PNG/GIF/WEBP，大小上限 10MB。</small>
                                         <div id="avatar-preview" class="profile-avatar-preview" style="display: none;">
                                             <img id="avatar-img" src="" alt="頭像預覽">
                                         </div>
