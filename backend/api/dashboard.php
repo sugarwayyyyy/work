@@ -27,7 +27,12 @@ $userRows = $db->fetchAll('
     SELECT
         COUNT(*)                                                      AS total,
         SUM(role = "student")                                         AS students,
-        SUM(role = "club_admin")                                      AS club_admins,
+        (
+            SELECT COUNT(DISTINCT cm.user_id)
+            FROM club_members cm
+            WHERE cm.is_active = 1
+              AND cm.role IN ("president","vice_president","public_relations","treasurer","director")
+        )                                                             AS club_admins,
         SUM(role = "platform_admin")                                  AS platform_admins,
         SUM(created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY))           AS new_this_week
     FROM users

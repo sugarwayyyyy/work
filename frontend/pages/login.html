@@ -86,9 +86,10 @@
                     PageUtils.showAlert('登入成功，正在重定向...', 'success');
                     setTimeout(() => {
                         const role = response.data.role;
+                        const canManageClubs = Boolean(response.data.can_manage_clubs);
                         if (role === 'platform_admin') {
                             window.location.href = 'admin-dashboard.html';
-                        } else if (role === 'club_admin') {
+                        } else if (canManageClubs) {
                             window.location.href = 'club-admin-dashboard.html';
                         } else {
                             window.location.href = '../index.html';

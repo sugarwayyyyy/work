@@ -178,19 +178,22 @@ class ClubAdminAPI {
                 Helper::error('目標 Email 格式不正確', 400);
             }
             $targetUser = Database::getInstance()->fetchOne(
-                'SELECT user_id, name, student_id, is_active, email FROM users WHERE LOWER(email) = ? LIMIT 1',
+                'SELECT user_id, name, student_id, is_active, email, role FROM users WHERE LOWER(email) = ? LIMIT 1',
                 [$target_user_email]
             );
         } else {
             $target_user_id = (int)$data['target_user_id'];
             $targetUser = Database::getInstance()->fetchOne(
-                'SELECT user_id, name, student_id, is_active, email FROM users WHERE user_id = ?',
+                'SELECT user_id, name, student_id, is_active, email, role FROM users WHERE user_id = ?',
                 [$target_user_id]
             );
         }
 
         if (!$targetUser || (int)$targetUser['is_active'] !== 1) {
             Helper::error('目標帳戶不存在或未啟用', 400);
+        }
+        if (($targetUser['role'] ?? '') === 'platform_admin') {
+            Helper::error('平台管理員不能成為社團管理員', 403);
         }
         $target_user_id = (int)$targetUser['user_id'];
 

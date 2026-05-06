@@ -88,7 +88,32 @@ class AdminAPI {
 
     public static function getUsers() {
         self::requireAdmin();
-        $users = Database::getInstance()->fetchAll('SELECT user_id, name, email, role, created_at, is_active FROM users ORDER BY created_at DESC');
+        $users = Database::getInstance()->fetchAll(
+            'SELECT
+                u.user_id,
+                u.name,
+                u.email,
+                u.student_id,
+                u.avatar_path,
+                u.role,
+                u.created_at,
+                u.is_active,
+                COALESCE(cm_stats.club_admin_count, 0) AS club_admin_count,
+                COALESCE(cm_stats.club_role_summary, "") AS club_role_summary
+             FROM users u
+             LEFT JOIN (
+                SELECT
+                    cm.user_id,
+                    COUNT(*) AS club_admin_count,
+                    GROUP_CONCAT(CONCAT(c.club_name, ":", cm.role) ORDER BY c.club_name ASC SEPARATOR "||") AS club_role_summary
+                FROM club_members cm
+                JOIN clubs c ON c.club_id = cm.club_id
+                WHERE cm.is_active = 1
+                  AND cm.role IN ("president", "vice_president", "public_relations", "treasurer", "director")
+                GROUP BY cm.user_id
+             ) cm_stats ON cm_stats.user_id = u.user_id
+             ORDER BY u.created_at DESC'
+        );
         Helper::success('取得用戶列表成功', ['users' => $users]);
     }
 
@@ -139,6 +164,9 @@ class AdminAPI {
             [$user_key, $user_key, $user_key]
         );
         if (!$user) Helper::error('找不到對應帳號', 404);
+        if (($user['role'] ?? '') === 'platform_admin') {
+            Helper::error('平台管理員不能成為社團管理員', 403);
+        }
 
         $member = Database::getInstance()->fetchOne(
             'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ?',
@@ -596,6 +624,13 @@ class AdminAPI {
         if (!$request) Helper::error('找不到申請單', 404);
         if ($request['request_status'] !== 'pending') {
             Helper::error('此申請單已處理，無法重複審核', 409);
+        }
+        $targetUserRole = Database::getInstance()->fetchOne(
+            'SELECT role FROM users WHERE user_id = ? LIMIT 1',
+            [$request['target_user_id']]
+        );
+        if (($targetUserRole['role'] ?? '') === 'platform_admin') {
+            Helper::error('平台管理員不能成為社團管理員', 403);
         }
 
         if ($decision === 'rejected' && $review_note === '') {

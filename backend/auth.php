@@ -247,6 +247,7 @@ class Helper {
 
 class Auth {
     private static $currentRoleCache = null;
+    private static $clubAdminMembershipCache = [];
 
     private static function syncCSRFCookie() {
         $token = Helper::generateCSRFToken();
@@ -333,6 +334,7 @@ class Auth {
     public static function logout() {
         self::startSession();
         self::$currentRoleCache = null;
+        self::$clubAdminMembershipCache = [];
         session_destroy();
     }
     
@@ -350,7 +352,52 @@ class Auth {
     
     // 檢查是否是社團幹部
     public static function isClubAdmin() {
-        return self::hasRole('club_admin');
+        if (!self::isLoggedIn()) return false;
+        if (self::isAdmin()) return true;
+        return self::hasActiveClubAdminMembership(self::getCurrentUserId());
+    }
+
+    public static function hasActiveClubAdminMembership($user_id) {
+        $uid = (int)$user_id;
+        if ($uid <= 0) return false;
+
+        if (array_key_exists($uid, self::$clubAdminMembershipCache)) {
+            return (bool)self::$clubAdminMembershipCache[$uid];
+        }
+
+        $membership = Database::getInstance()->fetchOne(
+            'SELECT 1
+             FROM club_members
+             WHERE user_id = ?
+               AND is_active = 1
+               AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")
+             LIMIT 1',
+            [$uid]
+        );
+
+        self::$clubAdminMembershipCache[$uid] = (bool)$membership;
+        return (bool)$membership;
+    }
+
+    public static function canManageClub($club_id, $user_id = null) {
+        $clubId = (int)$club_id;
+        if ($clubId <= 0) return false;
+
+        $uid = $user_id !== null ? (int)$user_id : (int)self::getCurrentUserId();
+        if ($uid <= 0) return false;
+        if (self::isAdmin()) return true;
+
+        $membership = Database::getInstance()->fetchOne(
+            'SELECT 1
+             FROM club_members
+             WHERE club_id = ?
+               AND user_id = ?
+               AND is_active = 1
+               AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")
+             LIMIT 1',
+            [$clubId, $uid]
+        );
+        return (bool)$membership;
     }
     
     // 檢查會話是否過期

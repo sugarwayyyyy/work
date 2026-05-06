@@ -782,6 +782,8 @@ async function hydrateUserFromSession() {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                can_manage_clubs: Boolean(user.can_manage_clubs),
+                managed_club_count: Number(user.managed_club_count || 0),
                 student_id: user.student_id || null,
                 avatar_path: user.avatar_path || null
             });
@@ -1352,6 +1354,14 @@ function isUserProfilePage() {
     return path.endsWith('/frontend/pages/user-profile.html') || path.endsWith('/pages/user-profile.html');
 }
 
+function userCanManageClubs(user) {
+    if (!user) return false;
+    if (user.role === 'platform_admin') return true;
+    if (user.role === 'club_admin') return true;
+    if (user.can_manage_clubs) return true;
+    return Number(user.managed_club_count || 0) > 0;
+}
+
 function setRestrictedDashboardNav(role) {
     const navLinks = document.querySelector('.nav-links');
     if (!navLinks) return;
@@ -1551,7 +1561,7 @@ function updateNavigation() {
 
             const roleLink = user.role === 'platform_admin'
                 ? `<a href="${getPageLink('admin-dashboard.html')}"><img class="ndp-menu-icon" src="${dashboardIcon}" alt="">管理員後台</a>`
-                : (user.role === 'club_admin'
+                : (userCanManageClubs(user)
                     ? `<a href="${getPageLink('club-admin-dashboard.html')}"><img class="ndp-menu-icon" src="${dashboardIcon}" alt="">幹部後台</a>`
                     : '');
 
@@ -1672,7 +1682,7 @@ function updateNavigation() {
                 li.innerHTML = `<a href="${getPageLink('admin-dashboard.html')}">管理員</a>`;
                 navLinks.appendChild(li);
             }
-            if (user.role === 'club_admin' && !document.getElementById('club-admin-dashboard-link')) {
+            if (userCanManageClubs(user) && user.role !== 'platform_admin' && !document.getElementById('club-admin-dashboard-link')) {
                 const li = document.createElement('li');
                 li.id = 'club-admin-dashboard-link';
                 li.innerHTML = `<a href="${getPageLink('club-admin-dashboard.html')}">幹部</a>`;

@@ -1212,28 +1212,16 @@ class EventAPI {
                 return;
             }
 
-            // 社團幹部只能查看自己社團的活動參與者
-            if ($user['role'] === 'club_admin') {
-                // 檢查該用戶是否是該活動所屬社團的幹部
-                $eventClub = Database::getInstance()->fetchOne(
-                    'SELECT e.club_id FROM events e WHERE e.event_id = ?',
-                    [$event_id]
-                );
+            $eventClub = Database::getInstance()->fetchOne(
+                'SELECT e.club_id FROM events e WHERE e.event_id = ?',
+                [$event_id]
+            );
 
-                if (!$eventClub) {
-                    Helper::error('找不到該活動', 404);
-                }
+            if (!$eventClub) {
+                Helper::error('找不到該活動', 404);
+            }
 
-                $adminCheck = Database::getInstance()->fetchOne(
-                    'SELECT 1 FROM club_members cm
-                     WHERE cm.user_id = ? AND cm.club_id = ? AND cm.role IN ("president", "vice_president", "director", "public_relations", "treasurer") AND cm.is_active = 1',
-                    [$user_id, $eventClub['club_id']]
-                );
-
-                if (!$adminCheck) {
-                    Helper::error('禁止訪問：您無權查看該社團的參與者列表', 403);
-                }
-
+            if (Auth::canManageClub((int)$eventClub['club_id'], $user_id)) {
                 $participants = Database::getInstance()->fetchAll(
                     'SELECT u.name, u.student_id FROM event_registrations er
                      JOIN users u ON er.user_id = u.user_id
@@ -1247,7 +1235,7 @@ class EventAPI {
             }
 
             // 其他用戶（普通學生）無權訪問
-            Helper::error('禁止訪問：只有社團幹部和平台管理員可以查看參與者列表', 403);
+            Helper::error('禁止訪問：只有該社團幹部和平台管理員可以查看參與者列表', 403);
 
         } catch (Exception $e) {
             self::handleInternalError('取得參與者失敗', $e);

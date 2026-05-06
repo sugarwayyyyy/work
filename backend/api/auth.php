@@ -16,6 +16,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 class UserAPI {
+    private static function getClubManagementSummary($user_id) {
+        $row = Database::getInstance()->fetchOne(
+            'SELECT COUNT(*) AS managed_club_count
+             FROM club_members
+             WHERE user_id = ?
+               AND is_active = 1
+               AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
+            [(int)$user_id]
+        );
+
+        $count = (int)($row['managed_club_count'] ?? 0);
+        return [
+            'can_manage_clubs' => $count > 0,
+            'managed_club_count' => $count
+        ];
+    }
+    
     
     /**
      * 用戶註冊
@@ -129,12 +146,15 @@ class UserAPI {
                 'role' => $user['role'],
                 'name' => $user['name']
             ]);
+            $clubSummary = self::getClubManagementSummary((int)$user['user_id']);
             
             Helper::success('登入成功', [
                 'user_id' => $user['user_id'],
                 'name' => $user['name'],
                 'email' => $user['email'],
                 'role' => $user['role'],
+                'can_manage_clubs' => $clubSummary['can_manage_clubs'],
+                'managed_club_count' => $clubSummary['managed_club_count'],
                 'csrf_token' => Helper::generateCSRFToken()
             ]);
             
@@ -173,6 +193,9 @@ class UserAPI {
         
         $user = Auth::getCurrentUser();
         unset($user['password']);
+        $clubSummary = self::getClubManagementSummary((int)($user['user_id'] ?? 0));
+        $user['can_manage_clubs'] = $clubSummary['can_manage_clubs'];
+        $user['managed_club_count'] = $clubSummary['managed_club_count'];
         
         Helper::success('取得用戶信息成功', $user);
     }
