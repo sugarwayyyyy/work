@@ -511,6 +511,58 @@
     font-size: 0.9rem;
 }
 
+.user-edit-club-roles-list {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.user-edit-club-role-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.42rem 0.6rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.55rem;
+    background: #f9fafb;
+    flex-wrap: wrap;
+}
+
+.user-edit-club-role-name {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: #1e293b;
+    flex: 1;
+    min-width: 100px;
+}
+
+.user-edit-club-role-label {
+    font-size: 0.82rem;
+    color: #475569;
+}
+
+.user-edit-club-add {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 0.25rem;
+}
+
+.user-edit-club-add .form-field {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 130px;
+}
+
+.user-edit-club-add .form-field:last-child {
+    flex: 0;
+}
+
 @media (max-width: 900px) {
     .user-mgmt-toolbar {
         flex-wrap: wrap;

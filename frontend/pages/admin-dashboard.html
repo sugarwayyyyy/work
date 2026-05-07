@@ -32,7 +32,6 @@
         <!-- 分頁導覽 -->
         <nav class="admin-tab-nav" role="tablist" aria-label="管理分頁">
             <button class="admin-tab is-active" data-tab="users"         role="tab" aria-selected="true">帳號管理</button>
-            <button class="admin-tab"            data-tab="club-admins"  role="tab" aria-selected="false">社團幹部</button>
             <button class="admin-tab"            data-tab="clubs"        role="tab" aria-selected="false">社團管理</button>
             <button class="admin-tab"            data-tab="reports"      role="tab" aria-selected="false">報告管理</button>
             <button class="admin-tab"            data-tab="announcements" role="tab" aria-selected="false">系統公告</button>
@@ -45,7 +44,7 @@
             <section class="card admin-panel user-mgmt-panel">
                 <div class="user-mgmt-head">
                     <h2>帳號管理</h2>
-                    <p>管理帳號層級資料與平台權限。社團職位請至社團幹部管理頁調整。</p>
+                    <p>管理帳號層級資料與平台權限。</p>
                 </div>
                 <div class="user-mgmt-toolbar">
                     <div class="form-field user-mgmt-toolbar__search">
@@ -68,10 +67,6 @@
                             <option value="0">停權</option>
                         </select>
                     </div>
-                    <div class="form-field user-mgmt-toolbar__action">
-                        <label>&nbsp;</label>
-                        <button type="button" id="go-club-admin-btn" class="btn btn-primary btn-sm">新增社團管理員</button>
-                    </div>
                 </div>
                 <div class="table-shell user-mgmt-table-shell">
                     <table class="table user-mgmt-table" id="users-table">
@@ -91,58 +86,6 @@
                     </table>
                 </div>
                 <div class="admin-pagination" id="users-pagination"></div>
-            </section>
-        </div>
-
-        <div id="tab-club-admins" class="admin-tab-panel" role="tabpanel">
-            <section class="card admin-panel">
-                <div class="admin-panel-head">
-                    <h2>社團幹部管理</h2>
-                    <span class="admin-panel-subtext">在此指派或移除「使用者 × 社團 × 職位」，職位將自動帶出社團管理權限</span>
-                </div>
-                <div class="admin-form-wrapper">
-                    <form id="club-admin-assignment-form" class="admin-form-grid">
-                        <div class="form-field">
-                            <label for="club-admin-club-id">社團 <span class="required">*</span></label>
-                            <select id="club-admin-club-id" required></select>
-                            <div id="err-club-admin-club-id" class="field-error"></div>
-                        </div>
-                        <div class="form-field">
-                            <label for="club-admin-user-key">幹部帳號 <span class="required">*</span></label>
-                            <select id="club-admin-user-key" required disabled>
-                                <option value="">請先選擇社團</option>
-                            </select>
-                            <div id="err-club-admin-user-key" class="field-error"></div>
-                        </div>
-                        <div class="form-field">
-                            <label for="club-admin-role">幹部職稱 <span class="required">*</span></label>
-                            <select id="club-admin-role" required>
-                                <option value="president">社長</option>
-                                <option value="vice_president">副社長</option>
-                                <option value="public_relations">公關</option>
-                                <option value="treasurer">總務</option>
-                                <option value="director">幹事</option>
-                            </select>
-                        </div>
-                        <div class="form-field">
-                            <label for="club-admin-active">是否啟用</label>
-                            <select id="club-admin-active">
-                                <option value="1">啟用</option>
-                                <option value="0">停用</option>
-                            </select>
-                        </div>
-                        <div class="form-actions admin-span-2">
-                            <button type="submit" class="btn btn-primary">新增 / 修改幹部資格</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="admin-table-controls">
-                    <div class="form-field">
-                        <label for="club-admin-assignments-search">關鍵字搜尋</label>
-                        <input type="text" id="club-admin-assignments-search" placeholder="社團代碼、社團名稱、姓名、信箱、學號、職稱" />
-                    </div>
-                </div>
-                <div id="club-admin-assignments-list" class="admin-list"></div>
             </section>
         </div>
 
@@ -333,65 +276,38 @@
                             <option value="platform_admin">平台管理員</option>
                         </select>
                     </div>
-                    <div class="form-field admin-span-2">
-                        <label>社團身分</label>
-                        <div class="admin-note-box" id="user-edit-club-identity-note">社團職位請至社團幹部管理頁調整</div>
-                    </div>
                     <div class="form-field admin-span-2" id="user-edit-password-wrap" style="display:none;">
-                        <label for="user-edit-admin-password">管理員密碼確認（升降權必填）</label>
+                        <label for="user-edit-admin-password">請輸入您自己的管理員密碼以確認此操作</label>
                         <input type="password" id="user-edit-admin-password" autocomplete="current-password" />
+                    </div>
+                </div>
+                <div class="user-edit-section admin-span-2" id="user-edit-club-section">
+                    <h4 class="user-edit-section-title">社團職位</h4>
+                    <div id="user-edit-club-roles-list" class="user-edit-club-roles-list"></div>
+                    <div class="user-edit-club-add">
+                        <div class="form-field">
+                            <label for="user-edit-club-add-club-id">社團</label>
+                            <select id="user-edit-club-add-club-id"></select>
+                        </div>
+                        <div class="form-field">
+                            <label for="user-edit-club-add-role">職稱</label>
+                            <select id="user-edit-club-add-role">
+                                <option value="president">社長</option>
+                                <option value="vice_president">副社長</option>
+                                <option value="public_relations">公關</option>
+                                <option value="treasurer">總務</option>
+                                <option value="director">幹事</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>&nbsp;</label>
+                            <button type="button" id="user-edit-club-add-btn" class="btn btn-primary btn-sm">新增職位</button>
+                        </div>
                     </div>
                 </div>
                 <div class="form-actions admin-span-2">
                     <button type="submit" class="btn btn-primary">儲存變更</button>
                     <button type="button" id="user-edit-cancel-btn" class="btn btn-secondary">取消</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="club-admin-quick-modal" class="modal club-admin-quick-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="club-admin-quick-title">
-        <div class="modal-content club-admin-quick-card ask-modal-card">
-            <div class="modal-header club-admin-quick-header">
-                <div>
-                    <h3 id="club-admin-quick-title">新增社團管理員</h3>
-                    <p class="club-admin-quick-subtitle">快速指派使用者為指定社團幹部</p>
-                </div>
-                <button type="button" id="club-admin-quick-close-btn" class="user-edit-close-btn" aria-label="關閉新增社團管理員視窗">✕</button>
-            </div>
-            <form id="club-admin-quick-form" class="admin-form-grid club-admin-quick-body">
-                <div class="form-field admin-span-2">
-                    <label for="club-admin-quick-club-id">社團 <span class="required">*</span></label>
-                    <select id="club-admin-quick-club-id" required></select>
-                    <div id="err-club-admin-quick-club-id" class="field-error"></div>
-                </div>
-                <div class="form-field admin-span-2">
-                    <label for="club-admin-quick-user-key">幹部帳號 <span class="required">*</span></label>
-                    <select id="club-admin-quick-user-key" required disabled>
-                        <option value="">請先選擇社團</option>
-                    </select>
-                    <div id="err-club-admin-quick-user-key" class="field-error"></div>
-                </div>
-                <div class="form-field">
-                    <label for="club-admin-quick-role">幹部職稱 <span class="required">*</span></label>
-                    <select id="club-admin-quick-role" required>
-                        <option value="president">社長</option>
-                        <option value="vice_president">副社長</option>
-                        <option value="public_relations">公關</option>
-                        <option value="treasurer">總務</option>
-                        <option value="director">幹事</option>
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label for="club-admin-quick-active">是否啟用</label>
-                    <select id="club-admin-quick-active">
-                        <option value="1">啟用</option>
-                        <option value="0">停用</option>
-                    </select>
-                </div>
-                <div class="form-actions admin-span-2">
-                    <button type="submit" class="btn btn-primary">儲存設定</button>
-                    <button type="button" id="club-admin-quick-cancel-btn" class="btn btn-secondary">取消</button>
                 </div>
             </form>
         </div>
@@ -508,71 +424,47 @@
             `;
         }
 
-        function renderClubAdminClubOptions() {
-            const select = document.getElementById('club-admin-club-id');
+        function renderModalClubOptions() {
+            const select = document.getElementById('user-edit-club-add-club-id');
             if (!select) return;
-            const previousValue = select.value;
             const options = clubsState.rows
                 .slice()
                 .sort((a, b) => compareByValue(a.club_code, b.club_code, 'asc'))
                 .map(club => `<option value="${Number(club.club_id) || 0}">${escapeHtml(club.club_code || '-')} ${escapeHtml(club.club_name || '-')}</option>`)
                 .join('');
             select.innerHTML = `<option value="">請選擇社團</option>${options}`;
-            if (previousValue) {
-                select.value = previousValue;
-            }
         }
 
-        function renderClubAdminQuickClubOptions() {
-            const select = document.getElementById('club-admin-quick-club-id');
-            if (!select) return;
-            const previousValue = select.value;
-            const options = clubsState.rows
-                .slice()
-                .sort((a, b) => compareByValue(a.club_code, b.club_code, 'asc'))
-                .map(club => `<option value="${Number(club.club_id) || 0}">${escapeHtml(club.club_code || '-')} ${escapeHtml(club.club_name || '-')}</option>`)
-                .join('');
-            select.innerHTML = `<option value="">請選擇社團</option>${options}`;
-            if (previousValue) {
-                select.value = previousValue;
+        function renderUserEditClubRoles(userId) {
+            const container = document.getElementById('user-edit-club-roles-list');
+            if (!container) return;
+            const uid = Number(userId);
+            const roles = (clubAdminAssignmentsState.rows || []).filter(r => Number(r.user_id) === uid);
+            if (!roles.length) {
+                container.innerHTML = '<span class="admin-note-box" style="font-size:0.82rem;">此帳號目前無社團幹部職位</span>';
+                return;
             }
-        }
-
-        function buildClubAdminUserOptions(selectedClubId, previousValue = '') {
-            const users = (usersState.rows || [])
-                .filter(user => Number(user.is_active) === 1 && user.role !== 'platform_admin')
-                .slice()
-                .sort((a, b) => compareByValue(a.name, b.name, 'asc'));
-            const options = `<option value="">${selectedClubId ? '請選擇幹部帳號' : '請先選擇社團'}</option>` + users
-                .map(user => `<option value="${Number(user.user_id) || 0}">${escapeHtml(user.name || '-')}｜${escapeHtml(user.email || '-')}｜${escapeHtml(user.student_id || '-')}｜${escapeHtml(PLATFORM_ROLE_LABELS[user.role] || user.role || '-')}</option>`)
-                .join('');
-            return { options, users, previousValue };
-        }
-
-        function renderClubAdminUserOptions() {
-            const select = document.getElementById('club-admin-user-key');
-            if (!select) return;
-            const selectedClubId = document.getElementById('club-admin-club-id')?.value || '';
-            const previousValue = select.value;
-            const { options } = buildClubAdminUserOptions(selectedClubId, previousValue);
-            select.disabled = !selectedClubId;
-            select.innerHTML = options;
-            if (previousValue) {
-                select.value = previousValue;
-            }
-        }
-
-        function renderClubAdminQuickUserOptions() {
-            const select = document.getElementById('club-admin-quick-user-key');
-            if (!select) return;
-            const selectedClubId = document.getElementById('club-admin-quick-club-id')?.value || '';
-            const previousValue = select.value;
-            const { options } = buildClubAdminUserOptions(selectedClubId, previousValue);
-            select.disabled = !selectedClubId;
-            select.innerHTML = options;
-            if (previousValue) {
-                select.value = previousValue;
-            }
+            container.innerHTML = roles.map(r => `
+                <div class="user-edit-club-role-row" data-member-id="${Number(r.member_id)}">
+                    <span class="user-edit-club-role-name">${escapeHtml(r.club_name || '-')}</span>
+                    <span class="user-edit-club-role-label">${escapeHtml(clubAdminRoleLabel(r.role))}</span>
+                    <span class="badge ${Number(r.is_active) ? 'badge-success' : ''}" style="font-size:0.72rem;">${Number(r.is_active) ? '啟用' : '停用'}</span>
+                    <button type="button" class="btn btn-sm btn-danger-outline" style="margin-left:auto;" data-revoke-member="${Number(r.member_id)}">撤銷</button>
+                </div>
+            `).join('');
+            container.querySelectorAll('[data-revoke-member]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('確定要撤銷此幹部職位嗎？')) return;
+                    const res = await APIClient.post('admin.php?action=revoke_club_admin_assignment', { member_id: Number(btn.dataset.revokeMember) });
+                    if (res.success) {
+                        PageUtils.showAlert('已撤銷幹部資格', 'success');
+                        await Promise.all([loadClubAdminAssignments(), loadUsers()]);
+                        renderUserEditClubRoles(Number(document.getElementById('user-edit-id').value));
+                    } else {
+                        PageUtils.showAlert('撤銷失敗：' + res.message, 'error');
+                    }
+                });
+            });
         }
 
         function clubAdminRoleLabel(role) {
@@ -621,99 +513,10 @@
             });
         }
 
-        function getFilteredClubAdminAssignments() {
-            const query = toSearchableText(clubAdminAssignmentsState.query);
-            let rows = [...clubAdminAssignmentsState.rows];
-            if (query) {
-                rows = rows.filter(item => [
-                    item.club_code,
-                    item.club_name,
-                    item.user_name,
-                    item.user_email,
-                    item.user_student_id,
-                    item.role,
-                    clubAdminRoleLabel(item.role)
-                ].some(v => toSearchableText(v).includes(query)));
-            }
-            return rows;
-        }
-
         async function loadClubAdminAssignments() {
             const response = await APIClient.get('admin.php?action=club_admin_assignments');
             if (!response.success) return console.error(response.message);
             clubAdminAssignmentsState.rows = response.data.assignments || [];
-            renderClubAdminUserOptions();
-            renderClubAdminAssignments();
-        }
-
-        function renderClubAdminAssignments() {
-            const container = document.getElementById('club-admin-assignments-list');
-            if (!container) return;
-            container.innerHTML = '';
-            const rows = getFilteredClubAdminAssignments();
-
-            if (rows.length === 0) {
-                renderEmptyState(container, '目前沒有幹部資格資料', '可先送出新增，或使用搜尋確認既有帳號是否存在。');
-                return;
-            }
-
-            rows.forEach(item => {
-                const safeClubName = escapeHtml(item.club_name || '-');
-                const safeClubCode = escapeHtml(item.club_code || '-');
-                const safeUserName = escapeHtml(item.user_name || '-');
-                const safeUserEmail = escapeHtml(item.user_email || '-');
-                const safeStudentId = escapeHtml(item.user_student_id || '-');
-                const safeRoleLabel = escapeHtml(clubAdminRoleLabel(item.role));
-                const safeJoinDate = escapeHtml(formatDateTime(item.join_date));
-                const safeMemberId = Number(item.member_id) || 0;
-                const safeClubId = Number(item.club_id) || 0;
-                const safeUserId = Number(item.user_id) || 0;
-                const safeRole = escapeHtml(item.role || 'member');
-                const safeActive = Number(item.is_active) === 1 ? '1' : '0';
-                const card = document.createElement('div');
-                card.className = 'admin-item-card';
-                card.innerHTML = `
-                    <div class="admin-item-head">
-                        <h4>${safeClubName}（${safeClubCode}）</h4>
-                        <span class="status-chip ${item.is_active == 1 ? 'chip-success' : 'chip-warning'}">${item.is_active == 1 ? '啟用' : '停用'}</span>
-                    </div>
-                    <p class="admin-item-content">帳號：${safeUserName}｜${safeUserEmail}｜學號：${safeStudentId}</p>
-                    <p class="admin-item-content">職稱：${safeRoleLabel}</p>
-                    <div class="admin-item-footer">
-                        <span class="admin-item-time">加入時間：${safeJoinDate}</span>
-                    </div>
-                    <div class="row-actions" style="margin-top: 12px;">
-                        <button class="btn btn-primary btn-sm" data-admin-edit="${safeMemberId}" data-club-id="${safeClubId}" data-user-key="${safeUserId}" data-role="${safeRole}" data-active="${safeActive}">編輯</button>
-                        <button class="btn btn-secondary btn-sm" data-admin-revoke="${safeMemberId}">撤銷幹部資格</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-
-            container.querySelectorAll('button[data-admin-edit]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.getElementById('club-admin-club-id').value = btn.dataset.clubId;
-                    renderClubAdminUserOptions();
-                    document.getElementById('club-admin-user-key').value = btn.dataset.userKey;
-                    document.getElementById('club-admin-role').value = btn.dataset.role;
-                    document.getElementById('club-admin-active').value = btn.dataset.active;
-                    document.getElementById('club-admin-assignment-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                });
-            });
-
-            container.querySelectorAll('button[data-admin-revoke]').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    if (!confirm('確定要撤銷此幹部資格嗎？')) return;
-                    const response = await APIClient.post('admin.php?action=revoke_club_admin_assignment', { member_id: Number(btn.dataset.adminRevoke) });
-                    if (response.success) {
-                        PageUtils.showAlert('已撤銷幹部資格', 'success');
-                        loadClubAdminAssignments();
-                        loadUsers();
-                    } else {
-                        PageUtils.showAlert('撤銷失敗：' + response.message, 'error');
-                    }
-                });
-            });
         }
 
         function setFieldError(inputId, message) {
@@ -746,8 +549,6 @@
             usersState.selectedUserIds = new Set(Array.from(usersState.selectedUserIds).filter(id => validIds.has(id)));
             const usersStatEl = document.getElementById('stat-users');
             if (usersStatEl) usersStatEl.textContent = usersState.rows.length;
-            renderClubAdminUserOptions();
-            renderClubAdminQuickUserOptions();
             renderUsersTable();
         }
 
@@ -757,8 +558,7 @@
             clubsState.rows = response.data.clubs || [];
             const clubsStatEl = document.getElementById('stat-clubs');
             if (clubsStatEl) clubsStatEl.textContent = clubsState.rows.length;
-            renderClubAdminClubOptions();
-            renderClubAdminQuickClubOptions();
+            renderModalClubOptions();
             renderClubsTable();
         }
 
@@ -1230,51 +1030,12 @@
         }
 
         function syncModalBodyScrollLock() {
-            const modalIds = ['user-edit-modal', 'club-admin-quick-modal'];
+            const modalIds = ['user-edit-modal'];
             const hasOpenModal = modalIds.some(id => {
                 const el = document.getElementById(id);
                 return el && el.style.display === 'flex';
             });
             document.body.style.overflow = hasOpenModal ? 'hidden' : '';
-        }
-
-        async function openClubAdminQuickModal() {
-            try {
-                await Promise.all([loadUsers(), loadClubs()]);
-            } catch (error) {
-                console.error('載入社團管理員資料失敗:', error);
-            }
-
-            const modal = document.getElementById('club-admin-quick-modal');
-            const form = document.getElementById('club-admin-quick-form');
-            if (!modal || !form) return;
-
-            form.reset();
-            setFieldError('club-admin-quick-club-id', '');
-            setFieldError('club-admin-quick-user-key', '');
-            renderClubAdminQuickClubOptions();
-            renderClubAdminQuickUserOptions();
-
-            modal.style.display = 'flex';
-            syncModalBodyScrollLock();
-            document.getElementById('club-admin-quick-club-id')?.focus();
-        }
-
-        function closeClubAdminQuickModal() {
-            const modal = document.getElementById('club-admin-quick-modal');
-            const form = document.getElementById('club-admin-quick-form');
-            if (!modal || !form) return;
-
-            form.reset();
-            modal.style.display = 'none';
-            setFieldError('club-admin-quick-club-id', '');
-            setFieldError('club-admin-quick-user-key', '');
-            const userSelect = document.getElementById('club-admin-quick-user-key');
-            if (userSelect) {
-                userSelect.disabled = true;
-                userSelect.innerHTML = '<option value="">請先選擇社團</option>';
-            }
-            syncModalBodyScrollLock();
         }
 
         function openUserEditModal(userId) {
@@ -1294,13 +1055,19 @@
             document.getElementById('user-edit-student-id').value = user.student_id || '';
             document.getElementById('user-edit-status').value = Number(user.is_active) === 1 ? '1' : '0';
             document.getElementById('user-edit-platform-role').value = user.role === 'platform_admin' ? 'platform_admin' : 'student';
-            document.getElementById('user-edit-club-identity-note').textContent = `社團身分：${getUserClubIdentitySummary(user)}。社團職位請至社團幹部管理頁調整。`;
             document.getElementById('user-edit-meta-name').textContent = user.name || '-';
             document.getElementById('user-edit-meta-email').textContent = user.email || '-';
             document.getElementById('user-edit-admin-password').value = '';
 
             const roleSelect = document.getElementById('user-edit-platform-role');
             roleSelect.disabled = isSelf && isPlatformAdmin;
+
+            const clubSection = document.getElementById('user-edit-club-section');
+            if (clubSection) clubSection.style.display = isPlatformAdmin ? 'none' : '';
+            if (!isPlatformAdmin) {
+                renderModalClubOptions();
+                renderUserEditClubRoles(user.user_id);
+            }
 
             const modal = document.getElementById('user-edit-modal');
             modal.style.display = 'flex';
@@ -1319,14 +1086,21 @@
             syncModalBodyScrollLock();
         }
 
-        function toggleUserEditPasswordField() {
+        function toggleUserEditPasswordField(focus = false) {
             const user = userEditState.originalUser;
             const nextRole = document.getElementById('user-edit-platform-role').value;
-            const roleChanged = user && user.role !== nextRole;
+            const originalSelectRole = user ? (user.role === 'platform_admin' ? 'platform_admin' : 'student') : 'student';
+            const roleChanged = user && originalSelectRole !== nextRole;
             const crossingPlatformBoundary = roleChanged && (user.role === 'platform_admin' || nextRole === 'platform_admin');
-            document.getElementById('user-edit-password-wrap').style.display = crossingPlatformBoundary ? 'block' : 'none';
+            const wrap = document.getElementById('user-edit-password-wrap');
+            const input = document.getElementById('user-edit-admin-password');
+            wrap.style.display = crossingPlatformBoundary ? '' : 'none';
+            if (crossingPlatformBoundary && focus) {
+                wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                setTimeout(() => input.focus(), 120);
+            }
             if (!crossingPlatformBoundary) {
-                document.getElementById('user-edit-admin-password').value = '';
+                input.value = '';
             }
         }
 
@@ -1518,30 +1292,16 @@
             });
             renderUsersTable();
         });
-        document.getElementById('go-club-admin-btn').addEventListener('click', () => {
-            openClubAdminQuickModal();
-        });
-
-        document.getElementById('user-edit-platform-role').addEventListener('change', toggleUserEditPasswordField);
+        document.getElementById('user-edit-platform-role').addEventListener('change', () => toggleUserEditPasswordField(true));
         document.getElementById('user-edit-close-btn').addEventListener('click', closeUserEditModal);
         document.getElementById('user-edit-cancel-btn').addEventListener('click', closeUserEditModal);
-        document.getElementById('club-admin-quick-close-btn').addEventListener('click', closeClubAdminQuickModal);
-        document.getElementById('club-admin-quick-cancel-btn').addEventListener('click', closeClubAdminQuickModal);
         document.getElementById('user-edit-modal').addEventListener('click', event => {
             if (event.target.id === 'user-edit-modal') closeUserEditModal();
-        });
-        document.getElementById('club-admin-quick-modal').addEventListener('click', event => {
-            if (event.target.id === 'club-admin-quick-modal') closeClubAdminQuickModal();
         });
         document.addEventListener('keydown', event => {
             if (event.key !== 'Escape') return;
             const userEditModal = document.getElementById('user-edit-modal');
-            const quickModal = document.getElementById('club-admin-quick-modal');
-            if (userEditModal && userEditModal.style.display === 'flex') {
-                closeUserEditModal();
-            } else if (quickModal && quickModal.style.display === 'flex') {
-                closeClubAdminQuickModal();
-            }
+            if (userEditModal && userEditModal.style.display === 'flex') closeUserEditModal();
         });
 
         document.getElementById('user-edit-form').addEventListener('submit', async event => {
@@ -1569,7 +1329,8 @@
             const profileChanged = nextName !== (original.name || '')
                 || nextEmail !== (original.email || '')
                 || nextStudentId !== (original.student_id || '');
-            const roleChanged = nextRole !== (original.role || 'student');
+            const originalSelectRole = original.role === 'platform_admin' ? 'platform_admin' : 'student';
+            const roleChanged = nextRole !== originalSelectRole;
             const statusChanged = nextStatus !== (Number(original.is_active) === 1 ? 1 : 0);
 
             if (!profileChanged && !roleChanged && !statusChanged) {
@@ -1632,87 +1393,29 @@
             loadUsers();
         });
 
-        document.getElementById('club-admin-assignments-search').addEventListener('input', event => { clubAdminAssignmentsState.query = event.target.value; renderClubAdminAssignments(); });
-        document.getElementById('club-admin-club-id').addEventListener('change', () => {
-            document.getElementById('club-admin-user-key').value = '';
-            renderClubAdminUserOptions();
-        });
-        document.getElementById('club-admin-quick-club-id').addEventListener('change', () => {
-            document.getElementById('club-admin-quick-user-key').value = '';
-            renderClubAdminQuickUserOptions();
-        });
         document.getElementById('clubs-search').addEventListener('input', event => { clubsState.query = event.target.value; clubsState.page = 1; renderClubsTable(); });
         document.getElementById('clubs-sort').addEventListener('change', event => { clubsState.sort = event.target.value; clubsState.page = 1; renderClubsTable(); });
         document.getElementById('announcements-search').addEventListener('input', event => { announcementsState.query = event.target.value; announcementsState.page = 1; renderAnnouncementsList(); });
         document.getElementById('announcements-sort').addEventListener('change', event => { announcementsState.sort = event.target.value; announcementsState.page = 1; renderAnnouncementsList(); });
 
-        document.getElementById('club-admin-assignment-form').addEventListener('submit', async event => {
-            event.preventDefault();
-
-            const clubIdInput = document.getElementById('club-admin-club-id');
-            const userKeyInput = document.getElementById('club-admin-user-key');
-            const roleInput = document.getElementById('club-admin-role');
-            const activeInput = document.getElementById('club-admin-active');
-
-            const clubId = clubIdInput.value.trim();
-            const userKey = userKeyInput.value.trim();
-            const role = roleInput.value;
-
-            setFieldError('club-admin-club-id', clubId ? '' : '此為必填欄位');
-            setFieldError('club-admin-user-key', userKey ? '' : '此為必填欄位');
-            if (!clubId || !userKey || !role) return;
-
-            const response = await APIClient.post('admin.php?action=upsert_club_admin_assignment', {
+        document.getElementById('user-edit-club-add-btn').addEventListener('click', async () => {
+            const userId = Number(document.getElementById('user-edit-id').value);
+            const clubId = document.getElementById('user-edit-club-add-club-id').value;
+            const role = document.getElementById('user-edit-club-add-role').value;
+            if (!clubId) { PageUtils.showAlert('請選擇社團', 'error'); return; }
+            const res = await APIClient.post('admin.php?action=upsert_club_admin_assignment', {
                 club_id: Number(clubId),
-                user_key: userKey,
+                user_key: String(userId),
                 role,
-                is_active: Number(activeInput.value)
+                is_active: 1
             });
-
-            if (response.success) {
-                PageUtils.showAlert('幹部資格已更新', 'success');
-                event.target.reset();
-                renderClubAdminClubOptions();
-                renderClubAdminUserOptions();
-                loadClubAdminAssignments();
-                loadUsers();
+            if (res.success) {
+                PageUtils.showAlert('職位已新增', 'success');
+                document.getElementById('user-edit-club-add-club-id').value = '';
+                await Promise.all([loadClubAdminAssignments(), loadUsers()]);
+                renderUserEditClubRoles(userId);
             } else {
-                PageUtils.showAlert('儲存失敗：' + response.message, 'error');
-            }
-        });
-
-        document.getElementById('club-admin-quick-form').addEventListener('submit', async event => {
-            event.preventDefault();
-
-            const clubIdInput = document.getElementById('club-admin-quick-club-id');
-            const userKeyInput = document.getElementById('club-admin-quick-user-key');
-            const roleInput = document.getElementById('club-admin-quick-role');
-            const activeInput = document.getElementById('club-admin-quick-active');
-
-            const clubId = clubIdInput.value.trim();
-            const userKey = userKeyInput.value.trim();
-            const role = roleInput.value;
-
-            setFieldError('club-admin-quick-club-id', clubId ? '' : '此為必填欄位');
-            setFieldError('club-admin-quick-user-key', userKey ? '' : '此為必填欄位');
-            if (!clubId || !userKey || !role) return;
-
-            const response = await APIClient.post('admin.php?action=upsert_club_admin_assignment', {
-                club_id: Number(clubId),
-                user_key: userKey,
-                role,
-                is_active: Number(activeInput.value)
-            });
-
-            if (response.success) {
-                PageUtils.showAlert('社團管理員新增成功', 'success');
-                closeClubAdminQuickModal();
-                renderClubAdminClubOptions();
-                renderClubAdminUserOptions();
-                loadClubAdminAssignments();
-                loadUsers();
-            } else {
-                PageUtils.showAlert('新增失敗：' + response.message, 'error');
+                PageUtils.showAlert('新增失敗：' + res.message, 'error');
             }
         });
 

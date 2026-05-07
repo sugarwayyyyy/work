@@ -294,6 +294,65 @@ class AdminAPI {
         Helper::success($hide ? '社團已停用/隱藏' : '社團已恢復顯示');
     }
 
+    public static function updateUserProfile($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['user_id']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $user_id = (int)$data['user_id'];
+        $update = [];
+
+        if (isset($data['name'])) {
+            $name = trim((string)$data['name']);
+            if ($name === '') Helper::error('姓名不可為空', 400);
+            if (ContentFilter::containsRestrictedLanguage($name)) Helper::error('姓名包含不適當字眼', 400);
+            $update['name'] = $name;
+        }
+
+        if (isset($data['email'])) {
+            $email = trim((string)$data['email']);
+            if (!Helper::validateEmail($email)) Helper::error('郵箱格式不正確', 400);
+            $dup = Database::getInstance()->fetchOne(
+                'SELECT user_id FROM users WHERE email = ? AND user_id <> ?',
+                [$email, $user_id]
+            );
+            if ($dup) Helper::error('此郵箱已被其他帳號使用', 409);
+            $update['email'] = $email;
+        }
+
+        if (isset($data['student_id'])) {
+            $sid = trim((string)$data['student_id']);
+            if ($sid !== '') {
+                $dup = Database::getInstance()->fetchOne(
+                    'SELECT user_id FROM users WHERE student_id = ? AND user_id <> ?',
+                    [$sid, $user_id]
+                );
+                if ($dup) Helper::error('學號已被其他帳號使用', 409);
+                $update['student_id'] = $sid;
+            } else {
+                $update['student_id'] = null;
+            }
+        }
+
+        if (!empty($update)) {
+            dbUpdate('users', $update, 'user_id = ?', [$user_id]);
+        }
+
+        Helper::success('用戶資料更新成功');
+    }
+
+    public static function updateUserStatus($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['user_id', 'is_active']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $user_id = (int)$data['user_id'];
+        $is_active = ((int)$data['is_active'] === 1) ? 1 : 0;
+
+        dbUpdate('users', ['is_active' => $is_active], 'user_id = ?', [$user_id]);
+        Helper::success('帳號狀態更新成功');
+    }
+
     public static function updateUserRole($data) {
         self::requireAdmin();
         $errors = Helper::validateRequired($data, ['user_id', 'role']);
@@ -780,7 +839,11 @@ if ($method === 'GET') {
 
 if ($method === 'POST') {
     $data = Helper::getRequestInput();
-    if ($action === 'update_user_role') {
+    if ($action === 'update_user_profile') {
+        AdminAPI::updateUserProfile($data);
+    } elseif ($action === 'update_user_status') {
+        AdminAPI::updateUserStatus($data);
+    } elseif ($action === 'update_user_role') {
         AdminAPI::updateUserRole($data);
     } elseif ($action === 'upsert_club_admin_assignment') {
         AdminAPI::upsertClubAdminAssignment($data);
