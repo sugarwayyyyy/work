@@ -1734,11 +1734,20 @@ function updateNavigation() {
 
             if (isClubAdminSubPage() || isClubAdminDashboardPage()) {
                 navLinks.innerHTML = `
+                    <li><a href="${FRONTEND_HOME_URL}">返回首頁</a></li>
                     <li><a href="${getPageLink('club-admin-club-manage.html')}">社團管理</a></li>
-                    <li><a href="${getPageLink('club-admin-create-event.html')}">建立活動</a></li>
                     <li><a href="${getPageLink('club-admin-events-list.html')}">活動列表</a></li>
                     <li><a href="${getPageLink('club-admin-transfer.html')}">帳戶轉讓</a></li>
                 `;
+            } else if (!isAdminSubPage() && !isAdminDashboardPage() && !isAdminOverviewPage()) {
+                if (userCanManageClubs(user) && user.role !== 'platform_admin') {
+                    if (!document.getElementById('club-admin-dashboard-link')) {
+                        const li = document.createElement('li');
+                        li.id = 'club-admin-dashboard-link';
+                        li.innerHTML = `<a href="${getPageLink('club-admin-club-manage.html')}">幹部後台</a>`;
+                        navLinks.appendChild(li);
+                    }
+                }
             }
 
             const staleProfileLink = document.getElementById('user-profile-link');
