@@ -990,6 +990,7 @@ footer p {
 
 .admin-dashboard-container {
     max-width: 1360px;
+    background: transparent;
 }
 
 .admin-hero {
@@ -1514,20 +1515,7 @@ footer p {
 
 /* Club Admin Dashboard Specific Styles */
 .club-admin-page {
-    background: linear-gradient(180deg, #ffffff 0%, #f9fbfd 100%);
-}
-
-.club-admin-page::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: 
-        radial-gradient(at 20% 50%, rgba(42, 95, 181, 0.08) 0%, transparent 50%),
-        radial-gradient(at 80% 80%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
-    pointer-events: none;
+    background: var(--page-bg);
 }
 
 .club-admin-page, .admin-page {
@@ -1648,4 +1636,3 @@ footer p {
 .required {
     color: var(--danger-color);
 }
-
