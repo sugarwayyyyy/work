@@ -111,18 +111,17 @@ async function apiPostJson(page, endpoint, payload) {
 }
 
 async function openManagedClubAdminPanel(page, tabKey = 'club-manage') {
-  await page.goto(`${BASE_URL}/pages/club-admin-dashboard.html`);
+  const pageByTab = {
+    'club-manage': 'club-admin-club-manage.html',
+    'create-event': 'club-admin-events-list.html',
+    'events-list': 'club-admin-events-list.html',
+    'transfer': 'club-admin-transfer.html',
+  };
+  const targetPage = pageByTab[tabKey] || 'club-admin-club-manage.html';
+
+  await page.goto(`${BASE_URL}/pages/${targetPage}`);
   await page.waitForLoadState('networkidle');
-
-  const manageBtn = page.locator('#my-clubs-container .admin-item-card button').first();
-  await expect(manageBtn).toBeVisible({ timeout: 15000 });
-  await manageBtn.click();
-  await expect(page.locator('#selected-club-banner')).toBeVisible({ timeout: 10000 });
-
-  const tab = page.locator(`.admin-tab[data-tab="${tabKey}"]`).first();
-  await expect(tab).toBeVisible({ timeout: 10000 });
-  await expect(tab).not.toHaveClass(/is-locked/, { timeout: 10000 });
-  await tab.click();
+  await expect(page.locator('#selected-club-banner')).toBeVisible({ timeout: 15000 });
 }
 
 async function collectFailedResponses(page, action) {

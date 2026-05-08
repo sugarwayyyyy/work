@@ -196,7 +196,11 @@ try {
         deleteWhereIn($db, 'events', 'event_id', $eventIds);
     }
 
-    cleanupAcceptanceStoryClubPollution($db);
+    // Only reset club pollution in full cleanup (global teardown) to avoid racing
+    // with AR-28/AR-35 tests that are still verifying their updates mid-run.
+    if ($fullCleanup) {
+        cleanupAcceptanceStoryClubPollution($db);
+    }
 
     $userStmt = $db->prepare('SELECT user_id, email FROM users WHERE email IN (?, ?, ?)');
     if ($userStmt === false) {

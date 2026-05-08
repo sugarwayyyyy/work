@@ -63,15 +63,21 @@ function toDateInputValue(date) {
 }
 
 async function openCreateEventFormFromClubAdminDashboard(page) {
-  await page.goto(`${BASE_URL}/pages/club-admin-dashboard.html`);
+  // club-admin-club-manage.html auto-selects the first club and persists clubId in sessionStorage.
+  await page.goto(`${BASE_URL}/pages/club-admin-club-manage.html`);
   await page.waitForLoadState('networkidle');
+  await expect(page.locator('#selected-club-banner')).toBeVisible({ timeout: 15000 });
 
-  const manageClubBtn = page.locator('#my-clubs-container .admin-item-card button').first();
-  await expect(manageClubBtn).toBeVisible({ timeout: 15000 });
-  await manageClubBtn.click();
+  // The create-event page redirects to events-list; use the events-list page directly.
+  await page.goto(`${BASE_URL}/pages/club-admin-events-list.html`);
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('#club-events-section')).toBeVisible({ timeout: 10000 });
 
-  await expect(page.locator('#selected-club-banner')).toBeVisible({ timeout: 10000 });
-  await openClubAdminTab(page, '建立活動', '#create-event-form', 'create-event');
+  const createBtn = page.locator('button[onclick*="openEventModal(\'create\')"], button:has-text("建立活動")').first();
+  await expect(createBtn).toBeVisible({ timeout: 10000 });
+  await createBtn.click();
+  await expect(page.locator('#update-event-form')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('#event-modal-submit')).toBeEnabled({ timeout: 10000 });
 }
 
 async function openClubAdminTab(page, tabName, panelSelector, tabKey = '') {
@@ -111,19 +117,19 @@ async function publishEventAsClubAdmin(page, eventName) {
   deadlineAt.setDate(deadlineAt.getDate() - 1);
   deadlineAt.setHours(21, 0, 0, 0);
 
-  await page.fill('#event-name', eventName);
-  await page.fill('#event-location', '綜合教學大樓 R201');
-    await page.fill('#event-description', `Automated E2E event ${eventName}`);
+  await page.fill('#update-event-name', eventName);
+  await page.fill('#update-event-location', '綜合教學大樓 R201');
+  await page.fill('#update-event-description', `Automated E2E event ${eventName}`);
 
-  await page.fill('#event-date-date', toDateInputValue(startAt));
-  await page.selectOption('#event-date-hour', String(startAt.getHours()).padStart(2, '0'));
-  await page.selectOption('#event-date-minute', '00');
+  await page.fill('#update-event-date-date', toDateInputValue(startAt));
+  await page.selectOption('#update-event-date-hour', String(startAt.getHours()).padStart(2, '0'));
+  await page.selectOption('#update-event-date-minute', '00');
 
-  await page.fill('#event-deadline-date', toDateInputValue(deadlineAt));
-  await page.selectOption('#event-deadline-hour', String(deadlineAt.getHours()).padStart(2, '0'));
-  await page.selectOption('#event-deadline-minute', '00');
+  await page.fill('#update-event-deadline-date', toDateInputValue(deadlineAt));
+  await page.selectOption('#update-event-deadline-hour', String(deadlineAt.getHours()).padStart(2, '0'));
+  await page.selectOption('#update-event-deadline-minute', '00');
 
-  const submitBtn = page.locator('#create-event-submit');
+  const submitBtn = page.locator('#event-modal-submit');
   await expect(submitBtn).toBeEnabled();
 
   page.once('dialog', dialog => dialog.accept());
@@ -373,7 +379,8 @@ test.describe('US 2.2: 社團活動發布', () => {
     const eventName = `US22-PUB-${Date.now()}`;
     const { eventId: createdEventId } = await publishEventAsClubAdmin(page, eventName);
 
-    await openClubAdminTab(page, '活動列表', '#club-events-section', 'events-list');
+    // After creating, we're already on club-admin-events-list.html — verify the section is visible.
+    await expect(page.locator('#club-events-section')).toBeVisible({ timeout: 10000 });
 
     expect(createdEventId).toBeGreaterThan(0);
   });
@@ -390,7 +397,8 @@ test.describe('US 2.2: 社團活動發布', () => {
 
     await page.goto(`${BASE_URL}/pages/event-detail.html?id=${eventId}`);
     await page.waitForLoadState('networkidle');
-    await expect(page.locator('#event-title')).toBeVisible();
+    // #event-detail is revealed in the finally block after the API call completes
+    await expect(page.locator('#event-detail')).toBeVisible({ timeout: 30000 });
 
     const sortedCheck = await page.evaluate(async () => {
       const response = await window.APIClient.get('events.php?page=1&filter=open');
@@ -431,8 +439,8 @@ test.describe('US 4.1: 平台管理員功能', () => {
   test('AC1: 管理員可進入管理儀表板', async ({ page }) => {
     await login(page, ADMIN.email, ADMIN.password);
     
-    // 驗證重定向到管理頁面
-    await page.waitForURL('**/admin-dashboard.html');
+    // 驗證重定向到管理頁面（平台管理員登入後導向 admin-users.html）
+    await page.waitForURL('**/admin-users.html');
     
     const adminDashboard = page.locator('body');
     await expect(adminDashboard).toBeVisible();
@@ -476,10 +484,10 @@ test.describe('登入與權限', () => {
   test('平台管理員可成功登入並進入管理頁面', async ({ page }) => {
     await login(page, ADMIN.email, ADMIN.password);
     
-    await page.waitForURL('**/admin-dashboard.html');
-    
+    await page.waitForURL('**/admin-users.html');
+
     const url = page.url();
-    expect(url).toContain('admin-dashboard.html');
+    expect(url).toContain('admin-users.html');
   });
 
   test('密碼錯誤登入失敗', async ({ page }) => {

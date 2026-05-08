@@ -5,7 +5,9 @@
       "Bash(php -l \"d:\\\\app\\\\appserv\\\\www\\\\work-main\\\\backend\\\\api\\\\events.php\")",
       "Bash(php -l \"d:/app/appserv/www/work-main/backend/api/club-admin.php\")",
       "Bash(git -C \"d:/app/appserv/www/work-main\" diff --stat)",
-      "PowerShell(Remove-Item \"d:\\\\app\\\\appserv\\\\www\\\\work-main\\\\frontend\\\\pages\\\\club-admin-my-clubs.html\" -Confirm:$false)"
+      "PowerShell(Remove-Item \"d:\\\\app\\\\appserv\\\\www\\\\work-main\\\\frontend\\\\pages\\\\club-admin-my-clubs.html\" -Confirm:$false)",
+      "Bash(grep -E \"^\\\\s+\\(passed|failed\\)|failed$\")",
+      "Bash(grep -E \"failed$|^\\\\s+\\\\d\\\\\\)\")"
     ],
     "additionalDirectories": [
       "D:\\app\\appserv\\www\\work-main\\frontend\\pages"
