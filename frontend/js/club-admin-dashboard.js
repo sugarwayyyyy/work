@@ -833,7 +833,15 @@
 
         async function loadClubAdminStats(clubId) {
             try {
-                const res = await APIClient.get(`club-admin.php?action=club_stats&id=${clubId}`);
+                const [res, myRes] = await Promise.all([
+                    APIClient.get(`club-admin.php?action=club_stats&id=${clubId}`),
+                    APIClient.get('club-admin.php?action=my_clubs'),
+                ]);
+                const myClubsEl = document.getElementById('stat-my-clubs');
+                if (myClubsEl && myRes.success) {
+                    const count = (myRes.data.clubs || []).length;
+                    myClubsEl.textContent = count || '-';
+                }
                 if (!res.success) return;
                 const s = res.data;
                 const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };

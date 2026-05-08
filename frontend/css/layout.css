@@ -188,10 +188,32 @@ nav {
         display: flex;
     }
 
+    .nav-links li {
+        display: block;
+        width: 100%;
+    }
+
     .nav-links a {
+        display: block;
         font-size: 0.9rem;
-        padding: 0.6rem 0.5rem;
+        padding: 0.6rem 0.75rem;
         white-space: normal;
+        border-radius: 0.4rem;
+    }
+
+    /* Replace desktop underline indicator with left-border + background on mobile */
+    .nav-links a::after {
+        display: none;
+    }
+
+    .nav-links a:hover {
+        background: var(--brand-soft, #ede9fe);
+    }
+
+    .nav-links a.active {
+        background: var(--brand-soft, #ede9fe);
+        border-left: 3px solid var(--brand, #7c3aed);
+        padding-left: calc(0.75rem - 3px);
     }
 
     .grid {
