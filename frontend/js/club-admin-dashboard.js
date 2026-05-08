@@ -14,6 +14,8 @@
 
         // 活動列表快取（供搜尋/排序使用）
         let _eventsListCache = [];
+        let _eventsCurrentPage = 1;
+        const _eventsPerPage = 10;
 
         // 活動 modal 模式：'create' | 'edit'
         let _eventModalMode = 'edit';
@@ -1084,7 +1086,74 @@
             if (!response.success) return console.error(response.message);
             if (!document.getElementById('club-events-container')) return;
             _eventsListCache = response.data.events || [];
+            _eventsCurrentPage = 1;
             renderFilteredEvents();
+        }
+
+        function ensureEventsPaginationContainer() {
+            const list = document.getElementById('club-events-container');
+            if (!list) return null;
+            let el = document.getElementById('club-events-pagination');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'club-events-pagination';
+                el.className = 'club-events-pagination';
+                list.insertAdjacentElement('afterend', el);
+            }
+            return el;
+        }
+
+        function renderEventsPagination(totalItems) {
+            const host = ensureEventsPaginationContainer();
+            if (!host) return;
+
+            const totalPages = Math.max(1, Math.ceil(totalItems / _eventsPerPage));
+            if (_eventsCurrentPage > totalPages) _eventsCurrentPage = totalPages;
+
+            if (totalItems <= _eventsPerPage) {
+                host.innerHTML = '';
+                host.style.display = 'none';
+                return;
+            }
+
+            host.style.display = '';
+            const info = document.createElement('div');
+            info.className = 'club-events-pagination__info';
+            info.textContent = `Page ${_eventsCurrentPage} / ${totalPages} | Total ${totalItems}`;
+
+            const controls = document.createElement('div');
+            controls.className = 'club-events-pagination__controls';
+
+            const makeBtn = (label, page, disabled = false, active = false) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `btn btn-secondary btn-sm${active ? ' is-active' : ''}`;
+                btn.textContent = label;
+                btn.disabled = disabled;
+                btn.addEventListener('click', () => {
+                    if (disabled || page === _eventsCurrentPage) return;
+                    _eventsCurrentPage = page;
+                    renderFilteredEvents();
+                });
+                return btn;
+            };
+
+            controls.appendChild(makeBtn('Prev', Math.max(1, _eventsCurrentPage - 1), _eventsCurrentPage === 1));
+
+            const maxVisiblePages = 5;
+            const half = Math.floor(maxVisiblePages / 2);
+            let start = Math.max(1, _eventsCurrentPage - half);
+            let end = Math.min(totalPages, start + maxVisiblePages - 1);
+            start = Math.max(1, end - maxVisiblePages + 1);
+            for (let p = start; p <= end; p++) {
+                controls.appendChild(makeBtn(String(p), p, false, p === _eventsCurrentPage));
+            }
+
+            controls.appendChild(makeBtn('Next', Math.min(totalPages, _eventsCurrentPage + 1), _eventsCurrentPage === totalPages));
+
+            host.innerHTML = '';
+            host.appendChild(info);
+            host.appendChild(controls);
         }
 
         function renderFilteredEvents() {
@@ -1095,7 +1164,10 @@
             const sort = document.getElementById('events-sort')?.value || 'date-desc';
 
             let events = _eventsListCache.slice();
-            if (q) events = events.filter(ev => (ev.event_name || '').toLowerCase().includes(q));
+            if (q) events = events.filter(ev =>
+                (ev.event_name || '').toLowerCase().includes(q) ||
+                (ev.event_date || '').slice(0, 10).includes(q)
+            );
 
             events.sort((a, b) => {
                 if (sort === 'date-asc')  return new Date(a.event_date) - new Date(b.event_date);
@@ -1109,10 +1181,17 @@
             if (events.length === 0) {
                 renderEmptyState(container,
                     q ? '找不到符合的活動' : '目前沒有活動',
-                    q ? '請嘗試其他關鍵字' : '建立第一場活動後，這裡就會顯示列表。');
+                    q ? '請嘗試其他關鍵字或日期' : '建立第一場活動後，這裡就會顯示列表。');
+                renderEventsPagination(0);
                 return;
             }
-            events.forEach(event => {
+            const totalItems = events.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / _eventsPerPage));
+            if (_eventsCurrentPage > totalPages) _eventsCurrentPage = totalPages;
+            const startIndex = (_eventsCurrentPage - 1) * _eventsPerPage;
+            const pagedEvents = events.slice(startIndex, startIndex + _eventsPerPage);
+
+            pagedEvents.forEach(event => {
                 const coHostNames = (event.co_host_clubs || []).map(club => PageUtils.escapeHtml(club.club_name || '')).filter(Boolean);
                 const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
                 const safeStatus = PageUtils.escapeHtml(translateStatus(event.event_status));
@@ -1141,6 +1220,7 @@
                 `;
                 container.appendChild(card);
             });
+            renderEventsPagination(totalItems);
         }
 
         async function archiveEvent(eventId) {
@@ -1798,8 +1878,14 @@
 
             const searchInput = document.getElementById('events-search');
             const sortSelect = document.getElementById('events-sort');
-            if (searchInput) searchInput.addEventListener('input', renderFilteredEvents);
-            if (sortSelect) sortSelect.addEventListener('change', renderFilteredEvents);
+            if (searchInput) searchInput.addEventListener('input', () => {
+                _eventsCurrentPage = 1;
+                renderFilteredEvents();
+            });
+            if (sortSelect) sortSelect.addEventListener('change', () => {
+                _eventsCurrentPage = 1;
+                renderFilteredEvents();
+            });
 
             const modalCloseBtn = document.getElementById('event-modal-close');
             if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeEventModal);

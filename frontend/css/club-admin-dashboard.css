@@ -297,6 +297,33 @@
     margin-bottom: 0;
 }
 
+.club-events-pagination {
+    margin-top: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.club-events-pagination__info {
+    font-size: 0.82rem;
+    color: var(--text-muted, #64748b);
+}
+
+.club-events-pagination__controls {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.club-events-pagination__controls .btn.is-active {
+    background: var(--brand, #7c3aed);
+    border-color: var(--brand, #7c3aed);
+    color: #fff;
+}
+
 .club-events-toolbar .filter-field label {
     display: block;
     margin-bottom: 0.28rem;
