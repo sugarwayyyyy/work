@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>帳戶轉讓 — 幹部後台</title>
+    <link rel="stylesheet" href="../css/styles.css?v=20260502k" />
+    <link rel="stylesheet" href="../css/admin.css?v=20260502k" />
+    <link rel="stylesheet" href="../css/club-admin-dashboard.css?v=20260502k" />
+</head>
+<body class="admin-dashboard-page club-admin-page">
+    <header>
+        <nav>
+            <a href="admin-users.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
+            <ul class="nav-links"></ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href='login.html'" style="display:none;">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container admin-dashboard-container">
+
+        <div class="admin-stats-bar reveal-up">
+            <div class="stat-item"><strong id="stat-my-clubs">-</strong><span>所屬社團</span></div>
+            <div class="stat-item"><strong id="stat-current-club" class="stat-club-name">—</strong><span>目前管理</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-followers">-</strong><span>追蹤數</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-total-events">-</strong><span>活動總數</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-upcoming">-</strong><span>即將舉行</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-published">-</strong><span>已發布</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-cancelled">-</strong><span>已取消</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-registrations">-</strong><span>總報名</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-avg-rating">-</strong><span>平均評分</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-unanswered-qa">-</strong><span>未回答 Q&amp;A</span></div>
+        </div>
+
+        <div id="selected-club-banner" class="admin-selected-club-banner" style="display:none;">
+            <span>目前管理：<strong id="selected-club-name">-</strong></span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openClubSwitchPopup()">切換社團</button>
+        </div>
+
+        <section class="card admin-panel reveal-up" id="transfer-request-section">
+            <div class="admin-panel-head">
+                <h2>帳戶轉讓申請</h2>
+                <span class="admin-panel-subtext" id="transfer-request-subtitle">由社團幹部提出，送行政端審核</span>
+            </div>
+            <div class="admin-form-wrapper">
+                <form id="transfer-request-form" class="admin-form-grid">
+                    <div class="form-field">
+                        <label for="transfer-target-user-email">目標用戶 Email <span class="required">*</span></label>
+                        <input type="email" id="transfer-target-user-email" required placeholder="輸入新幹部的 Email">
+                        <div id="err-transfer-target-user-email" class="field-error"></div>
+                    </div>
+                    <div class="form-field">
+                        <label for="transfer-target-student-id">目標學號（選填）</label>
+                        <input type="text" id="transfer-target-student-id" placeholder="例如：A123456789">
+                    </div>
+                    <div class="form-field admin-span-2">
+                        <label for="transfer-request-reason">轉讓原因 <span class="required">*</span></label>
+                        <textarea id="transfer-request-reason" class="cad-textarea-lg" required></textarea>
+                        <div id="err-transfer-request-reason" class="field-error"></div>
+                    </div>
+                    <div class="form-field admin-span-2">
+                        <label for="transfer-request-note">補充說明（選填）</label>
+                        <textarea id="transfer-request-note" class="cad-textarea-md" placeholder="例如：交接時間、附件位置、備註事項"></textarea>
+                    </div>
+                    <div class="form-actions admin-span-2">
+                        <button type="submit" class="btn btn-primary">送出轉讓申請</button>
+                    </div>
+                </form>
+            </div>
+            <div id="my-transfer-requests" class="admin-list"></div>
+        </section>
+
+    </div>
+
+    <script src="../js/main.js?v=20260502k"></script>
+    <script src="../js/club-admin-dashboard.js"></script>
+    <script>
+        (function () {
+            const clubId = Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
+            const clubName = sessionStorage.getItem('clubAdmin_clubName') || '';
+            if (!clubId) {
+                window.location.href = 'club-admin-my-clubs.html';
+                return;
+            }
+            currentClubId = clubId;
+            currentClubName = clubName;
+            const nameEl = document.getElementById('stat-current-club');
+            if (nameEl) nameEl.textContent = clubName || '—';
+            const banner = document.getElementById('selected-club-banner');
+            const bannerName = document.getElementById('selected-club-name');
+            if (bannerName) bannerName.textContent = clubName || '-';
+            if (banner) banner.style.display = '';
+            loadClubAdminStats(clubId);
+        })();
+    </script>
+</body>
+</html>

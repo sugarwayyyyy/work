@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>社團管理 — 幹部後台</title>
+    <link rel="stylesheet" href="../css/styles.css?v=20260502k" />
+    <link rel="stylesheet" href="../css/admin.css?v=20260502k" />
+    <link rel="stylesheet" href="../css/club-admin-dashboard.css?v=20260502k" />
+</head>
+<body class="admin-dashboard-page club-admin-page">
+    <header>
+        <nav>
+            <a href="admin-users.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
+            <ul class="nav-links"></ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href='login.html'" style="display:none;">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container admin-dashboard-container">
+
+        <div class="admin-stats-bar reveal-up">
+            <div class="stat-item"><strong id="stat-my-clubs">-</strong><span>所屬社團</span></div>
+            <div class="stat-item"><strong id="stat-current-club" class="stat-club-name">—</strong><span>目前管理</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-followers">-</strong><span>追蹤數</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-total-events">-</strong><span>活動總數</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-upcoming">-</strong><span>即將舉行</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-published">-</strong><span>已發布</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-cancelled">-</strong><span>已取消</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-registrations">-</strong><span>總報名</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-avg-rating">-</strong><span>平均評分</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-unanswered-qa">-</strong><span>未回答 Q&amp;A</span></div>
+        </div>
+
+        <div id="selected-club-banner" class="admin-selected-club-banner" style="display:none;">
+            <span>目前管理：<strong id="selected-club-name">-</strong></span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openClubSwitchPopup()">切換社團</button>
+        </div>
+
+        <div id="club-action-selector" style="display:none;" aria-hidden="true">
+            <span id="club-action-subtitle"></span>
+        </div>
+
+        <section class="card admin-panel reveal-up" id="club-management-section">
+            <div class="admin-panel-head">
+                <h2>社團管理</h2>
+                <span class="admin-panel-subtext" id="club-subtitle"></span>
+            </div>
+            <div class="admin-form-wrapper">
+                <div class="form-preview-card">
+                    <h4>編輯預覽</h4>
+                    <p id="club-preview-text" class="form-preview-text">尚未修改資料</p>
+                </div>
+                <form id="update-club-form" class="admin-form-grid">
+                    <input type="hidden" id="update-club-id">
+                    <div class="form-field">
+                        <label for="update-club-email">聯絡信箱 <span class="required">*</span></label>
+                        <input type="email" id="update-club-email" required>
+                        <div id="err-update-club-email" class="field-error"></div>
+                    </div>
+                    <div class="form-field">
+                        <label for="update-club-location">社課地點 <span class="required">*</span></label>
+                        <input type="text" id="update-club-location" required placeholder="例：第一教學大樓 3 樓 305 教室，或貼上 Google 地圖分享連結">
+                        <small class="cad-help-text">可輸入教室、樓層、建築名稱等文字地點；若填連結，僅接受 Google 地圖分享連結。</small>
+                        <div id="err-update-club-location" class="field-error"></div>
+                    </div>
+                    <div class="form-field">
+                        <label for="update-club-phone">聯絡電話</label>
+                        <input type="tel" id="update-club-phone">
+                    </div>
+                    <div class="form-field">
+                        <label for="update-club-meeting-day">社課時間 <span class="required">*</span></label>
+                        <input type="hidden" id="update-club-meeting-time">
+                        <div class="cad-stack">
+                            <div>
+                                <div class="cad-field-caption">上課日</div>
+                                <select id="update-club-meeting-day">
+                                    <option value="每週一">每週一</option>
+                                    <option value="每週二">每週二</option>
+                                    <option value="每週三">每週三</option>
+                                    <option value="每週四">每週四</option>
+                                    <option value="每週五">每週五</option>
+                                    <option value="每週六">每週六</option>
+                                    <option value="每週日">每週日</option>
+                                </select>
+                            </div>
+                            <div class="cad-time-range">
+                                <div>
+                                    <div class="cad-field-caption">開始</div>
+                                    <div class="cad-time-split">
+                                        <select id="update-club-meeting-start-hour"></select>
+                                        <select id="update-club-meeting-start-minute">
+                                            <option value="00">00</option>
+                                            <option value="30">30</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <span class="cad-time-divider">~</span>
+                                <div>
+                                    <div class="cad-field-caption">結束</div>
+                                    <div class="cad-time-split">
+                                        <select id="update-club-meeting-end-hour"></select>
+                                        <select id="update-club-meeting-end-minute">
+                                            <option value="00">00</option>
+                                            <option value="30">30</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點，例：每週三 19:00~21:30。</small>
+                        <div id="err-update-club-meeting-time" class="field-error"></div>
+                    </div>
+                    <div class="form-field">
+                        <label for="update-club-fee">社費（選填）</label>
+                        <input type="number" id="update-club-fee">
+                    </div>
+                    <div class="form-field admin-span-2">
+                        <label for="update-club-description">介紹內文 <span class="required">*</span></label>
+                        <textarea id="update-club-description" class="cad-textarea-xl" required onchange="detectTagsFromDescription()"></textarea>
+                        <div id="err-update-club-description" class="field-error"></div>
+                    </div>
+                    <div class="form-field admin-span-2">
+                        <label>標籤管理</label>
+                        <div class="cad-panel-box">
+                            <div class="cad-block-gap">
+                                <p class="cad-label-title">📌 推薦標籤（自動偵測）</p>
+                                <div id="suggested-tags" class="cad-tag-list"></div>
+                            </div>
+                            <div class="cad-block-divider">
+                                <p class="cad-label-title">✅ 已選標籤</p>
+                                <div id="selected-tags" class="cad-tag-list"></div>
+                            </div>
+                            <div class="cad-divider-top">
+                                <label class="cad-label-muted">新增或搜尋標籤</label>
+                                <div class="cad-search-row">
+                                    <input type="text" id="tag-search-input" class="cad-input-inline" placeholder="輸入標籤名稱...">
+                                    <button type="button" onclick="searchOrCreateTag()" class="btn btn-primary btn-sm">搜尋/新增</button>
+                                </div>
+                                <div id="tag-search-results" class="cad-scroll-200"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-field admin-span-2">
+                        <label for="club-logo-upload">Logo 圖片（選填）</label>
+                        <input type="file" id="club-logo-upload" accept="image/*" onchange="previewClubLogo(event)">
+                        <div id="club-logo-preview" class="image-preview-container">
+                            <img id="club-logo-img" src="" alt="Logo 預覽" class="cad-preview-image">
+                        </div>
+                    </div>
+                    <div class="form-actions admin-span-2">
+                        <button type="submit" class="btn btn-primary">更新社團</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="../js/main.js?v=20260502k"></script>
+    <script src="../js/club-admin-dashboard.js"></script>
+    <script>
+        // On this page only one section exists — hiding panels is a no-op
+        window.hideManagementPanels = function () {};
+        window.showManagementPanel = function () {};
+
+        (function () {
+            const clubId = Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
+            const clubName = sessionStorage.getItem('clubAdmin_clubName') || '';
+            if (!clubId) {
+                window.location.href = 'club-admin-my-clubs.html';
+                return;
+            }
+            currentClubId = clubId;
+            currentClubName = clubName;
+            const nameEl = document.getElementById('stat-current-club');
+            if (nameEl) nameEl.textContent = clubName || '—';
+            const banner = document.getElementById('selected-club-banner');
+            const bannerName = document.getElementById('selected-club-name');
+            if (bannerName) bannerName.textContent = clubName || '-';
+            if (banner) banner.style.display = '';
+            loadClubAdminStats(clubId);
+        })();
+    </script>
+</body>
+</html>

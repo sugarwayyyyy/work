@@ -156,6 +156,7 @@
         let popularTags = [];
         let allTags = [];
         const POPULAR_TAG_LIMIT = 10;
+        const HIDDEN_CATEGORY_NAMES = new Set(['綜合性', '宗教性']);
 
         function getClubUrlParams() {
             const params = new URLSearchParams(window.location.search);
@@ -174,7 +175,10 @@
                 const response = await APIClient.get('clubs.php?action=categories');
                 if (!response.success) return;
 
-                categoryData = response.data.categories || [];
+                categoryData = (response.data.categories || []).filter(cat => {
+                    const name = String(cat.category_name || '').trim();
+                    return !HIDDEN_CATEGORY_NAMES.has(name);
+                });
                 const select = document.getElementById('category-filter');
                 categoryData.forEach(cat => {
                     const option = document.createElement('option');

@@ -233,3 +233,267 @@
     margin-top: 4px;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
+
+/* 活動列表改為 portal-section 風格 */
+.club-admin-page #club-events-section.portal-section {
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 1rem;
+    background: var(--surface, #fff);
+    padding: 1rem;
+}
+
+.club-admin-page #club-events-section .portal-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+}
+
+.club-admin-page #club-events-section .portal-section-title,
+.club-admin-page #club-events-section .portal-section-head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.club-admin-events-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.club-admin-events-list .club-admin-event-row {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.8rem 0.2rem;
+}
+
+.club-admin-events-list .club-admin-event-row:last-child {
+    border-bottom: none;
+}
+
+.club-events-toolbar {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) 220px;
+    gap: 0.7rem;
+    margin-bottom: 0.85rem;
+}
+
+.club-events-toolbar .filter-field {
+    margin-bottom: 0;
+}
+
+.club-events-toolbar .filter-field label {
+    display: block;
+    margin-bottom: 0.28rem;
+}
+
+@media (max-width: 720px) {
+    .club-events-toolbar {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Stats bar ── */
+.club-admin-page .admin-stats-bar {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 0;
+    background: var(--surface, #fff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    margin-bottom: 0.85rem;
+}
+.club-admin-page .admin-stats-bar::-webkit-scrollbar { display: none; }
+
+.club-admin-page .admin-stats-bar .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.62rem 1rem;
+    border-right: 1px solid var(--border, #e2e8f0);
+    white-space: nowrap;
+    flex-shrink: 0;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.club-admin-page .admin-stats-bar .stat-item:last-child { border-right: none; }
+
+.club-admin-page .admin-stats-bar .stat-item strong {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--brand, #7c3aed);
+    line-height: 1;
+}
+.club-admin-page .admin-stats-bar .stat-item .stat-club-name {
+    font-size: 0.88rem;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.club-admin-page .admin-stats-bar .stat-item span {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.stat-club-only { opacity: 0.25; transition: opacity 0.35s ease; }
+.stat-club-only.is-loaded { opacity: 1; }
+.stat-alert { color: #dc2626 !important; }
+
+.admin-selected-club-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    background: var(--brand-soft, #ede9fe);
+    color: var(--brand-hover, #5b21b6);
+    border-radius: 0.75rem;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.88rem;
+    margin-bottom: 0.75rem;
+}
+
+.admin-tab.is-locked { opacity: 0.38; cursor: not-allowed; }
+.admin-tab.is-locked-flash { outline: 2px solid rgba(124,58,237,0.35); outline-offset: 2px; }
+.admin-club-select-hint { margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted); }
+
+@media (max-width: 600px) {
+    .club-admin-page .admin-stats-bar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        overflow-x: visible;
+        overflow-y: visible;
+    }
+    .club-admin-page .admin-stats-bar .stat-item {
+        border-right: none;
+        border-bottom: 1px solid var(--border, #e2e8f0);
+        white-space: normal;
+        flex-shrink: unset;
+    }
+    .club-admin-page .admin-stats-bar .stat-item:nth-child(odd) { border-right: 1px solid var(--border, #e2e8f0); }
+    .club-admin-page .admin-stats-bar .stat-item:nth-last-child(-n+2) { border-bottom: none; }
+    .club-admin-page .admin-stats-bar .stat-item strong { font-size: 1.3rem; }
+    .club-admin-page .admin-stats-bar .stat-item .stat-club-name { font-size: 0.82rem; max-width: 100%; }
+    .club-admin-page .admin-stats-bar .stat-item span { font-size: 0.68rem; }
+}
+
+/* ── Club switch popup ── */
+#club-switch-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+}
+
+.csm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.csm-panel {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+    width: 100%;
+    max-width: 400px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.csm-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem 0.85rem;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+    flex-shrink: 0;
+}
+
+.csm-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.csm-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.35rem;
+    line-height: 1;
+    color: var(--text-muted, #64748b);
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.35rem;
+    transition: background 0.15s, color 0.15s;
+}
+
+.csm-close:hover {
+    background: #f3f4f6;
+    color: #111;
+}
+
+.csm-body {
+    padding: 0.75rem 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.csm-status {
+    color: var(--text-muted, #64748b);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 1rem 0;
+    margin: 0;
+}
+
+.csm-status--error {
+    color: #dc2626;
+}
+
+.csm-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 0.6rem;
+    transition: background 0.15s;
+}
+
+.csm-item--current {
+    background: var(--brand-soft, #ede9fe);
+    border-color: var(--brand, #7c3aed);
+}
+
+.csm-item-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.csm-item-tag {
+    font-size: 0.75rem;
+    color: var(--brand, #7c3aed);
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}

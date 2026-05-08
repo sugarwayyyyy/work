@@ -141,13 +141,13 @@
 }
 
 
-.admin-dashboard-page .admin-list,
+.admin-page .admin-list,
 .club-admin-page .admin-list {
     display: grid;
     gap: 0.75rem;
 }
 
-.admin-dashboard-page .admin-item-card,
+.admin-page .admin-item-card,
 .club-admin-page .admin-item-card {
     border: 1px solid #d8e4ef;
     background: #ffffff;
@@ -156,13 +156,13 @@
     box-shadow: 0 4px 12px rgba(16, 53, 81, 0.07);
 }
 
-.admin-dashboard-page .admin-item-card h4,
+.admin-page .admin-item-card h4,
 .club-admin-page .admin-item-card h4 {
     margin-bottom: 0.35rem;
     color: #11344f;
 }
 
-.admin-dashboard-page .admin-item-card-pinned,
+.admin-page .admin-item-card-pinned,
 .club-admin-page .admin-item-card-pinned {
     border-color: #f2b04f;
     background: linear-gradient(180deg, #fff9ef 0%, #fff5e4 100%);
@@ -311,15 +311,20 @@
 .user-mgmt-table-shell {
     border: 1px solid #e5e7eb;
     border-radius: 14px;
-    overflow: hidden;
+    overflow-x: auto;
     background: #fff;
+}
+
+.user-mgmt-table {
+    width: 100%;
+    font-size: clamp(0.82rem, 0.6vw + 0.5rem, 1rem);
 }
 
 .user-mgmt-table thead th {
     background: #f9fafb;
     color: #374151;
     font-weight: 700;
-    font-size: 0.82rem;
+    font-size: 0.82em;
 }
 
 .user-mgmt-table td {
@@ -584,3 +589,4 @@
         grid-template-columns: repeat(2, 1fr);
     }
 }
+

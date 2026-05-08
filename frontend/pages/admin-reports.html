@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>報告管理 — 管理員</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body class="admin-page admin-reports-page">
+    <header>
+        <nav>
+            <a href="admin-users.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
+            <ul class="nav-links">
+                <li><a href="admin-overview.html">系統總覽</a></li>
+                <li><a href="admin-users.html">帳號管理</a></li>
+                <li><a href="admin-clubs.html">社團管理</a></li>
+                <li><a href="admin-reports.html">報告管理</a></li>
+                <li><a href="admin-announcements.html">系統公告</a></li>
+                <li><a href="admin-transfers.html">帳戶轉讓</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container">
+        <section class="card admin-panel">
+            <div class="admin-panel-head">
+                <h2>報告管理</h2>
+                <span class="admin-panel-subtext">活動成效、用戶回饋與檢舉工單</span>
+            </div>
+            <nav class="admin-sub-tab-nav" role="tablist" aria-label="報告分類">
+                <button class="admin-sub-tab is-active" data-sub-tab="events"   role="tab" aria-selected="true">活動成效</button>
+                <button class="admin-sub-tab"           data-sub-tab="feedback" role="tab" aria-selected="false">用戶回饋</button>
+                <button class="admin-sub-tab"           data-sub-tab="cases"    role="tab" aria-selected="false">檢舉工單</button>
+            </nav>
+            <div id="reports-panel-events"   class="admin-sub-panel is-active"></div>
+            <div id="reports-panel-feedback" class="admin-sub-panel"></div>
+            <div id="reports-panel-cases"    class="admin-sub-panel"></div>
+        </section>
+    </div>
+
+    <script src="../js/main.js?v=20260507"></script>
+    <script>
+        const CLUB_STATUS_LABELS = { active: '啟用', inactive: '停用', suspended: '暫停', pending: '待審核' };
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function formatDateTime(value) {
+            if (!value) return '-';
+            if (window.PageUtils && typeof PageUtils.formatDate === 'function') return PageUtils.formatDate(value);
+            return new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+        }
+        function renderEmptyState(container, title, description) {
+            container.innerHTML = `<div class="empty-state"><div class="empty-state-illustration"></div><h4>${escapeHtml(title || '')}</h4><p>${escapeHtml(description || '')}</p></div>`;
+        }
+
+        function reportStatusLabel(status) {
+            return ({ pending: '待處理', reviewing: '審核中', resolved: '已處理', dismissed: '已駁回' })[status] || status || '-';
+        }
+        function reportTypeLabel(type) {
+            return ({ qa_question: '提問', qa_reply: '提問回覆', review: '社團評價', event: '活動', club: '社團資料' })[type] || type || '-';
+        }
+
+        async function loadEventReports() {
+            const response = await APIClient.get('admin.php?action=event_reports');
+            if (!response.success) return console.error(response.message);
+            const container = document.getElementById('reports-panel-events');
+            container.innerHTML = '';
+            const reports = response.data.reports || [];
+            if (reports.length === 0) { renderEmptyState(container, '目前沒有活動報告', '等有活動成果資料後，這裡會顯示統計內容。'); return; }
+            reports.forEach(report => {
+                const safeEventName = escapeHtml(report.event_name || '-');
+                const safeStatus = escapeHtml(CLUB_STATUS_LABELS[report.event_status] || report.event_status || '-');
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head"><h4>${safeEventName}</h4><span class="status-chip">${safeStatus}</span></div>
+                    <p class="admin-item-content">參與人數：${report.participants_count ?? 0}，平均評分：${report.average_rating ?? '無'}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function loadUserFeedback() {
+            const response = await APIClient.get('admin.php?action=user_feedback');
+            if (!response.success) return console.error(response.message);
+            const container = document.getElementById('reports-panel-feedback');
+            container.innerHTML = '';
+            const feedback = response.data.feedback || [];
+            if (feedback.length === 0) { renderEmptyState(container, '目前沒有用戶回饋', '等有回饋資料後，這裡會顯示留言與評語。'); return; }
+            feedback.forEach(item => {
+                const safeSubject = escapeHtml(item.subject || '用戶回饋');
+                const safeCreatedAt = escapeHtml(formatDateTime(item.created_at));
+                const safeMessage = escapeHtml(item.message || item.content || '-');
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head"><h4>${safeSubject}</h4><span class="status-chip">${safeCreatedAt}</span></div>
+                    <p class="admin-item-content">${safeMessage}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function loadReportCases() {
+            const response = await APIClient.get('admin.php?action=reports&status=pending');
+            if (!response.success) { PageUtils.showAlert('載入檢舉工單失敗：' + response.message, 'error'); return; }
+            const container = document.getElementById('reports-panel-cases');
+            container.innerHTML = '';
+            const reports = response.data.reports || [];
+            if (reports.length === 0) { renderEmptyState(container, '目前沒有待處理檢舉', '有新檢舉時會顯示在這裡。'); return; }
+            reports.forEach(report => {
+                const safeStatus = escapeHtml(reportStatusLabel(report.status));
+                const safeType = escapeHtml(reportTypeLabel(report.reported_content_type));
+                const safeReason = escapeHtml(report.reason || '-');
+                const safeDescription = escapeHtml(report.description || '');
+                const safeReporter = escapeHtml(report.reported_by_name || '-');
+                const safeCreated = escapeHtml(formatDateTime(report.created_at));
+                const reportId = Number(report.report_id) || 0;
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head">
+                        <h4>${safeType} #${Number(report.reported_content_id) || 0}</h4>
+                        <span class="status-chip chip-warning">${safeStatus}</span>
+                    </div>
+                    <p class="admin-item-content">檢舉人：${safeReporter}｜時間：${safeCreated}</p>
+                    <p class="admin-item-content">事由：${safeReason}</p>
+                    ${safeDescription ? `<p class="admin-item-content">補充：${safeDescription}</p>` : ''}
+                    <div class="row-actions" style="margin-top: 12px;">
+                        <button class="btn btn-primary btn-sm" data-report-resolve="${reportId}">處理並下架</button>
+                        <button class="btn btn-secondary btn-sm" data-report-dismiss="${reportId}">駁回</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            container.querySelectorAll('button[data-report-resolve]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const note = prompt('可選填處理備註（例如：違反社群規範）') || '';
+                    await reviewReportCase(btn.dataset.reportResolve, 'resolved', note, true);
+                });
+            });
+            container.querySelectorAll('button[data-report-dismiss]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const note = prompt('請輸入駁回原因（必填）');
+                    if (!note || !note.trim()) return;
+                    await reviewReportCase(btn.dataset.reportDismiss, 'dismissed', note.trim(), false);
+                });
+            });
+        }
+
+        async function reviewReportCase(reportId, decision, adminNotes, forceHide) {
+            const response = await APIClient.post('admin.php?action=review_report', { report_id: Number(reportId), decision, admin_notes: adminNotes, force_hide: forceHide ? 1 : 0 });
+            if (response.success) { PageUtils.showAlert('檢舉工單已更新', 'success'); loadReportCases(); }
+            else PageUtils.showAlert('更新失敗：' + response.message, 'error');
+        }
+
+        const reportsLoaded = { events: false, feedback: false, cases: false };
+        const reportsLoaders = { events: loadEventReports, feedback: loadUserFeedback, cases: loadReportCases };
+
+        function switchReportsSubTab(key) {
+            document.querySelectorAll('.admin-sub-tab').forEach(t => { t.classList.remove('is-active'); t.setAttribute('aria-selected', 'false'); });
+            document.querySelectorAll('.admin-sub-panel').forEach(p => p.classList.remove('is-active'));
+            const btn = document.querySelector(`.admin-sub-tab[data-sub-tab="${key}"]`);
+            const panel = document.getElementById('reports-panel-' + key);
+            if (btn) { btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true'); }
+            if (panel) panel.classList.add('is-active');
+            if (!reportsLoaded[key]) { reportsLoaded[key] = true; reportsLoaders[key](); }
+        }
+
+        document.querySelectorAll('.admin-sub-tab').forEach(btn => {
+            btn.addEventListener('click', () => switchReportsSubTab(btn.dataset.subTab));
+        });
+
+        switchReportsSubTab('events');
+    </script>
+</body>
+</html>

@@ -969,7 +969,7 @@ footer p {
 }
 
 /* 蝞∴蕭??嚙踝蕭?銵冽撠惇 */
-.admin-dashboard-page {
+.admin-page {
     font-family: 'IBM Plex Sans TC', 'Segoe UI', Tahoma, sans-serif;
     background:
         radial-gradient(circle at 10% 10%, rgba(11, 80, 132, 0.2), transparent 38%),
@@ -978,7 +978,7 @@ footer p {
     min-height: 100vh;
 }
 
-.admin-dashboard-page::before {
+.admin-page::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -1530,7 +1530,7 @@ footer p {
     pointer-events: none;
 }
 
-.club-admin-page, .admin-dashboard-page {
+.club-admin-page, .admin-page {
     position: relative;
     overflow-x: hidden;
 }

@@ -692,11 +692,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function initializePage() {
     ensureSiteFavicon();
+    ensureHamburger();
     applyActiveNavLink();
     await hydrateUserFromSession();
     updateNavigation();
     await renderGlobalFollowSidebar();
     renderAuthPromoBanner();
+}
+
+function ensureHamburger() {
+    const nav = document.querySelector('header nav');
+    if (!nav || nav.querySelector('.hamburger')) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'hamburger';
+    btn.id = 'hamburger-btn';
+    btn.setAttribute('aria-label', '選單');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+
+    const navRight = nav.querySelector('.nav-right');
+    nav.insertBefore(btn, navRight || null);
+
+    btn.addEventListener('click', () => {
+        const open = nav.classList.toggle('nav-open');
+        btn.setAttribute('aria-expanded', String(open));
+    });
+
+    const closeMenu = () => {
+        nav.classList.remove('nav-open');
+        btn.setAttribute('aria-expanded', 'false');
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!nav.contains(e.target)) closeMenu();
+    });
+
+    nav.addEventListener('click', (e) => {
+        if (e.target.closest('.nav-links a')) closeMenu();
+    });
 }
 
 function ensureSiteFavicon() {
@@ -1231,12 +1265,11 @@ function setupSidebarToggle(section) {
 
 async function renderGlobalFollowSidebar() {
     const user = StorageUtils.getUser();
-    const shouldHideForPlatformAdminProfile = !!(user && user.role === 'platform_admin' && isUserProfilePage());
-    if (shouldHideForPlatformAdminProfile) {
+    const isAdminPage = isAdminSubPage() || isAdminOverviewPage() || isAdminDashboardPage()
+        || (isNotificationsPage() && !!(user && user.role === 'platform_admin'));
+    if (isAdminPage) {
         const existingSection = document.getElementById('followed-clubs-section');
-        if (existingSection) {
-            existingSection.remove();
-        }
+        if (existingSection) existingSection.remove();
         document.body.classList.remove('has-global-follow-sidebar');
         document.body.classList.remove('sidebar-expanded');
         return;
@@ -1344,14 +1377,31 @@ function isAdminOverviewPage() {
     return path.endsWith('/frontend/pages/admin-overview.html') || path.endsWith('/pages/admin-overview.html');
 }
 
+function isAdminSubPage() {
+    const path = window.location.pathname || '';
+    const pages = ['admin-users.html', 'admin-clubs.html', 'admin-reports.html', 'admin-announcements.html', 'admin-transfers.html'];
+    return pages.some(p => path.endsWith('/frontend/pages/' + p) || path.endsWith('/pages/' + p));
+}
+
 function isClubAdminDashboardPage() {
     const path = window.location.pathname || '';
     return path.endsWith('/frontend/pages/club-admin-dashboard.html') || path.endsWith('/pages/club-admin-dashboard.html');
 }
 
+function isClubAdminSubPage() {
+    const path = window.location.pathname || '';
+    const pages = ['club-admin-my-clubs.html', 'club-admin-club-manage.html', 'club-admin-create-event.html', 'club-admin-events-list.html', 'club-admin-transfer.html'];
+    return pages.some(p => path.endsWith('/frontend/pages/' + p) || path.endsWith('/pages/' + p));
+}
+
 function isUserProfilePage() {
     const path = window.location.pathname || '';
     return path.endsWith('/frontend/pages/user-profile.html') || path.endsWith('/pages/user-profile.html');
+}
+
+function isNotificationsPage() {
+    const path = window.location.pathname || '';
+    return path.endsWith('/frontend/pages/notifications.html') || path.endsWith('/pages/notifications.html');
 }
 
 function userCanManageClubs(user) {
@@ -1366,10 +1416,8 @@ function setRestrictedDashboardNav(role) {
     const navLinks = document.querySelector('.nav-links');
     if (!navLinks) return;
 
-    if (role === 'platform_admin') {
-        navLinks.innerHTML = `<li id="admin-dashboard-link"><a href="${getPageLink('admin-dashboard.html')}">管理員</a></li>`;
-    } else if (role === 'club_admin') {
-        navLinks.innerHTML = `<li id="club-admin-dashboard-link"><a href="${getPageLink('club-admin-dashboard.html')}">幹部</a></li>`;
+    if (role === 'club_admin') {
+        navLinks.innerHTML = `<li id="club-admin-dashboard-link"><a href="${getPageLink('club-admin-my-clubs.html')}">幹部</a></li>`;
     }
 }
 
@@ -1412,6 +1460,26 @@ function applyActiveNavLink() {
 
     const links = Array.from(navLinks.querySelectorAll('a[href]'));
     links.forEach((link) => link.classList.remove('active'));
+
+    if (isAdminOverviewPage()) {
+        const t = links.find(l => (l.getAttribute('href') || '').includes('admin-overview.html'));
+        if (t) t.classList.add('active');
+        return;
+    }
+    if (isAdminSubPage() || isAdminDashboardPage()) {
+        const filename = (window.location.pathname || '').split('/').pop() || '';
+        const target = filename === 'admin-dashboard.html' ? 'admin-users.html' : filename;
+        const t = links.find(l => (l.getAttribute('href') || '').includes(target));
+        if (t) t.classList.add('active');
+        return;
+    }
+    if (isClubAdminSubPage() || isClubAdminDashboardPage()) {
+        const filename = (window.location.pathname || '').split('/').pop() || '';
+        const target = filename === 'club-admin-dashboard.html' ? 'club-admin-my-clubs.html' : filename;
+        const t = links.find(l => (l.getAttribute('href') || '').includes(target));
+        if (t) t.classList.add('active');
+        return;
+    }
 
     const section = getNavActiveSection(window.location.pathname || '');
     if (!section) return;
@@ -1562,7 +1630,7 @@ function updateNavigation() {
             const roleLink = user.role === 'platform_admin'
                 ? `<a href="${getPageLink('admin-dashboard.html')}"><img class="ndp-menu-icon" src="${dashboardIcon}" alt="">管理員後台</a>`
                 : (userCanManageClubs(user)
-                    ? `<a href="${getPageLink('club-admin-dashboard.html')}"><img class="ndp-menu-icon" src="${dashboardIcon}" alt="">幹部後台</a>`
+                    ? `<a href="${getPageLink('club-admin-my-clubs.html')}"><img class="ndp-menu-icon" src="${dashboardIcon}" alt="">幹部後台</a>`
                     : '');
 
             const avatarTriggerContent = relativeAvatarUrl
@@ -1652,40 +1720,34 @@ function updateNavigation() {
 
         const navLinks = document.querySelector('.nav-links');
         if (navLinks) {
-            if (isAdminDashboardPage() || isAdminOverviewPage()) {
+            const isPlatformAdminAuxPage = user.role === 'platform_admin' && (isUserProfilePage() || isNotificationsPage());
+            if (isAdminSubPage() || isAdminDashboardPage() || isAdminOverviewPage() || isPlatformAdminAuxPage) {
                 navLinks.innerHTML = `
                     <li><a href="${getPageLink('admin-overview.html')}">系統總覽</a></li>
-                    <li id="admin-dashboard-link"><a href="${getPageLink('admin-dashboard.html')}">管理後台</a></li>
+                    <li><a href="${getPageLink('admin-users.html')}">帳號管理</a></li>
+                    <li><a href="${getPageLink('admin-clubs.html')}">社團管理</a></li>
+                    <li><a href="${getPageLink('admin-reports.html')}">報告管理</a></li>
+                    <li><a href="${getPageLink('admin-announcements.html')}">系統公告</a></li>
+                    <li><a href="${getPageLink('admin-transfers.html')}">帳戶轉讓</a></li>
                 `;
             }
 
-            if (isUserProfilePage() && user.role === 'platform_admin') {
-                navLinks.innerHTML = `<li id="admin-dashboard-link"><a href="${getPageLink('admin-dashboard.html')}">管理員</a></li>`;
-            }
-
-            if (isClubAdminDashboardPage()) {
+            if (isClubAdminSubPage() || isClubAdminDashboardPage()) {
                 navLinks.innerHTML = `
-                    <li><a href="${FRONTEND_HOME_URL}">首頁</a></li>
-                    <li><a href="${getPageLink('club-list.html')}">社團</a></li>
-                    <li><a href="${getPageLink('events.html')}">活動</a></li>
-                    <li><a href="${getPageLink('qa.html')}">提問</a></li>
-                    <li id="club-admin-dashboard-link"><a href="${getPageLink('club-admin-dashboard.html')}">幹部</a></li>
+                    <li><a href="${getPageLink('club-admin-club-manage.html')}">社團管理</a></li>
+                    <li><a href="${getPageLink('club-admin-create-event.html')}">建立活動</a></li>
+                    <li><a href="${getPageLink('club-admin-events-list.html')}">活動列表</a></li>
+                    <li><a href="${getPageLink('club-admin-transfer.html')}">帳戶轉讓</a></li>
                 `;
             }
 
             const staleProfileLink = document.getElementById('user-profile-link');
             if (staleProfileLink) staleProfileLink.remove();
 
-            if (user.role === 'platform_admin' && !document.getElementById('admin-dashboard-link')) {
-                const li = document.createElement('li');
-                li.id = 'admin-dashboard-link';
-                li.innerHTML = `<a href="${getPageLink('admin-dashboard.html')}">管理員</a>`;
-                navLinks.appendChild(li);
-            }
             if (userCanManageClubs(user) && user.role !== 'platform_admin' && !document.getElementById('club-admin-dashboard-link')) {
                 const li = document.createElement('li');
                 li.id = 'club-admin-dashboard-link';
-                li.innerHTML = `<a href="${getPageLink('club-admin-dashboard.html')}">幹部</a>`;
+                li.innerHTML = `<a href="${getPageLink('club-admin-my-clubs.html')}">幹部</a>`;
                 navLinks.appendChild(li);
             }
         }
@@ -1702,11 +1764,9 @@ function updateNavigation() {
         }
         const profileLink = document.getElementById('user-profile-link');
         const profileShortcut = document.getElementById('user-profile-shortcut');
-        const adminLink = document.getElementById('admin-dashboard-link');
         const clubAdminLink = document.getElementById('club-admin-dashboard-link');
         if (profileLink) profileLink.remove();
         if (profileShortcut) profileShortcut.remove();
-        if (adminLink) adminLink.remove();
         if (clubAdminLink) clubAdminLink.remove();
     }
 

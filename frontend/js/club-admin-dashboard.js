@@ -36,23 +36,22 @@
         }
 
         function hideManagementPanels() {
-            document.getElementById('club-management-section').style.display = 'none';
-            document.getElementById('create-event-section').style.display = 'none';
-            document.getElementById('transfer-request-section').style.display = 'none';
-            document.getElementById('club-events-section').style.display = 'none';
+            ['club-management-section','create-event-section','transfer-request-section','club-events-section','event-management-section'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
         }
 
         function showManagementPanel(panel) {
             hideManagementPanels();
-            if (panel === 'club') {
-                document.getElementById('club-management-section').style.display = 'block';
-            } else if (panel === 'event') {
-                document.getElementById('create-event-section').style.display = 'block';
-            } else if (panel === 'transfer') {
-                document.getElementById('transfer-request-section').style.display = 'block';
-            } else if (panel === 'events') {
-                document.getElementById('club-events-section').style.display = 'block';
-            }
+            const map = { club:'club-management-section', event:'create-event-section', transfer:'transfer-request-section', events:'club-events-section' };
+            const el = document.getElementById(map[panel]);
+            if (el) el.style.display = 'block';
+        }
+
+        // Called when user selects a club. Override per page for navigation behaviour.
+        function handleClubSelect(clubId, clubName) {
+            loadClubDetails(clubId);
         }
 
         function setDefaultCreateEventDate() {
@@ -208,9 +207,12 @@
         }
 
         function detectTagsFromDescription() {
-            const description = document.getElementById('update-club-description').value.trim().toLowerCase();
+            const descEl = document.getElementById('update-club-description');
+            if (!descEl) return;
+            const description = descEl.value.trim().toLowerCase();
             suggestedTagIds.clear();
             const suggestionContainer = document.getElementById('suggested-tags');
+            if (!suggestionContainer) return;
             suggestionContainer.innerHTML = '';
             
             // 根據標籤類型和關鍵字進行匹配
@@ -304,6 +306,7 @@
 
         function renderSelectedTags() {
             const container = document.getElementById('selected-tags');
+            if (!container) return;
             container.innerHTML = '';
             
             if (selectedTagIds.size === 0) {
@@ -321,8 +324,10 @@
         }
 
         function clearTagSearch() {
-            document.getElementById('tag-search-input').value = '';
-            document.getElementById('tag-search-results').innerHTML = '';
+            const inp = document.getElementById('tag-search-input');
+            const res = document.getElementById('tag-search-results');
+            if (inp) inp.value = '';
+            if (res) res.innerHTML = '';
         }
 
         async function loadAllTags() {
@@ -699,6 +704,7 @@
         }
 
         function refreshClubPreview() {
+            if (!document.getElementById('club-preview-text')) return;
             const name = (currentClubName || '').trim() || '未填寫';
             const desc = document.getElementById('update-club-description').value.trim() || '未填寫';
             const time = document.getElementById('update-club-meeting-time').value.trim() || '未填寫';
@@ -789,11 +795,8 @@
             const response = await APIClient.get('club-admin.php?action=my_clubs');
             if (!response.success) return console.error(response.message);
             const container = document.getElementById('my-clubs-container');
-            const clubEventsSection = document.getElementById('club-events-section');
+            if (!container) return;
             container.innerHTML = '';
-            if (clubEventsSection) {
-                clubEventsSection.style.display = 'none';
-            }
             (response.data.clubs || []).forEach(club => {
                 const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
                 const safeStatus = PageUtils.escapeHtml(translateStatus(club.activity_status));
@@ -805,7 +808,9 @@
                             <h4>${safeClubName}</h4>
                             <span class="status-chip">${safeStatus}</span>
                         </div>
-                        <button class="btn btn-primary btn-sm" onclick="loadClubDetails(${club.club_id})">管理社團</button>
+                        <button class="btn btn-primary btn-sm"
+                            data-manage-club-id="${Number(club.club_id)}"
+                            data-manage-club-name="${safeClubName}">管理社團</button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -813,24 +818,55 @@
             if (container.children.length === 0) {
                 renderEmptyState(container, '目前沒有可管理的社團', '如果你預期應該看到社團，請先確認帳號權限是否正確。');
             }
+            container.addEventListener('click', e => {
+                const btn = e.target.closest('[data-manage-club-id]');
+                if (!btn) return;
+                handleClubSelect(Number(btn.dataset.manageClubId), btn.dataset.manageClubName);
+            });
+        }
+
+        async function loadClubAdminStats(clubId) {
+            try {
+                const res = await APIClient.get(`club-admin.php?action=club_stats&id=${clubId}`);
+                if (!res.success) return;
+                const s = res.data;
+                const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+                setText('stat-followers',       s.follower_count ?? '-');
+                setText('stat-total-events',    s.total_events ?? '-');
+                setText('stat-upcoming',        s.upcoming_events ?? '-');
+                setText('stat-published',       s.published_events ?? '-');
+                setText('stat-cancelled',       s.cancelled_events ?? '-');
+                setText('stat-registrations',   s.total_registrations ?? '-');
+                setText('stat-avg-rating',      s.average_rating !== null ? Number(s.average_rating).toFixed(1) : '-');
+                const qaEl = document.getElementById('stat-unanswered-qa');
+                if (qaEl) {
+                    qaEl.textContent = s.unanswered_qa ?? '-';
+                    qaEl.classList.toggle('stat-alert', (s.unanswered_qa ?? 0) > 0);
+                }
+                document.querySelectorAll('.stat-club-only').forEach(el => el.classList.add('is-loaded'));
+            } catch (e) {
+                console.error('loadClubAdminStats error', e);
+            }
         }
 
         async function loadCollaborativeClubOptions(currentManagedClubId) {
             const createContainer = document.getElementById('event-collaborative-clubs');
             const updateContainer = document.getElementById('update-event-collaborative-clubs');
-            if (!createContainer || !updateContainer) return;
+            if (!createContainer && !updateContainer) return;
 
             try {
                 const response = await APIClient.get('clubs.php?action=all_for_filter');
-                if (!response.success) {
-                    return;
-                }
+                if (!response.success) return;
 
                 const clubs = (response.data?.clubs || []).filter(club => Number(club.club_id) !== Number(currentManagedClubId));
-                renderCollaborativeClubCheckboxes(createContainer, clubs, 'create-collab-club');
-                renderCollaborativeClubCheckboxes(updateContainer, clubs, 'update-collab-club');
-                bindCollaborativeClubDropdown('event-collaborative-clubs');
-                bindCollaborativeClubDropdown('update-event-collaborative-clubs');
+                if (createContainer) {
+                    renderCollaborativeClubCheckboxes(createContainer, clubs, 'create-collab-club');
+                    bindCollaborativeClubDropdown('event-collaborative-clubs');
+                }
+                if (updateContainer) {
+                    renderCollaborativeClubCheckboxes(updateContainer, clubs, 'update-collab-club');
+                    bindCollaborativeClubDropdown('update-event-collaborative-clubs');
+                }
             } catch (error) {
                 console.error('載入協辦社團清單失敗:', error);
             }
@@ -985,42 +1021,47 @@
             const club = response.data;
             currentClubName = club.club_name || '';
             currentClubLastUpdated = club.last_updated || null;
-            document.getElementById('club-action-selector').style.display = 'block';
-            document.getElementById('club-action-subtitle').textContent = `目前管理社團：${club.club_name || ''}`;
+
+            const $e = id => document.getElementById(id);
+            const setVal = (id, v) => { const e = $e(id); if (e) e.value = String(v ?? ''); };
+            const setTxt = (id, v) => { const e = $e(id); if (e) e.textContent = String(v ?? ''); };
+
+            if ($e('club-action-selector')) $e('club-action-selector').style.display = 'block';
+            setTxt('club-action-subtitle', `目前管理社團：${club.club_name || ''}`);
             hideManagementPanels();
-            document.getElementById('club-subtitle').textContent = club.club_name || '';
-            document.getElementById('update-club-id').value = club.club_id;
-            document.getElementById('event-club-id').value = club.club_id;
-            document.getElementById('update-club-description').value = club.description || '';
-            setClubMeetingTimeFromValue(club.meeting_time || '');
-            document.getElementById('update-club-location').value = club.meeting_location || '';
-            document.getElementById('update-club-email').value = club.contact_email || '';
-            document.getElementById('update-club-phone').value = club.contact_phone || '';
-            document.getElementById('update-club-fee').value = club.club_fee || '';
-            document.getElementById('create-event-submit').disabled = false;
-            document.getElementById('create-event-hint').textContent = `目前建立活動目標社團：${club.club_name || ''}`;
-            document.getElementById('transfer-request-subtitle').textContent = `目前申請社團：${club.club_name || ''}（${club.club_code || '-'}）`;
-            document.getElementById('club-events-subtitle').textContent = `目前管理社團：${club.club_name || ''}`;
-            setDefaultCreateEventDate();
+            setTxt('club-subtitle', club.club_name || '');
+            setVal('update-club-id', club.club_id);
+            setVal('event-club-id', club.club_id);
+            setVal('update-club-description', club.description || '');
+            if ($e('update-club-meeting-day')) setClubMeetingTimeFromValue(club.meeting_time || '');
+            setVal('update-club-location', club.meeting_location || '');
+            setVal('update-club-email', club.contact_email || '');
+            setVal('update-club-phone', club.contact_phone || '');
+            setVal('update-club-fee', club.club_fee || '');
+            if ($e('create-event-submit')) $e('create-event-submit').disabled = false;
+            setTxt('create-event-hint', `目前建立活動目標社團：${club.club_name || ''}`);
+            setTxt('transfer-request-subtitle', `目前申請社團：${club.club_name || ''}（${club.club_code || '-'}）`);
+            setTxt('club-events-subtitle', `目前管理社團：${club.club_name || ''}`);
+            if ($e('event-date-date')) setDefaultCreateEventDate();
             refreshClubPreview();
             await loadCollaborativeClubOptions(currentClubId);
 
-            const logoImg = document.getElementById('club-logo-img');
-            if (club.logo_path) {
-                logoImg.src = PageUtils.resolveMediaUrl(club.logo_path);
-                logoImg.style.display = 'block';
-            } else {
-                logoImg.style.display = 'none';
+            const logoImg = $e('club-logo-img');
+            if (logoImg) {
+                if (club.logo_path) {
+                    logoImg.src = PageUtils.resolveMediaUrl(club.logo_path);
+                    logoImg.style.display = 'block';
+                } else {
+                    logoImg.style.display = 'none';
+                }
             }
 
-            // 加載標籤
             selectedTagIds.clear();
             if (club.tags && club.tags.length > 0) {
                 club.tags.forEach(tag => selectedTagIds.add(tag.tag_id));
             }
             renderSelectedTags();
             detectTagsFromDescription();
-
             loadClubEvents(clubId);
         }
 
@@ -1028,6 +1069,7 @@
             const response = await APIClient.get('club-admin.php?action=club_events&id=' + clubId);
             if (!response.success) return console.error(response.message);
             const container = document.getElementById('club-events-container');
+            if (!container) return;
             container.innerHTML = '';
             const events = response.data.events || [];
             if (events.length === 0) {
@@ -1040,7 +1082,7 @@
                 const safeStatus = PageUtils.escapeHtml(translateStatus(event.event_status));
                 const safeLocation = PageUtils.escapeHtml(event.location || '');
                 const card = document.createElement('div');
-                card.className = 'admin-item-card';
+                card.className = 'club-admin-event-row';
                 card.innerHTML = `
                     <div class="admin-item-head">
                         <div>
@@ -1218,119 +1260,372 @@
             reader.readAsDataURL(file);
         }
 
-        document.getElementById('update-club-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            if (!validateClubForm()) return;
+        // ── Club switch popup ────────────────────────────────────────────────
+        function closeClubSwitchPopup() {
+            const modal = document.getElementById('club-switch-modal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
 
-            const submitButton = event.currentTarget.querySelector('button[type="submit"]');
-            if (submitButton) submitButton.disabled = true;
+        async function openClubSwitchPopup() {
+            let modal = document.getElementById('club-switch-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'club-switch-modal';
+                modal.innerHTML = `
+                    <div class="csm-overlay" id="csm-overlay">
+                        <div class="csm-panel">
+                            <div class="csm-head">
+                                <h3 class="csm-title">切換社團</h3>
+                                <button class="csm-close" id="csm-close" aria-label="關閉">&times;</button>
+                            </div>
+                            <div class="csm-body" id="csm-body"></div>
+                        </div>
+                    </div>`;
+                document.body.appendChild(modal);
+                document.getElementById('csm-overlay').addEventListener('click', e => {
+                    if (e.target.id === 'csm-overlay') closeClubSwitchPopup();
+                });
+                document.getElementById('csm-close').addEventListener('click', closeClubSwitchPopup);
+                document.addEventListener('keydown', e => {
+                    if (e.key === 'Escape') closeClubSwitchPopup();
+                });
+            }
+
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+
+            const body = document.getElementById('csm-body');
+            body.innerHTML = '<p class="csm-status">載入中⋯</p>';
 
             try {
+                const res = await APIClient.get('club-admin.php?action=my_clubs');
+                if (!res.success) throw new Error(res.message);
+                const clubs = res.data.clubs || [];
+                if (!clubs.length) {
+                    body.innerHTML = '<p class="csm-status">目前沒有可管理的社團。</p>';
+                    return;
+                }
+                body.innerHTML = '';
+                clubs.forEach(club => {
+                    const isCurrent = Number(club.club_id) === Number(currentClubId);
+                    const safeName = PageUtils.escapeHtml(club.club_name || '-');
+                    const item = document.createElement('div');
+                    item.className = 'csm-item' + (isCurrent ? ' csm-item--current' : '');
+                    item.innerHTML = isCurrent
+                        ? `<span class="csm-item-name">${safeName}</span><span class="csm-item-tag">目前管理中</span>`
+                        : `<span class="csm-item-name">${safeName}</span><button class="btn btn-primary btn-sm csm-pick" data-club-id="${Number(club.club_id)}" data-club-name="${safeName}">選擇</button>`;
+                    body.appendChild(item);
+                });
+
+                body.addEventListener('click', e => {
+                    const btn = e.target.closest('.csm-pick');
+                    if (!btn) return;
+                    const clubId = Number(btn.dataset.clubId);
+                    const clubName = btn.dataset.clubName;
+
+                    sessionStorage.setItem('clubAdmin_clubId', clubId);
+                    sessionStorage.setItem('clubAdmin_clubName', clubName);
+                    currentClubId = clubId;
+                    currentClubName = clubName;
+
+                    const bannerName = document.getElementById('selected-club-name');
+                    if (bannerName) bannerName.textContent = clubName;
+                    const statName = document.getElementById('stat-current-club');
+                    if (statName) statName.textContent = clubName;
+                    document.querySelectorAll('.stat-club-only').forEach(el => el.classList.remove('is-loaded'));
+                    loadClubAdminStats(clubId);
+
+                    closeClubSwitchPopup();
+                    document.dispatchEvent(new CustomEvent('clubadmin:switch', { detail: { clubId, clubName } }));
+                }, { once: true });
+            } catch (err) {
+                body.innerHTML = `<p class="csm-status csm-status--error">載入失敗：${PageUtils.escapeHtml(err.message)}</p>`;
+            }
+        }
+
+        // ── club-admin-club-manage.html ──────────────────────────────────────
+        (function () {
+            const form = document.getElementById('update-club-form');
+            if (!form) return;
+
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                if (!validateClubForm()) return;
+
+                const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+                if (submitButton) submitButton.disabled = true;
+
+                try {
+                    if (!currentClubId) {
+                        PageUtils.showAlert('請先選擇要管理的社團', 'error');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('description', document.getElementById('update-club-description').value);
+                    formData.append('meeting_time', document.getElementById('update-club-meeting-time').value);
+                    formData.append('meeting_location', document.getElementById('update-club-location').value);
+                    formData.append('contact_email', document.getElementById('update-club-email').value);
+                    formData.append('contact_phone', document.getElementById('update-club-phone').value);
+                    formData.append('club_fee', document.getElementById('update-club-fee').value);
+                    formData.append('last_updated', currentClubLastUpdated || '');
+
+                    const logoFile = document.getElementById('club-logo-upload').files[0];
+                    if (logoFile) {
+                        const uploadFormData = new FormData();
+                        uploadFormData.append('logo', logoFile);
+                        uploadFormData.append('club_id', currentClubId);
+                        const csrfHeaders = await APIClient.getCSRFHeaders();
+
+                        const uploadResponse = await fetch(getUploadApiUrl('upload_club_logo'), {
+                            method: 'POST',
+                            body: uploadFormData,
+                            credentials: 'include',
+                            headers: {
+                                ...APIClient.getAuthHeaders(),
+                                ...csrfHeaders
+                            }
+                        });
+
+                        const uploadRawText = await uploadResponse.text();
+                        let uploadResult = null;
+                        try {
+                            uploadResult = JSON.parse(uploadRawText);
+                        } catch (parseError) {
+                            throw new Error(`Logo 上傳回應格式錯誤（HTTP ${uploadResponse.status}）：${uploadRawText.slice(0, 300)}`);
+                        }
+
+                        if (!uploadResponse.ok || !uploadResult.success) {
+                            throw new Error(uploadResult.message || 'Logo 上傳失敗');
+                        }
+
+                        formData.append('logo_path', uploadResult.path);
+                    }
+
+                    const response = await APIClient.put('clubs.php?action=update&id=' + currentClubId, Object.fromEntries(formData));
+                    if (response.success) {
+                        PageUtils.showAlert('社團更新成功', 'success');
+                        await saveClubTags(currentClubId);
+                        loadClubDetails(currentClubId);
+                    } else {
+                        PageUtils.showAlert('更新社團失敗：' + (response.message || '未知錯誤'), 'error');
+                    }
+                } catch (error) {
+                    console.error('更新社團失敗:', error);
+                    PageUtils.showAlert('更新社團失敗：' + error.message, 'error');
+                } finally {
+                    if (submitButton) submitButton.disabled = false;
+                }
+            });
+
+            ['update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', refreshClubPreview);
+            });
+
+            initHourSelect('update-club-meeting-start-hour');
+            initHourSelect('update-club-meeting-end-hour');
+            ['update-club-meeting-day', 'update-club-meeting-start-hour', 'update-club-meeting-start-minute', 'update-club-meeting-end-hour', 'update-club-meeting-end-minute'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', () => {
+                        syncClubMeetingTimeValue();
+                        refreshClubPreview();
+                    });
+                }
+            });
+            setClubMeetingTimeFromValue('');
+
+            loadAllTags();
+            const saved = sessionStorage.getItem('clubAdmin_clubId');
+            if (saved) loadClubDetails(Number(saved));
+
+            document.addEventListener('clubadmin:switch', e => loadClubDetails(e.detail.clubId));
+        })();
+
+        // ── club-admin-create-event.html ─────────────────────────────────────
+        (function () {
+            const form = document.getElementById('create-event-form');
+            if (!form) return;
+
+            ['event-date', 'event-end', 'event-reg-start', 'event-deadline'].forEach(baseId => {
+                initHourSelect(`${baseId}-hour`);
+                const dateInput = document.getElementById(`${baseId}-date`);
+                const hourSelect = document.getElementById(`${baseId}-hour`);
+                const minuteSelect = document.getElementById(`${baseId}-minute`);
+                [dateInput, hourSelect, minuteSelect].forEach(control => {
+                    if (control) {
+                        control.addEventListener('change', () => {
+                            syncDateTimeFromParts(baseId, baseId === 'event-date');
+                        });
+                    }
+                });
+                setDateTimeParts(baseId, '');
+                syncDateTimeFromParts(baseId, false);
+            });
+
+            loadAllTags().then(() => {
+                renderEventSelectedTags('create');
+                detectEventTagsFromDescription();
+            });
+
+            const savedForCollab = sessionStorage.getItem('clubAdmin_clubId');
+            if (savedForCollab) loadCollaborativeClubOptions(Number(savedForCollab));
+
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+
                 if (!currentClubId) {
-                    PageUtils.showAlert('請先選擇要管理的社團', 'error');
+                    PageUtils.showAlert('請先從「我的社團」選擇要管理的社團', 'error');
                     return;
                 }
 
-                const formData = new FormData();
-                formData.append('description', document.getElementById('update-club-description').value);
-                formData.append('meeting_time', document.getElementById('update-club-meeting-time').value);
-                formData.append('meeting_location', document.getElementById('update-club-location').value);
-                formData.append('contact_email', document.getElementById('update-club-email').value);
-                formData.append('contact_phone', document.getElementById('update-club-phone').value);
-                formData.append('club_fee', document.getElementById('update-club-fee').value);
-                formData.append('last_updated', currentClubLastUpdated || '');
+                if (!validateEventForm()) return;
 
-                const logoFile = document.getElementById('club-logo-upload').files[0];
-                if (logoFile) {
-                    const uploadFormData = new FormData();
-                    uploadFormData.append('logo', logoFile);
-                    uploadFormData.append('club_id', currentClubId);
-                    const csrfHeaders = await APIClient.getCSRFHeaders();
+                if (!confirm(`即將以「${currentClubName}」幹部身份發布活動，是否確認？`)) return;
 
-                    const uploadResponse = await fetch(getUploadApiUrl('upload_club_logo'), {
-                        method: 'POST',
-                        body: uploadFormData,
-                        credentials: 'include',
-                        headers: {
-                            ...APIClient.getAuthHeaders(),
-                            ...csrfHeaders
+                try {
+                    const formData = new FormData();
+                    formData.append('club_id', currentClubId);
+                    formData.append('event_name', document.getElementById('event-name').value);
+                    formData.append('description', document.getElementById('event-description').value);
+                    formData.append('event_date', document.getElementById('event-date').value);
+                    formData.append('event_end_date', document.getElementById('event-end').value);
+                    formData.append('registration_start', document.getElementById('event-reg-start').value);
+                    formData.append('location', document.getElementById('event-location').value);
+                    formData.append('capacity', document.getElementById('event-capacity').value);
+                    formData.append('fee', document.getElementById('event-fee').value);
+                    formData.append('registration_deadline', document.getElementById('event-deadline').value);
+                    formData.append('event_status', 'published');
+                    formData.append('is_registration_open', document.getElementById('event-registration-open').checked ? '1' : '0');
+                    const payload = Object.fromEntries(formData);
+                    payload.collaborative_club_ids = getSelectedCollaborativeClubIds('event-collaborative-clubs');
+                    const response = await APIClient.post('events.php?action=create', payload);
+
+                    if (response.success) {
+                        const createdEventId = response?.data?.event_id;
+
+                        const posterFile = document.getElementById('event-poster-upload').files[0];
+                        if (posterFile && createdEventId) {
+                            const uploadFormData = new FormData();
+                            uploadFormData.append('poster', posterFile);
+                            uploadFormData.append('event_id', String(createdEventId));
+                            const csrfHeaders = await APIClient.getCSRFHeaders();
+                            const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
+                                method: 'POST',
+                                body: uploadFormData,
+                                credentials: 'include',
+                                headers: {
+                                    ...APIClient.getAuthHeaders(),
+                                    ...csrfHeaders
+                                }
+                            });
+
+                            const uploadRawText = await uploadResponse.text();
+                            let uploadResult = null;
+                            try {
+                                uploadResult = JSON.parse(uploadRawText);
+                            } catch (parseError) {
+                                throw new Error(`活動海報上傳回應格式錯誤（HTTP ${uploadResponse.status}）：${uploadRawText.slice(0, 300)}`);
+                            }
+
+                            if (!uploadResponse.ok || !uploadResult.success) {
+                                throw new Error(uploadResult.message || '活動海報上傳失敗');
+                            }
                         }
-                    });
 
-                    const uploadRawText = await uploadResponse.text();
-                    let uploadResult = null;
-                    try {
-                        uploadResult = JSON.parse(uploadRawText);
-                    } catch (parseError) {
-                        throw new Error(`Logo 上傳回應格式錯誤（HTTP ${uploadResponse.status}）：${uploadRawText.slice(0, 300)}`);
+                        if (createEventSelectedTagIds.size > 0 && createdEventId) {
+                            try {
+                                await APIClient.post('events.php?action=update_event_tags', {
+                                    event_id: createdEventId,
+                                    tag_ids: Array.from(createEventSelectedTagIds)
+                                });
+                            } catch (error) {
+                                console.error('保存活動標籤失敗:', error);
+                            }
+                        }
+
+                        PageUtils.showAlert('活動建立成功', 'success');
+                        event.target.reset();
+                        const posterImg = document.getElementById('event-poster-img');
+                        if (posterImg) posterImg.style.display = 'none';
+                        createEventSelectedTagIds.clear();
+                        renderEventSelectedTags('create');
+                        setDefaultCreateEventDate();
+                        detectEventTagsFromDescription();
+                    } else {
+                        PageUtils.showAlert('建立活動失敗：' + response.message, 'error');
                     }
+                } catch (error) {
+                    console.error('建立活動出現異常:', error);
+                    PageUtils.showAlert('建立活動錯誤：' + error.message, 'error');
+                }
+            });
 
-                    if (!uploadResponse.ok || !uploadResult.success) {
-                        throw new Error(uploadResult.message || 'Logo 上傳失敗');
+            document.addEventListener('clubadmin:switch', e => {
+                const hint = document.getElementById('create-event-hint');
+                if (hint) hint.textContent = `以「${e.detail.clubName}」幹部身份發布活動`;
+                loadCollaborativeClubOptions(e.detail.clubId);
+            });
+        })();
+
+        // ── club-admin-events-list.html ──────────────────────────────────────
+        (function () {
+            const form = document.getElementById('update-event-form');
+            if (!form) return;
+
+            ['update-event-date', 'update-event-end', 'update-event-reg-start', 'update-event-deadline'].forEach(baseId => {
+                initHourSelect(`${baseId}-hour`);
+                const dateInput = document.getElementById(`${baseId}-date`);
+                const hourSelect = document.getElementById(`${baseId}-hour`);
+                const minuteSelect = document.getElementById(`${baseId}-minute`);
+                [dateInput, hourSelect, minuteSelect].forEach(control => {
+                    if (control) {
+                        control.addEventListener('change', () => {
+                            syncDateTimeFromParts(baseId, false);
+                        });
                     }
+                });
+                setDateTimeParts(baseId, '');
+                syncDateTimeFromParts(baseId, false);
+            });
 
-                    formData.append('logo_path', uploadResult.path);
+            loadAllTags();
+
+            const savedForCollab = sessionStorage.getItem('clubAdmin_clubId');
+            if (savedForCollab) loadCollaborativeClubOptions(Number(savedForCollab));
+
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                if (!validateEventForm('update-')) return;
+
+                if (!currentEventId) {
+                    PageUtils.showAlert('找不到活動識別碼，請重新點選要編輯的活動', 'error');
+                    return;
                 }
 
-                const response = await APIClient.put('clubs.php?action=update&id=' + currentClubId, Object.fromEntries(formData));
-                if (response.success) {
-                    PageUtils.showAlert('社團更新成功', 'success');
-                    // 保存標籤
-                    await saveClubTags(currentClubId);
-                    loadClubDetails(currentClubId);
-                } else {
-                    PageUtils.showAlert('更新社團失敗：' + (response.message || '未知錯誤'), 'error');
-                }
-            } catch (error) {
-                console.error('更新社團失敗:', error);
-                PageUtils.showAlert('更新社團失敗：' + error.message, 'error');
-            } finally {
-                if (submitButton) submitButton.disabled = false;
-            }
-        });
+                const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+                if (submitButton) submitButton.disabled = true;
 
-        document.getElementById('create-event-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            
-            if (!currentClubId) {
-                PageUtils.showAlert('請先從「我的社團」選擇要管理的社團', 'error');
-                return;
-            }
-            
-            if (!validateEventForm()) {
-                return;
-            }
-            
-            if (!confirm(`即將以「${currentClubName}」幹部身份發布活動，是否確認？`)) {
-                return;
-            }
+                try {
+                    const formData = new FormData();
+                    formData.append('event_name', document.getElementById('update-event-name').value);
+                    formData.append('description', document.getElementById('update-event-description').value);
+                    formData.append('event_date', document.getElementById('update-event-date').value);
+                    formData.append('event_end_date', document.getElementById('update-event-end').value);
+                    formData.append('registration_start', document.getElementById('update-event-reg-start').value);
+                    formData.append('location', document.getElementById('update-event-location').value);
+                    formData.append('capacity', document.getElementById('update-event-capacity').value);
+                    formData.append('fee', document.getElementById('update-event-fee').value);
+                    formData.append('registration_deadline', document.getElementById('update-event-deadline').value);
+                    formData.append('is_registration_open', document.getElementById('update-event-registration-open').checked ? '1' : '0');
 
-            try {
-                const formData = new FormData();
-                formData.append('club_id', currentClubId);
-                formData.append('event_name', document.getElementById('event-name').value);
-                formData.append('description', document.getElementById('event-description').value);
-                formData.append('event_date', document.getElementById('event-date').value);
-                formData.append('event_end_date', document.getElementById('event-end').value);
-                formData.append('registration_start', document.getElementById('event-reg-start').value);
-                formData.append('location', document.getElementById('event-location').value);
-                formData.append('capacity', document.getElementById('event-capacity').value);
-                formData.append('fee', document.getElementById('event-fee').value);
-                formData.append('registration_deadline', document.getElementById('event-deadline').value);
-                formData.append('event_status', 'published');
-                formData.append('is_registration_open', document.getElementById('event-registration-open').checked ? '1' : '0');
-                const payload = Object.fromEntries(formData);
-                payload.collaborative_club_ids = getSelectedCollaborativeClubIds('event-collaborative-clubs');
-                const response = await APIClient.post('events.php?action=create', payload);
-                
-                if (response.success) {
-                    const createdEventId = response?.data?.event_id;
-
-                    const posterFile = document.getElementById('event-poster-upload').files[0];
-                    if (posterFile && createdEventId) {
+                    const posterFile = document.getElementById('update-event-poster-upload').files[0];
+                    if (posterFile) {
                         const uploadFormData = new FormData();
                         uploadFormData.append('poster', posterFile);
-                        uploadFormData.append('event_id', String(createdEventId));
+                        uploadFormData.append('event_id', currentEventId);
                         const csrfHeaders = await APIClient.getCSRFHeaders();
                         const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
                             method: 'POST',
@@ -1353,204 +1648,106 @@
                         if (!uploadResponse.ok || !uploadResult.success) {
                             throw new Error(uploadResult.message || '活動海報上傳失敗');
                         }
+
+                        formData.append('poster_path', uploadResult.path);
                     }
 
-                    // 保存活動標籤
-                    if (createEventSelectedTagIds.size > 0 && createdEventId) {
+                    const updatePayload = Object.fromEntries(formData);
+                    updatePayload.collaborative_club_ids = getSelectedCollaborativeClubIds('update-event-collaborative-clubs');
+                    const response = await APIClient.put('events.php?action=update&id=' + currentEventId, updatePayload);
+                    if (response.success) {
                         try {
                             await APIClient.post('events.php?action=update_event_tags', {
-                                event_id: createdEventId,
-                                tag_ids: Array.from(createEventSelectedTagIds)
+                                event_id: currentEventId,
+                                tag_ids: Array.from(eventSelectedTagIds)
                             });
                         } catch (error) {
                             console.error('保存活動標籤失敗:', error);
                         }
+
+                        PageUtils.showAlert('活動更新成功', 'success');
+                        loadClubEvents(currentClubId);
+                        const mgmtSection = document.getElementById('event-management-section');
+                        if (mgmtSection) mgmtSection.style.display = 'none';
+                        eventSelectedTagIds.clear();
+                        renderEventSelectedTags('update');
+                        setSelectedCollaborativeClubIds('update-event-collaborative-clubs', []);
+                        detectUpdateEventTagsFromDescription();
+                    } else {
+                        PageUtils.showAlert('更新活動失敗：' + (response.message || '未知錯誤'), 'error');
                     }
-                    
-                    PageUtils.showAlert('活動建立成功', 'success');
-                    loadClubEvents(currentClubId);
-                    event.target.reset();
-                    document.getElementById('event-poster-img').style.display = 'none';
-                    createEventSelectedTagIds.clear();
-                    renderEventSelectedTags('create');
-                    setDefaultCreateEventDate();
-                    detectEventTagsFromDescription();
-                } else {
-                    PageUtils.showAlert('建立活動失敗：' + response.message, 'error');
-                }
-            } catch (error) {
-                console.error('建立活動出現異常:', error);
-                PageUtils.showAlert('建立活動錯誤：' + error.message, 'error');
-            }
-        });
-
-        document.getElementById('update-event-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            if (!validateEventForm('update-')) return;
-
-            if (!currentEventId) {
-                PageUtils.showAlert('找不到活動識別碼，請重新點選要編輯的活動', 'error');
-                return;
-            }
-
-            const submitButton = event.currentTarget.querySelector('button[type="submit"]');
-            if (submitButton) submitButton.disabled = true;
-
-            try {
-                const formData = new FormData();
-                formData.append('event_name', document.getElementById('update-event-name').value);
-                formData.append('description', document.getElementById('update-event-description').value);
-                formData.append('event_date', document.getElementById('update-event-date').value);
-                formData.append('event_end_date', document.getElementById('update-event-end').value);
-                formData.append('registration_start', document.getElementById('update-event-reg-start').value);
-                formData.append('location', document.getElementById('update-event-location').value);
-                formData.append('capacity', document.getElementById('update-event-capacity').value);
-                formData.append('fee', document.getElementById('update-event-fee').value);
-                formData.append('registration_deadline', document.getElementById('update-event-deadline').value);
-                formData.append('is_registration_open', document.getElementById('update-event-registration-open').checked ? '1' : '0');
-
-                const posterFile = document.getElementById('update-event-poster-upload').files[0];
-                if (posterFile) {
-                    const uploadFormData = new FormData();
-                    uploadFormData.append('poster', posterFile);
-                    uploadFormData.append('event_id', currentEventId);
-                    const csrfHeaders = await APIClient.getCSRFHeaders();
-                    const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
-                        method: 'POST',
-                        body: uploadFormData,
-                        credentials: 'include',
-                        headers: {
-                            ...APIClient.getAuthHeaders(),
-                            ...csrfHeaders
-                        }
-                    });
-
-                    const uploadRawText = await uploadResponse.text();
-                    let uploadResult = null;
-                    try {
-                        uploadResult = JSON.parse(uploadRawText);
-                    } catch (parseError) {
-                        throw new Error(`活動海報上傳回應格式錯誤（HTTP ${uploadResponse.status}）：${uploadRawText.slice(0, 300)}`);
-                    }
-
-                    if (!uploadResponse.ok || !uploadResult.success) {
-                        throw new Error(uploadResult.message || '活動海報上傳失敗');
-                    }
-
-                    formData.append('poster_path', uploadResult.path);
-                }
-
-                const updatePayload = Object.fromEntries(formData);
-                updatePayload.collaborative_club_ids = getSelectedCollaborativeClubIds('update-event-collaborative-clubs');
-                const response = await APIClient.put('events.php?action=update&id=' + currentEventId, updatePayload);
-                if (response.success) {
-                    try {
-                        await APIClient.post('events.php?action=update_event_tags', {
-                            event_id: currentEventId,
-                            tag_ids: Array.from(eventSelectedTagIds)
-                        });
-                    } catch (error) {
-                        console.error('保存活動標籤失敗:', error);
-                    }
-
-                    PageUtils.showAlert('活動更新成功', 'success');
-                    loadClubEvents(currentClubId);
-                    document.getElementById('event-management-section').style.display = 'none';
-                    eventSelectedTagIds.clear();
-                    renderEventSelectedTags('update');
-                    setSelectedCollaborativeClubIds('update-event-collaborative-clubs', []);
-                    detectUpdateEventTagsFromDescription();
-                } else {
-                    PageUtils.showAlert('更新活動失敗：' + (response.message || '未知錯誤'), 'error');
-                }
-            } catch (error) {
-                console.error('更新活動出現異常:', error);
-                PageUtils.showAlert('更新活動錯誤：' + (error.message || '未知錯誤'), 'error');
-            } finally {
-                if (submitButton) submitButton.disabled = false;
-            }
-        });
-
-        document.getElementById('transfer-request-form').addEventListener('submit', async event => {
-            event.preventDefault();
-            if (!currentClubId) {
-                PageUtils.showAlert('請先選擇要管理的社團', 'error');
-                return;
-            }
-
-            const targetUserEmail = document.getElementById('transfer-target-user-email').value.trim().toLowerCase();
-            const reason = document.getElementById('transfer-request-reason').value.trim();
-            const studentId = document.getElementById('transfer-target-student-id').value.trim();
-            const note = document.getElementById('transfer-request-note').value.trim();
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-            if (!targetUserEmail) {
-                setFieldError('transfer-target-user-email', '此為必填欄位');
-            } else if (!emailPattern.test(targetUserEmail)) {
-                setFieldError('transfer-target-user-email', 'Email 格式不正確');
-            } else {
-                setFieldError('transfer-target-user-email', '');
-            }
-            setFieldError('transfer-request-reason', reason ? '' : '此為必填欄位');
-            if (!targetUserEmail || !emailPattern.test(targetUserEmail) || !reason) return;
-
-            const payload = {
-                club_id: currentClubId,
-                target_user_email: targetUserEmail,
-                reason,
-                handover_note: [studentId ? `目標學號：${studentId}` : '', note].filter(Boolean).join('｜')
-            };
-
-            const response = await APIClient.post('club-admin.php?action=submit_transfer_request', payload);
-            if (response.success) {
-                PageUtils.showAlert('轉讓申請已送出，請等待行政端審核', 'success');
-                event.target.reset();
-                loadMyTransferRequests();
-            } else {
-                PageUtils.showAlert('送出申請失敗：' + response.message, 'error');
-            }
-        });
-
-        ['update-club-description', 'update-club-meeting-time', 'update-club-email', 'update-club-location'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('input', refreshClubPreview);
-        });
-
-        initHourSelect('update-club-meeting-start-hour');
-        initHourSelect('update-club-meeting-end-hour');
-        ['update-club-meeting-day', 'update-club-meeting-start-hour', 'update-club-meeting-start-minute', 'update-club-meeting-end-hour', 'update-club-meeting-end-minute'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.addEventListener('change', () => {
-                    syncClubMeetingTimeValue();
-                    refreshClubPreview();
-                });
-            }
-        });
-        setClubMeetingTimeFromValue('');
-
-        ['event-date', 'event-end', 'event-reg-start', 'event-deadline',
-         'update-event-date', 'update-event-end', 'update-event-reg-start', 'update-event-deadline'].forEach(baseId => {
-            initHourSelect(`${baseId}-hour`);
-            const dateInput = document.getElementById(`${baseId}-date`);
-            const hourSelect = document.getElementById(`${baseId}-hour`);
-            const minuteSelect = document.getElementById(`${baseId}-minute`);
-            [dateInput, hourSelect, minuteSelect].forEach(control => {
-                if (control) {
-                    control.addEventListener('change', () => {
-                        syncDateTimeFromParts(baseId, baseId.endsWith('event-date'));
-                    });
+                } catch (error) {
+                    console.error('更新活動出現異常:', error);
+                    PageUtils.showAlert('更新活動錯誤：' + (error.message || '未知錯誤'), 'error');
+                } finally {
+                    if (submitButton) submitButton.disabled = false;
                 }
             });
 
-            setDateTimeParts(baseId, '');
-            syncDateTimeFromParts(baseId, false);
-        });
+            const saved = sessionStorage.getItem('clubAdmin_clubId');
+            if (saved) loadClubEvents(Number(saved));
 
-        loadAllTags().then(() => {
-            renderEventSelectedTags('create');
-            detectEventTagsFromDescription();
-        });
-        loadMyClubs();
-        loadMyTransferRequests();
+            document.addEventListener('clubadmin:switch', e => {
+                loadClubEvents(e.detail.clubId);
+                const mgmt = document.getElementById('event-management-section');
+                if (mgmt) mgmt.style.display = 'none';
+            });
+        })();
+
+        // ── club-admin-transfer.html ─────────────────────────────────────────
+        (function () {
+            const form = document.getElementById('transfer-request-form');
+            if (!form) return;
+
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                if (!currentClubId) {
+                    PageUtils.showAlert('請先選擇要管理的社團', 'error');
+                    return;
+                }
+
+                const targetUserEmail = document.getElementById('transfer-target-user-email').value.trim().toLowerCase();
+                const reason = document.getElementById('transfer-request-reason').value.trim();
+                const studentId = document.getElementById('transfer-target-student-id').value.trim();
+                const note = document.getElementById('transfer-request-note').value.trim();
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                if (!targetUserEmail) {
+                    setFieldError('transfer-target-user-email', '此為必填欄位');
+                } else if (!emailPattern.test(targetUserEmail)) {
+                    setFieldError('transfer-target-user-email', 'Email 格式不正確');
+                } else {
+                    setFieldError('transfer-target-user-email', '');
+                }
+                setFieldError('transfer-request-reason', reason ? '' : '此為必填欄位');
+                if (!targetUserEmail || !emailPattern.test(targetUserEmail) || !reason) return;
+
+                const payload = {
+                    club_id: currentClubId,
+                    target_user_email: targetUserEmail,
+                    reason,
+                    handover_note: [studentId ? `目標學號：${studentId}` : '', note].filter(Boolean).join('｜')
+                };
+
+                const response = await APIClient.post('club-admin.php?action=submit_transfer_request', payload);
+                if (response.success) {
+                    PageUtils.showAlert('轉讓申請已送出，請等待行政端審核', 'success');
+                    event.target.reset();
+                    loadMyTransferRequests();
+                } else {
+                    PageUtils.showAlert('送出申請失敗：' + response.message, 'error');
+                }
+            });
+
+            loadMyTransferRequests();
+
+            document.addEventListener('clubadmin:switch', () => loadMyTransferRequests());
+        })();
+
+        // ── club-admin-my-clubs.html ─────────────────────────────────────────
+        (function () {
+            if (!document.getElementById('my-clubs-container')) return;
+            loadMyClubs();
+        })();
+
         loadUnreadNotificationDot();

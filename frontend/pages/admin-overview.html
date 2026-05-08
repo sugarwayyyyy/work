@@ -264,10 +264,14 @@
 <body>
     <header>
         <nav>
-            <a href="admin-dashboard.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
+            <a href="admin-users.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
             <ul class="nav-links">
                 <li><a href="admin-overview.html">系統總覽</a></li>
-                <li><a href="admin-dashboard.html">管理後台</a></li>
+                <li><a href="admin-users.html">帳號管理</a></li>
+                <li><a href="admin-clubs.html">社團管理</a></li>
+                <li><a href="admin-reports.html">報告管理</a></li>
+                <li><a href="admin-announcements.html">系統公告</a></li>
+                <li><a href="admin-transfers.html">帳戶轉讓</a></li>
             </ul>
             <div class="nav-right">
                 <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()">登出</button>
@@ -314,20 +318,9 @@
         <!-- 待處理警示列 -->
         <div id="ov-alert-bar" class="ov-alert-bar">
             <span class="ov-alert-label" id="ov-alert-label">⚠ 待處理</span>
-            <a href="admin-dashboard.html" class="ov-chip chip-red"   id="ov-chip-reports">待審檢舉 -</a>
-            <a href="admin-dashboard.html" class="ov-chip chip-amber" id="ov-chip-transfers">待審轉讓 -</a>
-            <a href="admin-dashboard.html" class="ov-chip chip-amber" id="ov-chip-reviews">待審評價 -</a>
-            <span                          class="ov-chip chip-amber" id="ov-chip-qa">未回答 Q&amp;A -</span>
-        </div>
-
-        <!-- 快捷導覽 -->
-        <div class="ov-quick-nav">
-            <a href="admin-dashboard.html" class="ov-quick-link">用戶管理 →</a>
-            <a href="admin-dashboard.html" class="ov-quick-link">社團幹部 →</a>
-            <a href="admin-dashboard.html" class="ov-quick-link">社團管理 →</a>
-            <a href="admin-dashboard.html" class="ov-quick-link">報告管理 →</a>
-            <a href="admin-dashboard.html" class="ov-quick-link">系統公告 →</a>
-            <a href="admin-dashboard.html" class="ov-quick-link">帳戶轉讓 →</a>
+            <a href="admin-reports.html"   class="ov-chip chip-red"   id="ov-chip-reports">待審檢舉 -</a>
+            <a href="admin-transfers.html" class="ov-chip chip-amber" id="ov-chip-transfers">待審轉讓 -</a>
+            <a href="admin-reports.html"   class="ov-chip chip-amber" id="ov-chip-reviews">待審評價 -</a>
         </div>
 
         <!-- 詳細數據 2×2 -->

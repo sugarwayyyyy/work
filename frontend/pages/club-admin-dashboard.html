@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>社團幹部後台</title>
+    <meta http-equiv="refresh" content="0;url=club-admin-my-clubs.html" />
     <link rel="stylesheet" href="../css/styles.css?v=20260502k" />
     <link rel="stylesheet" href="../css/admin.css?v=20260502k" />
     <link rel="stylesheet" href="../css/club-admin-dashboard.css?v=20260502k" />
@@ -149,6 +150,7 @@
     </style>
 </head>
 <body class="admin-dashboard-page club-admin-page">
+    <script>window.location.replace('club-admin-my-clubs.html');</script>
     <header>
         <nav>
             <a href="../index.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
@@ -320,8 +322,7 @@
                     </div>
                     <div class="form-field admin-span-2">
                         <label for="club-logo-upload">Logo 圖片（選填）</label>
-                        <input type="file" id="club-logo-upload" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" onchange="previewClubLogo(event)">
-                        <small class="cad-help-text">檔案限制：支援 JPG/JPEG/PNG/GIF/WEBP，大小上限 10MB。</small>
+                        <input type="file" id="club-logo-upload" accept="image/*" onchange="previewClubLogo(event)">
                         <div id="club-logo-preview" class="image-preview-container">
                             <img id="club-logo-img" src="" alt="Logo 預覽" class="cad-preview-image">
                         </div>
@@ -443,8 +444,8 @@
                     </div>
                     <div class="form-field admin-span-2">
                         <label for="event-poster-upload">海報上傳</label>
-                        <input type="file" id="event-poster-upload" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" onchange="previewEventPoster(event)">
-                        <small class="cad-help-text">檔案限制：支援 JPG/JPEG/PNG/GIF/WEBP，大小上限 10MB。</small>
+                        <input type="file" id="event-poster-upload" accept="image/*" onchange="previewEventPoster(event)">
+                        <small class="cad-help-text">檔案限制：僅支援 JPG/PNG/GIF，大小上限 5MB。</small>
                         <div id="event-poster-preview" class="image-preview-container">
                             <img id="event-poster-img" src="" alt="海報預覽" class="cad-preview-image">
                         </div>
@@ -592,8 +593,8 @@
                     </div>
                     <div class="form-field admin-span-2">
                         <label for="update-event-poster-upload">海報上傳</label>
-                        <input type="file" id="update-event-poster-upload" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" onchange="previewUpdateEventPoster(event)">
-                        <small class="cad-help-text">檔案限制：支援 JPG/JPEG/PNG/GIF/WEBP，大小上限 10MB。</small>
+                        <input type="file" id="update-event-poster-upload" accept="image/*" onchange="previewUpdateEventPoster(event)">
+                        <small class="cad-help-text">檔案限制：僅支援 JPG/PNG/GIF，大小上限 5MB。</small>
                         <div id="update-event-poster-preview" class="image-preview-container">
                             <img id="update-event-poster-img" src="" alt="海報預覽" class="cad-preview-image">
                         </div>
@@ -634,9 +635,9 @@
             <div class="admin-form-wrapper">
                 <form id="transfer-request-form" class="admin-form-grid">
                     <div class="form-field">
-                        <label for="transfer-target-user-email">目標用戶 Email <span class="required">*</span></label>
-                        <input type="email" id="transfer-target-user-email" placeholder="例如：member@univ.edu" required>
-                        <div id="err-transfer-target-user-email" class="field-error"></div>
+                        <label for="transfer-target-user-id">目標用戶 ID <span class="required">*</span></label>
+                        <input type="number" id="transfer-target-user-id" required>
+                        <div id="err-transfer-target-user-id" class="field-error"></div>
                     </div>
                     <div class="form-field">
                         <label for="transfer-target-student-id">目標學號（選填）</label>

@@ -20,10 +20,11 @@ nav {
 }
 
 .logo {
-    font-size: 1.45rem;
+    font-size: clamp(0.85rem, 1.8vw, 1.45rem);
     font-weight: 800;
     letter-spacing: -0.03em;
     text-decoration: none;
+    white-space: nowrap;
     background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-400) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -109,41 +110,58 @@ nav {
     grid-template-columns: repeat(3, 1fr);
 }
 
+@media (max-width: 1024px) {
+    .logo__sub {
+        display: none;
+    }
+}
+
+/* ── Hamburger button (hidden on desktop) ── */
+.hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 0.4rem;
+    color: var(--text-default);
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.hamburger:hover {
+    background: var(--brand-soft, #ede9fe);
+    color: var(--brand, #7c3aed);
+}
+
 @media (max-width: 767px) {
     .container {
         padding: 1rem;
     }
 
     nav {
-        padding: 0.45rem 0.75rem;
-        flex-wrap: nowrap;
-        gap: 0.5rem;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        padding: 0.5rem 0.75rem;
+        flex-wrap: wrap;
+        gap: 0;
+        align-items: center;
     }
 
     .logo {
-        font-size: 0.95rem;
-        white-space: nowrap;
         flex-shrink: 0;
+        order: 1;
     }
 
-    .logo__sub {
-        display: none;
-    }
-
-    .nav-links {
-        gap: 0.75rem;
-        flex-shrink: 1;
-        min-width: 0;
-    }
-
-    .nav-links a {
-        font-size: 0.8125rem;
-        white-space: nowrap;
+    .hamburger {
+        display: flex;
+        order: 2;
+        margin-left: auto;
+        margin-right: 0.4rem;
     }
 
     .nav-right {
+        order: 3;
         gap: 0.35rem;
         flex-shrink: 0;
     }
@@ -152,6 +170,28 @@ nav {
         padding: 0.25rem 0.55rem;
         font-size: 0.75rem;
         border-radius: 0.5rem;
+    }
+
+    /* Nav links: hidden by default, full-width row below the header row */
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        flex-basis: 100%;
+        order: 10;
+        gap: 0;
+        padding: 0.35rem 0 0.5rem;
+        border-top: 1px solid var(--color-border-light, #e5e7eb);
+        margin-top: 0.4rem;
+    }
+
+    nav.nav-open .nav-links {
+        display: flex;
+    }
+
+    .nav-links a {
+        font-size: 0.9rem;
+        padding: 0.6rem 0.5rem;
+        white-space: normal;
     }
 
     .grid {

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>帳戶轉讓 — 管理員</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body class="admin-page admin-transfers-page">
+    <header>
+        <nav>
+            <a href="admin-users.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
+            <ul class="nav-links">
+                <li><a href="admin-overview.html">系統總覽</a></li>
+                <li><a href="admin-users.html">帳號管理</a></li>
+                <li><a href="admin-clubs.html">社團管理</a></li>
+                <li><a href="admin-reports.html">報告管理</a></li>
+                <li><a href="admin-announcements.html">系統公告</a></li>
+                <li><a href="admin-transfers.html">帳戶轉讓</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container">
+        <section class="card admin-panel">
+            <div class="admin-panel-head">
+                <h2>帳戶轉讓審核</h2>
+                <span class="admin-panel-subtext">由社團幹部提出申請，管理端核對後核准/退回</span>
+            </div>
+            <div id="transfer-requests" class="admin-list"></div>
+            <div id="transfer-history" class="admin-list"></div>
+        </section>
+    </div>
+
+    <script src="../js/main.js?v=20260507"></script>
+    <script>
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function formatDateTime(value) {
+            if (!value) return '-';
+            if (window.PageUtils && typeof PageUtils.formatDate === 'function') return PageUtils.formatDate(value);
+            return new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+        }
+        function renderEmptyState(container, title, description) {
+            container.innerHTML = `<div class="empty-state"><div class="empty-state-illustration"></div><h4>${escapeHtml(title || '')}</h4><p>${escapeHtml(description || '')}</p></div>`;
+        }
+
+        function transferRequestStatusLabel(status) {
+            return ({ pending: '待審核', approved: '已核准', rejected: '已退回', cancelled: '已取消' })[status] || status || '-';
+        }
+
+        async function loadTransferRequests() {
+            const response = await APIClient.get('admin.php?action=transfer_requests');
+            if (!response.success) return console.error(response.message);
+            const rows = response.data.requests || [];
+            const container = document.getElementById('transfer-requests');
+            container.innerHTML = '';
+            if (rows.length === 0) { renderEmptyState(container, '目前沒有待審核申請', '社團幹部送出申請後，會顯示在這裡。'); return; }
+            rows.forEach(item => {
+                const isPending = item.request_status === 'pending';
+                const safeClubName = escapeHtml(item.club_name || '-');
+                const safeClubCode = escapeHtml(item.club_code || '-');
+                const safeStatus = escapeHtml(transferRequestStatusLabel(item.request_status));
+                const safeRequesterName = escapeHtml(item.requester_name || '-');
+                const safeRequesterStudentId = escapeHtml(item.requester_student_id || '-');
+                const safeTargetName = escapeHtml(item.target_name || '-');
+                const safeTargetStudentId = escapeHtml(item.target_student_id || '-');
+                const safeReason = escapeHtml(item.reason || '-');
+                const safeHandover = escapeHtml(item.handover_note || '');
+                const safeReviewNote = escapeHtml(item.review_note || '');
+                const safeRequestedAt = escapeHtml(formatDateTime(item.requested_at));
+                const safeReviewedBy = escapeHtml(item.reviewed_by_name || '-');
+                const safeRequestId = Number(item.request_id) || 0;
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head">
+                        <h4>${safeClubName}（${safeClubCode}）</h4>
+                        <span class="status-chip ${isPending ? 'chip-warning' : 'chip-success'}">${safeStatus}</span>
+                    </div>
+                    <p class="admin-item-content">轉讓者：${safeRequesterName}（學號:${safeRequesterStudentId}）</p>
+                    <p class="admin-item-content">目標者：${safeTargetName}（學號:${safeTargetStudentId}）</p>
+                    <p class="admin-item-content">轉讓原因：${safeReason}</p>
+                    ${safeHandover ? `<p class="admin-item-content">補充：${safeHandover}</p>` : ''}
+                    ${safeReviewNote ? `<p class="admin-item-content">審核意見：${safeReviewNote}</p>` : ''}
+                    <div class="admin-item-footer">
+                        <span class="admin-item-time">送出：${safeRequestedAt}</span>
+                        <span class="admin-item-time">審核者：${safeReviewedBy}</span>
+                    </div>
+                    ${isPending ? `
+                        <div class="row-actions" style="margin-top: 12px;">
+                            <button class="btn btn-primary btn-sm" data-transfer-approve="${safeRequestId}">核准</button>
+                            <button class="btn btn-secondary btn-sm" data-transfer-reject="${safeRequestId}">退回</button>
+                        </div>
+                    ` : ''}
+                `;
+                container.appendChild(card);
+            });
+            container.querySelectorAll('button[data-transfer-approve]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('確認核准此帳戶轉讓申請？核准後會立即生效。')) return;
+                    await reviewTransferRequest(btn.dataset.transferApprove, 'approved', '');
+                });
+            });
+            container.querySelectorAll('button[data-transfer-reject]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const note = prompt('請輸入退回原因（必填）');
+                    if (!note || !note.trim()) return;
+                    await reviewTransferRequest(btn.dataset.transferReject, 'rejected', note.trim());
+                });
+            });
+        }
+
+        async function loadTransferHistory() {
+            const response = await APIClient.get('admin.php?action=transfer_history');
+            if (!response.success) return console.error(response.message);
+            const rows = response.data.transfers || [];
+            const container = document.getElementById('transfer-history');
+            container.innerHTML = '';
+            if (rows.length === 0) { renderEmptyState(container, '目前沒有轉讓紀錄', '當有帳戶交接時，紀錄會顯示在這裡。'); return; }
+            rows.forEach(transfer => {
+                const safeTransferredAt = escapeHtml(formatDateTime(transfer.transferred_at));
+                const safeClubName = escapeHtml(transfer.club_name || '-');
+                const safeClubCode = escapeHtml(transfer.club_code || '-');
+                const safeFromName = escapeHtml(transfer.from_user_name || '-');
+                const safeToName = escapeHtml(transfer.to_user_name || '-');
+                const safeAdminName = escapeHtml(transfer.admin_name || '-');
+                const safeReason = escapeHtml(transfer.reason || '未填寫原因');
+                const card = document.createElement('div');
+                card.className = 'admin-item-card';
+                card.innerHTML = `
+                    <div class="admin-item-head">
+                        <h4>帳戶轉讓紀錄</h4>
+                        <span class="status-chip chip-warning">${safeTransferredAt}</span>
+                    </div>
+                    <p class="admin-item-content">社團：${safeClubName}（${safeClubCode}）</p>
+                    <p class="admin-item-content">從用戶 ${safeFromName} 轉讓到用戶 ${safeToName}</p>
+                    <div class="admin-item-footer">
+                        <span class="admin-item-time">操作者：${safeAdminName}</span>
+                        <span class="status-chip">${safeReason}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function reviewTransferRequest(requestId, decision, reviewNote) {
+            const response = await APIClient.post('admin.php?action=review_transfer_request', { request_id: Number(requestId), decision, review_note: reviewNote });
+            if (response.success) {
+                PageUtils.showAlert(decision === 'approved' ? '已核准轉讓申請' : '已退回轉讓申請', 'success');
+                loadTransferRequests();
+                loadTransferHistory();
+            } else PageUtils.showAlert('審核失敗：' + response.message, 'error');
+        }
+
+        loadTransferRequests();
+        loadTransferHistory();
+    </script>
+</body>
+</html>

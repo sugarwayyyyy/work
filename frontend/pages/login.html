@@ -88,7 +88,7 @@
                         const role = response.data.role;
                         const canManageClubs = Boolean(response.data.can_manage_clubs);
                         if (role === 'platform_admin') {
-                            window.location.href = 'admin-dashboard.html';
+                            window.location.href = 'admin-users.html';
                         } else if (canManageClubs) {
                             window.location.href = 'club-admin-dashboard.html';
                         } else {
