@@ -1329,6 +1329,8 @@
                     currentClubId = clubId;
                     currentClubName = clubName;
 
+                    const banner = document.getElementById('selected-club-banner');
+                    if (banner) banner.style.display = '';
                     const bannerName = document.getElementById('selected-club-name');
                     if (bannerName) bannerName.textContent = clubName;
                     const statName = document.getElementById('stat-current-club');
@@ -1744,7 +1746,7 @@
             document.addEventListener('clubadmin:switch', () => loadMyTransferRequests());
         })();
 
-        // ── club-admin-my-clubs.html ─────────────────────────────────────────
+        // ── (legacy my-clubs IIFE — kept but guarded, page removed) ─────────
         (function () {
             if (!document.getElementById('my-clubs-container')) return;
             loadMyClubs();

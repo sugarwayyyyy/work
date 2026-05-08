@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>社團管理 — 幹部後台</title>
     <link rel="stylesheet" href="../css/styles.css?v=20260502k" />
     <link rel="stylesheet" href="../css/admin.css?v=20260502k" />
@@ -170,11 +173,27 @@
         window.hideManagementPanels = function () {};
         window.showManagementPanel = function () {};
 
-        (function () {
-            const clubId = Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
-            const clubName = sessionStorage.getItem('clubAdmin_clubName') || '';
+        (async function () {
+            let clubId = Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
+            let clubName = sessionStorage.getItem('clubAdmin_clubName') || '';
             if (!clubId) {
-                window.location.href = 'club-admin-my-clubs.html';
+                try {
+                    const res = await APIClient.get('club-admin.php?action=my_clubs');
+                    const firstClub = (res && res.success && res.data && Array.isArray(res.data.clubs))
+                        ? res.data.clubs[0]
+                        : null;
+                    if (firstClub) {
+                        clubId = Number(firstClub.club_id) || 0;
+                        clubName = String(firstClub.club_name || '');
+                        sessionStorage.setItem('clubAdmin_clubId', String(clubId));
+                        sessionStorage.setItem('clubAdmin_clubName', clubName);
+                    }
+                } catch (err) {
+                    console.error('Failed to resolve default club', err);
+                }
+            }
+            if (!clubId) {
+                window.location.href = 'club-admin-dashboard.html';
                 return;
             }
             currentClubId = clubId;
