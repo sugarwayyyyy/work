@@ -350,10 +350,9 @@ class Auth {
         return self::hasRole('platform_admin');
     }
     
-    // 檢查是否是社團幹部
+    // 檢查是否是社團幹部（平台管理員不等於社團幹部）
     public static function isClubAdmin() {
         if (!self::isLoggedIn()) return false;
-        if (self::isAdmin()) return true;
         return self::hasActiveClubAdminMembership(self::getCurrentUserId());
     }
 

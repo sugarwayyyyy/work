@@ -846,7 +846,7 @@ class EventAPI {
                 [$data['club_id'], Auth::getCurrentUserId()]
             );
             
-            if (!$member && !Auth::isAdmin()) {
+            if (!$member) {
                 Helper::error('您無權限發布活動', 403);
             }
             
@@ -928,7 +928,7 @@ class EventAPI {
                 [$event['club_id'], Auth::getCurrentUserId()]
             );
 
-            if (!$member && !Auth::isAdmin()) {
+            if (!$member) {
                 Helper::error('您無權限編輯此活動', 403);
             }
 

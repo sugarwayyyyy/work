@@ -826,7 +826,7 @@ class ClubAPI {
                 [$club_id, Auth::getCurrentUserId()]
             );
             
-            if (!$member && !Auth::isAdmin()) {
+            if (!$member) {
                 Helper::error('您無法編輯此社團', 403);
             }
             

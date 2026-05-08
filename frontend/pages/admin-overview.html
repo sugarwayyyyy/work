@@ -7,9 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../css/styles.css?v=20260509" />
     <style>
-        body { background: #f4f3f8; }
+        body { background: var(--page-bg); }
 
         /* ── Layout ── */
         .ov-wrap {
@@ -261,7 +261,7 @@
         }
     </style>
 </head>
-<body>
+<body class="admin-page admin-overview-page">
     <header>
         <nav>
             <a href="admin-users.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
@@ -362,7 +362,7 @@
                         <span class="ov-metric-value" id="ov-d-c-total">-</span>
                     </div>
                     <div class="ov-metric">
-                        <span class="ov-metric-name">活躍社團</span>
+                        <span class="ov-metric-name">啟用社團</span>
                         <span class="ov-metric-value v-pos" id="ov-d-c-active">-</span>
                     </div>
                     <div class="ov-metric">
@@ -466,54 +466,72 @@
             }).format(new Date(value));
         }
 
+        function countUp(el, toText, duration) {
+            const s = String(toText ?? '-');
+            const m = s.match(/^([+\-]?)(\d+(?:\.\d+)?)(.*)$/);
+            if (!m) { el.textContent = s; return; }
+            const prefix = m[1], endNum = parseFloat(m[2]), suffix = m[3];
+            const startNum = 0;
+            const isFloat = m[2].includes('.');
+            const t0 = performance.now();
+            (function tick(now) {
+                const p = Math.min((now - t0) / duration, 1);
+                const ease = 1 - Math.pow(1 - p, 3);
+                const cur = startNum + (endNum - startNum) * ease;
+                el.textContent = prefix + (isFloat ? cur.toFixed(1) : Math.round(cur)) + suffix;
+                if (p < 1) requestAnimationFrame(tick);
+            })(performance.now());
+        }
+
         async function loadOverview() {
             try {
                 const res = await APIClient.get('dashboard.php');
                 if (!res.success) return;
                 const { users, clubs, events, pending, announcements, generated_at } = res.data;
 
-                const set = (id, val) => {
+                const anim = (id, val, dur = 700) => {
                     const el = document.getElementById(id);
-                    if (el) el.textContent = val ?? '-';
+                    if (!el) return;
+                    countUp(el, val ?? '-', dur);
                 };
 
                 // KPI strip
-                set('ov-u-total',    users.total);
-                set('ov-u-new',      (users.new_this_week > 0 ? '+' : '') + users.new_this_week);
-                set('ov-c-active',   clubs.active);
-                set('ov-c-total',    clubs.total);
-                set('ov-e-upcoming', events.upcoming);
-                set('ov-e-published', events.published);
-                set('ov-a-active',   announcements.active);
-                set('ov-a-pinned',   announcements.pinned);
+                anim('ov-u-total',    users.total);
+                anim('ov-u-new',      (users.new_this_week > 0 ? '+' : '') + users.new_this_week);
+                anim('ov-c-active',   clubs.active);
+                anim('ov-c-total',    clubs.total);
+                anim('ov-e-upcoming', events.upcoming);
+                anim('ov-e-published', events.published);
+                anim('ov-a-active',   announcements.active);
+                anim('ov-a-pinned',   announcements.pinned);
 
                 // Detail cards
-                set('ov-d-u-total',            users.total);
-                set('ov-d-u-students',         users.students);
-                set('ov-d-u-club-admins',      users.club_admins);
-                set('ov-d-u-platform-admins',  users.platform_admins);
-                set('ov-d-u-new',              (users.new_this_week > 0 ? '+' : '') + users.new_this_week);
+                anim('ov-d-u-total',            users.total);
+                anim('ov-d-u-students',         users.students);
+                anim('ov-d-u-club-admins',      users.club_admins);
+                anim('ov-d-u-platform-admins',  users.platform_admins);
+                anim('ov-d-u-new',              (users.new_this_week > 0 ? '+' : '') + users.new_this_week);
 
-                set('ov-d-c-total',   clubs.total);
-                set('ov-d-c-active',  clubs.active);
-                set('ov-d-c-inactive', clubs.inactive);
-                set('ov-d-c-ghost',   clubs.ghost);
-                set('ov-d-c-stale',   clubs.stale);
+                anim('ov-d-c-total',   clubs.total);
+                anim('ov-d-c-active',  clubs.active);
+                anim('ov-d-c-inactive', clubs.inactive);
+                anim('ov-d-c-ghost',   clubs.ghost);
+                anim('ov-d-c-stale',   clubs.stale);
 
-                set('ov-d-e-total',         events.total);
-                set('ov-d-e-upcoming',      events.upcoming);
-                set('ov-d-e-published',     events.published);
-                set('ov-d-e-cancelled',     events.cancelled);
-                set('ov-d-e-registrations', events.total_registrations);
-                set('ov-d-e-rating',        events.avg_rating !== null ? events.avg_rating + ' ★' : '-');
+                anim('ov-d-e-total',         events.total);
+                anim('ov-d-e-upcoming',      events.upcoming);
+                anim('ov-d-e-published',     events.published);
+                anim('ov-d-e-cancelled',     events.cancelled);
+                anim('ov-d-e-registrations', events.total_registrations);
+                anim('ov-d-e-rating',        events.avg_rating !== null ? events.avg_rating + ' ★' : '-');
 
-                set('ov-d-a-active',   announcements.active);
-                set('ov-d-a-pinned',   announcements.pinned);
-                set('ov-d-a-expiring', announcements.expiring_soon);
-                set('ov-d-p-reports',  pending.reports);
-                set('ov-d-p-transfers', pending.transfers);
-                set('ov-d-p-reviews',  pending.reviews);
-                set('ov-d-p-qa',       pending.unanswered_qa);
+                anim('ov-d-a-active',   announcements.active);
+                anim('ov-d-a-pinned',   announcements.pinned);
+                anim('ov-d-a-expiring', announcements.expiring_soon);
+                anim('ov-d-p-reports',  pending.reports);
+                anim('ov-d-p-transfers', pending.transfers);
+                anim('ov-d-p-reviews',  pending.reviews);
+                anim('ov-d-p-qa',       pending.unanswered_qa);
 
                 // Alert bar chips
                 const chipData = [

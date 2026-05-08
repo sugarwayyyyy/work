@@ -32,7 +32,7 @@ class ClubAdminAPI {
     }
 
     public static function requireClubAdmin() {
-        if (!Auth::isClubAdmin() && !Auth::isAdmin()) {
+        if (!Auth::isClubAdmin()) {
             Helper::error('您無權限執行此操作', 403);
         }
     }
@@ -119,7 +119,7 @@ class ClubAdminAPI {
             'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
             [$club_id, Auth::getCurrentUserId()]
         );
-        if (!Auth::isAdmin() && !$isMember) {
+        if (!$isMember) {
             Helper::error('您無權限操作此社團', 403);
         }
 
