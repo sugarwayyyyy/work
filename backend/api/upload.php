@@ -64,6 +64,11 @@ class UploadAPI {
         }
     }
 
+    private function respondJson(int $statusCode, array $payload): void {
+        http_response_code($statusCode);
+        echo json_encode($payload);
+    }
+
     private function parseIniSize(string $val): int {
         $val = trim($val);
         $last = strtolower($val[-1] ?? '');
@@ -117,42 +122,42 @@ class UploadAPI {
     }
 
     private function canManageClub($clubId) {
-            if (Auth::isAdmin()) {
-                return true;
-            }
-
-            $userId = Auth::getCurrentUserId();
-            if (!$userId) {
-                return false;
-            }
-
-            $member = $this->db->fetchOne(
-                'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "director", "public_relations")',
-                [$clubId, $userId]
-            );
-
-            return !empty($member);
+        if (Auth::isAdmin()) {
+            return true;
         }
 
-        private function getClubIdByEvent($eventId) {
-            $event = $this->db->fetchOne('SELECT club_id FROM events WHERE event_id = ?', [$eventId]);
-            if (!$event) {
-                return null;
-            }
-            return (int)$event['club_id'];
+        $userId = Auth::getCurrentUserId();
+        if (!$userId) {
+            return false;
         }
 
-        private function hasColumn($tableName, $columnName) {
-            $row = $this->db->fetchOne(
-                'SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?',
-                [DB_NAME, $tableName, $columnName]
-            );
-            return !empty($row) && (int)($row['cnt'] ?? 0) > 0;
-        }
+        $member = $this->db->fetchOne(
+            'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "director", "public_relations")',
+            [$clubId, $userId]
+        );
 
-        private function ensureEventPosterColumn() {
-            return $this->hasColumn('events', 'poster_path');
+        return !empty($member);
+    }
+
+    private function getClubIdByEvent($eventId) {
+        $event = $this->db->fetchOne('SELECT club_id FROM events WHERE event_id = ?', [$eventId]);
+        if (!$event) {
+            return null;
         }
+        return (int)$event['club_id'];
+    }
+
+    private function hasColumn($tableName, $columnName) {
+        $row = $this->db->fetchOne(
+            'SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+            [DB_NAME, $tableName, $columnName]
+        );
+        return !empty($row) && (int)($row['cnt'] ?? 0) > 0;
+    }
+
+    private function ensureEventPosterColumn() {
+        return $this->hasColumn('events', 'poster_path');
+    }
 
     private function uploadClubLogo() {
         $clubId = (int)($_POST['club_id'] ?? 0);
@@ -183,7 +188,7 @@ class UploadAPI {
             $stmt->close();
         }
 
-        echo json_encode($result);
+        $this->respondJson(200, $result);
     }
 
     private function uploadEventPoster() {
@@ -233,7 +238,7 @@ class UploadAPI {
             $stmt->close();
         }
 
-        echo json_encode($result);
+        $this->respondJson(200, $result);
     }
 
     private function uploadUserAvatar() {
@@ -259,7 +264,7 @@ class UploadAPI {
             $stmt->close();
         }
 
-        echo json_encode($result);
+        $this->respondJson(200, $result);
     }
 
     private function processUpload($file, $prefix) {

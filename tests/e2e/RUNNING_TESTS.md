@@ -117,12 +117,23 @@ tests/e2e/
 2. 確認 port 8000 未被佔用：`netstat -ano | findstr :8000`
 3. 在 `playwright.config.js` 調高 `timeout`
 
-### Q: Firefox 測試不穩定？
-Firefox 在高並行下 Marionette 連線較不穩定。目前設定已限制：
-- `workers: 4`（非 CI 環境）
-- `retries: 1`（失敗自動重試一次）
+### Q: Firefox 測試出現 `Cannot read properties of undefined (reading '_page')`？
+根因是 Firefox 在 Windows/Playwright 環境建立分頁時，content subprocess 被 sandbox 擋住，page 一建立就 crash。
 
-若仍失敗，可單獨跑 Firefox：
+已在 `playwright.config.js` 的 Firefox project 加上以下環境變數停用 sandbox：
+
+```javascript
+launchOptions: {
+  env: {
+    ...process.env,
+    MOZ_DISABLE_CONTENT_SANDBOX: '1',
+    MOZ_DISABLE_RDD_SANDBOX: '1',
+    MOZ_DISABLE_GPU_SANDBOX: '1',
+  },
+},
+```
+
+若仍出現 Firefox 相關錯誤，可單獨跑 Firefox 確認：
 ```bash
 npm run test:firefox
 ```
@@ -142,8 +153,15 @@ npm run test:firefox
 
 ```javascript
 retries: process.env.CI ? 2 : 1,   // 本機失敗重試 1 次
-workers: process.env.CI ? 1 : 4,   // 本機 4 個 worker（Firefox 穩定性）
+workers: process.env.CI ? 1 : 4,   // 本機 4 個 worker
 fullyParallel: true,
+
+// Firefox: 停用 Windows sandbox 以防 content process crash
+// (症狀: browserContext.newPage 拋出 _page undefined)
+firefox project launchOptions.env:
+  MOZ_DISABLE_CONTENT_SANDBOX: '1'
+  MOZ_DISABLE_RDD_SANDBOX: '1'
+  MOZ_DISABLE_GPU_SANDBOX: '1'
 ```
 
 CI 環境（`CI=true`）只跑 Chromium，不跑 Firefox 與 WebKit：

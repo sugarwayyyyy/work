@@ -44,7 +44,17 @@ module.exports = defineConfig({
 
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: {
+        ...devices['Desktop Firefox'],
+        launchOptions: {
+          env: {
+            ...process.env,
+            MOZ_DISABLE_CONTENT_SANDBOX: '1',
+            MOZ_DISABLE_RDD_SANDBOX: '1',
+            MOZ_DISABLE_GPU_SANDBOX: '1',
+          },
+        },
+      },
     },
 
     {

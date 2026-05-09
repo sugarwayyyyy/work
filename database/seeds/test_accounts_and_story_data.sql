@@ -16,6 +16,11 @@ INSERT INTO users (email, password, student_id, name, role, is_active)
 SELECT 'student@univ.edu', @pwd_hash, 'S000001', '一般學生測試員', 'student', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'student@univ.edu');
 
+-- 強制還原角色，防止前次測試（或外部工具）遺留錯誤的 role 值
+UPDATE users SET role = 'platform_admin', is_active = TRUE WHERE email = 'admin@univ.edu';
+UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'clubadmin@univ.edu';
+UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'student@univ.edu';
+
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
 SELECT 'CSC001', '程式社', 1, '介紹本學期課程與專題方向', 2010, 0, '週三', '18:00-20:00', '資工館 R201', 'csc.club@univ.edu', '0911111111', 'active'
