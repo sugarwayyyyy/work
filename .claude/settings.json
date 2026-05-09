@@ -10,7 +10,13 @@
       "Bash(grep -E \"failed$|^\\\\s+\\\\d\\\\\\)\")",
       "Bash(php scripts/cleanup-e2e-test-data.php --full)",
       "Bash(php -r ' *)",
-      "Bash(php scripts/seed-e2e-test-data.php)"
+      "Bash(php scripts/seed-e2e-test-data.php)",
+      "PowerShell(Get-Process | Where-Object { $_.Name -match \"firefox|playwright|node|php\" } | Select-Object Id, Name, CPU, WorkingSet | Format-Table -AutoSize)",
+      "PowerShell(netstat -ano)",
+      "PowerShell(Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser)",
+      "Bash(node -e \"const p = require\\('@playwright/test/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts, null, 2\\)\\)\")",
+      "Bash(pip show *)"
     ],
     "additionalDirectories": [
       "D:\\app\\appserv\\www\\work-main\\frontend\\pages"

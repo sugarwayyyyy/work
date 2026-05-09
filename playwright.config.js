@@ -11,10 +11,11 @@ module.exports = defineConfig({
   fullyParallel: true,
   
   /* 如果測試失敗，重新運行 */
-  retries: process.env.CI ? 2 : 0,
-  
+  retries: process.env.CI ? 2 : 1,
+
   /* 並行運行的工作進程數 */
-  workers: process.env.CI ? 1 : undefined,
+  // Firefox 在高並行下 Marionette 連線不穩，限制 4 個 worker
+  workers: process.env.CI ? 1 : 4,
   
   /* 報告器 */
   reporter: 'html',
