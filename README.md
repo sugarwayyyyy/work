@@ -5,6 +5,7 @@
 ## 目錄
 - [專案概覽](#專案概覽)
 - [AI 與新同事啟用](#ai-與新同事啟用)
+- [AI 開發原則](#ai-開發原則)
 - [功能架構](#功能架構)
 - [專案結構](#專案結構)
 - [技術棧](#技術棧)
@@ -34,6 +35,92 @@
 - [.github/copilot-instructions.md](.github/copilot-instructions.md)
 
 此文件提供可直接執行的啟動步驟、資料庫初始化、常見錯誤排查與驗證方式。
+
+---
+
+## AI 開發原則
+
+**本節適用於所有 AI 編碼工具（Codex、Claude、GitHub Copilot 等），尤其是後端修改。違反以下原則會直接影響安全性或資料完整性。**
+
+### 後端安全
+
+#### 1. 認證與授權（必查）
+- 每支 API 在處理任何資料前，必須先呼叫 `Auth::isLoggedIn()`。
+- 管理員操作用 `Auth::isAdmin()`；社團幹部操作用 `$this->canManageClub($clubId)`，不要自行寫判斷邏輯。
+- 使用者只能操作自己的資料（如頭像上傳用 session userId，不接受 POST 傳入的 user_id）。
+- 平台管理員不能停權自己，這類防呆必須在後端實作，不能只靠前端。
+
+#### 2. CSRF 防護
+- 所有 POST／PUT／DELETE 必須驗證 CSRF token：
+  ```php
+  $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+  if (!Helper::verifyCSRFToken($token)) {
+      http_response_code(403);
+      echo json_encode(['success' => false, 'message' => 'CSRF 驗證失敗']);
+      return;
+  }
+  ```
+- GET 請求不需要 CSRF token，不要在 GET 上加寫入操作。
+
+#### 3. SQL 注入防護
+- **禁止**將任何使用者輸入直接拼入 SQL 字串。
+- 必須使用 MySQLi prepared statements（`bind_param`）。
+- 整數 ID 一律轉型：`$id = (int)($_GET['id'] ?? 0)`，再判斷 `if (!$id)`。
+
+#### 4. 輸入驗證
+- 所有來自 `$_GET`、`$_POST`、`$_FILES` 的資料視為不可信，在使用前驗證型別與範圍。
+- 必填欄位缺漏時回傳 `400` 並說明原因，不要 silent fail。
+
+#### 5. 錯誤回應格式
+- 所有 API 回應必須是 JSON，格式固定為：
+  ```json
+  { "success": true|false, "message": "...", "data": ... }
+  ```
+- 不能讓 PHP 原始錯誤或 stack trace 輸出到前端，API 檔案頂端要設 `set_exception_handler`。
+- HTTP 狀態碼要正確：401 未登入、403 權限不足、404 資源不存在、400 輸入錯誤、500 伺服器錯誤。
+
+### 角色系統（容易踩錯）
+
+- `users.role` 只有兩種有效值：`platform_admin`、`student`。**不要**寫入 `club_admin`。
+- 社團幹部身份由 `club_members.role` 決定（`president`、`vice_president`、`director`、`public_relations`）。
+- `Auth::isClubAdmin()` 查的是 `club_members` 資料表，不是 `users.role`。
+- 若需要判斷某使用者是否能管理某社團，呼叫 `canManageClub($clubId)`，不要自己查資料表。
+
+### 資料庫變更
+
+- **禁止**直接修改 `database/schema.sql` 來新增欄位或資料表——這不會更新已部署的資料庫。
+- 所有結構變更必須寫成新的 migration 檔放在 `database/migrations/`，並在 `run_migration.php` 中登記。
+- Migration 命名格式：`YYYYMMDD_描述.sql`，例如 `20260510_add_poster_path_to_events.sql`。
+- 每次新增欄位後，對應的 API 要先用 `hasColumn()` 確認欄位存在再使用，避免舊環境 500。
+
+### 上傳處理
+
+- 圖片限制定義在 `backend/config.php`：`MAX_FILE_SIZE`（10 MB）、`ALLOWED_IMAGE_TYPES`。
+- **不要**在 upload.php 以外的地方處理檔案上傳。
+- `$_POST` 與 `$_FILES` 同時為空且 `Content-Length > 0`，代表 PHP 的 `post_max_size` 被超過，需單獨偵測並回傳 413，不要誤報「缺少 ID」。
+- 上傳成功後的 path 格式固定為 `assets/uploads/{prefix}_{time}_{uniqid}.{ext}`。
+
+### 前端－後端契約
+
+- 修改 API 回傳欄位前，先搜尋所有前端 JS 引用該欄位的地方（`grep -r "欄位名" frontend/js/`）。
+- 刪除或重新命名欄位屬於 breaking change，必須同步更新前端。
+- API `action` 參數透過 `?action=xxx` 傳入，不要為每個 action 建立新的 PHP 檔。
+
+### 前端開發
+
+- 輸出使用者輸入的內容一律用 `PageUtils.escapeHtml()`，禁止直接 `innerHTML = userInput`。
+- `form.reset()` 不會重置 `disabled` 屬性，關閉 modal 後要明確還原所有欄位狀態。
+- 上傳前在前端驗證檔案大小（`file.size > MAX`），讓使用者在送出請求前就得到明確提示。
+- 路徑計算統一用 `getFrontendAssetPath()` 或 `getPageLink()`，不要手動拼接相對路徑。
+
+### 測試
+
+- 新增或修改 API 後，對應的 e2e 場景（`tests/e2e/`）要能全數通過。
+- 執行全套測試：`npx playwright test`，預期 162 個測試全部通過。
+- 種子資料修改後要重新執行一次 e2e，確認沒有 silent breakage。
+- 測試的 global setup 會執行 `--full` 清理再重新 seed，不要手動留殘留測試資料。
+
+---
 
 ## 功能架構
 
@@ -86,8 +173,15 @@
 │   ├── js/
 │   └── pages/
 ├── tests/
+│   ├── e2e/
+│   │   ├── user-stories.spec.js
+│   │   ├── additional-regression.spec.js
+│   │   └── global-setup.js
 │   ├── api/
 │   └── manual/
+├── scripts/
+│   ├── seed-e2e-test-data.php
+│   └── cleanup-e2e-test-data.php
 ├── logs/
 └── README.md
 ```
@@ -95,9 +189,9 @@
 ## 技術棧
 
 - 前端：HTML5、CSS3、Vanilla JavaScript
-- 後端：PHP 7.4+、MySQL / MySQLi
+- 後端：PHP 7.4+、MySQL 8.0+ / MySQLi
 - 開發環境：Windows、AppServ、Apache
-- 測試工具：PowerShell、自動化 API 驗收腳本、手動驗收清單
+- 測試：Playwright（e2e，需 Node.js）、手動驗收清單
 
 ## 安裝與初始化
 
@@ -107,6 +201,7 @@
 1. 匯入 `database/schema.sql` 與 `database/migrations/*`。
 2. 編輯 `backend/config.php` 設定資料庫連線。
 3. 確認 `frontend/assets/uploads`、`logs` 可寫入。
+4. 安裝 e2e 測試依賴：`npm install`。
 
 ## 執行方式
 
@@ -131,12 +226,25 @@ php -S localhost:8000
 
 避免重複維護，測試帳號與初始化資料請以 [QUICKSTART.md](QUICKSTART.md) 為準。
 
+測試帳號（密碼均為 `Test123456`）：
+
+| 帳號 | 角色 |
+|------|------|
+| `admin@univ.edu` | 平台管理員 |
+| `clubadmin@univ.edu` | 社團幹部（程式社社長、羽球社幹部） |
+| `student@univ.edu` | 一般學生 |
+
 ## 測試與驗收
 
-### 自動化驗收
+### E2E 自動化測試（Playwright）
+
 ```powershell
-pwsh -File tests/api/acceptance_user_stories.ps1 -BaseUrl "http://localhost:8000/../backend/api"
+npx playwright test
 ```
+
+預期結果：162 個測試全數通過（Chromium、Firefox、WebKit 三瀏覽器）。
+
+執行前確認後端服務已啟動，global setup 會自動執行完整清理與 seed。
 
 ### 手動驗收
 - [手動驗收清單](tests/manual/user_story_acceptance_checklist.md)
@@ -188,14 +296,13 @@ pwsh -File tests/api/acceptance_user_stories.ps1 -BaseUrl "http://localhost:8000
 
 ## 目前狀態
 
-- 核心資料庫與 API 已具備。
-- 前端學生端、社團幹部端與管理員端頁面已建立。
-- 驗收與測試文件已整理完成。
-- 目前工作重點集中在資料清理、介面美化與文件整併。
+- 核心資料庫、API 與前端三端頁面均已完成。
+- E2E 自動化測試（Playwright）162 個場景全數通過。
+- 目前工作重點集中在 UI 細節優化與功能完善。
 
 ## 維護建議
 
-1. 新增功能前先同步更新資料庫遷移與測試資料。
-2. API 有改動時，同步更新 README 與快速開始文件。
+1. 新增功能前先同步更新資料庫 migration 與測試種子資料。
+2. API 有改動時，同步更新 README 與快速開始文件，並確認 e2e 仍全數通過。
 3. 若前端頁面路由或資源路徑變動，先更新文件中的啟動說明。
-4. 測試文件建議以目前版本為準，避免重複保留舊版說明。
+4. 所有結構性變更（新資料表、新欄位）只能透過 migration 檔進行，不得直接改 schema.sql。
