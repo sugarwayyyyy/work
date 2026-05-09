@@ -693,6 +693,7 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initializePage() {
     ensureSiteFavicon();
     ensureHamburger();
+    injectFjuLogoIcon();
     applyActiveNavLink();
     injectClubNavDropdown();
     await hydrateUserFromSession();
@@ -1495,6 +1496,30 @@ function applyActiveNavLink() {
     if (target) {
         target.classList.add('active');
     }
+}
+
+function injectFjuLogoIcon() {
+    const logo = document.querySelector('a.logo');
+    if (!logo || logo.parentElement?.classList.contains('logo-wrapper')) return;
+
+    // img 必須在 .logo 外面，否則 background-clip:text 的合成層會讓透明像素出現方格
+    const wrapper = document.createElement('div');
+    wrapper.className = 'logo-wrapper';
+    logo.parentNode.insertBefore(wrapper, logo);
+
+    const imgLink = document.createElement('a');
+    imgLink.href = logo.getAttribute('href') || '#';
+    imgLink.tabIndex = -1; // 避免鍵盤使用者 tab 兩次
+
+    const img = document.createElement('img');
+    img.src = resolveFrontendAssetUrl('assets/icons/fju-logo.png');
+    img.alt = '';
+    img.className = 'logo-fju-icon';
+    img.setAttribute('aria-hidden', 'true');
+
+    imgLink.appendChild(img);
+    wrapper.appendChild(imgLink);
+    wrapper.appendChild(logo);
 }
 
 function injectClubNavDropdown() {

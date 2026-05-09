@@ -482,7 +482,13 @@
 
             document.getElementById('club-name').textContent = club.club_name;
             document.getElementById('club-category').textContent = club.category_name || '-';
-            document.getElementById('club-fee').textContent = club.club_fee > 0 ? `$${club.club_fee}` : '免費';
+            const _hasOnetime = (club.club_fee ?? 0) > 0;
+            const _hasSemester = club.club_fee_semester != null && club.club_fee_semester > 0;
+            document.getElementById('club-fee').textContent =
+                _hasOnetime && _hasSemester ? `入會費 $${club.club_fee} + 學期費 $${club.club_fee_semester} / 學期`
+                : _hasOnetime ? `入會費 $${club.club_fee}`
+                : _hasSemester ? `學期費 $${club.club_fee_semester} / 學期`
+                : '免費';
             document.getElementById('meeting-time').textContent = club.meeting_time || '-';
             document.getElementById('meeting-location').textContent = formatMeetingLocation(club.meeting_location);
             renderLocationActions(club.meeting_location);

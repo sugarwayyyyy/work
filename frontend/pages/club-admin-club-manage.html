@@ -82,7 +82,24 @@
                             </div>
                             <div>
                                 <div class="cad-field-caption">社費（選填）</div>
-                                <input type="number" id="update-club-fee">
+                                <div class="cad-fee-options">
+                                    <label class="cad-fee-row">
+                                        <input type="checkbox" id="update-fee-onetime-enabled" class="cad-fee-checkbox">
+                                        <span class="cad-fee-label">一次付清（入會費 / 年費）</span>
+                                        <div class="cad-fee-amount">
+                                            <input type="number" id="update-club-fee" class="cad-fee-input" min="0" placeholder="0" disabled>
+                                            <span class="cad-fee-unit">元</span>
+                                        </div>
+                                    </label>
+                                    <label class="cad-fee-row">
+                                        <input type="checkbox" id="update-fee-semester-enabled" class="cad-fee-checkbox">
+                                        <span class="cad-fee-label">學期費</span>
+                                        <div class="cad-fee-amount">
+                                            <input type="number" id="update-club-fee-semester" class="cad-fee-input" min="0" placeholder="0" disabled>
+                                            <span class="cad-fee-unit">元 / 學期</span>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>

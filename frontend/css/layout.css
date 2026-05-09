@@ -19,6 +19,12 @@ nav {
     padding: 0.85rem 2rem;
 }
 
+.logo-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
 .logo {
     font-size: clamp(0.85rem, 1.8vw, 1.45rem);
     font-weight: 800;
@@ -30,6 +36,12 @@ nav {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     line-height: 1.2;
+}
+
+.logo-fju-icon {
+    height: clamp(1.8rem, 3.5vw, 2.8rem);
+    width: auto;
+    flex-shrink: 0;
 }
 
 .logo__sub {
@@ -186,6 +198,10 @@ nav {
 
 @media (max-width: 1024px) {
     .logo__sub {
+        display: none;
+    }
+
+    .logo-fju-icon {
         display: none;
     }
 }

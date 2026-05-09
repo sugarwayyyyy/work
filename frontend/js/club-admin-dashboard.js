@@ -1053,7 +1053,22 @@
             setVal('update-club-location', club.meeting_location || '');
             setVal('update-club-email', club.contact_email || '');
             setVal('update-club-phone', club.contact_phone || '');
-            setVal('update-club-fee', club.club_fee || '');
+            const hasOnetime = (club.club_fee ?? 0) > 0;
+            const hasSemester = club.club_fee_semester != null && club.club_fee_semester > 0;
+            const onetimeCb = $e('update-fee-onetime-enabled');
+            const semesterCb = $e('update-fee-semester-enabled');
+            const onetimeIn = $e('update-club-fee');
+            const semesterIn = $e('update-club-fee-semester');
+            if (onetimeCb && onetimeIn) {
+                onetimeCb.checked = hasOnetime;
+                onetimeIn.disabled = !hasOnetime;
+                onetimeIn.value = hasOnetime ? club.club_fee : '';
+            }
+            if (semesterCb && semesterIn) {
+                semesterCb.checked = hasSemester;
+                semesterIn.disabled = !hasSemester;
+                semesterIn.value = hasSemester ? club.club_fee_semester : '';
+            }
             if ($e('create-event-submit')) $e('create-event-submit').disabled = false;
             setTxt('create-event-hint', `目前建立活動目標社團：${club.club_name || ''}`);
             setTxt('transfer-request-subtitle', `目前申請社團：${club.club_name || ''}（${club.club_code || '-'}）`);
@@ -1540,6 +1555,18 @@
             const form = document.getElementById('update-club-form');
             if (!form) return;
 
+            ['update-fee-onetime-enabled', 'update-fee-semester-enabled'].forEach(cbId => {
+                const cb = document.getElementById(cbId);
+                if (!cb) return;
+                const inputId = cbId === 'update-fee-onetime-enabled' ? 'update-club-fee' : 'update-club-fee-semester';
+                cb.addEventListener('change', () => {
+                    const inp = document.getElementById(inputId);
+                    if (!inp) return;
+                    inp.disabled = !cb.checked;
+                    if (!cb.checked) inp.value = '';
+                });
+            });
+
             form.addEventListener('submit', async event => {
                 event.preventDefault();
                 if (!validateClubForm()) return;
@@ -1559,7 +1586,10 @@
                     formData.append('meeting_location', document.getElementById('update-club-location').value);
                     formData.append('contact_email', document.getElementById('update-club-email').value);
                     formData.append('contact_phone', document.getElementById('update-club-phone').value);
-                    formData.append('club_fee', document.getElementById('update-club-fee').value);
+                    const onetimeEnabled = document.getElementById('update-fee-onetime-enabled')?.checked;
+                    const semesterEnabled = document.getElementById('update-fee-semester-enabled')?.checked;
+                    formData.append('club_fee', onetimeEnabled ? (document.getElementById('update-club-fee').value || '0') : '0');
+                    formData.append('club_fee_semester', semesterEnabled ? (document.getElementById('update-club-fee-semester').value || '0') : '');
                     formData.append('last_updated', currentClubLastUpdated || '');
 
                     const logoFile = document.getElementById('club-logo-upload').files[0];

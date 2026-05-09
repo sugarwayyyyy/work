@@ -781,6 +781,7 @@ class ClubAPI {
                 'description' => $data['description'],
                 'founding_year' => $data['founding_year'] ?? date('Y'),
                 'club_fee' => $data['club_fee'] ?? 0,
+                'club_fee_semester' => isset($data['club_fee_semester']) && $data['club_fee_semester'] !== '' ? (int)$data['club_fee_semester'] : null,
                 'meeting_day' => $data['meeting_day'] ?? '',
                 'meeting_time' => $data['meeting_time'] ?? '',
                 'meeting_location' => $data['meeting_location'] ?? '',
@@ -875,6 +876,7 @@ class ClubAPI {
                 'contact_email' => $data['contact_email'] ?? '',
                 'contact_phone' => $data['contact_phone'] ?? '',
                 'club_fee' => $data['club_fee'] ?? 0,
+                'club_fee_semester' => isset($data['club_fee_semester']) && $data['club_fee_semester'] !== '' ? (int)$data['club_fee_semester'] : null,
                 'last_updated' => date('Y-m-d H:i:s')
             ];
 

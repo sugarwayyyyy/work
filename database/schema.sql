@@ -40,6 +40,7 @@ CREATE TABLE clubs (
     description TEXT,
     founding_year INT,
     club_fee INT DEFAULT 0,
+    club_fee_semester INT DEFAULT NULL,
     meeting_day VARCHAR(50),
     meeting_time VARCHAR(50),
     meeting_location VARCHAR(100),

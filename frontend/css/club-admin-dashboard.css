@@ -82,6 +82,46 @@
     border-radius: 4px;
 }
 
+.cad-fee-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.cad-fee-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.cad-fee-label {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.cad-fee-amount {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.cad-fee-input {
+    width: 88px;
+}
+
+.cad-fee-input:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+.cad-fee-unit {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
 .cad-block-gap {
     margin-bottom: 1rem;
 }
