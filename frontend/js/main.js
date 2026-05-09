@@ -694,6 +694,7 @@ async function initializePage() {
     ensureSiteFavicon();
     ensureHamburger();
     applyActiveNavLink();
+    injectClubNavDropdown();
     await hydrateUserFromSession();
     updateNavigation();
     await renderGlobalFollowSidebar();
@@ -1494,6 +1495,44 @@ function applyActiveNavLink() {
     if (target) {
         target.classList.add('active');
     }
+}
+
+function injectClubNavDropdown() {
+    const navLinks = document.querySelector('.nav-links');
+    if (!navLinks) return;
+    if (navLinks.querySelector('.nav-dropdown')) return;
+
+    const clubLink = navLinks.querySelector('a[href*="club-list.html"]');
+    if (!clubLink) return;
+
+    const li = clubLink.closest('li');
+    if (!li) return;
+
+    const base = clubLink.getAttribute('href') || 'club-list.html';
+    const categories = [
+        { label: '休閒性', id: '5' },
+        { label: '學術性', id: '2' },
+        { label: '服務性', id: '4' },
+        { label: '藝文性', id: '3' },
+        { label: '體育性', id: '1' },
+    ];
+
+    const arrow = document.createElement('span');
+    arrow.className = 'nav-dropdown-arrow';
+    clubLink.appendChild(arrow);
+
+    li.classList.add('nav-has-dropdown');
+    const ul = document.createElement('ul');
+    ul.className = 'nav-dropdown';
+    categories.forEach(({ label, id }) => {
+        const item = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = id ? `${base}?category_id=${id}` : base;
+        a.textContent = label;
+        item.appendChild(a);
+        ul.appendChild(item);
+    });
+    li.appendChild(ul);
 }
 
 function getFrontendAssetPath(assetPath) {
