@@ -1647,7 +1647,7 @@ function updateNavigation() {
                 + `<div class="ndp-mail">${PageUtils.escapeHtml(user.email || '')}</div>`
                 + '</div></div>'
                 + '<div class="ndp-menu">'
-                + `<a href="${FRONTEND_HOME_URL}"><img class="ndp-menu-icon" src="${homeIcon}" alt="">返回首頁</a>`
+                + (user.role !== 'platform_admin' ? `<a href="${FRONTEND_HOME_URL}"><img class="ndp-menu-icon" src="${homeIcon}" alt="">返回首頁</a>` : '')
                 + `<a href="${getPageLink('user-profile.html')}"><img class="ndp-menu-icon" src="${personIcon}" alt="">個人資料</a>`
                 + roleLink
                 + '</div>'

@@ -74,9 +74,27 @@
 
         .review-stars {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.25rem;
+        }
+
+        .star-btn {
+            border: none;
+            background: transparent;
+            color: #d1d5db;
             font-size: 2rem;
-            flex-wrap: wrap;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.18s ease, transform 0.15s ease;
+        }
+
+        .star-btn:hover {
+            color: #f59e0b;
+            transform: scale(1.15);
+        }
+
+        .star-btn.is-active {
+            color: #fbbf24;
         }
 
         .review-modal-actions {
@@ -862,11 +880,7 @@
                 document.getElementById('review-rating').value = selectedRating;
 
                 document.querySelectorAll('.star-btn').forEach((b, idx) => {
-                    if (idx < selectedRating) {
-                        b.style.color = '#fbbf24';
-                    } else {
-                        b.style.color = '#d1d5db';
-                    }
+                    b.classList.toggle('is-active', idx < selectedRating);
                 });
             });
         });

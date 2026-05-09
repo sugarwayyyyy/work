@@ -349,6 +349,10 @@ class AdminAPI {
         $user_id = (int)$data['user_id'];
         $is_active = ((int)$data['is_active'] === 1) ? 1 : 0;
 
+        if ($user_id === (int)Auth::getCurrentUserId() && $is_active === 0) {
+            Helper::error('無法停權自己的帳號', 403);
+        }
+
         dbUpdate('users', ['is_active' => $is_active], 'user_id = ?', [$user_id]);
         Helper::success('帳號狀態更新成功');
     }

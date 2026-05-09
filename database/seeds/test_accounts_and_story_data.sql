@@ -9,13 +9,17 @@ SELECT 'admin@univ.edu', @pwd_hash, 'A000001', '平台管理員', 'platform_admi
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@univ.edu');
 
 INSERT INTO users (email, password, student_id, name, role, is_active)
-SELECT 'clubadmin@univ.edu', @pwd_hash, 'C000001', '社團幹部測試員', 'club_admin', TRUE
+SELECT 'clubadmin@univ.edu', @pwd_hash, 'C000001', '社團幹部測試員', 'student', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'clubadmin@univ.edu');
 
 INSERT INTO users (email, password, student_id, name, role, is_active)
 SELECT 'student@univ.edu', @pwd_hash, 'S000001', '一般學生測試員', 'student', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'student@univ.edu');
 
+
+INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
+SELECT 'CSC001', '程式社', 1, '介紹本學期課程與專題方向', 2010, 0, '週三', '18:00-20:00', '資工館 R201', 'csc.club@univ.edu', '0911111111', 'active'
+WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = 'CSC001');
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
 SELECT '090', '羽球社', 1, '歡迎零基礎與進階同學一起運動', 2015, 500, '週二', '18:30-20:30', '體育館 A 場', 'badminton.club@univ.edu', '0922333444', 'active'

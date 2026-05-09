@@ -376,6 +376,7 @@
             document.getElementById('user-edit-meta-email').textContent = user.email || '-';
             document.getElementById('user-edit-admin-password').value = '';
             document.getElementById('user-edit-platform-role').disabled = isSelf && isPlatformAdmin;
+            document.getElementById('user-edit-status').disabled = isSelf;
             const clubSection = document.getElementById('user-edit-club-section');
             if (clubSection) clubSection.style.display = isPlatformAdmin ? 'none' : '';
             if (!isPlatformAdmin) { renderModalClubOptions(); renderUserEditClubRoles(user.user_id); }
@@ -393,6 +394,8 @@
             document.getElementById('user-edit-password-wrap').style.display = 'none';
             document.getElementById('user-edit-meta-name').textContent = '-';
             document.getElementById('user-edit-meta-email').textContent = '-';
+            document.getElementById('user-edit-status').disabled = false;
+            document.getElementById('user-edit-platform-role').disabled = false;
             syncModalBodyScrollLock();
         }
 

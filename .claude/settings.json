@@ -7,7 +7,10 @@
       "Bash(git -C \"d:/app/appserv/www/work-main\" diff --stat)",
       "PowerShell(Remove-Item \"d:\\\\app\\\\appserv\\\\www\\\\work-main\\\\frontend\\\\pages\\\\club-admin-my-clubs.html\" -Confirm:$false)",
       "Bash(grep -E \"^\\\\s+\\(passed|failed\\)|failed$\")",
-      "Bash(grep -E \"failed$|^\\\\s+\\\\d\\\\\\)\")"
+      "Bash(grep -E \"failed$|^\\\\s+\\\\d\\\\\\)\")",
+      "Bash(php scripts/cleanup-e2e-test-data.php --full)",
+      "Bash(php -r ' *)",
+      "Bash(php scripts/seed-e2e-test-data.php)"
     ],
     "additionalDirectories": [
       "D:\\app\\appserv\\www\\work-main\\frontend\\pages"
