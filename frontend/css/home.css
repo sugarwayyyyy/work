@@ -341,6 +341,17 @@
     margin-bottom: 0.4rem;
 }
 
+.feed-item-map-link {
+    color: var(--brand);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.feed-item-map-link:hover {
+    color: var(--brand-hover);
+    text-decoration: underline;
+}
+
 .feed-item-meta__updated {
     margin-left: auto;
     color: var(--text-muted);
@@ -534,5 +545,4 @@
         text-align: center;
     }
 }
-
 
