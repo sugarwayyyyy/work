@@ -103,6 +103,16 @@
             flex-wrap: wrap;
         }
 
+        .feed-item-map-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .feed-item-map-link:hover {
+            text-decoration: underline;
+        }
+
         @media (max-width: 640px) {
             .modal-title {
                 font-size: 1.1rem;
@@ -619,14 +629,19 @@
                 const eventId = Number(event.event_id || 0);
                 const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
                 const rawLocation = String(event.location || '').trim();
+                const mapsMatch = rawLocation.match(MAPS_URL_RE);
+                const mapsUrl = mapsMatch ? mapsMatch[0] : '';
                 const locationText = (() => {
                     if (!rawLocation) return '-';
-                    const mapsMatch = rawLocation.match(MAPS_URL_RE);
                     if (!mapsMatch) return rawLocation;
                     const label = rawLocation.replace(MAPS_URL_RE, '').trim();
                     return label || 'Google 地圖';
                 })();
                 const safeLocation = PageUtils.escapeHtml(locationText);
+                const safeMapsUrl = PageUtils.escapeHtml(mapsUrl);
+                const locationHtml = mapsUrl
+                    ? `<a href="${safeMapsUrl}" target="_blank" rel="noopener noreferrer" class="feed-item-map-link">\uD83D\uDCCD ${safeLocation}</a>`
+                    : `<span>\uD83D\uDCCD ${safeLocation}</span>`;
 
                 const d = event.event_date
                     ? new Date(String(event.event_date).replace(' ', 'T'))
@@ -647,18 +662,24 @@
 
                 const card = document.createElement('article');
                 card.className = 'feed-item-card';
+                card.style.cursor = 'pointer';
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('a')) {
+                        window.location.href = `event-detail.html?id=${eventId}`;
+                    }
+                });
                 card.innerHTML = `
-                    <a href="event-detail.html?id=${eventId}" class="feed-item-link">
+                    <div class="feed-item-link">
                         <div class="feed-item-head">
                             <h3 class="feed-item-title">${safeEventName}</h3>
                             <span class="feed-item-badge ${isOpen ? '' : 'feed-item-badge--neutral'}">${isOpen ? '報名中' : '已截止'}</span>
                         </div>
                         <div class="feed-item-meta">
                             <span>${dateText}</span>
-                            <span>📍 ${safeLocation}</span>
+                            ${locationHtml}
                             ${capacityText ? `<span>${capacityText}</span>` : ''}
                         </div>
-                    </a>
+                    </div>
                 `;
                 container.appendChild(card);
             });

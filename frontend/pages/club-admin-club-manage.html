@@ -74,8 +74,17 @@
                         <div id="err-update-club-location" class="field-error"></div>
                     </div>
                     <div class="form-field">
-                        <label for="update-club-phone">聯絡電話</label>
-                        <input type="tel" id="update-club-phone">
+                        <label>聯絡資訊</label>
+                        <div class="cad-stack">
+                            <div>
+                                <div class="cad-field-caption">聯絡電話</div>
+                                <input type="tel" id="update-club-phone">
+                            </div>
+                            <div>
+                                <div class="cad-field-caption">社費（選填）</div>
+                                <input type="number" id="update-club-fee">
+                            </div>
+                        </div>
                     </div>
                     <div class="form-field">
                         <label for="update-club-meeting-day">社課時間 <span class="required">*</span></label>
@@ -120,10 +129,6 @@
                         <small class="cad-help-text">使用 24 小時制，分鐘僅能選整點或半點，例：每週三 19:00~21:30。</small>
                         <div id="err-update-club-meeting-time" class="field-error"></div>
                     </div>
-                    <div class="form-field">
-                        <label for="update-club-fee">社費（選填）</label>
-                        <input type="number" id="update-club-fee">
-                    </div>
                     <div class="form-field admin-span-2">
                         <label for="update-club-description">介紹內文 <span class="required">*</span></label>
                         <textarea id="update-club-description" class="cad-textarea-xl" required onchange="detectTagsFromDescription()"></textarea>
@@ -153,6 +158,7 @@
                     <div class="form-field admin-span-2">
                         <label for="club-logo-upload">Logo 圖片（選填）</label>
                         <input type="file" id="club-logo-upload" accept="image/*" onchange="previewClubLogo(event)">
+                        <small class="cad-help-text">檔案限制：僅支援 JPG／PNG／GIF／WebP，大小上限 10MB。</small>
                         <div id="club-logo-preview" class="image-preview-container">
                             <img id="club-logo-img" src="" alt="Logo 預覽" class="cad-preview-image">
                         </div>

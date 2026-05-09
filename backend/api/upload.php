@@ -64,7 +64,27 @@ class UploadAPI {
         }
     }
 
+    private function parseIniSize(string $val): int {
+        $val = trim($val);
+        $last = strtolower($val[-1] ?? '');
+        $num  = (int)$val;
+        if ($last === 'g') return $num * 1073741824;
+        if ($last === 'm') return $num * 1048576;
+        if ($last === 'k') return $num * 1024;
+        return $num;
+    }
+
     public function handleRequest() {
+        $contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+        if ($contentLength > 0 && empty($_FILES) && empty($_POST)) {
+            $limit = $this->parseIniSize((string)ini_get('post_max_size'));
+            if ($limit > 0 && $contentLength > $limit) {
+                http_response_code(413);
+                echo json_encode(['success' => false, 'message' => '上傳檔案超過伺服器大小限制，請壓縮後再試']);
+                return;
+            }
+        }
+
         if (!Auth::isLoggedIn()) {
             http_response_code(401);
             echo json_encode(['success' => false, 'message' => '未授權訪問']);

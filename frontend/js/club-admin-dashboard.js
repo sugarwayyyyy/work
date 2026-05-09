@@ -1339,6 +1339,10 @@
         async function uploadEventPosterFile(eventId, fileInput) {
             const posterFile = fileInput ? fileInput.files[0] : null;
             if (!posterFile) return null;
+            if (!eventId) return null;
+            if (posterFile.size > 10 * 1024 * 1024) {
+                throw new Error('海報檔案超過 10MB 上限，請壓縮後再上傳');
+            }
             const uploadFormData = new FormData();
             uploadFormData.append('poster', posterFile);
             uploadFormData.append('event_id', String(eventId));
@@ -1821,7 +1825,7 @@
                             return;
                         }
                         const createdId = response?.data?.event_id;
-                        await uploadEventPosterFile(createdId, posterFileInput);
+                        if (createdId) await uploadEventPosterFile(createdId, posterFileInput);
                         if (eventSelectedTagIds.size > 0 && createdId) {
                             try {
                                 await APIClient.post('events.php?action=update_event_tags', {
