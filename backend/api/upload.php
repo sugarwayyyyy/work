@@ -291,9 +291,8 @@ class UploadAPI {
             }
         }
 
-        $reportedType = $file['type'] ?? '';
-        $isSupportedType = in_array($reportedType, $normalizedAllowedTypes, true)
-            || in_array($detectedType, $normalizedAllowedTypes, true);
+        $typeToCheck = $detectedType ?? ($file['type'] ?? '');
+        $isSupportedType = in_array($typeToCheck, $normalizedAllowedTypes, true);
 
         if (!$isSupportedType) {
             return ['success' => false, 'message' => '不支援的文件類型'];
