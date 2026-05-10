@@ -260,8 +260,8 @@ class ClubAPI {
             $tags = isset($_GET['tags']) ? explode(',', $_GET['tags']) : [];
             $search = $_GET['search'] ?? '';
             $tag_match_mode = strtolower((string)($_GET['tag_match_mode'] ?? 'or'));
-            $min_fee = $_GET['min_fee'] ?? null;
-            $max_fee = $_GET['max_fee'] ?? null;
+            $min_fee = isset($_GET['min_fee']) && $_GET['min_fee'] !== '' ? (float)$_GET['min_fee'] : null;
+            $max_fee = isset($_GET['max_fee']) && $_GET['max_fee'] !== '' ? (float)$_GET['max_fee'] : null;
             $page = (int)($_GET['page'] ?? 1);
             $per_page = ITEMS_PER_PAGE;
             $offset = ($page - 1) * $per_page;

@@ -473,8 +473,8 @@ class EventAPI {
             $min_remaining = isset($_GET['min_remaining']) && $_GET['min_remaining'] !== ''
                 ? (int)$_GET['min_remaining']
                 : null;
-            $min_fee = $_GET['min_fee'] ?? null;
-            $max_fee = $_GET['max_fee'] ?? null;
+            $min_fee = isset($_GET['min_fee']) && $_GET['min_fee'] !== '' ? (float)$_GET['min_fee'] : null;
+            $max_fee = isset($_GET['max_fee']) && $_GET['max_fee'] !== '' ? (float)$_GET['max_fee'] : null;
             $page = (int)($_GET['page'] ?? 1);
             $per_page = ITEMS_PER_PAGE;
             $offset = ($page - 1) * $per_page;
