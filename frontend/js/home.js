@@ -87,6 +87,9 @@ function renderPagination(panelKey) {
     const pagination = document.getElementById('feed-pagination');
     if (!pagination) return;
 
+    const activePanel = document.querySelector('.feed-panel.is-active');
+    if (activePanel && activePanel.dataset.panel !== panelKey) return;
+
     const state = feedState[panelKey];
     const total = state.data.length;
     const totalPages = Math.ceil(total / FEED_PAGE_SIZE);
