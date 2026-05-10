@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
 /**
  * Google Maps URL 地點名稱解析端點
  * GET ?url=https://maps.app.goo.gl/xxx
