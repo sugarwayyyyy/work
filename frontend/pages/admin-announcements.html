@@ -57,6 +57,14 @@
                             <option value="update">更新</option>
                         </select>
                     </div>
+                    <div class="form-field">
+                        <label for="announcement-start-date">排程發布（選填）</label>
+                        <input type="datetime-local" id="announcement-start-date" />
+                    </div>
+                    <div class="form-field">
+                        <label for="announcement-end-date">自動到期（選填）</label>
+                        <input type="datetime-local" id="announcement-end-date" />
+                    </div>
                     <div class="form-field admin-checkbox-wrap">
                         <label for="announcement-sticky">是否置頂</label>
                         <input type="checkbox" id="announcement-sticky" />
@@ -229,6 +237,8 @@
             document.getElementById('announcement-content').value = item.content || '';
             document.getElementById('announcement-type').value = item.announcement_type || item.type || 'important';
             document.getElementById('announcement-sticky').checked = Boolean(item.is_pinned ?? item.is_sticky);
+            document.getElementById('announcement-start-date').value = item.start_date ? item.start_date.slice(0, 16) : '';
+            document.getElementById('announcement-end-date').value = item.end_date ? item.end_date.slice(0, 16) : '';
             document.getElementById('announcement-submit-btn').textContent = '儲存變更';
             document.getElementById('announcement-cancel-edit-btn').style.display = 'inline-flex';
             document.getElementById('announcement-title').focus();
@@ -253,7 +263,9 @@
                 title: document.getElementById('announcement-title').value,
                 content: document.getElementById('announcement-content').value,
                 type: document.getElementById('announcement-type').value,
-                is_sticky: document.getElementById('announcement-sticky').checked ? 1 : 0
+                is_sticky: document.getElementById('announcement-sticky').checked ? 1 : 0,
+                start_date: document.getElementById('announcement-start-date').value || null,
+                end_date: document.getElementById('announcement-end-date').value || null
             };
             if (editingId) payload.announcement_id = editingId;
             const action = editingId ? 'update_announcement' : 'create_announcement';

@@ -552,7 +552,9 @@ class AdminAPI {
             'announcement_type' => in_array($data['type'], ['event', 'maintenance', 'update', 'important']) ? $data['type'] : 'important',
             'is_pinned' => isset($data['is_sticky']) ? (int)$data['is_sticky'] : 0,
             'created_by' => Auth::getCurrentUser()['user_id'],
-            'created_at' => date('Y-m-d H:i:s')
+            'created_at' => date('Y-m-d H:i:s'),
+            'start_date' => !empty($data['start_date']) ? $data['start_date'] : null,
+            'end_date' => !empty($data['end_date']) ? $data['end_date'] : null
         ];
 
         $announcement_id = dbInsert('system_announcements', $announcement);
@@ -564,12 +566,19 @@ class AdminAPI {
     }
 
     public static function getAnnouncements() {
-                $announcements = Database::getInstance()->fetchAll(
-                        'SELECT * FROM system_announcements
-                         WHERE (start_date IS NULL OR start_date <= NOW())
-                             AND (end_date IS NULL OR end_date >= NOW())
-                         ORDER BY is_pinned DESC, display_priority DESC, created_at DESC'
-                );
+        if (Auth::isAdmin()) {
+            $announcements = Database::getInstance()->fetchAll(
+                'SELECT * FROM system_announcements
+                 ORDER BY is_pinned DESC, display_priority DESC, created_at DESC'
+            );
+        } else {
+            $announcements = Database::getInstance()->fetchAll(
+                'SELECT * FROM system_announcements
+                 WHERE (start_date IS NULL OR start_date <= NOW())
+                     AND (end_date IS NULL OR end_date >= NOW())
+                 ORDER BY is_pinned DESC, display_priority DESC, created_at DESC'
+            );
+        }
         Helper::success('取得公告列表成功', ['announcements' => $announcements]);
     }
 
@@ -607,7 +616,9 @@ class AdminAPI {
             'title' => trim($data['title']),
             'content' => trim($data['content']),
             'announcement_type' => in_array($data['type'], ['event', 'maintenance', 'update', 'important']) ? $data['type'] : 'important',
-            'is_pinned' => isset($data['is_sticky']) ? (int)$data['is_sticky'] : 0
+            'is_pinned' => isset($data['is_sticky']) ? (int)$data['is_sticky'] : 0,
+            'start_date' => !empty($data['start_date']) ? $data['start_date'] : null,
+            'end_date' => !empty($data['end_date']) ? $data['end_date'] : null
         ];
 
         dbUpdate('system_announcements', $updateData, 'announcement_id = ?', [$announcementId]);

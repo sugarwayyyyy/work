@@ -6,6 +6,102 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>註冊 - 社團平台</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .auth-layout {
+            display: flex;
+            height: calc(100vh - 64px);
+            overflow: hidden;
+            background: var(--page-bg);
+        }
+        .auth-carousel {
+            flex: 0 0 60%;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            gap: 1rem;
+            padding: 1.5rem 1.25rem;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+        }
+        .auth-carousel__fade {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            background: linear-gradient(to bottom,
+                var(--surface) 0%, transparent 14%,
+                transparent 86%, var(--surface) 100%);
+        }
+        .auth-form-side {
+            flex: 1;
+            display: flex;
+            align-items: safe center;
+            justify-content: center;
+            padding: 1rem 2rem;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        .auth-form-side::-webkit-scrollbar { display: none; }
+        .auth-form-side .card {
+            width: 100%;
+            max-width: 420px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
+            padding: 0;
+            margin-bottom: 0;
+        }
+        .auth-form-side .card:hover { transform: none; box-shadow: none; border-color: transparent; }
+        .auth-form-side .form-group { margin-bottom: 0.65rem; }
+        @media (max-width: 767px) {
+            .auth-form-side .card {
+                background: var(--surface);
+                border: 1px solid var(--color-border-light);
+                box-shadow: 0 1px 4px rgba(26,23,20,.06);
+                border-radius: 1rem;
+                padding: 1.5rem;
+            }
+        }
+        .logo-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+        }
+        .logo-col--down { animation-name: ac-down; animation-duration: 30s; }
+        .logo-col--up   { animation-name: ac-up;   animation-duration: 36s; }
+        @keyframes ac-down {
+            from { transform: translateY(0); }
+            to   { transform: translateY(-50%); }
+        }
+        @keyframes ac-up {
+            from { transform: translateY(-50%); }
+            to   { transform: translateY(0); }
+        }
+        .logo-item {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 0.875rem;
+            background: var(--surface-subtle);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--brand);
+            flex-shrink: 0;
+        }
+        .logo-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        @media (max-width: 767px) {
+            .auth-carousel { display: none; }
+            .auth-form-side { flex: 1; }
+        }
+    </style>
 </head>
 
 <body>
@@ -24,11 +120,16 @@
         </nav>
     </header>
 
-    <div class="container">
-        <div style="max-width: 500px; margin: 3rem auto;">
+    <div class="auth-layout">
+        <div class="auth-carousel" id="auth-carousel" aria-hidden="true">
+            <div class="auth-carousel__fade"></div>
+            <div class="logo-col logo-col--down" id="logo-col-1"></div>
+            <div class="logo-col logo-col--up"   id="logo-col-2"></div>
+        </div>
+        <div class="auth-form-side">
             <div class="card">
-                <div style="text-align: center; margin-bottom: 2rem;">
-                    <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem;">建立帳號</h1>
+                <div style="text-align: center; margin-bottom: 1.25rem;">
+                    <h1 style="font-size: 1.75rem; margin-bottom: 0.35rem;">建立帳號</h1>
                     <p style="color: var(--text-light);">加入社團平台社群</p>
                 </div>
 
@@ -76,9 +177,46 @@
         </div>
     </div>
 
-    <script src="../js/main.js?v=20260502f"></script>
+    <script src="../js/main.js?v=20260510"></script>
     <script>
         FormUtils.bindPasswordToggles();
+
+        async function initLogoCarousel() {
+            try {
+                const res = await APIClient.get('clubs.php');
+                const clubs = (res.success && res.data && res.data.clubs) ? res.data.clubs : [];
+                if (!clubs.length) return;
+
+                const cols = [
+                    document.getElementById('logo-col-1'),
+                    document.getElementById('logo-col-2')
+                ];
+
+                cols.forEach((col, ci) => {
+                    const pool = clubs.filter((_, i) => i % 2 === ci);
+                    const fill = pool.length < 6
+                        ? Array.from({ length: Math.ceil(6 / pool.length) }, () => pool).flat()
+                        : pool;
+                    const double = [...fill, ...fill];
+                    col.innerHTML = double.map(club => {
+                        const initial = PageUtils.escapeHtml((club.club_name || '社').charAt(0));
+                        if (club.logo_path) {
+                            const url = PageUtils.escapeAttribute(PageUtils.resolveMediaUrl(club.logo_path));
+                            const name = PageUtils.escapeAttribute(club.club_name || '');
+                            return `<div class="logo-item" data-initial="${initial}"><img src="${url}" alt="${name}" loading="lazy"></div>`;
+                        }
+                        return `<div class="logo-item">${initial}</div>`;
+                    }).join('');
+                    col.querySelectorAll('.logo-item img').forEach(img => {
+                        img.addEventListener('error', function () {
+                            this.closest('.logo-item').textContent = this.closest('.logo-item').dataset.initial || '社';
+                        });
+                    });
+                });
+            } catch (e) { /* carousel is decorative — fail silently */ }
+        }
+
+        initLogoCarousel();
 
         document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();

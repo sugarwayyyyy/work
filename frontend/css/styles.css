@@ -1437,6 +1437,7 @@ footer p {
 
 .table-shell .table {
     margin: 0;
+    width: 100%;
     min-width: 900px;
     background-color: var(--surface);
 }
@@ -1449,8 +1450,9 @@ footer p {
 
 .row-actions {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.35rem;
+    align-items: center;
 }
 
 .status-chip {
