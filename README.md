@@ -112,6 +112,7 @@
 - `form.reset()` 不會重置 `disabled` 屬性，關閉 modal 後要明確還原所有欄位狀態。
 - 上傳前在前端驗證檔案大小（`file.size > MAX`），讓使用者在送出請求前就得到明確提示。
 - 路徑計算統一用 `getFrontendAssetPath()` 或 `getPageLink()`，不要手動拼接相對路徑。
+- 所有顏色必須使用 CSS 自訂屬性（`var(--token)`），禁止在任何元件中硬編 hex 值（如 `#fff`、`#333`）。深色模式透過 `[data-theme="dark"]` 覆蓋 token，硬編 hex 會導致深色模式失效。
 
 ### 測試
 
@@ -130,6 +131,7 @@
 - 追蹤社團與個人動態
 - 評價與 Q&A 互動
 - 通知與個人資料管理
+- Light / Dark mode 切換（含訪客未登入狀態）
 
 ### 社團幹部端
 - 社團基本資料編修
@@ -298,6 +300,7 @@ npx playwright test
 
 - 核心資料庫、API 與前端三端頁面均已完成。
 - E2E 自動化測試（Playwright）162 個場景全數通過。
+- 已實作 Light / Dark mode（CSS token 系統），訪客與登入使用者均可切換。
 - 目前工作重點集中在 UI 細節優化與功能完善。
 
 ## 維護建議
