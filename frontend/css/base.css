@@ -80,6 +80,9 @@
     --shadow: 0 1px 3px rgba(26, 23, 20, 0.08), 0 1px 2px rgba(26, 23, 20, 0.04);
     --shadow-lg: 0 10px 24px -3px rgba(42, 95, 181, 0.16), 0 4px 8px -2px rgba(26, 23, 20, 0.08);
     --shadow-brand: 0 4px 14px rgba(42, 95, 181, 0.28);
+    /* 元件專用 token */
+    --header-bg: rgba(255, 255, 255, 0.88);
+    --input-bg: var(--color-bg-surface);
 }
 
 body {
@@ -113,6 +116,8 @@ select {
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
     font-size: 1rem;
+    background-color: var(--input-bg);
+    color: var(--text-default);
     transition: border-color 0.3s ease;
 }
 
@@ -168,4 +173,63 @@ textarea {
     outline: 2px solid rgba(42, 95, 181, 0.35);
     outline-offset: 2px;
     border-radius: 0.25rem;
+}
+
+/* ═══════════════ DARK MODE ═══════════════ */
+/* 明確用戶設定 */
+[data-theme="dark"] {
+    color-scheme: dark;
+    --color-bg-page: #171717;
+    --color-bg-surface: #212121;
+    --color-bg-subtle: #303030;
+    --color-bg-muted: #3A3A3A;
+    --color-border-light: #2A2A2A;
+    --color-border-default: #3D3D3D;
+    --color-border-strong: #555555;
+    --color-text-strong: #F5F5F5;
+    --color-text-default: #D4D4D4;
+    --color-text-muted: #888888;
+    --color-text-soft: #5A5A5A;
+    --brand: #7AABD8;
+    --brand-hover: #9FBDE4;
+    --brand-soft: rgba(122, 171, 216, 0.15);
+    --color-accent-50:  rgba(214, 63, 42, 0.08);
+    --color-accent-100: rgba(214, 63, 42, 0.14);
+    --color-accent-200: rgba(214, 63, 42, 0.28);
+    --color-accent-300: rgba(214, 63, 42, 0.42);
+    --accent-soft: rgba(214, 63, 42, 0.12);
+    --shadow: 0 1px 3px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 24px -3px rgba(0,0,0,0.55), 0 4px 8px -2px rgba(0,0,0,0.4);
+    --header-bg: rgba(23, 23, 23, 0.92);
+    --input-bg: var(--color-bg-surface);
+}
+
+/* 系統偏好自動偵測（使用者未明確設定時） */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --color-bg-page: #171717;
+        --color-bg-surface: #212121;
+        --color-bg-subtle: #303030;
+        --color-bg-muted: #3A3A3A;
+        --color-border-light: #2A2A2A;
+        --color-border-default: #3D3D3D;
+        --color-border-strong: #555555;
+        --color-text-strong: #F5F5F5;
+        --color-text-default: #D4D4D4;
+        --color-text-muted: #888888;
+        --color-text-soft: #5A5A5A;
+        --brand: #7AABD8;
+        --brand-hover: #9FBDE4;
+        --brand-soft: rgba(122, 171, 216, 0.15);
+        --color-accent-50:  rgba(214, 63, 42, 0.08);
+        --color-accent-100: rgba(214, 63, 42, 0.14);
+        --color-accent-200: rgba(214, 63, 42, 0.28);
+        --color-accent-300: rgba(214, 63, 42, 0.42);
+        --accent-soft: rgba(214, 63, 42, 0.12);
+        --shadow: 0 1px 3px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
+        --shadow-lg: 0 10px 24px -3px rgba(0,0,0,0.55), 0 4px 8px -2px rgba(0,0,0,0.4);
+        --header-bg: rgba(23, 23, 23, 0.92);
+        --input-bg: var(--color-bg-surface);
+    }
 }

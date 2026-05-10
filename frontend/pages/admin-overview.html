@@ -259,6 +259,119 @@
             .ov-kpi-value { font-size: 1.75rem; }
             .ov-detail-grid { grid-template-columns: 1fr; }
         }
+
+        /* ── Dark mode ── */
+        [data-theme="dark"] .ov-head-title { color: #F5F5F5; }
+        [data-theme="dark"] .ov-head-time  { color: #888888; }
+
+        [data-theme="dark"] .ov-kpi,
+        [data-theme="dark"] .ov-card {
+            background: #212121;
+            border-color: #2A2A2A;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        }
+
+        [data-theme="dark"] .ov-kpi-label,
+        [data-theme="dark"] .ov-kpi-sub,
+        [data-theme="dark"] .ov-card-title { color: #888888; }
+
+        [data-theme="dark"] .ov-kpi-value  { color: #F5F5F5; }
+        [data-theme="dark"] .ov-kpi-sub b.pos  { color: #4ade80; }
+        [data-theme="dark"] .ov-kpi-sub b.warn { color: #fbbf24; }
+
+        [data-theme="dark"] .ov-alert-bar {
+            background: rgba(220, 38, 38, 0.1);
+            border-color: rgba(220, 38, 38, 0.3);
+        }
+        [data-theme="dark"] .ov-alert-bar.is-clear {
+            background: rgba(22, 163, 74, 0.1);
+            border-color: rgba(22, 163, 74, 0.3);
+        }
+        [data-theme="dark"] .ov-alert-label { color: #f87171; }
+        [data-theme="dark"] .ov-alert-bar.is-clear .ov-alert-label { color: #4ade80; }
+
+        [data-theme="dark"] .ov-chip.chip-zero {
+            background: rgba(255, 255, 255, 0.07);
+            color: #888888;
+        }
+
+        [data-theme="dark"] .ov-quick-link {
+            background: rgba(122, 171, 216, 0.08);
+            border-color: rgba(122, 171, 216, 0.2);
+            color: #7AABD8;
+        }
+        [data-theme="dark"] .ov-quick-link:hover {
+            background: rgba(122, 171, 216, 0.16);
+            border-color: rgba(122, 171, 216, 0.4);
+            color: #9FBDE4;
+        }
+
+        [data-theme="dark"] .ov-metric:hover { background: #303030; }
+        [data-theme="dark"] .ov-metric-name  { color: #D4D4D4; }
+        [data-theme="dark"] .ov-metric-value { color: #F5F5F5; }
+        [data-theme="dark"] .ov-metric-value.v-pos   { color: #4ade80; }
+        [data-theme="dark"] .ov-metric-value.v-warn  { color: #fbbf24; }
+        [data-theme="dark"] .ov-metric-value.v-alert { color: #f87171; }
+
+        [data-theme="dark"] .ov-metric + .ov-metric-sep,
+        [data-theme="dark"] hr.ov-sep { border-top-color: #2A2A2A; }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .ov-head-title { color: #F5F5F5; }
+            :root:not([data-theme="light"]) .ov-head-time  { color: #888888; }
+
+            :root:not([data-theme="light"]) .ov-kpi,
+            :root:not([data-theme="light"]) .ov-card {
+                background: #212121;
+                border-color: #2A2A2A;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+            }
+
+            :root:not([data-theme="light"]) .ov-kpi-label,
+            :root:not([data-theme="light"]) .ov-kpi-sub,
+            :root:not([data-theme="light"]) .ov-card-title { color: #888888; }
+
+            :root:not([data-theme="light"]) .ov-kpi-value  { color: #F5F5F5; }
+            :root:not([data-theme="light"]) .ov-kpi-sub b.pos  { color: #4ade80; }
+            :root:not([data-theme="light"]) .ov-kpi-sub b.warn { color: #fbbf24; }
+
+            :root:not([data-theme="light"]) .ov-alert-bar {
+                background: rgba(220, 38, 38, 0.1);
+                border-color: rgba(220, 38, 38, 0.3);
+            }
+            :root:not([data-theme="light"]) .ov-alert-bar.is-clear {
+                background: rgba(22, 163, 74, 0.1);
+                border-color: rgba(22, 163, 74, 0.3);
+            }
+            :root:not([data-theme="light"]) .ov-alert-label { color: #f87171; }
+            :root:not([data-theme="light"]) .ov-alert-bar.is-clear .ov-alert-label { color: #4ade80; }
+
+            :root:not([data-theme="light"]) .ov-chip.chip-zero {
+                background: rgba(255, 255, 255, 0.07);
+                color: #888888;
+            }
+
+            :root:not([data-theme="light"]) .ov-quick-link {
+                background: rgba(122, 171, 216, 0.08);
+                border-color: rgba(122, 171, 216, 0.2);
+                color: #7AABD8;
+            }
+            :root:not([data-theme="light"]) .ov-quick-link:hover {
+                background: rgba(122, 171, 216, 0.16);
+                border-color: rgba(122, 171, 216, 0.4);
+                color: #9FBDE4;
+            }
+
+            :root:not([data-theme="light"]) .ov-metric:hover { background: #303030; }
+            :root:not([data-theme="light"]) .ov-metric-name  { color: #D4D4D4; }
+            :root:not([data-theme="light"]) .ov-metric-value { color: #F5F5F5; }
+            :root:not([data-theme="light"]) .ov-metric-value.v-pos   { color: #4ade80; }
+            :root:not([data-theme="light"]) .ov-metric-value.v-warn  { color: #fbbf24; }
+            :root:not([data-theme="light"]) .ov-metric-value.v-alert { color: #f87171; }
+
+            :root:not([data-theme="light"]) .ov-metric + .ov-metric-sep,
+            :root:not([data-theme="light"]) hr.ov-sep { border-top-color: #2A2A2A; }
+        }
     </style>
 </head>
 <body class="admin-page admin-overview-page">

@@ -235,6 +235,25 @@
                 align-items: stretch;
             }
         }
+
+        /* ── Dark mode: ask modal ── */
+        [data-theme="dark"] .ask-modal-card {
+            background: #212121;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+        [data-theme="dark"] .modal-header { border-bottom-color: #2A2A2A; }
+        [data-theme="dark"] .modal-close-btn { color: #888888; }
+        [data-theme="dark"] .modal-close-btn:hover { color: #F5F5F5; background-color: #303030; }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .ask-modal-card {
+                background: #212121;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            }
+            :root:not([data-theme="light"]) .modal-header { border-bottom-color: #2A2A2A; }
+            :root:not([data-theme="light"]) .modal-close-btn { color: #888888; }
+            :root:not([data-theme="light"]) .modal-close-btn:hover { color: #F5F5F5; background-color: #303030; }
+        }
     </style>
 </head>
 

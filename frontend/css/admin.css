@@ -162,10 +162,47 @@
     color: #11344f;
 }
 
+[data-theme="dark"] .admin-page .admin-item-card h4,
+[data-theme="dark"] .club-admin-page .admin-item-card h4 {
+    color: var(--color-text-strong);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .admin-page .admin-item-card h4,
+    :root:not([data-theme="light"]) .club-admin-page .admin-item-card h4 {
+        color: var(--color-text-strong);
+    }
+}
+
 .admin-page .admin-item-card-pinned,
 .club-admin-page .admin-item-card-pinned {
     border-color: #f2b04f;
     background: linear-gradient(180deg, #fff9ef 0%, #fff5e4 100%);
+}
+
+/* ── Announcements portal-section cards ── */
+.admin-page .admin-list .portal-section {
+    margin-bottom: 0;
+}
+
+.admin-page .portal-section--pinned {
+    border-color: rgba(242, 176, 79, 0.5);
+    border-left: 3px solid #f2b04f;
+    background: rgba(242, 176, 79, 0.04);
+}
+
+[data-theme="dark"] .admin-page .portal-section--pinned {
+    border-color: rgba(242, 176, 79, 0.25);
+    border-left: 3px solid rgba(242, 176, 79, 0.55);
+    background: rgba(242, 176, 79, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .admin-page .portal-section--pinned {
+        border-color: rgba(242, 176, 79, 0.25);
+        border-left: 3px solid rgba(242, 176, 79, 0.55);
+        background: rgba(242, 176, 79, 0.06);
+    }
 }
 
 /* ── Dashboard Summary ── */
@@ -588,5 +625,76 @@
     .dashboard-summary-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+/* ── Dark mode: modals ── */
+[data-theme="dark"] .user-edit-modal-content,
+[data-theme="dark"] .club-admin-quick-card {
+    background: #212121;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .user-edit-modal-header,
+[data-theme="dark"] .club-admin-quick-header {
+    border-bottom-color: #2A2A2A;
+}
+
+[data-theme="dark"] .user-edit-subtitle,
+[data-theme="dark"] .club-admin-quick-subtitle { color: #888888; }
+
+[data-theme="dark"] .user-edit-close-btn { color: #888888; }
+[data-theme="dark"] .user-edit-close-btn:hover {
+    color: #F5F5F5;
+    background-color: #303030;
+}
+
+[data-theme="dark"] .user-edit-meta-chip {
+    background: #303030;
+    border-color: #3D3D3D;
+    color: #D4D4D4;
+}
+
+[data-theme="dark"] .user-edit-section {
+    background: #171717;
+    border-color: #2A2A2A;
+}
+
+[data-theme="dark"] .user-edit-section-title { color: #D4D4D4; }
+
+[data-theme="dark"] .admin-note-box {
+    background: #171717;
+    border-color: #2A2A2A;
+    color: #888888;
+}
+
+[data-theme="dark"] .user-edit-club-role-row {
+    background: #171717;
+    border-color: #2A2A2A;
+}
+
+[data-theme="dark"] .user-edit-club-role-name  { color: #F5F5F5; }
+[data-theme="dark"] .user-edit-club-role-label { color: #888888; }
+[data-theme="dark"] .user-edit-club-add        { border-top-color: #2A2A2A; }
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .user-edit-modal-content,
+    :root:not([data-theme="light"]) .club-admin-quick-card {
+        background: #212121;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+    :root:not([data-theme="light"]) .user-edit-modal-header,
+    :root:not([data-theme="light"]) .club-admin-quick-header { border-bottom-color: #2A2A2A; }
+    :root:not([data-theme="light"]) .user-edit-subtitle,
+    :root:not([data-theme="light"]) .club-admin-quick-subtitle { color: #888888; }
+    :root:not([data-theme="light"]) .user-edit-close-btn { color: #888888; }
+    :root:not([data-theme="light"]) .user-edit-close-btn:hover { color: #F5F5F5; background-color: #303030; }
+    :root:not([data-theme="light"]) .user-edit-meta-chip { background: #303030; border-color: #3D3D3D; color: #D4D4D4; }
+    :root:not([data-theme="light"]) .user-edit-section { background: #171717; border-color: #2A2A2A; }
+    :root:not([data-theme="light"]) .user-edit-section-title { color: #D4D4D4; }
+    :root:not([data-theme="light"]) .admin-note-box { background: #171717; border-color: #2A2A2A; color: #888888; }
+    :root:not([data-theme="light"]) .user-edit-club-role-row { background: #171717; border-color: #2A2A2A; }
+    :root:not([data-theme="light"]) .user-edit-club-role-name  { color: #F5F5F5; }
+    :root:not([data-theme="light"]) .user-edit-club-role-label { color: #888888; }
+    :root:not([data-theme="light"]) .user-edit-club-add        { border-top-color: #2A2A2A; }
 }
 

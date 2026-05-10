@@ -165,11 +165,11 @@
                 const safeContent = escapeHtml(item.content || '-');
                 const safeCreatedAt = escapeHtml(formatDateTime(item.created_at));
                 const safeId = Number(item.announcement_id) || 0;
-                const card = document.createElement('div');
-                card.className = `admin-item-card ${isPinned ? 'admin-item-card-pinned' : ''}`;
+                const card = document.createElement('section');
+                card.className = `portal-section portal-section--dynamic${isPinned ? ' portal-section--pinned' : ''}`;
                 card.innerHTML = `
-                    <div class="admin-item-head">
-                        <h4>${safeTitle}</h4>
+                    <div class="portal-section-head">
+                        <h4 class="portal-section-title">${safeTitle}</h4>
                         <div class="admin-item-badges">
                             ${isPinned ? '<span class="status-chip chip-warning">置頂</span>' : ''}
                             <span class="status-chip">${safeType}</span>

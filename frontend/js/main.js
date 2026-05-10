@@ -686,6 +686,12 @@ class StorageUtils {
     }
 }
 
+// 立即套用已儲存的 theme，避免畫面閃爍
+(function () {
+    var t = localStorage.getItem('theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
     initializePage();
 });
@@ -1619,6 +1625,32 @@ function toRelativeFrontendPath(url) {
     return `${prefix}${normalized}`;
 }
 
+// ── Dark mode helpers ──────────────────────────────────────────────────────
+function _getEffectiveTheme() {
+    return document.documentElement.getAttribute('data-theme')
+        || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+}
+
+function toggleTheme() {
+    const next = _getEffectiveTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    _syncThemeToggleIcon();
+}
+
+function _syncThemeToggleIcon() {
+    const isDark = _getEffectiveTheme() === 'dark';
+    const label = isDark ? '切換為淺色模式' : '切換為深色模式';
+    const sunSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+    const moonSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    [document.getElementById('ndp-theme-toggle'), document.getElementById('guest-theme-toggle')].forEach(btn => {
+        if (!btn) return;
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+        btn.innerHTML = isDark ? sunSvg : moonSvg;
+    });
+}
+
 function ensureNavDropdownStyles() {
     if (document.getElementById('nav-dropdown-style')) return;
 
@@ -1645,7 +1677,27 @@ function ensureNavDropdownStyles() {
         + '.ndp-menu a:hover,.ndp-logout-btn:hover{background:#f8fafc}'
         + '.ndp-menu-icon{width:16px;height:16px;flex-shrink:0;display:block;opacity:.86}'
         + '.ndp-logout-wrap{border-top:1px solid #f1f5f9}'
-        + '@media(max-width:767px){.nav-dd-panel{position:fixed;top:auto;right:auto}}';
+        + '@media(max-width:767px){.nav-dd-panel{position:fixed;top:auto;right:auto}}'
+        // dark mode overrides for the JS-injected panel
+        + '[data-theme="dark"] .nav-dd-panel{background:var(--color-bg-surface);border-color:var(--color-border-default);box-shadow:0 12px 28px rgba(0,0,0,.5)}'
+        + '[data-theme="dark"] .ndp-head{background:var(--color-bg-subtle);border-bottom-color:var(--color-border-light)}'
+        + '[data-theme="dark"] .ndp-avatar-lg{border-color:var(--color-border-default);background:var(--color-bg-subtle)}'
+        + '[data-theme="dark"] .ndp-name{color:var(--color-text-strong)}'
+        + '[data-theme="dark"] .ndp-mail{color:var(--color-text-muted)}'
+        + '[data-theme="dark"] .ndp-menu a,[data-theme="dark"] .ndp-logout-btn{background:var(--color-bg-surface);color:var(--color-text-default)}'
+        + '[data-theme="dark"] .ndp-menu a:hover,[data-theme="dark"] .ndp-logout-btn:hover{background:var(--color-bg-subtle)}'
+        + '[data-theme="dark"] .ndp-logout-wrap{border-top-color:var(--color-border-light)}'
+        + '[data-theme="dark"] .nav-bell-btn:hover,[data-theme="dark"] .nav-avatar-trigger:hover{background:var(--color-bg-subtle)}'
+        + '[data-theme="dark"] .nav-avatar-fallback,[data-theme="dark"] .nav-avatar-img{border-color:var(--color-border-default)}'
+        + '[data-theme="dark"] .nav-bell-icon,[data-theme="dark"] .nav-dd-caret,[data-theme="dark"] .ndp-menu-icon{filter:invert(1)}'
+        // media-query auto-detect mirrors
+        + '@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav-dd-panel{background:var(--color-bg-surface);border-color:var(--color-border-default)}:root:not([data-theme="light"]) .ndp-head{background:var(--color-bg-subtle);border-bottom-color:var(--color-border-light)}:root:not([data-theme="light"]) .ndp-name{color:var(--color-text-strong)}:root:not([data-theme="light"]) .ndp-mail{color:var(--color-text-muted)}:root:not([data-theme="light"]) .ndp-menu a,:root:not([data-theme="light"]) .ndp-logout-btn{background:var(--color-bg-surface);color:var(--color-text-default)}:root:not([data-theme="light"]) .ndp-menu a:hover,:root:not([data-theme="light"]) .ndp-logout-btn:hover{background:var(--color-bg-subtle)}:root:not([data-theme="light"]) .ndp-logout-wrap{border-top-color:var(--color-border-light)}:root:not([data-theme="light"]) .nav-bell-btn:hover,:root:not([data-theme="light"]) .nav-avatar-trigger:hover{background:var(--color-bg-subtle)}:root:not([data-theme="light"]) .nav-bell-icon,:root:not([data-theme="light"]) .nav-dd-caret,:root:not([data-theme="light"]) .ndp-menu-icon{filter:invert(1)}}'
+        // theme toggle button
+        + '.ndp-theme-toggle{position:absolute;top:8px;right:8px;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:none;background:transparent;color:#6b7280;cursor:pointer;transition:background 0.15s,color 0.15s;flex-shrink:0}'
+        + '.ndp-theme-toggle:hover{background:#f3f4f6;color:#111827}'
+        + '[data-theme="dark"] .ndp-theme-toggle{color:#9ca3af}'
+        + '[data-theme="dark"] .ndp-theme-toggle:hover{background:var(--color-bg-muted);color:#f5f0e8}'
+        + '@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .ndp-theme-toggle{color:#9ca3af}:root:not([data-theme="light"]) .ndp-theme-toggle:hover{background:var(--color-bg-muted);color:#f5f0e8}}';
     document.head.appendChild(st);
 }
 
@@ -1704,12 +1756,14 @@ function updateNavigation() {
                 + `<button class="nav-bell-btn" id="nav-bell-btn" aria-label="通知"><img class="nav-bell-icon" src="${bellIcon}" alt=""></button>`
                 + `<button class="nav-avatar-trigger" id="nav-avatar-trigger" aria-label="個人頭像" aria-controls="nav-dd-panel" aria-haspopup="true" aria-expanded="false">${avatarTriggerContent}<img class="nav-dd-caret" src="${caretIcon}" alt=""></button>`
                 + '<div class="nav-dd-panel" id="nav-dd-panel" style="display:none">'
-                + '<div class="ndp-head">'
+                + '<div class="ndp-head" style="position:relative">'
                 + `<div class="ndp-avatar-lg">${profileAvatar}</div>`
                 + '<div class="ndp-user-meta">'
                 + `<div class="ndp-name">${PageUtils.escapeHtml(user.name || '')}</div>`
                 + `<div class="ndp-mail">${PageUtils.escapeHtml(user.email || '')}</div>`
-                + '</div></div>'
+                + '</div>'
+                + '<button class="ndp-theme-toggle" id="ndp-theme-toggle"></button>'
+                + '</div>'
                 + '<div class="ndp-menu">'
                 + (user.role !== 'platform_admin' ? `<a href="${FRONTEND_HOME_URL}"><img class="ndp-menu-icon" src="${homeIcon}" alt="">返回首頁</a>` : '')
                 + `<a href="${getPageLink('user-profile.html')}"><img class="ndp-menu-icon" src="${personIcon}" alt="">個人資料</a>`
@@ -1728,6 +1782,19 @@ function updateNavigation() {
             const avatarTrigger = document.getElementById('nav-avatar-trigger');
             const ddPanel = document.getElementById('nav-dd-panel');
             const logoutInlineBtn = document.getElementById('ndp-logout-btn');
+            const themeToggleBtn = document.getElementById('ndp-theme-toggle');
+
+            if (themeToggleBtn) {
+                _syncThemeToggleIcon();
+                themeToggleBtn.onclick = (e) => { e.stopPropagation(); toggleTheme(); };
+            }
+
+            if (!window._themeMediaListenerBound) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                    if (!localStorage.getItem('theme')) _syncThemeToggleIcon();
+                });
+                window._themeMediaListenerBound = true;
+            }
 
             if (bellBtn) {
                 bellBtn.onclick = (e) => {
@@ -1829,6 +1896,27 @@ function updateNavigation() {
             userDropdown.innerHTML = '';
             userDropdown.onclick = null;
         }
+
+        let guestToggle = document.getElementById('guest-theme-toggle');
+        if (!guestToggle && loginBtn) {
+            guestToggle = document.createElement('button');
+            guestToggle.id = 'guest-theme-toggle';
+            guestToggle.className = 'guest-theme-toggle';
+            guestToggle.type = 'button';
+            loginBtn.parentNode.insertBefore(guestToggle, loginBtn);
+        }
+        if (guestToggle) {
+            _syncThemeToggleIcon();
+            guestToggle.onclick = () => toggleTheme();
+        }
+
+        if (!window._themeMediaListenerBound) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (!localStorage.getItem('theme')) _syncThemeToggleIcon();
+            });
+            window._themeMediaListenerBound = true;
+        }
+
         const profileLink = document.getElementById('user-profile-link');
         const profileShortcut = document.getElementById('user-profile-shortcut');
         const clubAdminLink = document.getElementById('club-admin-dashboard-link');

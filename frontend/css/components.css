@@ -203,7 +203,7 @@
 }
 
 .badge-filter {
-    background-color: #ffffff;
+    background-color: var(--surface);
     color: var(--text-dark);
     border: 1px solid var(--border-color);
     cursor: pointer;

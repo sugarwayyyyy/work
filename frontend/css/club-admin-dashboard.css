@@ -4,7 +4,7 @@
 }
 
 .cad-help-text {
-    color: #666;
+    color: var(--text-muted);
     display: block;
     margin-top: 0.35rem;
 }
@@ -77,7 +77,7 @@
 }
 
 .cad-panel-box {
-    background: #f8f9fa;
+    background: var(--surface-subtle);
     padding: 1rem;
     border-radius: 4px;
 }
@@ -128,24 +128,24 @@
 
 .cad-block-divider {
     margin-bottom: 1rem;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
 }
 
 .cad-divider-top {
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
 }
 
 .cad-label-muted {
     font-size: 0.9rem;
-    color: #666;
+    color: var(--text-muted);
 }
 
 .cad-label-title {
     margin: 0 0 0.5rem 0;
     font-size: 0.9rem;
-    color: #666;
+    color: var(--text-muted);
 }
 
 .cad-tag-list {
@@ -302,7 +302,7 @@
 }
 
 .club-admin-events-list .club-admin-event-row {
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border-default);
     padding: 0.8rem 0.2rem;
 }
 
@@ -311,7 +311,7 @@
 }
 
 .club-admin-page #club-events-container .club-admin-event-row {
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border-default);
     padding: 0.8rem 0.2rem;
     cursor: pointer;
     border-radius: 0.72rem;
@@ -490,7 +490,7 @@
 }
 
 .csm-panel {
-    background: #fff;
+    background: var(--surface);
     border-radius: 1rem;
     box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
     width: 100%;
@@ -529,8 +529,8 @@
 }
 
 .csm-close:hover {
-    background: #f3f4f6;
-    color: #111;
+    background: var(--surface-subtle);
+    color: var(--text-strong);
 }
 
 .csm-body {
@@ -599,7 +599,7 @@
 }
 
 .evm-panel {
-    background: #fff;
+    background: var(--surface);
     border-radius: 1rem;
     box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
     max-width: 960px;
@@ -611,10 +611,10 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.25rem 0.85rem;
-    border-bottom: 1px solid var(--border, #e2e8f0);
+    border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
-    background: #fff;
+    background: var(--surface);
     z-index: 1;
     border-radius: 1rem 1rem 0 0;
 }

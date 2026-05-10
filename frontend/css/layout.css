@@ -1,6 +1,6 @@
 /* 版面層：導航 / 容器 / 網格 */
 header {
-    background-color: rgba(255, 255, 255, 0.88);
+    background-color: var(--header-bg);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--color-border-light);
@@ -106,8 +106,8 @@ nav {
     top: 100%;
     left: 0;
     transform: translateY(-4px);
-    background: #fff;
-    border: 1px solid #d1d5db;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     list-style: none;
@@ -136,7 +136,7 @@ nav {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
     font-weight: 400;
-    color: #374151;
+    color: var(--text-default);
     white-space: nowrap;
     text-decoration: none;
     transition: background 0.12s;
@@ -147,8 +147,8 @@ nav {
 }
 
 .nav-dropdown a:hover {
-    background: #f3f4f6;
-    color: #111827;
+    background: var(--surface-subtle);
+    color: var(--text-strong);
 }
 
 .nav-dropdown-arrow {
@@ -173,6 +173,26 @@ nav {
     display: flex;
     gap: 0.75rem;
     align-items: center;
+}
+
+.guest-theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-default);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.guest-theme-toggle:hover {
+    background: var(--brand-soft);
+    color: var(--brand);
 }
 
 .container {

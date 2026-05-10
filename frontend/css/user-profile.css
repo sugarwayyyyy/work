@@ -433,6 +433,58 @@
     margin: 0 0 0.72rem;
 }
 
+/* ── Dark mode ── */
+[data-theme="dark"] .profile-section {
+    background: #212121;
+}
+
+[data-theme="dark"] .followed-club-row:hover,
+[data-theme="dark"] .profile-event-row:hover,
+[data-theme="dark"] .profile-question-row:hover {
+    background: #303030;
+}
+
+[data-theme="dark"] .profile-status-badge--approved,
+[data-theme="dark"] .profile-status-badge--solved,
+[data-theme="dark"] .profile-status-badge--completed,
+[data-theme="dark"] .profile-status-badge--club-active {
+    color: #34d399;
+    background: rgba(52, 211, 153, 0.15);
+}
+
+[data-theme="dark"] .profile-status-badge--pending,
+[data-theme="dark"] .profile-status-badge--unsolved,
+[data-theme="dark"] .profile-status-badge--club-quiet {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.15);
+}
+
+[data-theme="dark"] .profile-status-badge--ongoing {
+    color: #fb923c;
+    background: rgba(251, 146, 60, 0.15);
+}
+
+[data-theme="dark"] .profile-status-badge--upcoming {
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .profile-section { background: #212121; }
+    :root:not([data-theme="light"]) .followed-club-row:hover,
+    :root:not([data-theme="light"]) .profile-event-row:hover,
+    :root:not([data-theme="light"]) .profile-question-row:hover { background: #303030; }
+    :root:not([data-theme="light"]) .profile-status-badge--approved,
+    :root:not([data-theme="light"]) .profile-status-badge--solved,
+    :root:not([data-theme="light"]) .profile-status-badge--completed,
+    :root:not([data-theme="light"]) .profile-status-badge--club-active { color: #34d399; background: rgba(52, 211, 153, 0.15); }
+    :root:not([data-theme="light"]) .profile-status-badge--pending,
+    :root:not([data-theme="light"]) .profile-status-badge--unsolved,
+    :root:not([data-theme="light"]) .profile-status-badge--club-quiet { color: #fbbf24; background: rgba(251, 191, 36, 0.15); }
+    :root:not([data-theme="light"]) .profile-status-badge--ongoing { color: #fb923c; background: rgba(251, 146, 60, 0.15); }
+    :root:not([data-theme="light"]) .profile-status-badge--upcoming { color: #60a5fa; background: rgba(96, 165, 250, 0.15); }
+}
+
 /* ── RWD ── */
 @media (max-width: 720px) {
     .profile-container {
