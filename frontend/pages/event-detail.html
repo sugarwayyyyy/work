@@ -97,10 +97,6 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <strong>👥 主辦社團</strong>
-                                        <p id="event-club-detail"></p>
-                                    </div>
-                                    <div>
                                         <strong>💰 費用</strong>
                                         <p id="event-fee">免費</p>
                                     </div>
@@ -341,10 +337,6 @@
             document.getElementById('event-location-detail').textContent = formatEventLocation(event.location);
             renderEventLocationActions(event.location);
             resolveAndUpdateLocation(event.location);
-            document.getElementById('event-club-detail').innerHTML = _allClubs
-                .filter(c => c.club_name)
-                .map(c => `<a href="club-detail.html?id=${Number(c.club_id)}">${PageUtils.escapeHtml(c.club_name)}</a>`)
-                .join('、');
             document.getElementById('event-fee').textContent = event.fee ? `NT$ ${event.fee}` : '免費';
             document.getElementById('event-contact').textContent = event.contact_info || '請聯繫社團幹部';
 
