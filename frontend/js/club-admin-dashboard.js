@@ -1769,30 +1769,11 @@
 
                         const posterFile = document.getElementById('event-poster-upload').files[0];
                         if (posterFile && createdEventId) {
-                            const uploadFormData = new FormData();
-                            uploadFormData.append('poster', posterFile);
-                            uploadFormData.append('event_id', String(createdEventId));
-                            const csrfHeaders = await APIClient.getCSRFHeaders();
-                            const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
-                                method: 'POST',
-                                body: uploadFormData,
-                                credentials: 'include',
-                                headers: {
-                                    ...APIClient.getAuthHeaders(),
-                                    ...csrfHeaders
-                                }
-                            });
-
-                            const uploadRawText = await uploadResponse.text();
-                            let uploadResult = null;
                             try {
-                                uploadResult = JSON.parse(uploadRawText);
-                            } catch (parseError) {
-                                throw new Error(`活動海報上傳回應格式錯誤（HTTP ${uploadResponse.status}）：${uploadRawText.slice(0, 300)}`);
-                            }
-
-                            if (!uploadResponse.ok || !uploadResult.success) {
-                                throw new Error(uploadResult.message || '活動海報上傳失敗');
+                                await uploadEventPosterFile(createdEventId, document.getElementById('event-poster-upload'));
+                            } catch (uploadErr) {
+                                try { await APIClient.delete(`events.php?action=delete&id=${createdEventId}`); } catch (_) {}
+                                throw uploadErr;
                             }
                         }
 
@@ -1897,7 +1878,14 @@
                             return;
                         }
                         const createdId = response?.data?.event_id;
-                        if (createdId) await uploadEventPosterFile(createdId, posterFileInput);
+                        if (createdId && posterFileInput?.files[0]) {
+                            try {
+                                await uploadEventPosterFile(createdId, posterFileInput);
+                            } catch (uploadErr) {
+                                try { await APIClient.delete(`events.php?action=delete&id=${createdId}`); } catch (_) {}
+                                throw uploadErr;
+                            }
+                        }
                         if (eventSelectedTagIds.size > 0 && createdId) {
                             try {
                                 await APIClient.post('events.php?action=update_event_tags', {

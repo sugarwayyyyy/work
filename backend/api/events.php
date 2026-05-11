@@ -1472,6 +1472,24 @@ class EventAPI {
         }
     }
 
+    public static function deleteEvent($event_id) {
+        try {
+            $event = self::requireEventManagePermission($event_id);
+            $db    = Database::getInstance();
+
+            $db->delete('collaborative_events',  'event_id = ?', [$event_id]);
+            $db->delete('event_tag_relations',   'event_id = ?', [$event_id]);
+            $db->delete('event_registrations',   'event_id = ?', [$event_id]);
+            $db->delete('event_attendance',      'event_id = ?', [$event_id]);
+            $db->delete('event_comments',        'event_id = ?', [$event_id]);
+            $db->delete('events',                'event_id = ?', [$event_id]);
+
+            Helper::success('活動已刪除');
+        } catch (Exception $e) {
+            self::handleInternalError('刪除活動失敗', $e);
+        }
+    }
+
     public static function archiveEvent($event_id, $archive = true) {
         try {
             $event = self::requireEventManagePermission($event_id);
@@ -1700,6 +1718,12 @@ if ($method === 'PUT') {
         EventAPI::archiveEvent($event_id, true);
     } elseif ($action === 'restore' && $event_id) {
         EventAPI::archiveEvent($event_id, false);
+    }
+}
+
+if ($method === 'DELETE') {
+    if ($action === 'delete' && $event_id) {
+        EventAPI::deleteEvent($event_id);
     }
 }
 
