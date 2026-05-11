@@ -159,9 +159,12 @@
 │       ├── auth.php
 │       ├── club-admin.php
 │       ├── clubs.php
+│       ├── dashboard.php
 │       ├── events.php
+│       ├── location-preview.php
 │       ├── notifications.php
 │       ├── qa.php
+│       ├── reports.php
 │       ├── reviews.php
 │       └── upload.php
 ├── database/
@@ -279,6 +282,13 @@ npx playwright test
 - `backend/api/club-admin.php`
 - `backend/api/upload.php`
 - `backend/api/notifications.php`
+
+### 儀表板與檢舉
+- `backend/api/dashboard.php` — 全站統計摘要（僅限平台管理員）
+- `backend/api/reports.php` — 使用者檢舉回報
+
+### 工具
+- `backend/api/location-preview.php` — Google Maps 短網址解析，回傳地點名稱
 
 ## 版本與發布紀錄
 
