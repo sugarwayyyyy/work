@@ -31,6 +31,83 @@
 
     <div id="alert-container"></div>
 
+    <div id="club-management-section" class="user-edit-modal" role="dialog" aria-modal="true" aria-labelledby="club-edit-title">
+        <div class="user-edit-modal-content" style="width:min(860px,100%); overflow-y:auto;">
+            <div class="user-edit-modal-header">
+                <h3 id="club-edit-title">編輯社團資料</h3>
+                <button type="button" class="csm-close" id="club-edit-close">&times;</button>
+            </div>
+            <form id="edit-club-detail-form" class="admin-form-grid user-edit-modal-body">
+                <input type="hidden" id="edit-club-id">
+                <div class="form-field">
+                    <label for="edit-club-code">社團代碼 <span class="required">*</span></label>
+                    <input type="text" id="edit-club-code" required>
+                </div>
+                <div class="form-field">
+                    <label for="edit-club-name">社團名稱 <span class="required">*</span></label>
+                    <input type="text" id="edit-club-name" required>
+                </div>
+                <div class="form-field">
+                    <label for="edit-club-category">社團類別</label>
+                    <select id="edit-club-category">
+                        <option value="">不限 / 未設定</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="edit-founding-year">成立年份</label>
+                    <input type="number" id="edit-founding-year" min="1900" max="2100" placeholder="例：2015">
+                </div>
+                <div class="form-field">
+                    <label for="edit-contact-email">聯絡信箱</label>
+                    <input type="email" id="edit-contact-email">
+                </div>
+                <div class="form-field">
+                    <label for="edit-contact-phone">聯絡電話</label>
+                    <input type="tel" id="edit-contact-phone">
+                </div>
+                <div class="form-field">
+                    <label for="edit-meeting-day">社課日</label>
+                    <input type="text" id="edit-meeting-day" placeholder="例：每週三">
+                </div>
+                <div class="form-field">
+                    <label for="edit-meeting-time">社課時間</label>
+                    <input type="text" id="edit-meeting-time" placeholder="例：19:00~21:00">
+                </div>
+                <div class="form-field admin-span-2">
+                    <label for="edit-meeting-location">社課地點</label>
+                    <input type="text" id="edit-meeting-location" placeholder="例：第一教學大樓 305 教室">
+                </div>
+                <div class="form-field">
+                    <label for="edit-club-fee">社費（入會費 / 年費）</label>
+                    <input type="number" id="edit-club-fee" min="0" placeholder="0">
+                </div>
+                <div class="form-field">
+                    <label for="edit-club-fee-semester">學期費</label>
+                    <input type="number" id="edit-club-fee-semester" min="0" placeholder="0">
+                </div>
+                <div class="form-field admin-span-2">
+                    <label for="edit-club-logo-input">社團 Logo</label>
+                    <div style="display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-top:0.25rem;">
+                        <img id="edit-club-logo-preview" src="" alt="Logo 預覽"
+                             style="display:none;width:80px;height:80px;object-fit:cover;border-radius:0.5rem;border:1px solid var(--border-color);">
+                        <div>
+                            <input type="file" id="edit-club-logo-input" accept="image/jpeg,image/png,image/gif,image/webp">
+                            <small style="display:block;margin-top:0.25rem;color:var(--text-light);">JPG／PNG／GIF／WebP，上限 10MB</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-field admin-span-2">
+                    <label for="edit-description">社團介紹</label>
+                    <textarea id="edit-description" rows="6" style="width:100%;resize:vertical;"></textarea>
+                </div>
+                <div class="form-actions admin-span-2">
+                    <button type="submit" class="btn btn-primary">儲存變更</button>
+                    <button type="button" class="btn btn-secondary" id="club-edit-cancel">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="container">
         <section class="card admin-panel">
             <div class="admin-panel-head">
@@ -215,6 +292,7 @@
                             </select>
                             <button class="btn btn-secondary btn-sm" data-club-update="${safeClubId}">更新</button>
                             <button class="btn btn-secondary btn-sm" data-club-toggle="${safeClubId}">${club.deleted_at ? '恢復' : '停用/隱藏'}</button>
+                            <button class="btn btn-primary btn-sm" data-club-edit="${safeClubId}">編輯社團資料</button>
                         </div>
                     </td>`;
                 body.appendChild(row);
@@ -234,6 +312,9 @@
                     if (response.success) loadClubs();
                     else PageUtils.showAlert('更新社團顯示狀態失敗：' + response.message, 'error');
                 });
+            });
+            document.querySelectorAll('#clubs-table button[data-club-edit]').forEach(btn => {
+                btn.addEventListener('click', () => openClubEdit(Number(btn.dataset.clubEdit)));
             });
             renderPagination('clubs-pagination', pageData, nextPage => { clubsState.page = nextPage; renderClubsTable(); });
         }
@@ -271,6 +352,131 @@
             if (response.success) { event.target.reset(); loadClubs(); PageUtils.showAlert('社團基礎名單新增成功', 'success'); }
             else PageUtils.showAlert('新增失敗：' + response.message, 'error');
         });
+
+        async function openClubEdit(clubId) {
+            const response = await APIClient.get(`admin.php?action=club_detail&id=${clubId}`);
+            if (!response.success) { PageUtils.showAlert('載入社團資料失敗：' + response.message, 'error'); return; }
+            const c = response.data.club;
+            document.getElementById('edit-club-id').value = c.club_id;
+            document.getElementById('edit-club-code').value = c.club_code || '';
+            document.getElementById('edit-club-name').value = c.club_name || '';
+            document.getElementById('edit-club-category').value = c.category_id || '';
+            document.getElementById('edit-founding-year').value = c.founding_year || '';
+            document.getElementById('edit-contact-email').value = c.contact_email || '';
+            document.getElementById('edit-contact-phone').value = c.contact_phone || '';
+            document.getElementById('edit-meeting-day').value = c.meeting_day || '';
+            document.getElementById('edit-meeting-time').value = c.meeting_time || '';
+            document.getElementById('edit-meeting-location').value = c.meeting_location || '';
+            document.getElementById('edit-club-fee').value = c.club_fee || '';
+            document.getElementById('edit-club-fee-semester').value = c.club_fee_semester || '';
+            document.getElementById('edit-description').value = c.description || '';
+            const logoPreview = document.getElementById('edit-club-logo-preview');
+            const logoUrl = c.logo_path ? PageUtils.resolveMediaUrl(c.logo_path) : '';
+            logoPreview.src = logoUrl;
+            logoPreview.style.display = logoUrl ? 'block' : 'none';
+            document.getElementById('edit-club-logo-input').value = '';
+            document.getElementById('club-management-section').style.display = 'flex';
+        }
+
+        function validateLogoFile(file) {
+            if (file.size > 10 * 1024 * 1024) return '檔案大小超過 10MB';
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            const ext = (file.name.split('.').pop() || '').toLowerCase();
+            if (!allowedTypes.includes(file.type) || !allowedExts.includes(ext)) return '不支援的圖片格式，請上傳 JPG、PNG、GIF 或 WebP';
+            return null;
+        }
+
+        function closeClubEdit() {
+            document.getElementById('club-management-section').style.display = '';
+        }
+
+        document.getElementById('club-edit-close').addEventListener('click', closeClubEdit);
+        document.getElementById('club-edit-cancel').addEventListener('click', closeClubEdit);
+        document.getElementById('club-management-section').addEventListener('click', e => {
+            if (e.target === e.currentTarget) closeClubEdit();
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeClubEdit();
+        });
+
+        document.getElementById('edit-club-logo-input').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const err = validateLogoFile(file);
+            if (err) { PageUtils.showAlert('Logo：' + err, 'error'); e.target.value = ''; return; }
+            const url = URL.createObjectURL(file);
+            const preview = document.getElementById('edit-club-logo-preview');
+            preview.src = url;
+            preview.style.display = 'block';
+        });
+
+        document.getElementById('edit-club-detail-form').addEventListener('submit', async event => {
+            event.preventDefault();
+            const submitBtn = event.currentTarget.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+            try {
+                const clubId = document.getElementById('edit-club-id').value;
+                const logoFile = document.getElementById('edit-club-logo-input').files[0];
+                if (logoFile) {
+                    const logoErr = validateLogoFile(logoFile);
+                    if (logoErr) { PageUtils.showAlert('Logo：' + logoErr, 'error'); return; }
+                    const uploadFormData = new FormData();
+                    uploadFormData.append('logo', logoFile);
+                    uploadFormData.append('club_id', clubId);
+                    const csrfHeaders = await APIClient.getCSRFHeaders();
+                    const uploadRes = await fetch(`${APIClient.getBaseUrl()}/upload.php?action=upload_club_logo`, {
+                        method: 'POST', body: uploadFormData, credentials: 'include',
+                        headers: { ...APIClient.getAuthHeaders(), ...csrfHeaders }
+                    });
+                    const uploadJson = await uploadRes.json().catch(() => ({}));
+                    if (!uploadRes.ok || !uploadJson.success) throw new Error(uploadJson.message || 'Logo 上傳失敗');
+                    const preview = document.getElementById('edit-club-logo-preview');
+                    preview.src = PageUtils.resolveMediaUrl(uploadJson.path);
+                    preview.style.display = 'block';
+                }
+                const payload = {
+                    club_id:           clubId,
+                    club_code:         document.getElementById('edit-club-code').value.trim(),
+                    club_name:         document.getElementById('edit-club-name').value.trim(),
+                    category_id:       document.getElementById('edit-club-category').value,
+                    founding_year:     document.getElementById('edit-founding-year').value,
+                    contact_email:     document.getElementById('edit-contact-email').value.trim(),
+                    contact_phone:     document.getElementById('edit-contact-phone').value.trim(),
+                    meeting_day:       document.getElementById('edit-meeting-day').value.trim(),
+                    meeting_time:      document.getElementById('edit-meeting-time').value.trim(),
+                    meeting_location:  document.getElementById('edit-meeting-location').value.trim(),
+                    club_fee:          document.getElementById('edit-club-fee').value,
+                    club_fee_semester: document.getElementById('edit-club-fee-semester').value,
+                    description:       document.getElementById('edit-description').value.trim(),
+                };
+                const response = await APIClient.post('admin.php?action=update_club_detail', payload);
+                if (response.success) {
+                    PageUtils.showAlert('社團資料更新成功', 'success');
+                    closeClubEdit();
+                    loadClubs();
+                } else {
+                    PageUtils.showAlert('更新失敗：' + response.message, 'error');
+                }
+            } catch (err) {
+                PageUtils.showAlert('錯誤：' + err.message, 'error');
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        });
+
+        // 把分類選項同步填入編輯表單
+        const _origLoadCategories = loadClubCategories;
+        loadClubCategories = async function () {
+            await _origLoadCategories();
+            const src = document.getElementById('new-club-category');
+            const dst = document.getElementById('edit-club-category');
+            Array.from(src.options).forEach(opt => {
+                if (opt.value && !dst.querySelector(`option[value="${opt.value}"]`)) {
+                    dst.appendChild(opt.cloneNode(true));
+                }
+            });
+        };
 
         loadClubCategories();
         loadClubs();
