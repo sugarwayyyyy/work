@@ -274,6 +274,45 @@ class AdminAPI {
         Helper::success('更新社團基礎名單成功');
     }
 
+    public static function getClubDetail($club_id) {
+        self::requireAdmin();
+        $club_id = (int)$club_id;
+        if (!$club_id) Helper::error('無效的社團ID', 400);
+        $club = Database::getInstance()->fetchOne('SELECT * FROM clubs WHERE club_id = ?', [$club_id]);
+        if (!$club) Helper::error('社團不存在', 404);
+        Helper::success('取得社團詳情成功', ['club' => $club]);
+    }
+
+    public static function updateClubDetail($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['club_id', 'club_code', 'club_name']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        if (ContentFilter::hasRestrictedInFields($data, ['club_name', 'description'])) {
+            Helper::error('社團資料包含不適當字眼，請修改後再送出', 400);
+        }
+
+        $club_id = (int)$data['club_id'];
+        $result = dbUpdate('clubs', [
+            'club_code'          => trim($data['club_code']),
+            'club_name'          => trim($data['club_name']),
+            'category_id'        => isset($data['category_id']) && $data['category_id'] !== '' ? (int)$data['category_id'] : null,
+            'description'        => $data['description'] ?? '',
+            'founding_year'      => isset($data['founding_year']) && $data['founding_year'] !== '' ? (int)$data['founding_year'] : null,
+            'meeting_day'        => $data['meeting_day'] ?? '',
+            'meeting_time'       => $data['meeting_time'] ?? '',
+            'meeting_location'   => $data['meeting_location'] ?? '',
+            'contact_email'      => $data['contact_email'] ?? '',
+            'contact_phone'      => $data['contact_phone'] ?? '',
+            'club_fee'           => isset($data['club_fee']) && $data['club_fee'] !== '' ? (int)$data['club_fee'] : 0,
+            'club_fee_semester'  => isset($data['club_fee_semester']) && $data['club_fee_semester'] !== '' ? (int)$data['club_fee_semester'] : null,
+            'last_updated'       => date('Y-m-d H:i:s'),
+        ], 'club_id = ?', [$club_id]);
+
+        if (!$result) Helper::error('更新社團資料失敗', 500);
+        Helper::success('更新社團資料成功');
+    }
+
     public static function softDeleteClub($data) {
         self::requireAdmin();
         $errors = Helper::validateRequired($data, ['club_id']);
@@ -833,6 +872,8 @@ if ($method === 'GET') {
         AdminAPI::getUsers();
     } elseif ($action === 'clubs') {
         AdminAPI::getClubs();
+    } elseif ($action === 'club_detail') {
+        AdminAPI::getClubDetail($_GET['id'] ?? 0);
     } elseif ($action === 'club_admin_assignments') {
         AdminAPI::getClubAdminAssignments();
     } elseif ($action === 'event_reports') {
@@ -870,6 +911,8 @@ if ($method === 'POST') {
         AdminAPI::createClubBase($data);
     } elseif ($action === 'update_club') {
         AdminAPI::updateClubBase($data);
+    } elseif ($action === 'update_club_detail') {
+        AdminAPI::updateClubDetail($data);
     } elseif ($action === 'soft_delete_club') {
         AdminAPI::softDeleteClub($data);
     } elseif ($action === 'create_announcement') {
