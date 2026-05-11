@@ -1210,7 +1210,21 @@
                 const coHostNames = (event.co_host_clubs || []).map(club => PageUtils.escapeHtml(club.club_name || '')).filter(Boolean);
                 const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
                 const safeStatus = PageUtils.escapeHtml(translateStatus(event.event_status));
-                const safeLocation = PageUtils.escapeHtml(event.location || '');
+                const MAPS_URL_RE = /https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)/i;
+                const rawLocation = String(event.location || '').trim();
+                const mapsMatch = rawLocation.match(MAPS_URL_RE);
+                const locationText = mapsMatch
+                    ? (rawLocation.replace(MAPS_URL_RE, '').trim() || 'Google 地圖')
+                    : rawLocation;
+                const locationHtml = (() => {
+                    if (!rawLocation) return '';
+                    const safeText = PageUtils.escapeHtml(locationText);
+                    if (mapsMatch) {
+                        const safeUrl = PageUtils.escapeHtml(mapsMatch[0]);
+                        return `｜<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeText}</a>`;
+                    }
+                    return `｜${safeText}`;
+                })();
                 const card = document.createElement('div');
                 card.className = 'club-admin-event-row';
                 card.innerHTML = `
@@ -1229,7 +1243,7 @@
                                 : `<button class="btn btn-secondary btn-sm" onclick="archiveEvent(${event.event_id})">歸檔</button>`}
                         </div>
                     </div>
-                    <p class="admin-item-content">${formatDateTime(event.event_date)}${safeLocation ? '｜' + safeLocation : ''}</p>
+                    <p class="admin-item-content">${formatDateTime(event.event_date)}${locationHtml}</p>
                     <p class="admin-item-content">目前報名人數：${Number(event.registered_count || 0)} 人</p>
                     ${coHostNames.length > 0 ? `<p class="admin-item-content">協辦社團：${coHostNames.join('、')}</p>` : ''}
                 `;
