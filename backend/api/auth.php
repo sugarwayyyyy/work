@@ -273,7 +273,7 @@ class UserAPI {
     }
     
     /**
-     * 註銷帳號（軟刪除）
+     * 刪除帳號（硬刪除，不可回復）
      * POST /api/auth.php?action=deactivate_account
      */
     public static function deactivateAccount($data) {
@@ -289,20 +289,86 @@ class UserAPI {
         $user = Auth::getCurrentUser();
 
         if (($user['role'] ?? '') === 'platform_admin') {
-            Helper::error('平台管理員帳號無法自行註銷，請聯繫系統維護人員', 403);
+            Helper::error('平台管理員帳號無法自行刪除，請聯繫系統維護人員', 403);
         }
 
         if (!Helper::verifyPassword($data['password'], $user['password'])) {
-            Helper::error('密碼錯誤，無法執行註銷', 401);
+            Helper::error('密碼錯誤，無法執行刪除', 401);
         }
 
+        $db  = Database::getInstance();
+        $uid = (int)$user['user_id'];
+
+        // 輔助：帶參數的 prepared statement 執行（user_id 皆為整數）
+        $exec = function (string $sql, array $params) use ($db) {
+            $stmt = $db->prepare($sql);
+            if (!$stmt) throw new Exception('SQL prepare failed: ' . $sql);
+            if ($params) {
+                $types = str_repeat('i', count($params));
+                $stmt->bind_param($types, ...$params);
+            }
+            $stmt->execute();
+            $stmt->close();
+        };
+
         try {
-            dbUpdate('users', ['is_active' => 0], 'user_id = ?', [$user['user_id']]);
+            $db->beginTransaction();
+
+            // ── 1. NULL 掉 nullable 審計欄位，保留記錄但移除個人身分 ──
+            $exec('UPDATE reports                  SET resolved_by   = NULL WHERE resolved_by        = ?', [$uid]);
+            $exec('UPDATE system_announcements     SET created_by    = NULL WHERE created_by         = ?', [$uid]);
+            $exec('UPDATE account_transfers        SET transferred_by = NULL WHERE transferred_by    = ?', [$uid]);
+            $exec('UPDATE account_transfer_requests SET reviewed_by  = NULL WHERE reviewed_by        = ?', [$uid]);
+            $exec('UPDATE activity_logs            SET triggered_by  = NULL WHERE triggered_by       = ?', [$uid]);
+
+            // ── 2. 刪除不可 NULL 的關聯資料 ──
+
+            // 轉讓申請（申請者或目標為此用戶）
+            $exec('DELETE FROM account_transfer_requests WHERE requester_user_id = ? OR target_user_id = ?', [$uid, $uid]);
+            // 轉讓記錄（from/to 為此用戶）
+            $exec('DELETE FROM account_transfers WHERE from_user_id = ? OR to_user_id = ?', [$uid, $uid]);
+            // 此用戶提出的檢舉
+            $exec('DELETE FROM reports WHERE reported_by_user_id = ?', [$uid]);
+            // 通知
+            $exec('DELETE FROM notifications WHERE user_id = ?', [$uid]);
+            // 參與證明
+            $exec('DELETE FROM participation_certificates WHERE user_id = ?', [$uid]);
+
+            // ── 3. QA（子表優先）──
+            // 用戶對他人回覆的「有幫助」投票
+            $exec('DELETE FROM qa_reply_helpful WHERE user_id = ?', [$uid]);
+            // 他人對此用戶問題的回覆（子回覆透過 parent_reply_id ON DELETE CASCADE 自動清除）
+            $exec('DELETE qr FROM qa_replies qr JOIN q_and_a qa ON qr.qa_id = qa.qa_id WHERE qa.user_id = ?', [$uid]);
+            // 此用戶對他人問題的回覆
+            $exec('DELETE FROM qa_replies WHERE user_id = ?', [$uid]);
+            // 此用戶問題的標籤關聯
+            $exec('DELETE qtr FROM qa_tag_relations qtr JOIN q_and_a qa ON qtr.qa_id = qa.qa_id WHERE qa.user_id = ?', [$uid]);
+            // 此用戶的問題
+            $exec('DELETE FROM q_and_a WHERE user_id = ?', [$uid]);
+
+            // ── 4. 評價（子表優先）──
+            $exec('DELETE rtr FROM review_tag_relations rtr JOIN reviews r ON rtr.review_id = r.review_id WHERE r.user_id = ?', [$uid]);
+            $exec('DELETE FROM reviews WHERE user_id = ?', [$uid]);
+
+            // ── 5. 活動相關 ──
+            $exec('DELETE FROM event_registrations WHERE user_id = ?', [$uid]);
+            $exec('DELETE FROM event_attendance   WHERE user_id = ?', [$uid]);
+            $exec('DELETE FROM event_comments     WHERE user_id = ?', [$uid]);
+
+            // ── 6. 社團關係 ──
+            $exec('DELETE FROM club_members   WHERE user_id = ?', [$uid]);
+            $exec('DELETE FROM club_followers WHERE user_id = ?', [$uid]);
+
+            // ── 7. 刪除用戶本體 ──
+            $exec('DELETE FROM users WHERE user_id = ?', [$uid]);
+
+            $db->commit();
             Auth::logout();
-            Helper::success('帳號已成功註銷');
+            Helper::success('帳號已成功刪除');
         } catch (Exception $e) {
-            Helper::logError('帳號註銷失敗: ' . $e->getMessage());
-            Helper::error('帳號註銷失敗', 500);
+            $db->rollback();
+            Helper::logError('帳號刪除失敗: ' . $e->getMessage());
+            Helper::error('帳號刪除失敗，請稍後再試', 500);
         }
     }
 

@@ -240,7 +240,7 @@
                     displayEventDetail(currentEvent);
                     loadParticipants(eventId);
                     loadComments(eventId);
-                    loadClubInfo(currentEvent.club_id);
+                    loadClubInfo(currentEvent.club?.club_id || currentEvent.club_id, Array.isArray(currentEvent.co_host_clubs) ? currentEvent.co_host_clubs : []);
                 } else {
                     PageUtils.showAlert(response.message, 'error');
                 }
@@ -311,8 +311,12 @@
                 } catch (e) {}
             };
 
+            const _coHosts = Array.isArray(event.co_host_clubs) ? event.co_host_clubs : [];
+            const _mainClub = { club_id: event.club?.club_id || event.club_id, club_name: event.club?.club_name || '' };
+            const _allClubs = [_mainClub, ..._coHosts];
+
             document.getElementById('event-title').textContent = event.event_name;
-            document.getElementById('event-club').textContent = event.club_name;
+            document.getElementById('event-club').textContent = _allClubs.map(c => c.club_name).filter(Boolean).join('、');
             document.getElementById('event-date').textContent = PageUtils.formatDate(event.event_date);
             document.getElementById('event-location').textContent = formatEventLocation(event.location);
             const latestEventTime = event.updated_at || event.published_at || event.created_at || null;
@@ -337,7 +341,10 @@
             document.getElementById('event-location-detail').textContent = formatEventLocation(event.location);
             renderEventLocationActions(event.location);
             resolveAndUpdateLocation(event.location);
-            document.getElementById('event-club-detail').textContent = event.club_name;
+            document.getElementById('event-club-detail').innerHTML = _allClubs
+                .filter(c => c.club_name)
+                .map(c => `<a href="club-detail.html?id=${Number(c.club_id)}">${PageUtils.escapeHtml(c.club_name)}</a>`)
+                .join('、');
             document.getElementById('event-fee').textContent = event.fee ? `NT$ ${event.fee}` : '免費';
             document.getElementById('event-contact').textContent = event.contact_info || '請聯繫社團幹部';
 
@@ -510,26 +517,37 @@
         }
 
         // 載入社團資訊
-        async function loadClubInfo(clubId) {
+        async function loadClubInfo(clubId, coHosts = []) {
+            const container = document.getElementById('club-info');
             try {
                 const response = await APIClient.get(`clubs.php?action=detail&id=${clubId}`);
                 if (response.success) {
                     const club = response.data;
-                    const container = document.getElementById('club-info');
                     const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
                     const safeDescription = PageUtils.escapeHtml(club.description || '');
                     const safeClubId = Number(club.club_id) || 0;
+
+                    const coHostHtml = coHosts.length > 0
+                        ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                               <strong>協辦社團</strong>
+                               <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                   ${coHosts.map(c => `<a href="club-detail.html?id=${Number(c.club_id)}" class="btn btn-secondary btn-sm">${PageUtils.escapeHtml(c.club_name || '-')}</a>`).join('')}
+                               </div>
+                           </div>`
+                        : '';
+
                     container.innerHTML = `
                         <h5>${safeClubName}</h5>
                         <p>${safeDescription}</p>
                         <div style="margin-top: 1rem;">
                             <a href="club-detail.html?id=${safeClubId}" class="btn btn-primary btn-sm">查看社團詳情</a>
                         </div>
+                        ${coHostHtml}
                     `;
                 }
             } catch (error) {
                 console.error('Error loading club info:', error);
-                document.getElementById('club-info').innerHTML = '<p>載入失敗</p>';
+                container.innerHTML = '<p>載入失敗</p>';
             }
         }
 

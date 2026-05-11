@@ -312,7 +312,9 @@ async function loadClubCategories() {
         const response = await APIClient.get('clubs.php?action=categories');
         if (!response.success) return;
         const select = document.getElementById('club-category');
+        const excluded = new Set(['宗教性', '綜合性']);
         response.data.categories.forEach(cat => {
+            if (excluded.has(cat.category_name)) return;
             const option = document.createElement('option');
             option.value = cat.category_id;
             option.textContent = cat.category_name;

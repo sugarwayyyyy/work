@@ -761,8 +761,10 @@
             return map[status] || status || '-';
         }
 
-        async function loadMyTransferRequests() {
-            const response = await APIClient.get('club-admin.php?action=my_transfer_requests');
+        async function loadMyTransferRequests(clubId) {
+            const id = clubId || currentClubId;
+            const qs = id ? `&club_id=${encodeURIComponent(id)}` : '';
+            const response = await APIClient.get(`club-admin.php?action=my_transfer_requests${qs}`);
             if (!response.success) return console.error(response.message);
             const container = document.getElementById('my-transfer-requests');
             if (!container) return;
@@ -1365,6 +1367,24 @@
             modal.scrollTop = 0;
         }
 
+        async function validatePosterFile(file) {
+            if (!file) return null;
+            if (file.size > 10 * 1024 * 1024) return '檔案大小超過 10MB 限制，請壓縮後再試';
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            const ext = (file.name.split('.').pop() || '').toLowerCase();
+            if (!allowedTypes.includes(file.type) || !allowedExts.includes(ext)) {
+                return '不支援的圖片格式，請上傳 JPG、PNG、GIF 或 WebP';
+            }
+            return new Promise(resolve => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => { URL.revokeObjectURL(url); resolve(null); };
+                img.onerror = () => { URL.revokeObjectURL(url); resolve('圖片檔案損壞或無法讀取，請換一張圖片'); };
+                img.src = url;
+            });
+        }
+
         async function uploadEventPosterFile(eventId, fileInput) {
             const posterFile = fileInput ? fileInput.files[0] : null;
             if (!posterFile) return null;
@@ -1718,6 +1738,12 @@
 
                 if (!validateEventForm()) return;
 
+                const _posterFile1 = document.getElementById('event-poster-upload').files[0];
+                if (_posterFile1) {
+                    const _posterErr1 = await validatePosterFile(_posterFile1);
+                    if (_posterErr1) { PageUtils.showAlert('活動海報：' + _posterErr1, 'error'); return; }
+                }
+
                 if (!confirm(`即將以「${currentClubName}」幹部身份發布活動，是否確認？`)) return;
 
                 try {
@@ -1848,6 +1874,8 @@
                             PageUtils.showAlert('請先選擇要管理的社團', 'error');
                             return;
                         }
+                        const _posterErrCreate = await validatePosterFile(posterFileInput?.files[0]);
+                        if (_posterErrCreate) { PageUtils.showAlert('活動海報：' + _posterErrCreate, 'error'); return; }
                         const payload = {
                             club_id: currentClubId,
                             event_name: g('update-event-name').value,
@@ -1886,6 +1914,8 @@
                             PageUtils.showAlert('找不到活動識別碼，請重新點選要編輯的活動', 'error');
                             return;
                         }
+                        const _posterErrUpdate = await validatePosterFile(posterFileInput?.files[0]);
+                        if (_posterErrUpdate) { PageUtils.showAlert('活動海報：' + _posterErrUpdate, 'error'); return; }
                         const formData = new FormData();
                         formData.append('event_name', g('update-event-name').value);
                         formData.append('description', g('update-event-description').value);
@@ -1997,7 +2027,7 @@
 
             loadMyTransferRequests();
 
-            document.addEventListener('clubadmin:switch', () => loadMyTransferRequests());
+            document.addEventListener('clubadmin:switch', e => loadMyTransferRequests(e.detail?.clubId));
         })();
 
         // ── (legacy my-clubs IIFE — kept but guarded, page removed) ─────────

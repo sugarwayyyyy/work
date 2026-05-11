@@ -455,9 +455,7 @@ INSERT INTO club_categories (category_name, description) VALUES
 ('學術性', '學術研究、技能進修相關社團'),
 ('藝文性', '文化、藝術、音樂相關社團'),
 ('服務性', '社會服務、志願服務相關社團'),
-('休閒性', '娛樂、休閒活動相關社團'),
-('宗教性', '宗教信仰相關社團'),
-('綜合性', '其他綜合性社團');
+('休閒性', '娛樂、休閒活動相關社團');
 
 INSERT INTO club_tags (tag_name, tag_type, description) VALUES
 ('無經驗可', 'experience', '不需要先前經驗'),
