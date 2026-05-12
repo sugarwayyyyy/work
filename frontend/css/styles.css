@@ -1033,7 +1033,10 @@ footer p {
 }
 
 .admin-users-page .container.club-list-page,
-.admin-reports-page .container.club-list-page {
+.admin-reports-page .container.club-list-page,
+.admin-clubs-page .container.club-list-page,
+.admin-announcements-page .container.club-list-page,
+.admin-transfers-page .container.club-list-page {
     padding: 1.25rem 2rem 1.5rem;
 }
 
