@@ -65,13 +65,47 @@
                     <label for="edit-contact-phone">聯絡電話</label>
                     <input type="tel" id="edit-contact-phone">
                 </div>
-                <div class="form-field">
-                    <label for="edit-meeting-day">社課日</label>
-                    <input type="text" id="edit-meeting-day" placeholder="例：每週三">
-                </div>
-                <div class="form-field">
-                    <label for="edit-meeting-time">社課時間</label>
-                    <input type="text" id="edit-meeting-time" placeholder="例：19:00~21:00">
+                <div class="form-field admin-span-2">
+                    <label>社課時間</label>
+                    <input type="hidden" id="edit-meeting-time">
+                    <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;margin-top:0.25rem;">
+                        <div>
+                            <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:0.25rem;">上課日</div>
+                            <select id="edit-club-meeting-day">
+                                <option value="每週一">每週一</option>
+                                <option value="每週二">每週二</option>
+                                <option value="每週三">每週三</option>
+                                <option value="每週四">每週四</option>
+                                <option value="每週五">每週五</option>
+                                <option value="每週六">每週六</option>
+                                <option value="每週日">每週日</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;align-items:flex-end;gap:0.5rem;">
+                            <div>
+                                <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:0.25rem;">開始</div>
+                                <div style="display:flex;gap:0.25rem;">
+                                    <select id="edit-meeting-start-hour"></select>
+                                    <select id="edit-meeting-start-minute">
+                                        <option value="00">00</option>
+                                        <option value="30">30</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <span style="padding-bottom:0.4rem;font-weight:600;">~</span>
+                            <div>
+                                <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:0.25rem;">結束</div>
+                                <div style="display:flex;gap:0.25rem;">
+                                    <select id="edit-meeting-end-hour"></select>
+                                    <select id="edit-meeting-end-minute">
+                                        <option value="00">00</option>
+                                        <option value="30">30</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <small style="display:block;margin-top:0.25rem;color:var(--text-light);">24 小時制，分鐘僅能選整點或半點。</small>
                 </div>
                 <div class="form-field admin-span-2">
                     <label for="edit-meeting-location">社課地點</label>
@@ -353,6 +387,65 @@
             else PageUtils.showAlert('新增失敗：' + response.message, 'error');
         });
 
+        function initEditHourSelect(id) {
+            const sel = document.getElementById(id);
+            if (!sel) return;
+            sel.innerHTML = '';
+            for (let h = 0; h < 24; h++) {
+                const opt = document.createElement('option');
+                opt.value = String(h).padStart(2, '0');
+                opt.textContent = String(h).padStart(2, '0') + ' 時';
+                sel.appendChild(opt);
+            }
+        }
+
+        function syncEditMeetingTime() {
+            const day = document.getElementById('edit-club-meeting-day')?.value || '';
+            const sh  = document.getElementById('edit-meeting-start-hour')?.value || '00';
+            const sm  = document.getElementById('edit-meeting-start-minute')?.value || '00';
+            const eh  = document.getElementById('edit-meeting-end-hour')?.value || '00';
+            const em  = document.getElementById('edit-meeting-end-minute')?.value || '00';
+            const el  = document.getElementById('edit-meeting-time');
+            if (el) el.value = `${day} ${sh}:${sm}-${eh}:${em}`;
+        }
+
+        function setEditMeetingFromClub(meetingTime, meetingDay) {
+            const combined = String(meetingTime || '').trim();
+            const dayOnly  = String(meetingDay  || '').trim();
+            const fallback = { day: '每週三', sh: '19', sm: '00', eh: '21', em: '00' };
+
+            const matchedFull = combined.match(/(每週[一二三四五六日])\s*(\d{1,2}):(\d{2})\s*[-~～]\s*(\d{1,2}):(\d{2})/);
+            const matchedTime = combined.match(/(\d{1,2}):(\d{2})\s*[-~～]\s*(\d{1,2}):(\d{2})/);
+
+            let next;
+            if (matchedFull) {
+                next = {
+                    day: matchedFull[1],
+                    sh:  String(parseInt(matchedFull[2], 10)).padStart(2, '0'),
+                    sm:  matchedFull[3] === '30' ? '30' : '00',
+                    eh:  String(parseInt(matchedFull[4], 10)).padStart(2, '0'),
+                    em:  matchedFull[5] === '30' ? '30' : '00',
+                };
+            } else if (matchedTime) {
+                next = {
+                    day: dayOnly || fallback.day,
+                    sh:  String(parseInt(matchedTime[1], 10)).padStart(2, '0'),
+                    sm:  matchedTime[2] === '30' ? '30' : '00',
+                    eh:  String(parseInt(matchedTime[3], 10)).padStart(2, '0'),
+                    em:  matchedTime[4] === '30' ? '30' : '00',
+                };
+            } else {
+                next = { ...fallback, day: dayOnly || fallback.day };
+            }
+
+            document.getElementById('edit-club-meeting-day').value        = next.day;
+            document.getElementById('edit-meeting-start-hour').value      = next.sh;
+            document.getElementById('edit-meeting-start-minute').value    = next.sm;
+            document.getElementById('edit-meeting-end-hour').value        = next.eh;
+            document.getElementById('edit-meeting-end-minute').value      = next.em;
+            syncEditMeetingTime();
+        }
+
         async function openClubEdit(clubId) {
             const response = await APIClient.get(`admin.php?action=club_detail&id=${clubId}`);
             if (!response.success) { PageUtils.showAlert('載入社團資料失敗：' + response.message, 'error'); return; }
@@ -364,8 +457,7 @@
             document.getElementById('edit-founding-year').value = c.founding_year || '';
             document.getElementById('edit-contact-email').value = c.contact_email || '';
             document.getElementById('edit-contact-phone').value = c.contact_phone || '';
-            document.getElementById('edit-meeting-day').value = c.meeting_day || '';
-            document.getElementById('edit-meeting-time').value = c.meeting_time || '';
+            setEditMeetingFromClub(c.meeting_time || '', c.meeting_day || '');
             document.getElementById('edit-meeting-location').value = c.meeting_location || '';
             document.getElementById('edit-club-fee').value = c.club_fee || '';
             document.getElementById('edit-club-fee-semester').value = c.club_fee_semester || '';
@@ -443,8 +535,8 @@
                     founding_year:     document.getElementById('edit-founding-year').value,
                     contact_email:     document.getElementById('edit-contact-email').value.trim(),
                     contact_phone:     document.getElementById('edit-contact-phone').value.trim(),
-                    meeting_day:       document.getElementById('edit-meeting-day').value.trim(),
-                    meeting_time:      document.getElementById('edit-meeting-time').value.trim(),
+                    meeting_day:       document.getElementById('edit-club-meeting-day').value,
+                    meeting_time:      document.getElementById('edit-meeting-time').value,
                     meeting_location:  document.getElementById('edit-meeting-location').value.trim(),
                     club_fee:          document.getElementById('edit-club-fee').value,
                     club_fee_semester: document.getElementById('edit-club-fee-semester').value,
@@ -477,6 +569,14 @@
                 }
             });
         };
+
+        initEditHourSelect('edit-meeting-start-hour');
+        initEditHourSelect('edit-meeting-end-hour');
+        ['edit-club-meeting-day', 'edit-meeting-start-hour', 'edit-meeting-start-minute',
+         'edit-meeting-end-hour', 'edit-meeting-end-minute'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', syncEditMeetingTime);
+        });
 
         loadClubCategories();
         loadClubs();
