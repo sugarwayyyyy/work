@@ -268,19 +268,25 @@ class ClubAdminAPI {
     public static function getMyTransferRequests() {
         self::requireClubAdmin();
         $user_id = Auth::getCurrentUserId();
+        $club_id = isset($_GET['club_id']) && (int)$_GET['club_id'] > 0 ? (int)$_GET['club_id'] : null;
 
-        $rows = Database::getInstance()->fetchAll(
-            'SELECT r.request_id, r.club_id, c.club_name, c.club_code,
-                    r.target_user_id, tu.name AS target_user_name, tu.student_id AS target_student_id,
-                    r.reason, r.handover_note, r.request_status, r.review_note,
-                    r.requested_at, r.reviewed_at
-             FROM account_transfer_requests r
-             JOIN clubs c ON r.club_id = c.club_id
-             JOIN users tu ON r.target_user_id = tu.user_id
-             WHERE r.requester_user_id = ?
-             ORDER BY r.requested_at DESC',
-            [$user_id]
-        );
+        $sql = 'SELECT r.request_id, r.club_id, c.club_name, c.club_code,
+                       r.target_user_id, tu.name AS target_user_name, tu.student_id AS target_student_id,
+                       r.reason, r.handover_note, r.request_status, r.review_note,
+                       r.requested_at, r.reviewed_at
+                FROM account_transfer_requests r
+                JOIN clubs c ON r.club_id = c.club_id
+                JOIN users tu ON r.target_user_id = tu.user_id
+                WHERE r.requester_user_id = ?';
+        $params = [$user_id];
+
+        if ($club_id !== null) {
+            $sql .= ' AND r.club_id = ?';
+            $params[] = $club_id;
+        }
+
+        $sql .= ' ORDER BY r.requested_at DESC';
+        $rows = Database::getInstance()->fetchAll($sql, $params);
 
         Helper::success('取得我的轉讓申請成功', ['requests' => $rows]);
     }
