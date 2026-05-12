@@ -1,6 +1,10 @@
 # Local environment config (machine-specific, not committed)
 backend/config.local.php
 
+# IDE and tool settings (machine-specific)
+.claude/settings.json
+.vscode/settings.json
+
 # Runtime uploads (do not commit generated files)
 frontend/assets/uploads/*
 !frontend/assets/uploads/.gitkeep
