@@ -3,12 +3,21 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $backendPath = Join-Path $projectRoot 'backend'
 $routerPath = Join-Path $projectRoot 'tests/e2e/dev-router.php'
+if (Test-Path 'C:\xampp\php\php.exe') {
+    $phpPath = 'C:\xampp\php\php.exe'
+} elseif (Test-Path 'C:\AppServ\php8\php.exe') {
+    $phpPath = 'C:\AppServ\php8\php.exe'
+} elseif (Test-Path 'C:\AppServ\php7\php.exe') {
+    $phpPath = 'C:\AppServ\php7\php.exe'
+} else {
+    $phpPath = 'php'
+}
 
 Write-Host '[1/3] 啟動 frontend 伺服器 http://localhost:8000 ...' -ForegroundColor Cyan
-Start-Process -FilePath 'php' -ArgumentList '-S localhost:8000', $routerPath -WorkingDirectory $projectRoot
+Start-Process -FilePath $phpPath -ArgumentList '-S localhost:8000', $routerPath -WorkingDirectory $projectRoot
 
 Write-Host '[2/3] 啟動 backend 伺服器 http://localhost:8080 ...' -ForegroundColor Cyan
-Start-Process -FilePath 'php' -ArgumentList '-S localhost:8080' -WorkingDirectory $backendPath
+Start-Process -FilePath $phpPath -ArgumentList '-S localhost:8080' -WorkingDirectory $backendPath
 
 Write-Host '[3/3] 啟動完成，請開啟下列網址：' -ForegroundColor Green
 Write-Host '  前端: http://localhost:8000' -ForegroundColor Green

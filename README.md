@@ -195,7 +195,7 @@
 
 - 前端：HTML5、CSS3、Vanilla JavaScript
 - 後端：PHP 7.4+、MySQL 8.0+ / MySQLi
-- 開發環境：Windows、AppServ、Apache
+- 開發環境：Windows、AppServ 或 XAMPP、Apache
 - 測試：Playwright（e2e，需 Node.js）、手動驗收清單
 
 ## 安裝與初始化
@@ -204,7 +204,7 @@
 
 快速摘要：
 1. 匯入 `database/schema.sql` 與 `database/migrations/*`。
-2. 編輯 `backend/config.php` 設定資料庫連線。
+2. 建立 `backend/config.local.php` 設定本機資料庫連線（此檔案不進 git）。
 3. 確認 `frontend/assets/uploads`、`logs` 可寫入。
 4. 安裝 e2e 測試依賴：`npm install`。
 

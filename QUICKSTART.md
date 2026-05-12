@@ -18,7 +18,7 @@
 ## 前置條件
 
 - Windows 或相容的本機環境
-- AppServ / Apache / PHP
+- AppServ 或 XAMPP（含 Apache + PHP）
 - MySQL 8.0+ 或 MariaDB
 - 可執行 PowerShell
 
@@ -42,8 +42,18 @@ mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 
 可選方案：使用 `run_migration.php` 執行整批遷移（執行前先確認資料庫連線設定）。
 
-### 2. 設定連線
-編輯 `backend/config.php`，確認資料庫名稱、帳號、密碼與埠號。
+### 2. 設定本機連線
+
+建立 `backend/config.local.php`（此檔案已加入 `.gitignore`，不會進 git）：
+
+```php
+<?php
+// 依照本機環境填寫，AppServ 預設密碼通常為 12345678，XAMPP 預設為空字串
+define('DB_PASSWORD', '12345678');  // AppServ
+// define('DB_PASSWORD', '');       // XAMPP
+```
+
+> `backend/config.php` 的預設值為 AppServ（密碼 `12345678`）。若使用 XAMPP（無密碼），只需建立上述檔案並取消 XAMPP 那行的注解即可。
 
 ### 3. 檢查資料夾權限
 確認以下資料夾存在且可寫入：
@@ -103,7 +113,7 @@ php -S localhost:8080
 
 ### 無法連線資料庫
 - 確認 MySQL 已啟動
-- 檢查 `config.php` 內的帳密
+- 確認已建立 `backend/config.local.php` 並填入正確密碼（AppServ: `12345678`，XAMPP: 空字串 `''`）
 - 確認資料庫名稱是 `club_platform`
 
 ### 頁面沒有樣式

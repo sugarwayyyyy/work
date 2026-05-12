@@ -1,10 +1,15 @@
 <?php
 // 共用設定：資料庫、上傳、會話與錯誤記錄。
-define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_USER', getenv('DB_USER') ?: 'root');
-define('DB_PASSWORD', getenv('DB_PASSWORD') ?: '12345678');
-define('DB_NAME', getenv('DB_NAME') ?: 'club_platform');
-define('DB_PORT', (int)(getenv('DB_PORT') ?: 3306));
+// 本地環境覆蓋設定（此檔案不進 git，各電腦自行建立）
+if (file_exists(__DIR__ . '/config.local.php')) {
+    require_once __DIR__ . '/config.local.php';
+}
+
+defined('DB_HOST')     or define('DB_HOST',     getenv('DB_HOST')     ?: 'localhost');
+defined('DB_USER')     or define('DB_USER',     getenv('DB_USER')     ?: 'root');
+defined('DB_PASSWORD') or define('DB_PASSWORD', getenv('DB_PASSWORD') ?: '12345678');
+defined('DB_NAME')     or define('DB_NAME',     getenv('DB_NAME')     ?: 'club_platform');
+defined('DB_PORT')     or define('DB_PORT',     (int)(getenv('DB_PORT') ?: 3306));
 
 define('APP_NAME', '社團活動資訊統整平台');
 define('APP_URL', 'http://localhost');
