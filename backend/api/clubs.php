@@ -902,13 +902,17 @@ class ClubAPI {
                 'description' => '更新社團信息'
             ]);
             
-            Helper::success('社團更新成功');
-            
+            $fresh = Database::getInstance()->fetchOne('SELECT last_updated FROM clubs WHERE club_id = ?', [$club_id]);
+            Helper::success('社團更新成功', [
+                'club_id'      => (int)$club_id,
+                'last_updated' => $fresh['last_updated'] ?? null,
+            ]);
+
         } catch (Exception $e) {
             Helper::error('更新社團失敗: ' . $e->getMessage(), 500);
         }
     }
-    
+
     /**
      * 取得用戶追蹤的社團
      * GET /api/clubs.php?action=my_follows

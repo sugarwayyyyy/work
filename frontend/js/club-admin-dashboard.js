@@ -1660,6 +1660,9 @@
 
                     const response = await APIClient.put('clubs.php?action=update&id=' + currentClubId, Object.fromEntries(formData));
                     if (response.success) {
+                        if (response.data?.last_updated) {
+                            currentClubLastUpdated = response.data.last_updated;
+                        }
                         PageUtils.showAlert('社團更新成功', 'success');
                         await saveClubTags(currentClubId);
                         loadClubDetails(currentClubId);
