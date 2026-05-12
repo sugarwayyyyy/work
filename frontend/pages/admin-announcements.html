@@ -57,13 +57,15 @@
                             <option value="update">更新</option>
                         </select>
                     </div>
-                    <div class="form-field">
-                        <label for="announcement-start-date">排程發布（選填）</label>
-                        <input type="datetime-local" id="announcement-start-date" />
-                    </div>
-                    <div class="form-field">
-                        <label for="announcement-end-date">自動到期（選填）</label>
-                        <input type="datetime-local" id="announcement-end-date" />
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(219px,1fr));gap:0.75rem;">
+                        <div class="form-field" style="margin-bottom:0;">
+                            <label for="announcement-start-date">排程發布（選填）</label>
+                            <input type="datetime-local" id="announcement-start-date" />
+                        </div>
+                        <div class="form-field" style="margin-bottom:0;">
+                            <label for="announcement-end-date">自動到期（選填）</label>
+                            <input type="datetime-local" id="announcement-end-date" />
+                        </div>
                     </div>
                     <div class="form-field admin-checkbox-wrap">
                         <label for="announcement-sticky">是否置頂</label>
