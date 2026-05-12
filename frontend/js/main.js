@@ -1951,6 +1951,38 @@ window.FormUtils = FormUtils;
 window.StorageUtils = StorageUtils;
 window.refreshGlobalFollowSidebar = renderGlobalFollowSidebar;
 
+(function initStatsScrollArrows() {
+    const wrap = document.querySelector('.admin-stats-bar-wrap');
+    const bar = wrap && wrap.querySelector('.admin-stats-bar');
+    if (!wrap || !bar) return;
+
+    const lBtn = document.createElement('button');
+    lBtn.type = 'button';
+    lBtn.className = 'stats-scroll-arrow stats-scroll-arrow--left is-hidden';
+    lBtn.setAttribute('aria-label', '向左捲動');
+    lBtn.innerHTML = '&#8249;';
+
+    const rBtn = document.createElement('button');
+    rBtn.type = 'button';
+    rBtn.className = 'stats-scroll-arrow stats-scroll-arrow--right';
+    rBtn.setAttribute('aria-label', '向右捲動');
+    rBtn.innerHTML = '&#8250;';
+
+    wrap.appendChild(lBtn);
+    wrap.appendChild(rBtn);
+
+    function sync() {
+        lBtn.classList.toggle('is-hidden', bar.scrollLeft <= 2);
+        rBtn.classList.toggle('is-hidden', bar.scrollLeft >= bar.scrollWidth - bar.clientWidth - 2);
+    }
+
+    lBtn.addEventListener('click', function() { bar.scrollBy({ left: -140, behavior: 'smooth' }); });
+    rBtn.addEventListener('click', function() { bar.scrollBy({ left: 140, behavior: 'smooth' }); });
+    bar.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync);
+    sync();
+})();
+
 
 
 

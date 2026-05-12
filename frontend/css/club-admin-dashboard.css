@@ -650,6 +650,71 @@
     }
 }
 
+/* ── Stats bar wrapper（箭頭指示器）── */
+.admin-stats-bar-wrap {
+    position: relative;
+}
+
+@media (max-width: 600px) {
+    .club-admin-page .admin-stats-bar-wrap::before,
+    .club-admin-page .admin-stats-bar-wrap::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2rem;
+        pointer-events: none;
+        z-index: 2;
+        transition: opacity 0.2s;
+    }
+    .club-admin-page .admin-stats-bar-wrap::before {
+        left: 0;
+        background: linear-gradient(to right, var(--surface, #fff) 20%, transparent);
+        border-radius: 0.7rem 0 0 0.7rem;
+    }
+    .club-admin-page .admin-stats-bar-wrap::after {
+        right: 0;
+        background: linear-gradient(to left, var(--surface, #fff) 20%, transparent);
+        border-radius: 0 0.7rem 0.7rem 0;
+    }
+
+    .club-admin-page .stats-scroll-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        background: var(--surface, #fff);
+        border: 1px solid var(--border, #e2e8f0);
+        box-shadow: 0 1px 6px rgba(15, 23, 42, 0.14);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        line-height: 1;
+        color: var(--text-muted, #64748b);
+        cursor: pointer;
+        padding: 0;
+        z-index: 3;
+        transition: opacity 0.18s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .club-admin-page .stats-scroll-arrow:hover {
+        color: var(--brand, #7c3aed);
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.2);
+    }
+    .club-admin-page .stats-scroll-arrow--left  { left: -0.45rem; }
+    .club-admin-page .stats-scroll-arrow--right { right: -0.45rem; }
+    .club-admin-page .stats-scroll-arrow.is-hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+@media (min-width: 601px) {
+    .club-admin-page .stats-scroll-arrow { display: none; }
+}
+
 /* 手機：橫向滑動一列，大幅減少垂直佔用空間 */
 @media (max-width: 600px) {
     .club-admin-page .admin-stats-bar {
