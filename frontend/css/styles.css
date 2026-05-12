@@ -1795,12 +1795,3 @@ footer p {
     .review-modal-actions .btn { width: 100%; }
 }
 
-/* ── qa.html filter responsive ── */
-@media (max-width: 720px) {
-    .qa-filter-topbar { flex-direction: column; align-items: stretch; }
-    .qa-filter-keyword { min-width: 0; }
-    .qa-filter-toggle-btn { justify-content: center; }
-    .qa-filter-grid { grid-template-columns: 1fr; }
-    .qa-filter-actions { flex-direction: column; }
-    .qa-filter-toolbar { align-items: stretch; }
-}

@@ -7,6 +7,7 @@
     <title>提問 - 社團平台</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/events.css">
     <style>
         #ask-modal {
             position: fixed;
@@ -80,135 +81,6 @@
             min-height: 96px;
         }
 
-        .qa-filter-card {
-            margin-bottom: 1rem;
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .qa-filter-card .filter-card__body {
-            padding: 0.88rem;
-        }
-
-        .qa-filter-topbar {
-            display: flex;
-            align-items: flex-end;
-            gap: 0.6rem;
-            flex-wrap: wrap;
-        }
-
-        .qa-filter-keyword {
-            flex: 1;
-            min-width: 220px;
-        }
-
-        .qa-filter-topbar .event-filter-keyword {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .qa-filter-topbar .event-filter-keyword input {
-            width: 100%;
-            border: 1px solid var(--border);
-            border-radius: 0.7rem;
-            background: var(--surface);
-            padding: 0.54rem 0.62rem;
-            font-size: 0.87rem;
-            font-family: inherit;
-        }
-
-        .qa-filter-topbar .event-filter-keyword input:focus {
-            outline: none;
-            border-color: var(--brand);
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
-        }
-
-        .qa-filter-toggle-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.52rem 0.88rem;
-            border: 1px solid var(--border);
-            border-radius: 0.7rem;
-            background: var(--surface);
-            color: var(--text-default);
-            font-size: 0.84rem;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-        }
-
-        .qa-filter-toggle-btn:hover {
-            border-color: var(--brand);
-            color: var(--brand);
-        }
-
-        .qa-filter-toggle-btn.is-active {
-            border-color: var(--brand);
-            background: var(--brand-soft);
-            color: var(--brand-hover);
-        }
-
-        .qa-filter-toggle-btn .toggle-arrow {
-            display: inline-block;
-            font-size: 0.7rem;
-            transition: transform 0.22s ease;
-        }
-
-        .qa-filter-toggle-btn.is-active .toggle-arrow {
-            transform: rotate(180deg);
-        }
-
-        .qa-advanced-filters {
-            max-height: 0;
-            overflow: hidden;
-            margin-top: 0;
-            transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.28s ease;
-        }
-
-        .qa-advanced-filters.is-open {
-            max-height: 420px;
-            margin-top: 0.74rem;
-        }
-
-        .qa-filter-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.65rem;
-        }
-
-        .qa-filter-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 0.6rem;
-            padding-top: 0.72rem;
-        }
-
-        .qa-filter-toolbar__status {
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-            flex-wrap: wrap;
-        }
-
-        .qa-filter-toolbar__label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            white-space: nowrap;
-        }
-
-        .qa-filter-actions {
-            display: flex;
-            gap: 0.5rem;
-            padding-top: 0.74rem;
-            margin-top: 0.74rem;
-            border-top: 1px solid var(--color-border-light);
-        }
-
         /* ── Dark mode: ask modal ── */
         [data-theme="dark"] .ask-modal-card {
             background: #212121;
@@ -251,17 +123,17 @@
     <div id="alert-container"></div>
 
     <div class="container">
-        <div class="card qa-filter-card">
+        <div class="event-filter-card filter-card">
             <div class="filter-card__body">
-                <div class="qa-filter-topbar">
-                    <div class="filter-field event-filter-keyword qa-filter-keyword">
+                <div class="event-filter-topbar">
+                    <div class="filter-field event-filter-keyword">
                         <input type="text" id="qa-search" placeholder="搜尋標題、內容、社團名稱或類別…">
                     </div>
                     <button id="qa-search-btn" class="btn btn-primary btn-sm" type="button">搜尋</button>
                     <button id="qa-reset-btn" class="btn btn-secondary btn-sm" type="button">重製</button>
                     <button
                         id="qa-advanced-toggle-btn"
-                        class="qa-filter-toggle-btn"
+                        class="event-filter-toggle-btn"
                         type="button"
                         aria-expanded="false"
                         aria-controls="qa-advanced-filters"
@@ -270,15 +142,15 @@
                     </button>
                 </div>
 
-                <div class="qa-filter-toolbar">
-                    <div class="qa-filter-toolbar__status">
-                        <span class="qa-filter-toolbar__label">提問狀態</span>
+                <div class="event-filter-toolbar">
+                    <div class="event-filter-toolbar__status">
+                        <span class="event-filter-toolbar__label">提問狀態</span>
                         <div id="qa-status-filters" class="chip-cloud"></div>
                     </div>
                 </div>
 
-                <div id="qa-advanced-filters" class="qa-advanced-filters" aria-hidden="true">
-                    <div class="qa-filter-grid">
+                <div id="qa-advanced-filters" class="event-advanced-filters" aria-hidden="true">
+                    <div class="event-filter-grid event-filter-grid--advanced">
                         <div class="filter-field">
                             <label for="qa-club-filter">社團篩選</label>
                             <select id="qa-club-filter">
