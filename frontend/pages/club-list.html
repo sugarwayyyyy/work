@@ -646,9 +646,9 @@
             await loadAllTags();
             await applyClubFiltersFromUrl();
             const isSidebar = document.querySelector('.club-explorer-layout--sidebar');
-            if (window.matchMedia('(min-width: 981px)').matches && isSidebar) {
-                openAdvancedFilters();
-            } else if (hasAdvancedFilters()) {
+            const urlParams = getClubUrlParams();
+            const hasUrlFilters = Boolean(urlParams.tags || urlParams.categoryId || urlParams.clubId || urlParams.minFee || urlParams.maxFee);
+            if ((window.matchMedia('(min-width: 981px)').matches && isSidebar) || hasUrlFilters || hasAdvancedFilters()) {
                 openAdvancedFilters();
             } else {
                 closeAdvancedFilters();

@@ -8,7 +8,20 @@
 
 const { execFileSync } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 const { test, expect } = require('@playwright/test');
+
+function resolvePhp() {
+  const candidates = [
+    'C:\\xampp\\php\\php.exe',
+    'C:\\AppServ\\php8\\php.exe',
+    'C:\\AppServ\\php7\\php.exe',
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return 'php';
+}
 
 // 測試配置
 const BASE_URL = 'http://localhost:8000';
@@ -39,7 +52,7 @@ function cleanupE2ETestData(fullCleanup = false) {
   if (fullCleanup) {
     args.push('--full');
   }
-  execFileSync('php', args, { stdio: 'inherit' });
+  execFileSync(resolvePhp(), args, { stdio: 'inherit' });
 }
 
 /**

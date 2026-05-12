@@ -23,12 +23,20 @@ UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'stude
 
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
-SELECT 'CSC001', '程式社', 1, '介紹本學期課程與專題方向', 2010, 0, '週三', '18:00-20:00', '資工館 R201', 'csc.club@univ.edu', '0911111111', 'active'
+SELECT 'CSC001', '程式社', 10, '介紹本學期課程與專題方向', 2010, 0, '週三', '18:00-20:00', '資工館 R201', 'csc.club@univ.edu', '0911111111', 'active'
 WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = 'CSC001');
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
-SELECT '090', '羽球社', 1, '歡迎零基礎與進階同學一起運動', 2015, 500, '週二', '18:30-20:30', '體育館 A 場', 'badminton.club@univ.edu', '0922333444', 'active'
+SELECT '090', '羽球社', 9, '歡迎零基礎與進階同學一起運動', 2015, 500, '週二', '18:30-20:30', '體育館 A 場', 'badminton.club@univ.edu', '0922333444', 'active'
 WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = '090');
+
+-- 確保 CSC001 必填欄位有值（舊資料可能是 NULL）
+UPDATE clubs SET
+    meeting_time     = COALESCE(NULLIF(meeting_time, ''),     '18:00-20:00'),
+    meeting_location = COALESCE(NULLIF(meeting_location, ''), '資工館 R201'),
+    contact_email    = COALESCE(NULLIF(contact_email, ''),    'csc.club@univ.edu'),
+    contact_phone    = COALESCE(NULLIF(contact_phone, ''),    '0911111111')
+WHERE club_code = 'CSC001';
 
 SET @club_admin_id = (SELECT user_id FROM users WHERE email = 'clubadmin@univ.edu' LIMIT 1);
 SET @student_id = (SELECT user_id FROM users WHERE email = 'student@univ.edu' LIMIT 1);
@@ -70,6 +78,20 @@ WHERE NOT EXISTS (SELECT 1 FROM events WHERE club_id = @club2 AND event_name = '
 INSERT INTO events (club_id, event_name, description, event_date, location, capacity, fee, registration_deadline, event_status, is_registration_open, published_at)
 SELECT @club2, '上學期舊活動（過期）', '用於驗收過期活動隱藏', DATE_SUB(NOW(), INTERVAL 30 DAY), '體育館 B 場', 20, 0, DATE_SUB(NOW(), INTERVAL 31 DAY), 'published', FALSE, DATE_SUB(NOW(), INTERVAL 40 DAY)
 WHERE NOT EXISTS (SELECT 1 FROM events WHERE club_id = @club2 AND event_name = '上學期舊活動（過期）');
+
+-- Ensure club_tags exist (cleanup may have wiped them; these mirror schema.sql defaults)
+INSERT IGNORE INTO club_tags (tag_name) VALUES
+  ('程式設計'), ('音樂'), ('運動'), ('藝術'), ('語言'),
+  ('學術'), ('戶外'), ('服務'), ('電競'), ('攝影'),
+  ('舞蹈'), ('棋藝');
+
+-- Link tags to CSC001 so popular_tags API returns results (HAVING usage_count > 0).
+-- Only CSC001 (not 090) because the cleanup script deletes club 090 and the FK would block it.
+INSERT IGNORE INTO club_tag_relations (club_id, tag_id)
+SELECT @club1, tag_id FROM club_tags WHERE tag_name = '程式設計';
+
+INSERT IGNORE INTO club_tag_relations (club_id, tag_id)
+SELECT @club1, tag_id FROM club_tags WHERE tag_name = '學術';
 
 SET @admin_id = (SELECT user_id FROM users WHERE email = 'admin@univ.edu' LIMIT 1);
 INSERT INTO system_announcements (title, content, announcement_type, is_pinned, display_priority, created_by, start_date)
