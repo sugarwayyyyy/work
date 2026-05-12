@@ -433,25 +433,6 @@
     }
 }
 
-/* 手機：單列橫向滑動 */
-@media (max-width: 480px) {
-    .club-admin-page .admin-stats-bar {
-        grid-template-columns: repeat(10, minmax(72px, 1fr));
-        overflow-x: auto;
-        overflow-y: hidden;
-        border-radius: 0.6rem;
-    }
-    .club-admin-page .admin-stats-bar .stat-item {
-        padding: 0.35rem 0.55rem;
-        min-width: 72px;
-    }
-    .club-admin-page .admin-stats-bar .stat-item strong {
-        font-size: 1.12rem;
-    }
-    .club-admin-page .admin-stats-bar .stat-item span {
-        font-size: 0.72rem;
-    }
-}
 
 .admin-selected-club-banner {
     display: flex;
@@ -669,31 +650,30 @@
     }
 }
 
-/* ── club-admin-dashboard.html stats bar responsive ── */
+/* 手機：橫向滑動一列，大幅減少垂直佔用空間 */
 @media (max-width: 600px) {
     .club-admin-page .admin-stats-bar {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        overflow-x: visible;
-        overflow-y: visible;
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+    }
+    .club-admin-page .admin-stats-bar::-webkit-scrollbar {
+        display: none;
     }
     .club-admin-page .admin-stats-bar .stat-item {
+        flex: 0 0 auto;
+        min-width: 62px;
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.1rem;
-        padding: 0.65rem 0.85rem;
-        border-right: none;
-        border-bottom: 1px solid var(--border, #e2e8f0);
-        white-space: normal;
-        flex-shrink: unset;
+        padding: 0.42rem 0.58rem;
+        gap: 0.12rem;
+        white-space: nowrap;
     }
-    .club-admin-page .admin-stats-bar .stat-item:nth-child(odd) {
-        border-right: 1px solid var(--border, #e2e8f0);
-    }
-    .club-admin-page .admin-stats-bar .stat-item:nth-last-child(-n+2) {
-        border-bottom: none;
-    }
-    .club-admin-page .admin-stats-bar .stat-item strong { font-size: 1.3rem; }
-    .club-admin-page .admin-stats-bar .stat-item .stat-club-name { font-size: 0.82rem; max-width: 100%; }
-    .club-admin-page .admin-stats-bar .stat-item span { font-size: 0.68rem; }
+    .club-admin-page .admin-stats-bar .stat-item:first-child { border-radius: 0.7rem 0 0 0.7rem; }
+    .club-admin-page .admin-stats-bar .stat-item:last-child  { border-radius: 0 0.7rem 0.7rem 0; }
+    .club-admin-page .admin-stats-bar .stat-item strong { font-size: 1.05rem; white-space: nowrap; }
+    .club-admin-page .admin-stats-bar .stat-item .stat-club-name { font-size: 0.72rem; max-width: 88px; }
+    .club-admin-page .admin-stats-bar .stat-item span { font-size: 0.62rem; }
 }
