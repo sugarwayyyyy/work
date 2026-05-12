@@ -3,11 +3,15 @@
 本專案使用 **Playwright** 進行端對端 (E2E) 測試，以驗證使用者故事的功能實現。
 
 ## 目錄
+- [運作原理](#運作原理)
 - [安裝](#安裝)
+- [前置條件](#前置條件)
 - [執行測試](#執行測試)
 - [測試結構](#測試結構)
 - [測試帳號](#測試帳號)
+- [撰寫新測試](#撰寫新測試)
 - [常見問題](#常見問題)
+- [相關文件](#相關文件)
 
 ## 安裝
 
@@ -71,20 +75,34 @@ php scripts/cleanup-e2e-test-data.php --full
 
 ## 測試結構
 
-測試文件位置：`tests/e2e/user-stories.spec.js`
+```
+tests/e2e/
+├── user-stories.spec.js          # 主要使用者故事測試（US 1.1–4.1 + 登入/頁面可訪問性）
+├── additional-regression.spec.js # 補充迴歸測試（AR-01–AR-40）
+├── global-setup.js               # 測試前自動清理 + seed 資料
+├── global-teardown.js            # 測試後清理
+├── dev-router.php                # Playwright webServer 路由（整合前後端）
+├── RUNNING_TESTS.md              # 詳細操作指南
+└── README.md                     # 本文件
+```
 
 ### 涵蓋的使用者故事
 
-| US 代碼 | 功能 | AC 涵蓋 |
-|--------|------|--------|
-| US 1.1 | 社團列表與搜尋篩選 | 3/3 ✅ |
-| US 1.3 | 追蹤功能與動態牆 | 2/3 ✅ |
-| US 1.5 | 資料時間戳 | 1/2 ✅ |
-| US 2.1 | 社團幹部編輯資訊 | 3/3 ✅ |
-| US 2.2 | 社團活動發布 | 2/2 ✅ |
-| US 4.1 | 平台管理員功能 | 2/2 ✅ |
-| 登入/權限 | 使用者認證 | 4/4 ✅ |
-| 頁面加載 | 可訪問性 | 3/3 ✅ |
+| 功能 | spec 檔 | AC 涵蓋 |
+|------|---------|--------|
+| US 1.1 社團列表與搜尋篩選 | user-stories | 3/3 ✅ |
+| US 1.3 追蹤功能與動態牆 | user-stories | 2/3 ✅ |
+| US 1.5 資料時間戳 | user-stories | 1/2 ✅ |
+| US 2.1 社團幹部編輯資訊 | user-stories | 3/3 ✅ |
+| US 2.2 社團活動發布 | user-stories | 2/2 ✅ |
+| US 4.1 平台管理員功能 | user-stories | 2/2 ✅ |
+| 登入/權限 | user-stories | 4/4 ✅ |
+| 頁面可訪問性 | user-stories | 3/3 ✅ |
+| 首頁進階搜尋 | additional-regression | ✅ |
+| 社團列表篩選與導覽 | additional-regression | ✅ |
+| 活動頁篩選器 | additional-regression | ✅ |
+| QA 互動細節 | additional-regression | ✅ |
+| 社團編輯同步驗證 | additional-regression | ✅ |
 
 ## 測試帳號
 
@@ -103,25 +121,36 @@ php scripts/cleanup-e2e-test-data.php --full
 - **密碼**：Test123456
 - **角色**：platform_admin
 
+## 運作原理
+
+**單一 PHP 伺服器架構**：`npm test` 會讓 Playwright 自動啟動一個 PHP 伺服器（`php -S localhost:8000 tests/e2e/dev-router.php`），`dev-router.php` 同時負責路由：
+- 前端靜態頁面：`/pages/*.html`、`/css/`、`/js/` → `frontend/`
+- 後端 API：`/api/*.php` → `backend/api/`
+
+不需要分開啟動前端與後端，也不需要任何 `cd` 指令。
+
+**PHP 路徑自動偵測**：`global-setup.js`、`global-teardown.js`、`user-stories.spec.js` 內的 `resolvePhp()` 會依序嘗試：
+1. `C:\xampp\php\php.exe`（XAMPP）
+2. `C:\AppServ\php8\php.exe`（AppServ PHP 8）
+3. `C:\AppServ\php7\php.exe`（AppServ PHP 7）
+4. `php`（PATH 中的全域指令，fallback）
+
+不需要手動設定 PHP 路徑。
+
+**測試資料生命週期**：
+1. `global-setup.js` — 測試開始前執行完整清理（`--full`）再 seed 測試帳號與資料
+2. `test.afterEach` — 每個測試結束後執行輕量清理（移除該測試產生的活動等）
+3. `global-teardown.js` — 整個 suite 結束後再執行一次完整清理
+
+AI 工具注意：**不需要、也不應該**在測試中手動插入或清理資料庫資料，lifecycle 已自動處理。
+
 ## 前置條件
 
-在執行測試之前，確保以下服務已啟動：
+**不需要**手動啟動前端或後端伺服器。執行 `npm test` 時，Playwright 會透過 `playwright.config.js` 的 `webServer` 設定自動啟動，並在測試結束後自動關閉。
 
-### 1. 啟動前端服務器（終端 1）
-```bash
-cd frontend
-php -S localhost:8000
-```
+只需確保 MySQL 資料庫已初始化：
 
-### 2. 啟動後端服務器（終端 2）
 ```bash
-cd backend
-php -S 127.0.0.1:8080
-```
-
-### 3. 確保 MySQL 資料庫已初始化
-```bash
-# 執行所有資料庫遷移和種子資料
 php run_migration.php
 ```
 
@@ -137,28 +166,64 @@ playwright-report/index.html
 npx playwright show-report
 ```
 
+## 撰寫新測試
+
+### 加在哪個 spec 檔？
+- **`user-stories.spec.js`** — 對應使用者故事（US X.Y）的驗收測試
+- **`additional-regression.spec.js`** — 邊界條件、迴歸測試、不屬於特定 US 的功能驗證
+
+### 命名慣例
+```js
+test.describe('US 2.3: 功能名稱', () => {
+  test('AC1: 具體驗收條件描述', async ({ page }) => { ... });
+});
+// 迴歸測試用 AR- 前綴
+test.describe('AR-41: 功能名稱', () => { ... });
+```
+
+### 可用的 Helper 函式（定義於 `user-stories.spec.js` 頂部）
+
+| 函式 | 說明 |
+|------|------|
+| `login(page, email, password)` | 導覽到登入頁並完成登入，等待跳轉完成 |
+| `publishEventAsClubAdmin(page, eventName)` | 以社團幹部身份建立並發布活動，回傳 `{ startAt, eventId }` |
+| `openClubAdminTab(page, tabName, panelSelector, tabKey)` | 點選社團後台的指定分頁並等待面板出現 |
+| `waitForEventIdByName(page, eventName)` | 輪詢 API 直到活動出現，回傳 `eventId` |
+| `waitForEventCardByName(page, eventName)` | 輪詢前台活動列表直到卡片出現，回傳 locator |
+| `toDateInputValue(date)` | 將 `Date` 物件轉為 `YYYY-MM-DD` 字串 |
+
+### 測試帳號常數（直接使用，不要 hardcode 字串）
+```js
+// 定義於 spec 頂部
+const ADMIN      = { email: 'admin@univ.edu',      password: 'Test123456', role: 'platform_admin' };
+const CLUB_ADMIN = { email: 'clubadmin@univ.edu',  password: 'Test123456', role: 'club_admin' };
+const STUDENT    = { email: 'student@univ.edu',    password: 'Test123456', role: 'student' };
+```
+
+### 重要限制（AI 工具必讀）
+
+- **測試並行執行**（4 workers）：每個測試必須完全獨立，不可依賴其他測試的執行順序或共享 DOM 狀態。
+- **不要手動操作資料庫**：seed / cleanup 已由 lifecycle 自動管理，測試中只透過 UI 或 `APIClient` 操作。
+- **`reuseExistingServer: true`（非 CI）**：本機 port 8000 若已有服務在跑，Playwright 會直接使用。若有異常請先確認 port 沒被其他程式佔用。
+- **勿使用 `page.waitForNavigation()`**：此 API 在較新版 Playwright 已棄用，改用 `page.waitForURL()` 或 `page.waitForLoadState()`。
+- **Firefox sandbox**：Windows 上 Firefox 需停用 sandbox（已設定於 `playwright.config.js`），不需要額外處理。
+
 ## 常見問題
 
 ### Q: 測試超時？
-**A**: 確保前端和後端服務器都已啟動，並且可以正常訪問。
+**A**: 確認 MySQL 服務正常，且 port 8000 未被其他程式佔用（`netstat -ano | findstr :8000`）。不需要手動啟動伺服器，Playwright 會自動處理。
 
 ### Q: 找不到元素？
-**A**: 元素選擇器可能需要根據前端的實際 HTML 結構調整。檢查 `page.locator()` 中的選擇器。
-
-### Q: 如何在測試中添加新的測試用例？
-**A**: 
-1. 在 `tests/e2e/user-stories.spec.js` 中添加新的 `test()` 區塊
-2. 使用 `test.describe()` 將相關測試分組
-3. 使用 `expect()` 進行斷言
+**A**: 先用 `npm run test:ui` 或 `npm run test:debug` 逐步確認選擇器。選擇器定義於各 spec 檔的 `page.locator()` 中。
 
 ### Q: 如何調試失敗的測試？
-**A**: 
-1. 使用 `npm run test:debug` 進行調試
-2. 在測試代碼中添加 `await page.pause()` 來暫停執行
-3. 查看生成的視頻或截圖
+**A**:
+1. `npm run test:debug` — 開啟 Playwright Inspector 逐步執行
+2. 在測試中插入 `await page.pause()` 暫停
+3. 失敗後查看 `playwright-report/` 的截圖與影片
 
-### Q: 可以並行運行測試嗎？
-**A**: 是的，Playwright 默認並行運行多個工作進程。在 `playwright.config.js` 中修改 `workers` 設置。
+### Q: 可以只跑單一測試？
+**A**: 用 `-g` 過濾關鍵字：`npx playwright test -g "US 1.1"`，或指定 spec 檔：`npx playwright test user-stories.spec.js`。
 
 ## 參考資源
 
@@ -168,6 +233,8 @@ npx playwright show-report
 
 ## 相關文件
 
-- [PHP 驗收測試](../api/acceptance_user_stories.php) - API 層級測試
+- [詳細操作指南](RUNNING_TESTS.md) — 進階設定、故障排查、CI 說明
+- [PHP 驗收測試](../api/acceptance_user_stories.php) — API 層級測試
+- [手動驗收清單](../manual/user_story_acceptance_checklist.md)
 - [測試報告](../../TESTING_REPORT.md)
 - [專案狀態](../../PROJECT_STATUS.md)
