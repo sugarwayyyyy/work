@@ -629,7 +629,7 @@
     padding: 1.25rem 1.5rem 1.5rem;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
     #event-modal {
         padding: 0;
         display: flex;
@@ -667,4 +667,33 @@
         grid-template-columns: 1.6fr 1fr 1fr;
         gap: 0.35rem;
     }
+}
+
+/* ── club-admin-dashboard.html stats bar responsive ── */
+@media (max-width: 600px) {
+    .club-admin-page .admin-stats-bar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        overflow-x: visible;
+        overflow-y: visible;
+    }
+    .club-admin-page .admin-stats-bar .stat-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.1rem;
+        padding: 0.65rem 0.85rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border, #e2e8f0);
+        white-space: normal;
+        flex-shrink: unset;
+    }
+    .club-admin-page .admin-stats-bar .stat-item:nth-child(odd) {
+        border-right: 1px solid var(--border, #e2e8f0);
+    }
+    .club-admin-page .admin-stats-bar .stat-item:nth-last-child(-n+2) {
+        border-bottom: none;
+    }
+    .club-admin-page .admin-stats-bar .stat-item strong { font-size: 1.3rem; }
+    .club-admin-page .admin-stats-bar .stat-item .stat-club-name { font-size: 0.82rem; max-width: 100%; }
+    .club-admin-page .admin-stats-bar .stat-item span { font-size: 0.68rem; }
 }

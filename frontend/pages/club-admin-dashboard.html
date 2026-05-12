@@ -81,50 +81,6 @@
             color: #dc2626 !important;
         }
 
-        /* ── 手機（≤ 600px）：改為二欄 grid ── */
-        @media (max-width: 600px) {
-            .club-admin-page .admin-stats-bar {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                overflow-x: visible;
-                overflow-y: visible;
-            }
-
-            .club-admin-page .admin-stats-bar .stat-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.1rem;
-                padding: 0.65rem 0.85rem;
-                border-right: none;
-                border-bottom: 1px solid var(--border, #e2e8f0);
-                white-space: normal;
-                flex-shrink: unset;
-            }
-
-            /* 左欄（奇數）補右邊分隔線 */
-            .club-admin-page .admin-stats-bar .stat-item:nth-child(odd) {
-                border-right: 1px solid var(--border, #e2e8f0);
-            }
-
-            /* 最後一列兩格去掉底線 */
-            .club-admin-page .admin-stats-bar .stat-item:nth-last-child(-n+2) {
-                border-bottom: none;
-            }
-
-            .club-admin-page .admin-stats-bar .stat-item strong {
-                font-size: 1.3rem;
-            }
-
-            .club-admin-page .admin-stats-bar .stat-item .stat-club-name {
-                font-size: 0.82rem;
-                max-width: 100%;
-            }
-
-            .club-admin-page .admin-stats-bar .stat-item span {
-                font-size: 0.68rem;
-            }
-        }
-
         .admin-selected-club-banner {
             display: flex;
             align-items: center;

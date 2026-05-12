@@ -147,7 +147,7 @@
     transform: scale(1.05);
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
     .auth-promo-banner {
         left: 0.75rem;
         right: 0.75rem;
@@ -1773,4 +1773,31 @@ footer p {
         background: linear-gradient(135deg, rgba(111,151,209,0.1), rgba(214,63,42,0.07));
         border-bottom-color: var(--color-border-light);
     }
+}
+
+/* ── admin-overview.html responsive ── */
+@media (max-width: 860px) {
+    .ov-kpi-strip { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 580px) {
+    .ov-kpi-value { font-size: 1.75rem; }
+    .ov-detail-grid { grid-template-columns: 1fr; }
+}
+
+/* ── club-detail.html review modal responsive ── */
+@media (max-width: 640px) {
+    .modal-title { font-size: 1.1rem; }
+    .review-modal-actions { flex-direction: column-reverse; }
+    .review-modal-actions .btn { width: 100%; }
+}
+
+/* ── qa.html filter responsive ── */
+@media (max-width: 720px) {
+    .qa-filter-topbar { flex-direction: column; align-items: stretch; }
+    .qa-filter-keyword { min-width: 0; }
+    .qa-filter-toggle-btn { justify-content: center; }
+    .qa-filter-grid { grid-template-columns: 1fr; }
+    .qa-filter-actions { flex-direction: column; }
+    .qa-filter-toolbar { align-items: stretch; }
 }

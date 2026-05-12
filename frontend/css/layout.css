@@ -227,7 +227,7 @@ nav {
 }
 
 /* ── Nav squeeze zone: shrink font + gap before hamburger kicks in ── */
-@media (max-width: 1100px) and (min-width: 768px) {
+@media (max-width: 1100px) and (min-width: 769px) {
     .nav-links {
         gap: clamp(0.6rem, 1.4vw, 1.75rem);
     }
@@ -257,7 +257,7 @@ nav {
     color: var(--brand, #7c3aed);
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
     .container {
         padding: 1rem;
     }
