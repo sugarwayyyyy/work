@@ -152,9 +152,9 @@
                 <div id="qa-advanced-filters" class="event-advanced-filters" aria-hidden="true">
                     <div class="event-filter-grid event-filter-grid--advanced">
                         <div class="filter-field">
-                            <label for="qa-club-filter">社團篩選</label>
-                            <select id="qa-club-filter">
-                                <option value="">全部社團</option>
+                            <label for="qa-category-filter">社團類別</label>
+                            <select id="qa-category-filter">
+                                <option value="">全部類別</option>
                             </select>
                         </div>
                         <div class="filter-field">
@@ -163,6 +163,12 @@
                                 <option value="">全部</option>
                                 <option value="open">開放中</option>
                                 <option value="closed">已關閉</option>
+                            </select>
+                        </div>
+                        <div class="filter-field">
+                            <label for="qa-club-filter">社團篩選</label>
+                            <select id="qa-club-filter" disabled>
+                                <option value="">請先選擇類別</option>
                             </select>
                         </div>
                     </div>
@@ -272,28 +278,58 @@
             };
         }
 
-        async function loadClubFilterOptions() {
+        async function loadQACategories() {
+            try {
+                const response = await APIClient.get('clubs.php?action=categories');
+                if (!response.success) return;
+
+                const HIDDEN_CATEGORY_NAMES = new Set(['綜合性', '宗教性']);
+                const categories = (response.data.categories || []).filter(cat =>
+                    !HIDDEN_CATEGORY_NAMES.has(String(cat.category_name || '').trim())
+                );
+                const select = document.getElementById('qa-category-filter');
+                categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.category_id;
+                    option.textContent = cat.category_name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadQAClubsByCategory(categoryId) {
             const clubSelect = document.getElementById('qa-club-filter');
-            if (!clubSelect) return;
+            clubSelect.innerHTML = '';
+
+            if (!categoryId) {
+                clubSelect.disabled = true;
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = '請先選擇類別';
+                clubSelect.appendChild(placeholder);
+                return;
+            }
 
             try {
-                const response = await APIClient.get('clubs.php?action=all_for_filter');
+                const response = await APIClient.get(`clubs.php?action=by_category&category_id=${encodeURIComponent(categoryId)}`);
                 if (!response.success) return;
 
                 const clubs = response.data.clubs || [];
-                const currentValue = clubSelect.value;
-                clubSelect.innerHTML = '<option value="">全部社團</option>';
+                const allOption = document.createElement('option');
+                allOption.value = '';
+                allOption.textContent = '全部社團';
+                clubSelect.appendChild(allOption);
 
                 clubs.forEach(club => {
                     const option = document.createElement('option');
                     option.value = club.club_id;
-                    option.textContent = `${club.club_name || '-'}${club.category_name ? `（${club.category_name}）` : ''}`;
+                    option.textContent = club.club_name;
                     clubSelect.appendChild(option);
                 });
 
-                if (currentValue) {
-                    clubSelect.value = currentValue;
-                }
+                clubSelect.disabled = false;
             } catch (error) {
                 console.error('Error:', error);
             }
@@ -407,14 +443,18 @@
         }
 
         function hasQAAdvancedFilters() {
+            const categoryId = document.getElementById('qa-category-filter').value;
             const clubId = document.getElementById('qa-club-filter').value;
             const status = document.getElementById('qa-status-filter').value;
-            return Boolean(clubId || status);
+            return Boolean(categoryId || clubId || status);
         }
 
         function resetQAFilters() {
             document.getElementById('qa-search').value = '';
-            document.getElementById('qa-club-filter').value = '';
+            document.getElementById('qa-category-filter').value = '';
+            const clubSelect = document.getElementById('qa-club-filter');
+            clubSelect.disabled = true;
+            clubSelect.innerHTML = '<option value="">請先選擇類別</option>';
             document.getElementById('qa-status-filter').value = '';
             renderQAStatusFilters();
             loadQA();
@@ -630,10 +670,9 @@
         window.addEventListener('DOMContentLoaded', async function() {
             const params = getQAUrlParams();
             document.getElementById('qa-search').value = params.search;
-            document.getElementById('qa-club-filter').value = params.club_id;
             document.getElementById('qa-status-filter').value = params.status;
 
-            await loadClubFilterOptions();
+            await loadQACategories();
             renderQAStatusFilters();
             loadQA();
             loadCategoriesForModal();
@@ -707,6 +746,11 @@
 
             document.getElementById('qa-status-filter').addEventListener('change', () => {
                 renderQAStatusFilters();
+                loadQA();
+            });
+
+            document.getElementById('qa-category-filter').addEventListener('change', async (e) => {
+                await loadQAClubsByCategory(e.target.value);
                 loadQA();
             });
 

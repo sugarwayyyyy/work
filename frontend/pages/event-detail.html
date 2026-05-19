@@ -413,41 +413,37 @@
                 return;
             }
 
-            // 顯示卡片
-            if (participantsCard) {
-                participantsCard.style.display = 'block';
-            }
-
             try {
                 const response = await APIClient.get(`events.php?action=participants&event_id=${eventId}`);
-                if (response.success) {
-                    const participants = response.data.participants;
-                    const container = document.getElementById('participants-list');
 
-                    if (participants.length === 0) {
-                        container.innerHTML = '<p>尚無參與者</p>';
-                        return;
-                    }
-
-                    let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">';
-                    participants.forEach(participant => {
-                        const safeName = PageUtils.escapeHtml(participant.name || '匿名參與者');
-                        const safeStudentId = PageUtils.escapeHtml(participant.student_id || '');
-                        html += `
-                            <div class="card" style="text-align: center;">
-                                <div style="font-weight: bold;">${safeName}</div>
-                                <div style="color: var(--text-light); font-size: 0.875rem;">${safeStudentId}</div>
-                            </div>
-                        `;
-                    });
-                    html += '</div>';
-                    container.innerHTML = html;
-                } else {
-                    document.getElementById('participants-list').innerHTML = '<p>載入失敗</p>';
+                if (!response.success) {
+                    // 無權限（403）或其他錯誤：不顯示卡片
+                    if (participantsCard) participantsCard.style.display = 'none';
+                    return;
                 }
+
+                if (participantsCard) participantsCard.style.display = 'block';
+
+                const participants = response.data.participants || [];
+                const container = document.getElementById('participants-list');
+
+                if (participants.length === 0) {
+                    container.innerHTML = '<p class="text-muted">尚未有人參加此活動。</p>';
+                    return;
+                }
+
+                let html = `<p style="font-size:0.85rem;color:var(--text-muted,#888);margin:0 0 0.6rem;">共 ${participants.length} 人</p><ul style="list-style:none;margin:0;padding:0;max-width:400px;">`;
+                participants.forEach((participant, i) => {
+                    const safeName = PageUtils.escapeHtml(participant.name || '匿名參與者');
+                    const safeStudentId = PageUtils.escapeHtml(participant.student_id || '—');
+                    const divider = i < participants.length - 1 ? 'border-bottom:1px solid var(--border,#e8eef3);' : '';
+                    html += `<li style="display:flex;justify-content:space-between;align-items:center;padding:0.55rem 0;${divider}"><span style="font-weight:500;">${safeName}</span><span style="color:var(--text-muted,#888);font-size:0.875rem;">${safeStudentId}</span></li>`;
+                });
+                html += '</ul>';
+                container.innerHTML = html;
             } catch (error) {
                 console.error('Error loading participants:', error);
-                document.getElementById('participants-list').innerHTML = '<p>載入失敗</p>';
+                if (participantsCard) participantsCard.style.display = 'none';
             }
         }
 
