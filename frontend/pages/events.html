@@ -195,7 +195,10 @@
                 const response = await APIClient.get('clubs.php?action=categories');
                 if (!response.success) return;
 
-                clubCategories = response.data.categories || [];
+                const HIDDEN_CATEGORY_NAMES = new Set(['綜合性', '宗教性']);
+                clubCategories = (response.data.categories || []).filter(cat =>
+                    !HIDDEN_CATEGORY_NAMES.has(String(cat.category_name || '').trim())
+                );
                 const categorySelect = document.getElementById('club-category-filter');
                 clubCategories.forEach(category => {
                     const option = document.createElement('option');
