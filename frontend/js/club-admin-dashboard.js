@@ -1278,14 +1278,12 @@
         }
 
         function exportRegistrations(eventId) {
-            const token = StorageUtils.getToken();
             const base = APIClient.getBaseUrl();
             const url = `${base}/events.php?action=export_registrations&id=${eventId}`;
 
             fetch(url, {
                 method: 'GET',
-                credentials: 'same-origin',
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
+                credentials: 'include'
             })
                 .then(async (response) => {
                     if (!response.ok) {
