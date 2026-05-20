@@ -39,7 +39,7 @@
 .home-welcome-card,
 .portal-quick-card {
     border: 1px solid var(--border);
-    border-radius: 1rem;
+    border-radius: 10px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
     background: var(--surface);
 }
@@ -92,7 +92,7 @@
 
 .portal-search-form {
     border: 1px solid var(--color-border-light);
-    border-radius: 0.95rem;
+    border-radius: 10px;
     background: var(--surface);
     padding: 0.75rem;
 }
@@ -135,7 +135,7 @@
 .portal-field input,
 .portal-field select {
     border: 1px solid var(--border);
-    border-radius: 0.7rem;
+    border-radius: 10px;
     padding: 0.55rem 0.62rem;
     font-size: 0.88rem;
     background: var(--surface);
@@ -183,7 +183,7 @@
 
 .portal-section--dynamic {
     border: 1px solid var(--color-border-light);
-    border-radius: 1rem;
+    border-radius: 10px;
     padding: 0.85rem;
     background: var(--surface);
     box-shadow: 0 1px 1px rgba(15, 23, 42, 0.03);
@@ -194,7 +194,7 @@
     align-items: center;
     background: var(--surface-subtle);
     border: 1px solid var(--color-border-light);
-    border-radius: 0.8rem;
+    border-radius: 10px;
     padding: 0.2rem;
     gap: 0.2rem;
 }
@@ -205,7 +205,7 @@
     color: var(--text-muted);
     font-size: 0.78rem;
     font-weight: 700;
-    border-radius: 0.64rem;
+    border-radius: 10px;
     padding: 0.34rem 0.65rem;
     cursor: pointer;
 }
@@ -251,7 +251,7 @@
     display: block;
     text-decoration: none;
     color: inherit;
-    border-radius: 0.72rem;
+    border-radius: 10px;
     padding: 0.32rem 0.5rem;
     transition: background-color 0.16s ease;
 }
@@ -377,7 +377,7 @@
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border-radius: 0.5rem;
+    border-radius: 4px;
     border: 1px solid var(--color-border-light);
     background: var(--surface);
     color: var(--text-default);
@@ -404,7 +404,7 @@
 
 .home-summary-item {
     border: 1px solid var(--color-border-light);
-    border-radius: 0.74rem;
+    border-radius: 10px;
     padding: 0.48rem 0.52rem;
     background: var(--surface);
     box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
@@ -545,4 +545,7 @@
         text-align: center;
     }
 }
+
+
+
 

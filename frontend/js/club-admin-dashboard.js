@@ -1243,6 +1243,7 @@
                         <div style="display:flex;gap:0.4rem;flex-wrap:wrap;justify-content:flex-end;align-items:center;flex-shrink:0;">
                             <span class="feed-item-badge feed-item-badge--neutral">${safeStatus}</span>
                             <button class="btn btn-secondary btn-sm" onclick="editEvent(${event.event_id})">編輯</button>
+                            <button class="btn btn-secondary btn-sm" onclick="openParticipantsPanel(${event.event_id})">參與者</button>
                             <button class="btn btn-secondary btn-sm" onclick="exportRegistrations(${event.event_id})">匯出 CSV</button>
                             ${event.event_status === 'archived'
                                 ? `<button class="btn btn-primary btn-sm" onclick="restoreEvent(${event.event_id})">還原</button>`
@@ -2116,5 +2117,53 @@
             if (!document.getElementById('my-clubs-container')) return;
             loadMyClubs();
         })();
+
+        // ── Participants panel ─────────────────────────────────────────────────
+        async function openParticipantsPanel(eventId) {
+            const modal = document.getElementById('participants-modal');
+            const body = document.getElementById('participants-modal-body');
+            const titleEl = document.getElementById('participants-modal-title');
+            const exportBtn = document.getElementById('participants-export-btn');
+            if (!modal || !body) return;
+
+            const ev = (typeof _eventsListCache !== 'undefined')
+                ? _eventsListCache.find(e => e.event_id === eventId)
+                : null;
+            if (titleEl) titleEl.textContent = `參與者 — ${ev?.event_name || '活動'}`;
+            if (exportBtn) exportBtn.onclick = () => exportRegistrations(eventId);
+
+            body.innerHTML = '<p style="color:var(--text-light);">載入中...</p>';
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+
+            try {
+                const res = await APIClient.get(`events.php?action=participants&event_id=${eventId}`);
+                if (!res.success) {
+                    body.innerHTML = `<p style="color:var(--text-light);">${PageUtils.escapeHtml(res.message || '載入失敗')}</p>`;
+                    return;
+                }
+                const participants = res.data.participants || [];
+                if (participants.length === 0) {
+                    body.innerHTML = '<p style="color:var(--text-light);">尚未有人報名此活動。</p>';
+                    return;
+                }
+                let html = `<p style="font-size:0.85rem;color:var(--text-light);margin-bottom:0.75rem;">共 ${participants.length} 人</p><ul class="participants-list" style="max-width:none;">`;
+                participants.forEach(p => {
+                    const safeName = PageUtils.escapeHtml(p.name || '匿名');
+                    const safeId = PageUtils.escapeHtml(p.student_id || '—');
+                    html += `<li class="participants-item"><span class="participants-name">${safeName}</span><span class="participants-id">${safeId}</span></li>`;
+                });
+                html += '</ul>';
+                body.innerHTML = html;
+            } catch (e) {
+                body.innerHTML = '<p style="color:var(--text-light);">載入失敗，請稍後再試。</p>';
+            }
+        }
+
+        function closeParticipantsPanel() {
+            const modal = document.getElementById('participants-modal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
 
         loadUnreadNotificationDot();

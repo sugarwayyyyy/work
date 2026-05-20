@@ -35,145 +35,130 @@
         </div>
 
         <div id="event-detail" style="display: none;">
-            <div class="card">
-                <div class="card-header">
-                    <h1 id="event-title"></h1>
-                    <div id="event-last-updated" style="margin-top: 0.35rem; color: var(--text-light); font-size: 0.92rem;">最新上傳時間：-</div>
-                    <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
-                        <span id="event-club" class="badge"></span>
-                        <span id="event-date" style="color: var(--text-light);"></span>
-                        <span id="event-location" style="color: var(--text-light);"></span>
+
+            <!-- ── Hero ──────────────────────────────────── -->
+            <div class="event-hero">
+                <h1 id="event-title" class="event-hero__title"></h1>
+                <div class="event-hero__meta">
+                    <span id="event-club" class="badge"></span>
+                    <span id="event-date"></span>
+                    <span id="event-location"></span>
+                </div>
+                <div id="event-last-updated" class="event-hero__updated">最新上傳時間：-</div>
+            </div>
+
+            <!-- ── Two-column layout ──────────────────────── -->
+            <div class="event-layout">
+
+                <!-- Main column -->
+                <div class="event-main">
+
+                    <!-- Poster carousel -->
+                    <div id="event-poster-section" style="display: none; margin-bottom: 2rem;">
+                        <div class="ig-carousel" id="event-poster-carousel">
+                            <div class="ig-carousel__track" id="event-poster-track"></div>
+                            <button class="ig-carousel__btn ig-carousel__btn--prev" id="poster-prev" aria-label="上一張">&#8249;</button>
+                            <button class="ig-carousel__btn ig-carousel__btn--next" id="poster-next" aria-label="下一張">&#8250;</button>
+                            <div class="ig-carousel__dots" id="poster-dots"></div>
+                            <div class="ig-carousel__counter" id="poster-counter"></div>
+                        </div>
                     </div>
+
+                    <!-- Description -->
+                    <section class="event-section">
+                        <h3 class="event-section__title">活動描述</h3>
+                        <p id="event-description" class="event-section__body"></p>
+                    </section>
+
+                    <!-- Participants (admins only) -->
+                    <section class="event-section" id="participants-card" style="display: none;">
+                        <h3 class="event-section__title">參與者列表</h3>
+                        <div id="participants-list"><p>載入中...</p></div>
+                    </section>
+
+                    <!-- Comments -->
+                    <section class="event-section">
+                        <div class="event-comments-head">
+                            <h3 class="event-section__title">活動評論</h3>
+                            <span id="comments-rating-summary" class="event-comments-rating">⭐ 0.0（0 人評分）</span>
+                        </div>
+                        <div id="comment-form-hint" style="display: none; margin-bottom: 1.25rem; color: var(--text-light);"></div>
+                        <div id="comment-form" style="display: none; margin-bottom: 2rem;">
+                            <h4>留下您的評論</h4>
+                            <form id="add-comment-form">
+                                <div class="form-group">
+                                    <label>評分</label>
+                                    <div id="rating-stars">
+                                        <span class="rating-star" data-rating="1">★</span>
+                                        <span class="rating-star" data-rating="2">★</span>
+                                        <span class="rating-star" data-rating="3">★</span>
+                                        <span class="rating-star" data-rating="4">★</span>
+                                        <span class="rating-star" data-rating="5">★</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="comment-content">評論內容</label>
+                                    <textarea id="comment-content" rows="4" placeholder="分享您的活動體驗..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">提交評論</button>
+                            </form>
+                        </div>
+                        <div id="comments-list"><p>載入中...</p></div>
+                    </section>
                 </div>
 
-                <div class="card-body">
-                    <div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem;">
-                        <!-- 主要內容 -->
-                        <div>
-                            <h3>活動描述</h3>
-                            <p id="event-description" style="line-height: 1.6; margin-bottom: 2rem;"></p>
+                <!-- Sidebar -->
+                <aside class="event-sidebar">
+                    <!-- Registration CTA -->
+                    <div class="event-sidebar-block event-reg-block">
+                        <div class="event-reg-meta">
+                            <span id="registered-count">0</span> 人已報名 &nbsp;·&nbsp; 名額 <span id="max-participants">0</span>
+                        </div>
+                        <div class="event-reg-status"><span id="event-status" class="badge">進行中</span></div>
+                        <div id="registration-section" style="margin-top: 1rem;">
+                            <button id="register-btn" class="btn btn-primary" style="display: none; width: 100%;">報名參加</button>
+                            <button id="unregister-btn" class="btn btn-secondary" style="display: none; width: 100%;">取消報名</button>
+                            <p id="registration-message" style="color: var(--text-light); margin-top: 0.5rem; font-size: 0.875rem;"></p>
+                        </div>
+                    </div>
 
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                                <div class="stat-card">
-                                    <div class="stat-label">已報名</div>
-                                    <div class="stat-number" id="registered-count">0</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-label">名額上限</div>
-                                    <div class="stat-number" id="max-participants">0</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-label">狀態</div>
-                                    <div class="stat-number" id="event-status">進行中</div>
+                    <div class="event-sidebar-block">
+                        <h4 class="event-sidebar-block__title">活動資訊</h4>
+                        <div class="event-info-list">
+                            <div class="event-info-item">
+                                <span class="event-info-item__label">📅 日期時間</span>
+                                <span id="event-datetime-detail" class="event-info-item__val"></span>
+                            </div>
+                            <div class="event-info-item">
+                                <span class="event-info-item__label">📍 地點</span>
+                                <div id="event-location-box">
+                                    <div id="event-location-detail" class="event-info-item__val"></div>
+                                    <div id="event-location-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;"></div>
                                 </div>
                             </div>
-
-                            <div id="registration-section" style="margin-bottom: 2rem;">
-                                <button id="register-btn" class="btn btn-primary" style="display: none;">報名參加</button>
-                                <button id="unregister-btn" class="btn btn-secondary" style="display: none;">取消報名</button>
-                                <p id="registration-message" style="color: var(--text-light); margin-top: 0.5rem;"></p>
+                            <div class="event-info-item">
+                                <span class="event-info-item__label">💰 費用</span>
+                                <span id="event-fee" class="event-info-item__val">免費</span>
                             </div>
-
-                            <div id="event-poster-section" style="display: none; margin-bottom: 2rem; margin-top: 0.5rem;">
-                                <div class="ig-carousel" id="event-poster-carousel">
-                                    <div class="ig-carousel__track" id="event-poster-track"></div>
-                                    <button class="ig-carousel__btn ig-carousel__btn--prev" id="poster-prev" aria-label="上一張">&#8249;</button>
-                                    <button class="ig-carousel__btn ig-carousel__btn--next" id="poster-next" aria-label="下一張">&#8250;</button>
-                                    <div class="ig-carousel__dots" id="poster-dots"></div>
-                                    <div class="ig-carousel__counter" id="poster-counter"></div>
+                            <div class="event-info-item">
+                                <span class="event-info-item__label">📞 聯絡方式</span>
+                                <span id="event-contact" class="event-info-item__val"></span>
+                            </div>
+                            <div class="event-info-item">
+                                <span class="event-info-item__label">📅 加入日曆</span>
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.4rem;">
+                                    <button id="google-calendar-btn" class="btn btn-secondary btn-sm" onclick="addToGoogleCalendar()">📅 Google 日曆</button>
+                                    <button id="apple-calendar-btn" class="btn btn-secondary btn-sm" onclick="addToAppleCalendar()">📱 Apple 日曆</button>
+                                    <button id="outlook-calendar-btn" class="btn btn-secondary btn-sm" onclick="addToOutlookCalendar()">💼 Outlook 日曆</button>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- 側邊欄 -->
-                        <div>
-                            <div class="card">
-                                <h4>活動資訊</h4>
-                                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                                    <div>
-                                        <strong>📅 日期時間</strong>
-                                        <p id="event-datetime-detail"></p>
-                                    </div>
-                                    <div>
-                                        <strong>📍 地點</strong>
-                                        <div id="event-location-box" style="margin-top: 0.35rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                                            <div id="event-location-detail" style="line-height: 1.6;"></div>
-                                            <div id="event-location-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <strong>💰 費用</strong>
-                                        <p id="event-fee">免費</p>
-                                    </div>
-                                    <div>
-                                        <strong>📅 加入日曆</strong>
-                                        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
-                                            <button id="google-calendar-btn" class="btn btn-secondary btn-sm" onclick="addToGoogleCalendar()">📅 Google 日曆</button>
-                                            <button id="apple-calendar-btn" class="btn btn-secondary btn-sm" onclick="addToAppleCalendar()">📱 Apple 日曆</button>
-                                            <button id="outlook-calendar-btn" class="btn btn-secondary btn-sm" onclick="addToOutlookCalendar()">💼 Outlook 日曆</button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <strong>📞 聯絡方式</strong>
-                                        <p id="event-contact"></p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card" style="margin-top: 1rem;">
-                                <h4>關於主辦社團</h4>
-                                <div id="club-info">
-                                    <p>載入中...</p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
-                </div>
-            </div>
-
-            <div class="card" style="margin-top: 2rem; display: none;" id="participants-card">
-                <div class="card-header">
-                    <h3>參與者列表</h3>
-                </div>
-                <div class="card-body">
-                    <div id="participants-list">
-                        <p>載入中...</p>
+                    <div class="event-sidebar-block">
+                        <h4 class="event-sidebar-block__title">關於主辦社團</h4>
+                        <div id="club-info"><p>載入中...</p></div>
                     </div>
-                </div>
-            </div>
-
-            <div class="card" style="margin-top: 2rem;">
-                <div class="card-header">
-                    <h3>活動評論</h3>
-                    <div id="comments-rating-summary" style="margin-top: 0.5rem; color: var(--text-light); font-size: 0.9rem;">⭐ 0.0（0 人評分）</div>
-                </div>
-                <div class="card-body">
-                    <div id="comment-form-hint" style="display: none; margin-bottom: 1rem; color: var(--text-light);"></div>
-                    <div id="comment-form" style="display: none; margin-bottom: 2rem;">
-                        <h4>留下您的評論</h4>
-                        <form id="add-comment-form">
-                            <div class="form-group">
-                                <label>評分</label>
-                                <div id="rating-stars">
-                                    <span class="rating-star" data-rating="1">★</span>
-                                    <span class="rating-star" data-rating="2">★</span>
-                                    <span class="rating-star" data-rating="3">★</span>
-                                    <span class="rating-star" data-rating="4">★</span>
-                                    <span class="rating-star" data-rating="5">★</span>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="comment-content">評論內容</label>
-                                <textarea id="comment-content" rows="4" placeholder="分享您的活動體驗..." required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary">提交評論</button>
-                        </form>
-                    </div>
-
-                    <div id="comments-list">
-                        <p>載入中...</p>
-                    </div>
-                </div>
+                </aside>
             </div>
         </div>
     </div>
@@ -531,19 +516,15 @@
                         const author = PageUtils.escapeHtml(comment.author_name || comment.user_name || '匿名用戶');
                         const safeComment = PageUtils.escapeHtml(comment.comment || '');
                         html += `
-                            <div class="card" style="margin-bottom: 1rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div class="comment-item">
+                                <div class="comment-item__header">
                                     <div>
-                                        <strong>${author}</strong>
-                                        <div style="color: var(--text-light); font-size: 0.875rem; margin: 0.25rem 0;">
-                                            ${PageUtils.timeAgo(comment.created_at)}
-                                        </div>
+                                        <div class="comment-item__author">${author}</div>
+                                        <div class="comment-item__time">${PageUtils.timeAgo(comment.created_at)}</div>
                                     </div>
-                                    <div style="text-align: right;">
-                                        <div>${ratingHtml}</div>
-                                    </div>
+                                    <div>${ratingHtml}</div>
                                 </div>
-                                <p style="margin-top: 0.5rem;">${safeComment}</p>
+                                <p class="comment-item__body">${safeComment}</p>
                             </div>
                         `;
                     });

@@ -1,4 +1,4 @@
-/* 基礎層：reset / tokens / typography / form */
+﻿/* 基礎層：reset / tokens / typography / form */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
 
 * {
@@ -114,7 +114,7 @@ select {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
+    border-radius: 4px;
     font-size: 1rem;
     background-color: var(--input-bg);
     color: var(--text-default);
@@ -233,3 +233,5 @@ textarea {
         --input-bg: var(--color-bg-surface);
     }
 }
+
+

@@ -1,4 +1,4 @@
-/* 版面層：導航 / 容器 / 網格 */
+﻿/* 版面層：導航 / 容器 / 網格 */
 header {
     background-color: var(--header-bg);
     backdrop-filter: blur(24px);
@@ -109,7 +109,7 @@ nav {
     transform: translateY(-4px);
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     list-style: none;
     padding: 0.25rem 0;
@@ -245,7 +245,7 @@ nav {
     border: none;
     cursor: pointer;
     padding: 0.4rem;
-    border-radius: 0.4rem;
+    border-radius: 4px;
     color: var(--text-default);
     flex-shrink: 0;
     align-items: center;
@@ -291,7 +291,7 @@ nav {
     .nav-right .btn-sm {
         padding: 0.25rem 0.55rem;
         font-size: 0.75rem;
-        border-radius: 0.5rem;
+        border-radius: 4px;
     }
 
     /* Nav links: hidden by default, full-width row below the header row */
@@ -320,7 +320,7 @@ nav {
         font-size: 0.9rem;
         padding: 0.6rem 0.75rem;
         white-space: normal;
-        border-radius: 0.4rem;
+        border-radius: 4px;
     }
 
     /* Replace desktop underline indicator with left-border + background on mobile */
@@ -351,3 +351,5 @@ nav {
         grid-template-columns: 1fr;
     }
 }
+
+

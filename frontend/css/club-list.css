@@ -13,7 +13,7 @@
     margin-bottom: 0.85rem;
     padding: 0.95rem;
     border: 1px solid var(--border);
-    border-radius: 1rem;
+    border-radius: 10px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
     background: var(--surface);
 }
@@ -83,7 +83,7 @@
 .club-filter-card {
     margin-bottom: 0;
     border: 1px solid var(--color-border-light);
-    border-radius: 1rem;
+    border-radius: 10px;
     box-shadow: 0 1px 1px rgba(15, 23, 42, 0.03);
     background: var(--surface);
     transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -111,7 +111,7 @@
     gap: 0.28rem;
     padding: 0.3rem 0.58rem;
     border: 1px solid var(--border);
-    border-radius: 0.6rem;
+    border-radius: 4px;
     background: var(--surface);
     color: var(--text-muted);
     font-size: 0.74rem;
@@ -191,7 +191,7 @@
 .club-filter-card .filter-field select,
 .club-filter-card .subsearch-box input {
     border: 1px solid var(--border);
-    border-radius: 0.7rem;
+    border-radius: 10px;
     background: var(--surface);
     padding: 0.54rem 0.62rem;
     font-size: 0.87rem;
@@ -210,7 +210,7 @@
     gap: 0.35rem;
     padding: 0.52rem 0.88rem;
     border: 1px solid var(--border);
-    border-radius: 0.7rem;
+    border-radius: 10px;
     background: var(--surface);
     color: var(--text-default);
     font-size: 0.84rem;
@@ -317,7 +317,7 @@
 .club-results-summary {
     margin-bottom: 0.5rem;
     border: 1px solid var(--color-border-light);
-    border-radius: 1rem;
+    border-radius: 10px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
     background: var(--surface);
     padding: 0.7rem 0.82rem;
@@ -363,7 +363,7 @@
 .club-results-surface {
     margin-bottom: 0;
     border: 1px solid var(--color-border-light);
-    border-radius: 1.04rem;
+    border-radius: 10px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95));
     box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
     padding: 0.82rem;
@@ -397,7 +397,7 @@
     gap: 0.44rem;
     margin-bottom: 0;
     padding: 0.16rem;
-    border-radius: 0.9rem;
+    border-radius: 10px;
     background: rgba(255, 255, 255, 0.56);
 }
 
@@ -405,7 +405,7 @@
     margin-bottom: 0;
     padding: 0.56rem 0.62rem;
     border: 1px solid rgba(203, 213, 225, 0.62);
-    border-radius: 0.78rem;
+    border-radius: 10px;
     box-shadow: none;
     background: var(--surface);
     transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
@@ -583,7 +583,7 @@
 .club-state {
     grid-column: 1 / -1;
     border: 1px dashed var(--color-border-light);
-    border-radius: 0.85rem;
+    border-radius: 10px;
     background: var(--surface);
     padding: 1.05rem 0.85rem;
     text-align: center;
@@ -624,7 +624,7 @@
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text-default);
-    border-radius: 0.58rem;
+    border-radius: 4px;
     padding: 0.34rem 0.6rem;
     font-size: 0.78rem;
     line-height: 1;
@@ -731,7 +731,7 @@
     .club-results-summary,
     .club-results-surface,
     .club-result-row {
-        border-radius: 0.84rem;
+        border-radius: 10px;
     }
 
     .club-results-surface {
@@ -762,3 +762,5 @@
         margin-top: 0.16rem;
     }
 }
+
+
