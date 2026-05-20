@@ -338,7 +338,8 @@
             renderEventLocationActions(event.location);
             resolveAndUpdateLocation(event.location);
             document.getElementById('event-fee').textContent = event.fee ? `NT$ ${event.fee}` : '免費';
-            document.getElementById('event-contact').textContent = event.contact_info || '請聯繫社團幹部';
+            const clubPhone = event.club ? (event.club.president_phone || event.club.contact_phone || '') : '';
+            document.getElementById('event-contact').textContent = event.contact_info || clubPhone || '請聯繫社團幹部';
 
             // 設定活動狀態
             const eventDate = new Date(event.event_date);
@@ -432,12 +433,11 @@
                     return;
                 }
 
-                let html = `<p style="font-size:0.85rem;color:var(--text-muted,#888);margin:0 0 0.6rem;">共 ${participants.length} 人</p><ul style="list-style:none;margin:0;padding:0;max-width:400px;">`;
-                participants.forEach((participant, i) => {
+                let html = `<p class="participants-count">共 ${participants.length} 人</p><ul class="participants-list">`;
+                participants.forEach(participant => {
                     const safeName = PageUtils.escapeHtml(participant.name || '匿名參與者');
                     const safeStudentId = PageUtils.escapeHtml(participant.student_id || '—');
-                    const divider = i < participants.length - 1 ? 'border-bottom:1px solid var(--border,#e8eef3);' : '';
-                    html += `<li style="display:flex;justify-content:space-between;align-items:center;padding:0.55rem 0;${divider}"><span style="font-weight:500;">${safeName}</span><span style="color:var(--text-muted,#888);font-size:0.875rem;">${safeStudentId}</span></li>`;
+                    html += `<li class="participants-item"><span class="participants-name">${safeName}</span><span class="participants-id">${safeStudentId}</span></li>`;
                 });
                 html += '</ul>';
                 container.innerHTML = html;
@@ -489,7 +489,6 @@
                                     </div>
                                     <div style="text-align: right;">
                                         <div>${ratingHtml}</div>
-                                        <div style="color: var(--text-light); font-size: 0.8rem;">1 人評分</div>
                                     </div>
                                 </div>
                                 <p style="margin-top: 0.5rem;">${safeComment}</p>

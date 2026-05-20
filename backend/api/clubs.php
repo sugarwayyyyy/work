@@ -629,7 +629,13 @@ class ClubAPI {
                 [$club_id]
             );
             $club['members'] = $members;
-            
+
+            $president = null;
+            foreach ($members as $m) {
+                if (($m['role'] ?? '') === 'president') { $president = $m; break; }
+            }
+            $club['president_phone'] = !empty($president['phone']) ? $president['phone'] : null;
+
             // 取得近期活動
             $events = Database::getInstance()->fetchAll(
                 'SELECT * FROM events 
@@ -782,6 +788,7 @@ class ClubAPI {
                 'founding_year' => $data['founding_year'] ?? date('Y'),
                 'club_fee' => $data['club_fee'] ?? 0,
                 'club_fee_semester' => isset($data['club_fee_semester']) && $data['club_fee_semester'] !== '' ? (int)$data['club_fee_semester'] : null,
+                'club_fee_per_session' => isset($data['club_fee_per_session']) && $data['club_fee_per_session'] !== '' ? (int)$data['club_fee_per_session'] : null,
                 'meeting_day' => $data['meeting_day'] ?? '',
                 'meeting_time' => $data['meeting_time'] ?? '',
                 'meeting_location' => $data['meeting_location'] ?? '',
@@ -877,6 +884,7 @@ class ClubAPI {
                 'contact_phone' => $data['contact_phone'] ?? '',
                 'club_fee' => $data['club_fee'] ?? 0,
                 'club_fee_semester' => isset($data['club_fee_semester']) && $data['club_fee_semester'] !== '' ? (int)$data['club_fee_semester'] : null,
+                'club_fee_per_session' => isset($data['club_fee_per_session']) && $data['club_fee_per_session'] !== '' ? (int)$data['club_fee_per_session'] : null,
                 'last_updated' => date('Y-m-d H:i:s')
             ];
 

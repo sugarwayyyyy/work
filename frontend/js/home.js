@@ -10,14 +10,16 @@ const feedState = {
 
 function buildAnnouncementCard(item, globalIndex) {
     const isPinned = Number(item.is_pinned) === 1;
-    const badgeClass = isPinned ? 'feed-item-badge--accent' : 'feed-item-badge--neutral';
+    const isExpired = isPinned && item.end_date && new Date(item.end_date) < new Date();
+    const badgeClass = isExpired ? 'feed-item-badge--neutral' : (isPinned ? 'feed-item-badge--accent' : 'feed-item-badge--neutral');
+    const badgeText = isExpired ? '已下架' : (isPinned ? '置頂' : '公告');
     const card = document.createElement('article');
     card.className = 'feed-item-card feed-item-card--announcement';
     card.innerHTML = `
         <button type="button" class="feed-item-link feed-item-link--announcement" data-expand-row="${globalIndex}">
             <div class="feed-item-head">
                 <h3 class="feed-item-title">${escapeHtml(item.title || '未命名公告')}</h3>
-                <span class="feed-item-badge ${badgeClass}">${isPinned ? '置頂' : '公告'}</span>
+                <span class="feed-item-badge ${badgeClass}">${badgeText}</span>
             </div>
             <div class="feed-item-time">${safeDate(item.created_at)}</div>
             <p class="feed-item-body" data-expand-body>${escapeHtml(item.content || '')}</p>

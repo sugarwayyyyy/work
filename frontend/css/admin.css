@@ -724,3 +724,54 @@
     :root:not([data-theme="light"]) .user-edit-club-add        { border-top-color: #2A2A2A; }
 }
 
+
+/* ── feed-item-card expand rows (transfers, reports) ── */
+.transfer-row-detail {
+    display: none;
+    padding: 0.4rem 0.55rem 0.65rem;
+    border-top: 1px solid var(--color-border-light);
+    margin-top: 0.18rem;
+    font-size: 0.83rem;
+}
+.feed-item-card.is-expanded .transfer-row-detail { display: block; }
+.transfer-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.28rem 1rem;
+    margin-bottom: 0.55rem;
+}
+.transfer-detail-full { grid-column: 1 / -1; }
+.transfer-detail-label { font-weight: 600; color: var(--text-muted); margin-right: 0.3rem; }
+.transfer-row-actions { display: flex; gap: 0.5rem; margin-top: 0.55rem; }
+.tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.2em;
+    padding: 0 0.3em;
+    height: 1.2em;
+    border-radius: 999px;
+    background: var(--accent-soft, #fef3c7);
+    color: var(--accent-strong, #b45309);
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+}
+.tab-count:empty { display: none; }
+
+/* ── admin-transfers.html legacy ── */
+.transfer-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem 1rem;
+    margin: 0.6rem 0;
+    font-size: 0.9rem;
+}
+.transfer-meta-full { grid-column: 1 / -1; }
+.transfer-meta-label {
+    font-weight: 500;
+    color: var(--text-light);
+    margin-right: 0.4rem;
+}

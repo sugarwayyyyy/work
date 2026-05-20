@@ -279,8 +279,8 @@
 
                                 <div id="danger-zone" class="danger-zone" style="display: none;">
                                     <p class="danger-zone__title">⚠ 危險區域</p>
-                                    <p class="danger-zone__desc">註銷帳號後，您將無法登入此帳號。若需重新啟用，請聯繫平台管理員。</p>
-                                    <button type="button" class="btn btn-danger-outline btn-sm" onclick="openDeactivateModal()">註銷帳號</button>
+                                    <p class="danger-zone__desc">刪除帳號後，所有資料將永久清除且無法回復。</p>
+                                    <button type="button" class="btn btn-danger-outline btn-sm" onclick="openDeactivateModal()">刪除帳號</button>
                                 </div>
                             </div>
 
@@ -296,13 +296,13 @@
     <div id="deactivate-modal" style="display: none;">
         <div class="deactivate-modal-card">
             <div class="deactivate-modal-header">
-                <h2 class="deactivate-modal-title">確認註銷帳號</h2>
+                <h2 class="deactivate-modal-title">確認刪除帳號</h2>
                 <button type="button" class="deactivate-modal-close" onclick="closeDeactivateModal()" aria-label="關閉">✕</button>
             </div>
             <div class="deactivate-modal-body">
                 <div class="deactivate-warning-box">
-                    <strong>此操作無法撤銷</strong>
-                    帳號一旦註銷，您將立即登出且無法再使用此帳號登入。所有追蹤社團、報名紀錄、提問等資料將保留但無法存取，如需重新啟用請聯繫管理員。
+                    <strong>此操作永久不可撤銷</strong>
+                    帳號一旦刪除，您的所有資料（評論、問答、報名紀錄、社團關係等）將被永久清除，且無法回復。如僅需暫停使用，請聯繫管理員。
                 </div>
                 <form id="deactivate-form">
                     <div class="form-group">
@@ -310,7 +310,7 @@
                         <input type="password" id="deactivate-password" placeholder="輸入密碼" autocomplete="current-password" required>
                     </div>
                     <div class="deactivate-modal-actions">
-                        <button type="submit" class="btn btn-danger">確認註銷帳號</button>
+                        <button type="submit" class="btn btn-danger">確認刪除帳號</button>
                         <button type="button" class="btn btn-secondary" onclick="closeDeactivateModal()">取消</button>
                     </div>
                 </form>
@@ -800,13 +800,13 @@
                 } else {
                     PageUtils.showAlert(response.message || '註銷失敗', 'error');
                     submitBtn.disabled = false;
-                    submitBtn.textContent = '確認註銷帳號';
+                    submitBtn.textContent = '確認刪除帳號';
                 }
             } catch (err) {
                 console.error('Deactivate error:', err);
                 PageUtils.showAlert('發生錯誤，請稍後再試', 'error');
                 submitBtn.disabled = false;
-                submitBtn.textContent = '確認註銷帳號';
+                submitBtn.textContent = '確認刪除帳號';
             }
         }
 

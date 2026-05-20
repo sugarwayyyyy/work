@@ -1795,3 +1795,26 @@ footer p {
     .review-modal-actions .btn { width: 100%; }
 }
 
+/* ── event-detail participants list ── */
+.participants-count {
+    font-size: 0.85rem;
+    color: var(--text-muted, #888);
+    margin: 0 0 0.6rem;
+}
+.participants-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 420px;
+}
+.participants-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--border, #e8eef3);
+}
+.participants-item:last-child { border-bottom: none; }
+.participants-name { font-weight: 500; }
+.participants-id { color: var(--text-muted, #888); font-size: 0.875rem; }
+

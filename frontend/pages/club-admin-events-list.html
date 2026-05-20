@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="../css/styles.css?v=20260502k" />
     <link rel="stylesheet" href="../css/admin.css?v=20260502k" />
     <link rel="stylesheet" href="../css/club-admin-dashboard.css?v=20260502k" />
+    <link rel="stylesheet" href="../css/home.css" />
 </head>
 <body class="admin-dashboard-page club-admin-page">
     <header>
@@ -45,12 +46,9 @@
             <button type="button" class="btn btn-secondary btn-sm" onclick="openClubSwitchPopup()">切換社團</button>
         </div>
 
-        <section class="card admin-panel reveal-up" id="club-events-section">
-            <div class="admin-panel-head">
-                <div>
-                    <h2>社團活動列表</h2>
-                    <span class="admin-panel-subtext" id="club-events-subtitle">管理所屬社團的活動</span>
-                </div>
+        <section class="portal-section portal-section--dynamic reveal-up" id="club-events-section">
+            <div class="portal-section-head">
+                <h2 class="portal-section-title">社團活動列表</h2>
                 <button type="button" class="btn btn-primary btn-sm" onclick="openEventModal('create')">＋ 建立活動</button>
             </div>
             <div class="club-events-toolbar">

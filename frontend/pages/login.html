@@ -172,6 +172,11 @@
                 const clubs = (res.success && res.data && res.data.clubs) ? res.data.clubs : [];
                 if (!clubs.length) return;
 
+                for (let i = clubs.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [clubs[i], clubs[j]] = [clubs[j], clubs[i]];
+                }
+
                 const cols = [
                     document.getElementById('logo-col-1'),
                     document.getElementById('logo-col-2')

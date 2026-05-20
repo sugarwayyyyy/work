@@ -764,6 +764,16 @@ class EventAPI {
                 'SELECT * FROM clubs WHERE club_id = ?',
                 [$event['club_id']]
             );
+            if ($club) {
+                $presidentRow = Database::getInstance()->fetchOne(
+                    'SELECT u.phone FROM users u
+                     JOIN club_members cm ON cm.user_id = u.user_id
+                     WHERE cm.club_id = ? AND cm.role = "president" AND cm.is_active = 1
+                     LIMIT 1',
+                    [$event['club_id']]
+                );
+                $club['president_phone'] = !empty($presidentRow['phone']) ? $presidentRow['phone'] : null;
+            }
             $event['club'] = $club;
             
             // 取得標籤

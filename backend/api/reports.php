@@ -138,16 +138,36 @@ class ReportAPI {
             ? $reportTypeRaw
             : 'other';
 
+        $uid = (int)Auth::getCurrentUserId();
+
+        $recentCount = Database::getInstance()->fetchOne(
+            'SELECT COUNT(*) AS cnt FROM reports
+             WHERE reported_by_user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)',
+            [$uid]
+        );
+        if ((int)($recentCount['cnt'] ?? 0) >= 5) {
+            $oldest = Database::getInstance()->fetchOne(
+                'SELECT created_at FROM reports
+                 WHERE reported_by_user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+                 ORDER BY created_at ASC LIMIT 1',
+                [$uid]
+            );
+            $cooldownEnds = strtotime($oldest['created_at']) + 600;
+            $remaining = max(1, $cooldownEnds - time());
+            $minutes = ceil($remaining / 60);
+            Helper::error("檢舉頻率過高，請於 {$minutes} 分鐘後再試", 429);
+        }
+
         $existingPending = Database::getInstance()->fetchOne(
             'SELECT report_id FROM reports WHERE reported_by_user_id = ? AND reported_content_type = ? AND reported_content_id = ? AND status IN ("pending", "reviewing") LIMIT 1',
-            [Auth::getCurrentUserId(), $type, $contentId]
+            [$uid, $type, $contentId]
         );
         if ($existingPending) {
             Helper::error('你已檢舉過此內容，請等待審核結果', 409);
         }
 
         $reportId = dbInsert('reports', [
-            'reported_by_user_id' => Auth::getCurrentUserId(),
+            'reported_by_user_id' => $uid,
             'report_type' => $reportType,
             'reported_content_type' => $type,
             'reported_content_id' => $contentId,
@@ -159,6 +179,20 @@ class ReportAPI {
 
         if (!$reportId) {
             Helper::error('檢舉送出失敗', 500);
+        }
+
+        $admins = Database::getInstance()->fetchAll(
+            "SELECT user_id FROM users WHERE role = 'platform_admin' AND is_active = 1"
+        );
+        foreach ($admins as $admin) {
+            dbInsert('notifications', [
+                'user_id'           => $admin['user_id'],
+                'title'             => '新檢舉待審核',
+                'message'           => '有新的內容檢舉待審核，請前往管理員後台處理。',
+                'notification_type' => 'system',
+                'is_read'           => 0,
+                'created_at'        => date('Y-m-d H:i:s')
+            ]);
         }
 
         Helper::success('檢舉已送出，感謝你的回饋', ['report_id' => $reportId]);

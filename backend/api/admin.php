@@ -614,7 +614,10 @@ class AdminAPI {
             $announcements = Database::getInstance()->fetchAll(
                 'SELECT * FROM system_announcements
                  WHERE (start_date IS NULL OR start_date <= NOW())
-                     AND (end_date IS NULL OR end_date >= NOW())
+                   AND (
+                       (end_date IS NULL OR end_date >= NOW())
+                       OR (is_pinned = 1 AND end_date IS NOT NULL AND end_date < NOW())
+                   )
                  ORDER BY is_pinned DESC, display_priority DESC, created_at DESC'
             );
         }

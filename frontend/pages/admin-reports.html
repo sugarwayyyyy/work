@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../css/styles.css" />
     <link rel="stylesheet" href="../css/admin.css" />
+    <link rel="stylesheet" href="../css/home.css" />
 </head>
 <body class="admin-page admin-reports-page">
     <header>
@@ -32,19 +33,20 @@
     <div id="alert-container"></div>
 
     <div class="container club-list-page">
-        <section class="card admin-panel">
-            <div class="admin-panel-head">
-                <h2>報告管理</h2>
-                <span class="admin-panel-subtext">活動成效、用戶回饋與檢舉工單</span>
+        <section class="portal-section portal-section--dynamic">
+            <div class="portal-section-head">
+                <h2 class="portal-section-title">報告管理</h2>
+                <div class="feed-tabs" role="tablist" aria-label="報告分類">
+                    <button type="button" class="feed-tab is-active" data-sub-tab="events"   role="tab" aria-selected="true">活動成效</button>
+                    <button type="button" class="feed-tab"           data-sub-tab="feedback" role="tab" aria-selected="false">用戶回饋</button>
+                    <button type="button" class="feed-tab"           data-sub-tab="cases"    role="tab" aria-selected="false">檢舉工單</button>
+                </div>
             </div>
-            <nav class="admin-sub-tab-nav" role="tablist" aria-label="報告分類">
-                <button class="admin-sub-tab is-active" data-sub-tab="events"   role="tab" aria-selected="true">活動成效</button>
-                <button class="admin-sub-tab"           data-sub-tab="feedback" role="tab" aria-selected="false">用戶回饋</button>
-                <button class="admin-sub-tab"           data-sub-tab="cases"    role="tab" aria-selected="false">檢舉工單</button>
-            </nav>
-            <div id="reports-panel-events"   class="admin-sub-panel is-active"></div>
-            <div id="reports-panel-feedback" class="admin-sub-panel"></div>
-            <div id="reports-panel-cases"    class="admin-sub-panel"></div>
+            <div class="feed-panels">
+                <div id="reports-panel-events"   class="feed-panel is-active"></div>
+                <div id="reports-panel-feedback" class="feed-panel"></div>
+                <div id="reports-panel-cases"    class="feed-panel"></div>
+            </div>
         </section>
     </div>
 
@@ -78,17 +80,23 @@
             container.innerHTML = '';
             const reports = response.data.reports || [];
             if (reports.length === 0) { renderEmptyState(container, '目前沒有活動報告', '等有活動成果資料後，這裡會顯示統計內容。'); return; }
+            const list = document.createElement('div');
+            list.className = 'feed-stream-list';
             reports.forEach(report => {
                 const safeEventName = escapeHtml(report.event_name || '-');
                 const safeStatus = escapeHtml(CLUB_STATUS_LABELS[report.event_status] || report.event_status || '-');
-                const card = document.createElement('div');
-                card.className = 'admin-item-card';
-                card.innerHTML = `
-                    <div class="admin-item-head"><h4>${safeEventName}</h4><span class="status-chip">${safeStatus}</span></div>
-                    <p class="admin-item-content">參與人數：${report.participants_count ?? 0}，平均評分：${report.average_rating ?? '無'}</p>
+                const article = document.createElement('article');
+                article.className = 'feed-item-card';
+                article.innerHTML = `
+                    <div class="feed-item-head">
+                        <h3 class="feed-item-title">${safeEventName}</h3>
+                        <span class="feed-item-badge feed-item-badge--neutral">${safeStatus}</span>
+                    </div>
+                    <p class="feed-item-meta"><span>參與人數：${report.participants_count ?? 0}</span><span>平均評分：${report.average_rating ?? '無'}</span></p>
                 `;
-                container.appendChild(card);
+                list.appendChild(article);
             });
+            container.appendChild(list);
         }
 
         async function loadUserFeedback() {
@@ -98,18 +106,24 @@
             container.innerHTML = '';
             const feedback = response.data.feedback || [];
             if (feedback.length === 0) { renderEmptyState(container, '目前沒有用戶回饋', '等有回饋資料後，這裡會顯示留言與評語。'); return; }
+            const list = document.createElement('div');
+            list.className = 'feed-stream-list';
             feedback.forEach(item => {
                 const safeSubject = escapeHtml(item.subject || '用戶回饋');
-                const safeCreatedAt = escapeHtml(formatDateTime(item.created_at));
+                const safeCreatedAt = formatDateTime(item.created_at);
                 const safeMessage = escapeHtml(item.message || item.content || '-');
-                const card = document.createElement('div');
-                card.className = 'admin-item-card';
-                card.innerHTML = `
-                    <div class="admin-item-head"><h4>${safeSubject}</h4><span class="status-chip">${safeCreatedAt}</span></div>
-                    <p class="admin-item-content">${safeMessage}</p>
+                const article = document.createElement('article');
+                article.className = 'feed-item-card';
+                article.innerHTML = `
+                    <div class="feed-item-head">
+                        <h3 class="feed-item-title">${safeSubject}</h3>
+                        <span class="feed-item-time">${safeCreatedAt}</span>
+                    </div>
+                    <p class="feed-item-body">${safeMessage}</p>
                 `;
-                container.appendChild(card);
+                list.appendChild(article);
             });
+            container.appendChild(list);
         }
 
         async function loadReportCases() {
@@ -119,44 +133,48 @@
             container.innerHTML = '';
             const reports = response.data.reports || [];
             if (reports.length === 0) { renderEmptyState(container, '目前沒有待處理檢舉', '有新檢舉時會顯示在這裡。'); return; }
+            const list = document.createElement('div');
+            list.className = 'feed-stream-list';
             reports.forEach(report => {
-                const safeStatus = escapeHtml(reportStatusLabel(report.status));
                 const safeType = escapeHtml(reportTypeLabel(report.reported_content_type));
                 const safeReason = escapeHtml(report.reason || '-');
                 const safeDescription = escapeHtml(report.description || '');
                 const safeReporter = escapeHtml(report.reported_by_name || '-');
-                const safeCreated = escapeHtml(formatDateTime(report.created_at));
+                const safeCreated = formatDateTime(report.created_at);
                 const reportId = Number(report.report_id) || 0;
-                const card = document.createElement('div');
-                card.className = 'admin-item-card';
-                card.innerHTML = `
-                    <div class="admin-item-head">
-                        <h4>${safeType} #${Number(report.reported_content_id) || 0}</h4>
-                        <span class="status-chip chip-warning">${safeStatus}</span>
-                    </div>
-                    <p class="admin-item-content">檢舉人：${safeReporter}｜時間：${safeCreated}</p>
-                    <p class="admin-item-content">事由：${safeReason}</p>
-                    ${safeDescription ? `<p class="admin-item-content">補充：${safeDescription}</p>` : ''}
-                    <div class="row-actions" style="margin-top: 12px;">
-                        <button class="btn btn-primary btn-sm" data-report-resolve="${reportId}">處理並下架</button>
-                        <button class="btn btn-secondary btn-sm" data-report-dismiss="${reportId}">駁回</button>
+                const article = document.createElement('article');
+                article.className = 'feed-item-card';
+                article.innerHTML = `
+                    <button type="button" class="feed-item-link feed-item-link--announcement" data-expand-report>
+                        <div class="feed-item-head">
+                            <h3 class="feed-item-title">${safeType} #${Number(report.reported_content_id) || 0}</h3>
+                            <span class="feed-item-badge feed-item-badge--accent">待處理</span>
+                        </div>
+                        <p class="feed-item-subtitle">檢舉人：${safeReporter}</p>
+                        <p class="feed-item-time">${safeCreated}</p>
+                    </button>
+                    <div class="transfer-row-detail">
+                        <p style="margin:0 0 0.3rem;font-size:0.83rem;"><span class="transfer-detail-label">事由</span>${safeReason}</p>
+                        ${safeDescription ? `<p style="margin:0 0 0.5rem;font-size:0.83rem;"><span class="transfer-detail-label">補充</span>${safeDescription}</p>` : ''}
+                        <div class="transfer-row-actions">
+                            <button class="btn btn-primary btn-sm" data-report-resolve="${reportId}">處理並下架</button>
+                            <button class="btn btn-secondary btn-sm" data-report-dismiss="${reportId}">駁回</button>
+                        </div>
                     </div>
                 `;
-                container.appendChild(card);
-            });
-            container.querySelectorAll('button[data-report-resolve]').forEach(btn => {
-                btn.addEventListener('click', async () => {
+                article.querySelector('[data-expand-report]').addEventListener('click', () => article.classList.toggle('is-expanded'));
+                article.querySelector('[data-report-resolve]').addEventListener('click', async () => {
                     const note = prompt('可選填處理備註（例如：違反社群規範）') || '';
-                    await reviewReportCase(btn.dataset.reportResolve, 'resolved', note, true);
+                    await reviewReportCase(reportId, 'resolved', note, true);
                 });
-            });
-            container.querySelectorAll('button[data-report-dismiss]').forEach(btn => {
-                btn.addEventListener('click', async () => {
+                article.querySelector('[data-report-dismiss]').addEventListener('click', async () => {
                     const note = prompt('請輸入駁回原因（必填）');
                     if (!note || !note.trim()) return;
-                    await reviewReportCase(btn.dataset.reportDismiss, 'dismissed', note.trim(), false);
+                    await reviewReportCase(reportId, 'dismissed', note.trim(), false);
                 });
+                list.appendChild(article);
             });
+            container.appendChild(list);
         }
 
         async function reviewReportCase(reportId, decision, adminNotes, forceHide) {
@@ -169,16 +187,16 @@
         const reportsLoaders = { events: loadEventReports, feedback: loadUserFeedback, cases: loadReportCases };
 
         function switchReportsSubTab(key) {
-            document.querySelectorAll('.admin-sub-tab').forEach(t => { t.classList.remove('is-active'); t.setAttribute('aria-selected', 'false'); });
-            document.querySelectorAll('.admin-sub-panel').forEach(p => p.classList.remove('is-active'));
-            const btn = document.querySelector(`.admin-sub-tab[data-sub-tab="${key}"]`);
+            document.querySelectorAll('.feed-tab[data-sub-tab]').forEach(t => { t.classList.remove('is-active'); t.setAttribute('aria-selected', 'false'); });
+            document.querySelectorAll('.feed-panel').forEach(p => p.classList.remove('is-active'));
+            const btn = document.querySelector(`.feed-tab[data-sub-tab="${key}"]`);
             const panel = document.getElementById('reports-panel-' + key);
             if (btn) { btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true'); }
             if (panel) panel.classList.add('is-active');
             if (!reportsLoaded[key]) { reportsLoaded[key] = true; reportsLoaders[key](); }
         }
 
-        document.querySelectorAll('.admin-sub-tab').forEach(btn => {
+        document.querySelectorAll('.feed-tab[data-sub-tab]').forEach(btn => {
             btn.addEventListener('click', () => switchReportsSubTab(btn.dataset.subTab));
         });
 

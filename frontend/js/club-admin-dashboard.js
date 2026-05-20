@@ -762,7 +762,7 @@
         }
 
         async function loadMyTransferRequests(clubId) {
-            const id = clubId || currentClubId;
+            const id = clubId || currentClubId || Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
             const qs = id ? `&club_id=${encodeURIComponent(id)}` : '';
             const response = await APIClient.get(`club-admin.php?action=my_transfer_requests${qs}`);
             if (!response.success) return console.error(response.message);
@@ -1057,10 +1057,13 @@
             setVal('update-club-phone', club.contact_phone || '');
             const hasOnetime = (club.club_fee ?? 0) > 0;
             const hasSemester = club.club_fee_semester != null && club.club_fee_semester > 0;
+            const hasSession = club.club_fee_per_session != null && club.club_fee_per_session > 0;
             const onetimeCb = $e('update-fee-onetime-enabled');
             const semesterCb = $e('update-fee-semester-enabled');
+            const sessionCb = $e('update-fee-session-enabled');
             const onetimeIn = $e('update-club-fee');
             const semesterIn = $e('update-club-fee-semester');
+            const sessionIn = $e('update-club-fee-session');
             if (onetimeCb && onetimeIn) {
                 onetimeCb.checked = hasOnetime;
                 onetimeIn.disabled = !hasOnetime;
@@ -1070,6 +1073,11 @@
                 semesterCb.checked = hasSemester;
                 semesterIn.disabled = !hasSemester;
                 semesterIn.value = hasSemester ? club.club_fee_semester : '';
+            }
+            if (sessionCb && sessionIn) {
+                sessionCb.checked = hasSession;
+                sessionIn.disabled = !hasSession;
+                sessionIn.value = hasSession ? club.club_fee_per_session : '';
             }
             if ($e('create-event-submit')) $e('create-event-submit').disabled = false;
             setTxt('create-event-hint', `目前建立活動目標社團：${club.club_name || ''}`);
@@ -1208,6 +1216,10 @@
             const startIndex = (_eventsCurrentPage - 1) * _eventsPerPage;
             const pagedEvents = events.slice(startIndex, startIndex + _eventsPerPage);
 
+            const list = document.createElement('div');
+            list.className = 'feed-stream-list';
+            container.appendChild(list);
+
             pagedEvents.forEach(event => {
                 const coHostNames = (event.co_host_clubs || []).map(club => PageUtils.escapeHtml(club.club_name || '')).filter(Boolean);
                 const safeEventName = PageUtils.escapeHtml(event.event_name || '未命名活動');
@@ -1223,33 +1235,33 @@
                     const safeText = PageUtils.escapeHtml(locationText);
                     if (mapsMatch) {
                         const safeUrl = PageUtils.escapeHtml(mapsMatch[0]);
-                        return `｜<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeText}</a>`;
+                        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--brand)">${safeText}</a>`;
                     }
-                    return `｜${safeText}`;
+                    return safeText;
                 })();
-                const card = document.createElement('div');
-                card.className = 'club-admin-event-row';
-                card.innerHTML = `
-                    <div class="admin-item-head">
-                        <div>
-                            <h4>${safeEventName}</h4>
-                            <div class="admin-item-badges">
-                                <span class="status-chip">${safeStatus}</span>
-                            </div>
+                const article = document.createElement('article');
+                article.className = 'feed-item-card';
+                article.innerHTML = `
+                    <div class="feed-item-head">
+                        <div style="min-width:0;flex:1;">
+                            <h3 class="feed-item-title">${safeEventName}</h3>
+                            <p class="feed-item-subtitle" style="margin-top:0.18rem;">${formatDateTime(event.event_date)}${locationHtml ? `　${locationHtml}` : ''}</p>
                         </div>
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;justify-content:flex-end;align-items:center;flex-shrink:0;">
+                            <span class="feed-item-badge feed-item-badge--neutral">${safeStatus}</span>
                             <button class="btn btn-secondary btn-sm" onclick="editEvent(${event.event_id})">編輯</button>
-                            <button class="btn btn-secondary btn-sm" onclick="exportRegistrations(${event.event_id})">匯出報名 CSV</button>
+                            <button class="btn btn-secondary btn-sm" onclick="exportRegistrations(${event.event_id})">匯出 CSV</button>
                             ${event.event_status === 'archived'
                                 ? `<button class="btn btn-primary btn-sm" onclick="restoreEvent(${event.event_id})">還原</button>`
                                 : `<button class="btn btn-secondary btn-sm" onclick="archiveEvent(${event.event_id})">歸檔</button>`}
                         </div>
                     </div>
-                    <p class="admin-item-content">${formatDateTime(event.event_date)}${locationHtml}</p>
-                    <p class="admin-item-content">目前報名人數：${Number(event.registered_count || 0)} 人</p>
-                    ${coHostNames.length > 0 ? `<p class="admin-item-content">協辦社團：${coHostNames.join('、')}</p>` : ''}
+                    <p class="feed-item-meta">
+                        <span>報名：${Number(event.registered_count || 0)} 人</span>
+                        ${coHostNames.length > 0 ? `<span>協辦：${coHostNames.join('、')}</span>` : ''}
+                    </p>
                 `;
-                container.appendChild(card);
+                list.appendChild(article);
             });
             renderEventsPagination(totalItems);
         }
@@ -1587,10 +1599,13 @@
             const form = document.getElementById('update-club-form');
             if (!form) return;
 
-            ['update-fee-onetime-enabled', 'update-fee-semester-enabled'].forEach(cbId => {
+            [
+                ['update-fee-onetime-enabled', 'update-club-fee'],
+                ['update-fee-semester-enabled', 'update-club-fee-semester'],
+                ['update-fee-session-enabled', 'update-club-fee-session']
+            ].forEach(([cbId, inputId]) => {
                 const cb = document.getElementById(cbId);
                 if (!cb) return;
-                const inputId = cbId === 'update-fee-onetime-enabled' ? 'update-club-fee' : 'update-club-fee-semester';
                 cb.addEventListener('change', () => {
                     const inp = document.getElementById(inputId);
                     if (!inp) return;
@@ -1620,8 +1635,10 @@
                     formData.append('contact_phone', document.getElementById('update-club-phone').value);
                     const onetimeEnabled = document.getElementById('update-fee-onetime-enabled')?.checked;
                     const semesterEnabled = document.getElementById('update-fee-semester-enabled')?.checked;
+                    const sessionEnabled = document.getElementById('update-fee-session-enabled')?.checked;
                     formData.append('club_fee', onetimeEnabled ? (document.getElementById('update-club-fee').value || '0') : '0');
                     formData.append('club_fee_semester', semesterEnabled ? (document.getElementById('update-club-fee-semester').value || '0') : '');
+                    formData.append('club_fee_per_session', sessionEnabled ? (document.getElementById('update-club-fee-session').value || '0') : '');
                     formData.append('last_updated', currentClubLastUpdated || '');
 
                     const logoFile = document.getElementById('club-logo-upload').files[0];

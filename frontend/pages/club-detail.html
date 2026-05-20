@@ -486,16 +486,18 @@
             document.getElementById('club-category').textContent = club.category_name || '-';
             const _hasOnetime = (club.club_fee ?? 0) > 0;
             const _hasSemester = club.club_fee_semester != null && club.club_fee_semester > 0;
-            document.getElementById('club-fee').textContent =
-                _hasOnetime && _hasSemester ? `入會費 $${club.club_fee} + 學期費 $${club.club_fee_semester} / 學期`
-                : _hasOnetime ? `入會費 $${club.club_fee}`
-                : _hasSemester ? `學期費 $${club.club_fee_semester} / 學期`
-                : '免費';
+            const _hasSession = club.club_fee_per_session != null && club.club_fee_per_session > 0;
+            const _feeParts = [
+                _hasOnetime   ? `入會費 $${club.club_fee}` : null,
+                _hasSemester  ? `學期費 $${club.club_fee_semester} / 學期` : null,
+                _hasSession   ? `單堂費 $${club.club_fee_per_session} / 堂` : null
+            ].filter(Boolean);
+            document.getElementById('club-fee').textContent = _feeParts.length ? _feeParts.join('、') : '免費';
             document.getElementById('meeting-time').textContent = club.meeting_time || '-';
             document.getElementById('meeting-location').textContent = formatMeetingLocation(club.meeting_location);
             renderLocationActions(club.meeting_location);
             document.getElementById('contact-email').textContent = club.contact_email || '-';
-            document.getElementById('contact-phone').textContent = club.contact_phone || '-';
+            document.getElementById('contact-phone').textContent = club.president_phone || club.contact_phone || '-';
             document.getElementById('last-updated').textContent = formatDateTime(club.last_updated);
             document.getElementById('club-last-updated-banner').textContent = `最後更新時間：${formatDateTime(club.last_updated)}`;
             document.getElementById('club-description').textContent = club.description || '-';

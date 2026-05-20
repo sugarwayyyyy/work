@@ -221,6 +221,20 @@ class ClubAdminAPI {
 
         if (!$requestId) Helper::error('送出轉讓申請失敗', 500);
 
+        $admins = Database::getInstance()->fetchAll(
+            "SELECT user_id FROM users WHERE role = 'platform_admin' AND is_active = 1"
+        );
+        foreach ($admins as $admin) {
+            dbInsert('notifications', [
+                'user_id'           => $admin['user_id'],
+                'title'             => '新帳戶轉讓申請',
+                'message'           => '有新的社團帳戶轉讓申請待審核，請前往管理員後台處理。',
+                'notification_type' => 'system',
+                'is_read'           => 0,
+                'created_at'        => date('Y-m-d H:i:s')
+            ]);
+        }
+
         Helper::success('轉讓申請已送出，待管理員審核', ['request_id' => $requestId]);
     }
 
