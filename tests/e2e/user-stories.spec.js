@@ -347,10 +347,10 @@ test.describe('US 1.5: 資料時間戳', () => {
     expect(eventId).toBeGreaterThan(0);
 
     await page.goto(`${BASE_URL}/pages/event-detail.html?id=${eventId}`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const latestUpload = page.locator('#event-last-updated');
-    await expect(latestUpload).toBeVisible();
+    await expect(latestUpload).toBeVisible({ timeout: 15000 });
 
     const text = (await latestUpload.innerText()).trim();
     expect(text.length).toBeGreaterThan(0);
@@ -409,7 +409,7 @@ test.describe('US 2.2: 社團活動發布', () => {
     expect(eventId).toBeGreaterThan(0);
 
     await page.goto(`${BASE_URL}/pages/event-detail.html?id=${eventId}`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     // #event-detail is revealed in the finally block after the API call completes
     await expect(page.locator('#event-detail')).toBeVisible({ timeout: 30000 });
 

@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 function isGoogleMapsUrl(string $url): bool {
     return (bool) preg_match(
-        '#^https?://(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^/\s]+/maps(?:[/?#][^\s]*)?|maps\.app\.goo\.gl/\S+|goo\.gl/maps/\S+)$#i',
+        '~^https?://(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^/\s]+/maps(?:[/?#][^\s]*)?|maps\.app\.goo\.gl/\S+|goo\.gl/maps/\S+)$~i',
         trim($url)
     );
 }
