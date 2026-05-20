@@ -212,6 +212,16 @@ class UploadAPI {
             return;
         }
 
+        $existing = $this->db->fetchOne(
+            'SELECT COUNT(*) AS cnt FROM event_posters WHERE event_id = ?',
+            [$eventId]
+        );
+        if ((int)($existing['cnt'] ?? 0) >= 10) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '每個活動最多上傳 10 張海報']);
+            return;
+        }
+
         $file = $_FILES['poster'] ?? null;
         if (!$file) {
             http_response_code(400);
@@ -221,20 +231,17 @@ class UploadAPI {
 
         $result = $this->processUpload($file, 'event_' . $eventId . '_poster');
         if ($result['success']) {
-            if (!$this->ensureEventPosterColumn()) {
-                http_response_code(500);
-                echo json_encode(['success' => false, 'message' => '資料庫缺少 events.poster_path 欄位，請先執行 migration']);
-                return;
-            }
-
-            $stmt = $this->db->prepare("UPDATE events SET poster_path = ? WHERE event_id = ?");
+            $stmt = $this->db->prepare(
+                'INSERT INTO event_posters (event_id, image_path, uploaded_at) VALUES (?, ?, NOW())'
+            );
             if (!$stmt) {
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => '資料庫更新失敗（無法準備 SQL）']);
+                echo json_encode(['success' => false, 'message' => '資料庫寫入失敗']);
                 return;
             }
-            $stmt->bind_param("si", $result['path'], $eventId);
+            $stmt->bind_param('is', $eventId, $result['path']);
             $stmt->execute();
+            $result['poster_id'] = (int)$stmt->insert_id;
             $stmt->close();
         }
 

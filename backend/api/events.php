@@ -818,7 +818,16 @@ class EventAPI {
                 );
             }
             $event['user_registration'] = $user_registration;
-            
+
+            $posters = Database::getInstance()->fetchAll(
+                'SELECT poster_id, image_path FROM event_posters WHERE event_id = ? ORDER BY sort_order, uploaded_at',
+                [$event_id]
+            );
+            if (empty($posters) && !empty($event['poster_path'])) {
+                $posters = [['poster_id' => null, 'image_path' => $event['poster_path']]];
+            }
+            $event['posters'] = $posters;
+
             Helper::success('取得活動詳情成功', $event);
             
         } catch (Exception $e) {
@@ -1500,6 +1509,33 @@ class EventAPI {
         }
     }
 
+    public static function deleteEventPoster($poster_id) {
+        if (!$poster_id) Helper::error('缺少 poster_id', 400);
+        if (!Auth::isLoggedIn()) Helper::error('請先登入', 401);
+
+        $poster = Database::getInstance()->fetchOne(
+            'SELECT ep.poster_id, ep.event_id FROM event_posters ep WHERE ep.poster_id = ?',
+            [$poster_id]
+        );
+        if (!$poster) Helper::error('海報不存在', 404);
+
+        $event_id = (int)$poster['event_id'];
+        if (!Auth::isAdmin()) {
+            $userId = Auth::getCurrentUserId();
+            $member = Database::getInstance()->fetchOne(
+                'SELECT 1 FROM club_members cm
+                 JOIN events e ON e.club_id = cm.club_id
+                 WHERE e.event_id = ? AND cm.user_id = ? AND cm.is_active = 1
+                   AND cm.role IN ("president","vice_president","director","public_relations")',
+                [$event_id, $userId]
+            );
+            if (!$member) Helper::error('權限不足', 403);
+        }
+
+        Database::getInstance()->delete('event_posters', 'poster_id = ?', [$poster_id]);
+        Helper::success('海報已刪除');
+    }
+
     public static function archiveEvent($event_id, $archive = true) {
         try {
             $event = self::requireEventManagePermission($event_id);
@@ -1734,6 +1770,8 @@ if ($method === 'PUT') {
 if ($method === 'DELETE') {
     if ($action === 'delete' && $event_id) {
         EventAPI::deleteEvent($event_id);
+    } elseif ($action === 'delete_event_poster') {
+        EventAPI::deleteEventPoster((int)($_GET['poster_id'] ?? 0));
     }
 }
 

@@ -1087,15 +1087,8 @@
             refreshClubPreview();
             await loadCollaborativeClubOptions(currentClubId);
 
-            const logoImg = $e('club-logo-img');
-            if (logoImg) {
-                if (club.logo_path) {
-                    logoImg.src = PageUtils.resolveMediaUrl(club.logo_path);
-                    logoImg.style.display = 'block';
-                } else {
-                    logoImg.style.display = 'none';
-                }
-            }
+            _existingLogoUrl = club.logo_path ? PageUtils.resolveMediaUrl(club.logo_path) : null;
+            renderLogoGallery(_existingLogoUrl, false);
 
             selectedTagIds.clear();
             if (club.tags && club.tags.length > 0) {
@@ -1360,8 +1353,8 @@
                 }
                 const regOpen = document.getElementById('update-event-registration-open');
                 if (regOpen) regOpen.checked = true;
-                const posterImg = document.getElementById('update-event-poster-img');
-                if (posterImg) { posterImg.src = ''; posterImg.style.display = 'none'; }
+                _pendingPosterFiles = [];
+                renderPosterGallery('create');
                 eventSelectedTagIds.clear();
                 renderEventSelectedTags('update');
                 detectUpdateEventTagsFromDescription();
@@ -1395,20 +1388,19 @@
             });
         }
 
-        async function uploadEventPosterFile(eventId, fileInput) {
-            const posterFile = fileInput ? fileInput.files[0] : null;
-            if (!posterFile) return null;
-            if (!eventId) return null;
-            if (posterFile.size > 10 * 1024 * 1024) {
-                throw new Error('海報檔案超過 10MB 上限，請壓縮後再上傳');
-            }
-            const uploadFormData = new FormData();
-            uploadFormData.append('poster', posterFile);
-            uploadFormData.append('event_id', String(eventId));
+        let _pendingPosterFiles = [];
+        let _currentEventPosters = [];
+
+        async function uploadEventPosterFile(eventId, file) {
+            if (!file || !eventId) return null;
+            if (file.size > 10 * 1024 * 1024) throw new Error('海報檔案超過 10MB 上限，請壓縮後再上傳');
+            const fd = new FormData();
+            fd.append('poster', file);
+            fd.append('event_id', String(eventId));
             const csrfHeaders = await APIClient.getCSRFHeaders();
             const uploadResponse = await fetch(getUploadApiUrl('upload_event_poster'), {
                 method: 'POST',
-                body: uploadFormData,
+                body: fd,
                 credentials: 'include',
                 headers: { ...APIClient.getAuthHeaders(), ...csrfHeaders }
             });
@@ -1417,8 +1409,101 @@
             try { result = JSON.parse(rawText); }
             catch (e) { throw new Error(`活動海報上傳回應格式錯誤（HTTP ${uploadResponse.status}）：${rawText.slice(0, 300)}`); }
             if (!uploadResponse.ok || !result.success) throw new Error(result.message || '活動海報上傳失敗');
-            return result.path;
+            return { poster_id: result.poster_id, path: result.path };
         }
+
+        function renderPosterGallery(mode) {
+            const gallery = document.getElementById('event-poster-gallery');
+            const addWrap = document.getElementById('poster-add-wrap');
+            if (!gallery) return;
+            gallery.innerHTML = '';
+            const items = mode === 'create' ? _pendingPosterFiles : _currentEventPosters;
+            items.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = 'poster-gallery-item';
+                const imgSrc = mode === 'create'
+                    ? URL.createObjectURL(item)
+                    : PageUtils.resolveMediaUrl(item.image_path);
+                const img = document.createElement('img');
+                img.src = imgSrc;
+                img.alt = `海報 ${idx + 1}`;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'poster-delete-btn';
+                btn.setAttribute('aria-label', '刪除');
+                btn.textContent = '×';
+                if (mode === 'create') {
+                    btn.addEventListener('click', () => {
+                        _pendingPosterFiles.splice(idx, 1);
+                        renderPosterGallery('create');
+                    });
+                } else {
+                    btn.addEventListener('click', async () => {
+                        if (!confirm('確認刪除此海報？')) return;
+                        btn.disabled = true;
+                        const resp = await APIClient.delete(`events.php?action=delete_event_poster&poster_id=${item.poster_id}`);
+                        if (resp.success) {
+                            _currentEventPosters.splice(idx, 1);
+                            renderPosterGallery('edit');
+                        } else {
+                            btn.disabled = false;
+                            PageUtils.showAlert('刪除失敗：' + resp.message, 'error');
+                        }
+                    });
+                }
+                el.appendChild(img);
+                el.appendChild(btn);
+                gallery.appendChild(el);
+            });
+            if (addWrap) addWrap.style.display = items.length >= 10 ? 'none' : '';
+        }
+
+        (function initPosterUploadInput() {
+            const input = document.getElementById('update-event-poster-upload');
+            if (!input) return;
+            input.addEventListener('change', async function () {
+                const files = Array.from(this.files);
+                this.value = '';
+                if (!files.length) return;
+
+                if (_eventModalMode === 'create') {
+                    const available = 10 - _pendingPosterFiles.length;
+                    if (available <= 0) { PageUtils.showAlert('已達 10 張上限', 'error'); return; }
+                    const toAdd = files.slice(0, available);
+                    if (toAdd.length < files.length) PageUtils.showAlert(`已達上限，僅加入前 ${toAdd.length} 張`, 'error');
+                    for (const f of toAdd) {
+                        const err = await validatePosterFile(f);
+                        if (err) { PageUtils.showAlert(`${f.name}：${err}`, 'error'); continue; }
+                        _pendingPosterFiles.push(f);
+                    }
+                    renderPosterGallery('create');
+                } else {
+                    const available = 10 - _currentEventPosters.length;
+                    if (available <= 0) { PageUtils.showAlert('已達 10 張上限', 'error'); return; }
+                    const toUpload = files.slice(0, available);
+                    if (toUpload.length < files.length) PageUtils.showAlert(`已達上限，僅上傳前 ${toUpload.length} 張`, 'error');
+                    const label = document.getElementById('poster-add-label');
+                    if (label) { label.style.opacity = '0.5'; label.style.pointerEvents = 'none'; }
+                    try {
+                        for (const f of toUpload) {
+                            const err = await validatePosterFile(f);
+                            if (err) { PageUtils.showAlert(`${f.name}：${err}`, 'error'); continue; }
+                            try {
+                                const result = await uploadEventPosterFile(currentEventId, f);
+                                if (result) {
+                                    _currentEventPosters.push({ poster_id: result.poster_id, image_path: result.path });
+                                    renderPosterGallery('edit');
+                                }
+                            } catch (e) {
+                                PageUtils.showAlert(`${f.name} 上傳失敗：${e.message}`, 'error');
+                            }
+                        }
+                    } finally {
+                        if (label) { label.style.opacity = ''; label.style.pointerEvents = ''; }
+                    }
+                }
+            });
+        })();
 
         async function editEvent(eventId) {
             currentEventId = eventId;
@@ -1454,59 +1539,57 @@
             detectUpdateEventTagsFromDescription();
             setSelectedCollaborativeClubIds('update-event-collaborative-clubs', (event.co_host_clubs || []).map(club => club.club_id));
 
-            const posterImg = document.getElementById('update-event-poster-img');
-            if (event.poster_path) {
-                posterImg.src = PageUtils.resolveMediaUrl(event.poster_path);
-                posterImg.style.display = 'block';
-            } else {
-                posterImg.style.display = 'none';
-            }
+            _currentEventPosters = event.posters || [];
+            renderPosterGallery('edit');
         }
 
-        function previewClubLogo(event) {
-            const file = event.target.files[0];
-            const img = document.getElementById('club-logo-img');
-            if (!file) {
-                img.style.display = 'none';
+        let _existingLogoUrl = null;
+
+        function renderLogoGallery(imgUrl, isNew) {
+            const gallery = document.getElementById('club-logo-gallery');
+            const addWrap = document.getElementById('club-logo-add-wrap');
+            if (!gallery) return;
+            gallery.innerHTML = '';
+            if (!imgUrl) {
+                if (addWrap) addWrap.style.display = '';
                 return;
             }
-            const reader = new FileReader();
-            reader.onload = e => {
-                img.src = e.target.result;
-                img.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+            const el = document.createElement('div');
+            el.className = 'poster-gallery-item';
+            const img = document.createElement('img');
+            img.src = imgUrl;
+            img.alt = 'Logo 預覽';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'poster-delete-btn';
+            btn.setAttribute('aria-label', '移除');
+            btn.textContent = '×';
+            btn.addEventListener('click', () => {
+                const input = document.getElementById('club-logo-upload');
+                if (input) input.value = '';
+                if (isNew && _existingLogoUrl) {
+                    renderLogoGallery(_existingLogoUrl, false);
+                } else {
+                    _existingLogoUrl = null;
+                    renderLogoGallery(null, false);
+                }
+            });
+            el.appendChild(img);
+            el.appendChild(btn);
+            gallery.appendChild(el);
+            if (addWrap) addWrap.style.display = 'none';
         }
 
-        function previewEventPoster(event) {
-            const file = event.target.files[0];
-            const img = document.getElementById('event-poster-img');
-            if (!file) {
-                img.style.display = 'none';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = e => {
-                img.src = e.target.result;
-                img.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
+        (function initLogoUploadInput() {
+            const input = document.getElementById('club-logo-upload');
+            if (!input) return;
+            input.addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) return;
+                renderLogoGallery(URL.createObjectURL(file), true);
+            });
+        })();
 
-        function previewUpdateEventPoster(event) {
-            const file = event.target.files[0];
-            const img = document.getElementById('update-event-poster-img');
-            if (!file) {
-                img.style.display = 'none';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = e => {
-                img.src = e.target.result;
-                img.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
 
         // ── Club switch popup ────────────────────────────────────────────────
         function closeClubSwitchPopup() {
@@ -1865,7 +1948,6 @@
 
                 const g = id => document.getElementById(id);
                 const collabIds = getSelectedCollaborativeClubIds('update-event-collaborative-clubs');
-                const posterFileInput = g('update-event-poster-upload');
 
                 try {
                     if (_eventModalMode === 'create') {
@@ -1873,8 +1955,6 @@
                             PageUtils.showAlert('請先選擇要管理的社團', 'error');
                             return;
                         }
-                        const _posterErrCreate = await validatePosterFile(posterFileInput?.files[0]);
-                        if (_posterErrCreate) { PageUtils.showAlert('活動海報：' + _posterErrCreate, 'error'); return; }
                         const payload = {
                             club_id: currentClubId,
                             event_name: g('update-event-name').value,
@@ -1896,13 +1976,12 @@
                             return;
                         }
                         const createdId = response?.data?.event_id;
-                        if (createdId && posterFileInput?.files[0]) {
-                            try {
-                                await uploadEventPosterFile(createdId, posterFileInput);
-                            } catch (uploadErr) {
-                                try { await APIClient.delete(`events.php?action=delete&id=${createdId}`); } catch (_) {}
-                                throw uploadErr;
+                        if (createdId && _pendingPosterFiles.length > 0) {
+                            for (const f of _pendingPosterFiles) {
+                                try { await uploadEventPosterFile(createdId, f); }
+                                catch (e) { PageUtils.showAlert('部分海報上傳失敗：' + e.message, 'error'); }
                             }
+                            _pendingPosterFiles = [];
                         }
                         if (eventSelectedTagIds.size > 0 && createdId) {
                             try {
@@ -1920,8 +1999,6 @@
                             PageUtils.showAlert('找不到活動識別碼，請重新點選要編輯的活動', 'error');
                             return;
                         }
-                        const _posterErrUpdate = await validatePosterFile(posterFileInput?.files[0]);
-                        if (_posterErrUpdate) { PageUtils.showAlert('活動海報：' + _posterErrUpdate, 'error'); return; }
                         const formData = new FormData();
                         formData.append('event_name', g('update-event-name').value);
                         formData.append('description', g('update-event-description').value);
@@ -1933,8 +2010,6 @@
                         formData.append('fee', g('update-event-fee').value);
                         formData.append('registration_deadline', g('update-event-deadline').value);
                         formData.append('is_registration_open', g('update-event-registration-open').checked ? '1' : '0');
-                        const posterPath = await uploadEventPosterFile(currentEventId, posterFileInput);
-                        if (posterPath) formData.append('poster_path', posterPath);
                         const updatePayload = Object.fromEntries(formData);
                         updatePayload.collaborative_club_ids = collabIds;
                         const response = await APIClient.put('events.php?action=update&id=' + currentEventId, updatePayload);

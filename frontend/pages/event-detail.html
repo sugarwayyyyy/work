@@ -75,8 +75,13 @@
                             </div>
 
                             <div id="event-poster-section" style="display: none; margin-bottom: 2rem; margin-top: 0.5rem;">
-                                <h3>活動海報</h3>
-                                <img id="event-poster" src="" alt="活動海報" style="width: 100%; max-width: 720px; border-radius: 12px; border: 1px solid #e5e7eb; object-fit: cover;">
+                                <div class="ig-carousel" id="event-poster-carousel">
+                                    <div class="ig-carousel__track" id="event-poster-track"></div>
+                                    <button class="ig-carousel__btn ig-carousel__btn--prev" id="poster-prev" aria-label="上一張">&#8249;</button>
+                                    <button class="ig-carousel__btn ig-carousel__btn--next" id="poster-next" aria-label="下一張">&#8250;</button>
+                                    <div class="ig-carousel__dots" id="poster-dots"></div>
+                                    <div class="ig-carousel__counter" id="poster-counter"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -183,6 +188,61 @@
         let currentRating = 0;
         let eventHasEnded = false;
         let userRegisteredForEvent = false;
+
+        // ── IG-style poster carousel ──────────────────────────────────────────
+        let _pIdx = 0, _pTotal = 0;
+
+        function _updateCarousel() {
+            const track   = document.getElementById('event-poster-track');
+            const dotsEl  = document.getElementById('poster-dots');
+            const counter = document.getElementById('poster-counter');
+            if (track)   track.style.transform = `translateX(-${_pIdx * 100}%)`;
+            if (dotsEl)  dotsEl.querySelectorAll('.ig-carousel__dot').forEach((d, i) => d.classList.toggle('is-active', i === _pIdx));
+            if (counter) counter.textContent = `${_pIdx + 1} / ${_pTotal}`;
+        }
+
+        function buildPosterCarousel(posters) {
+            const section  = document.getElementById('event-poster-section');
+            const track    = document.getElementById('event-poster-track');
+            const dotsEl   = document.getElementById('poster-dots');
+            const carousel = document.getElementById('event-poster-carousel');
+            const prevBtn  = document.getElementById('poster-prev');
+            const nextBtn  = document.getElementById('poster-next');
+            if (!section || !track) return;
+
+            if (!posters || posters.length === 0) { section.style.display = 'none'; return; }
+
+            _pIdx = 0;
+            _pTotal = posters.length;
+
+            track.innerHTML = posters.map((p, i) => {
+                const url = PageUtils.escapeAttribute(PageUtils.resolveMediaUrl(p.image_path));
+                return `<img src="${url}" alt="活動海報 ${i + 1}" draggable="false">`;
+            }).join('');
+
+            if (dotsEl) dotsEl.innerHTML = posters.map((_, i) =>
+                `<span class="ig-carousel__dot${i === 0 ? ' is-active' : ''}"></span>`
+            ).join('');
+
+            carousel.classList.toggle('ig-carousel--single', posters.length === 1);
+
+            _updateCarousel();
+            section.style.display = 'block';
+
+            prevBtn.onclick = () => { _pIdx = (_pIdx - 1 + _pTotal) % _pTotal; _updateCarousel(); };
+            nextBtn.onclick = () => { _pIdx = (_pIdx + 1) % _pTotal; _updateCarousel(); };
+            if (dotsEl) dotsEl.querySelectorAll('.ig-carousel__dot').forEach((dot, i) => {
+                dot.onclick = () => { _pIdx = i; _updateCarousel(); };
+            });
+
+            // swipe support
+            let _tx = 0;
+            carousel.addEventListener('touchstart', e => { _tx = e.touches[0].clientX; }, { passive: true });
+            carousel.addEventListener('touchend', e => {
+                const dx = e.changedTouches[0].clientX - _tx;
+                if (Math.abs(dx) > 40) { _pIdx = dx < 0 ? (_pIdx + 1) % _pTotal : (_pIdx - 1 + _pTotal) % _pTotal; _updateCarousel(); }
+            });
+        }
 
         function renderCommentFormAccess() {
             const user = StorageUtils.getUser();
@@ -318,16 +378,8 @@
             const latestEventTime = event.updated_at || event.published_at || event.created_at || null;
             document.getElementById('event-last-updated').textContent = `最新上傳時間：${formatDateTime(latestEventTime)}`;
             document.getElementById('event-description').textContent = event.description;
-            const posterSection = document.getElementById('event-poster-section');
-            const posterImage = document.getElementById('event-poster');
-            const posterUrl = PageUtils.resolveMediaUrl(event.poster_path);
-            if (posterSection && posterImage && posterUrl) {
-                posterImage.src = posterUrl;
-                posterSection.style.display = 'block';
-            } else if (posterSection && posterImage) {
-                posterImage.src = '';
-                posterSection.style.display = 'none';
-            }
+            const posters = event.posters || (event.poster_path ? [{ poster_id: null, image_path: event.poster_path }] : []);
+            buildPosterCarousel(posters);
             document.getElementById('registered-count').textContent = event.registered_count;
             const capacity = Number(event.capacity ?? event.max_participants ?? 0);
             document.getElementById('max-participants').textContent = Number.isFinite(capacity) && capacity > 0

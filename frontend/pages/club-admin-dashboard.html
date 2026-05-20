@@ -282,12 +282,15 @@
                         </div>
                     </div>
                     <div class="form-field admin-span-2">
-                        <label for="club-logo-upload">Logo 圖片（選填）</label>
-                        <input type="file" id="club-logo-upload" accept="image/*" onchange="previewClubLogo(event)">
-                        <small class="cad-help-text">檔案限制：僅支援 JPG／PNG／GIF／WebP，大小上限 10MB。</small>
-                        <div id="club-logo-preview" class="image-preview-container">
-                            <img id="club-logo-img" src="" alt="Logo 預覽" class="cad-preview-image">
+                        <label>Logo 圖片（選填）</label>
+                        <div id="club-logo-gallery" class="poster-gallery"></div>
+                        <div id="club-logo-add-wrap">
+                            <label class="btn btn-secondary btn-sm poster-add-label" id="club-logo-add-label">
+                                ＋ 上傳 Logo
+                                <input type="file" id="club-logo-upload" accept="image/*" style="display:none">
+                            </label>
                         </div>
+                        <small class="cad-help-text">檔案限制：僅支援 JPG／PNG／GIF／WebP，大小上限 10MB。</small>
                     </div>
                     <div class="form-actions admin-span-2">
                         <button type="submit" class="btn btn-primary">更新社團</button>

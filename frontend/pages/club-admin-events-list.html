@@ -178,12 +178,15 @@
                         <div id="err-update-event-description" class="field-error"></div>
                     </div>
                     <div class="form-field admin-span-2">
-                        <label for="update-event-poster-upload">海報上傳</label>
-                        <input type="file" id="update-event-poster-upload" accept="image/*" onchange="previewUpdateEventPoster(event)">
-                        <small class="cad-help-text">檔案限制：僅支援 JPG／PNG／GIF／WebP，大小上限 10MB。</small>
-                        <div id="update-event-poster-preview" class="image-preview-container">
-                            <img id="update-event-poster-img" src="" alt="海報預覽" class="cad-preview-image">
+                        <label>活動海報<span class="cad-label-muted">（最多 10 張）</span></label>
+                        <div id="event-poster-gallery" class="poster-gallery"></div>
+                        <div id="poster-add-wrap">
+                            <label class="btn btn-secondary btn-sm poster-add-label" id="poster-add-label">
+                                ＋ 新增海報
+                                <input type="file" id="update-event-poster-upload" accept="image/*" multiple style="display:none">
+                            </label>
                         </div>
+                        <small class="cad-help-text">每張限 10MB，僅支援 JPG／PNG／GIF／WebP。</small>
                     </div>
                     <div class="form-field admin-span-2">
                         <label>活動標籤（選填）</label>
