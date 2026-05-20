@@ -947,7 +947,7 @@ footer {
     padding: 2.5rem 2rem;
     text-align: center;
     width: 100%;
-    margin-top: 4rem;
+    margin-top: auto;
     border-top: 1px solid rgba(255,255,255,0.08);
 }
 
@@ -1004,7 +1004,7 @@ footer p {
 }
 
 .admin-users-page footer {
-    margin-top: 0;
+    margin-top: auto;
 }
 
 .admin-reports-page .club-list-page {
