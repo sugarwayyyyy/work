@@ -81,7 +81,7 @@
     --shadow-lg: 0 10px 24px -3px rgba(42, 95, 181, 0.16), 0 4px 8px -2px rgba(26, 23, 20, 0.08);
     --shadow-brand: 0 4px 14px rgba(42, 95, 181, 0.28);
     /* 元件專用 token */
-    --header-bg: rgba(255, 255, 255, 0.88);
+    --header-bg: rgba(255, 255, 255, 0.75);
     --input-bg: var(--color-bg-surface);
 }
 
@@ -130,7 +130,7 @@ textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(42, 95, 181, 0.1);
+    box-shadow: 0 0 0 4px var(--brand-soft);
 }
 
 textarea {
@@ -170,8 +170,8 @@ textarea {
 }
 
 .password-toggle:focus-visible {
-    outline: 2px solid rgba(42, 95, 181, 0.35);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: 0 0 0 4px var(--brand-soft);
     border-radius: 0.25rem;
 }
 
@@ -200,7 +200,7 @@ textarea {
     --accent-soft: rgba(214, 63, 42, 0.12);
     --shadow: 0 1px 3px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
     --shadow-lg: 0 10px 24px -3px rgba(0,0,0,0.55), 0 4px 8px -2px rgba(0,0,0,0.4);
-    --header-bg: rgba(23, 23, 23, 0.92);
+    --header-bg: rgba(23, 23, 23, 0.80);
     --input-bg: var(--color-bg-surface);
 }
 
@@ -229,7 +229,7 @@ textarea {
         --accent-soft: rgba(214, 63, 42, 0.12);
         --shadow: 0 1px 3px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
         --shadow-lg: 0 10px 24px -3px rgba(0,0,0,0.55), 0 4px 8px -2px rgba(0,0,0,0.4);
-        --header-bg: rgba(23, 23, 23, 0.92);
+        --header-bg: rgba(23, 23, 23, 0.80);
         --input-bg: var(--color-bg-surface);
     }
 }

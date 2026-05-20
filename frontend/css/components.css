@@ -8,7 +8,7 @@
     font-weight: 600;
     font-family: inherit;
     letter-spacing: 0.01em;
-    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     text-decoration: none;
     display: inline-flex;
     align-items: center;
@@ -31,8 +31,8 @@
 
 .btn-primary:hover {
     background: linear-gradient(135deg, var(--color-primary-700), var(--color-primary-800));
-    box-shadow: 0 6px 18px rgba(42, 95, 181, 0.38);
-    transform: translateY(-1px);
+    box-shadow: 0 6px 20px -4px rgba(42, 95, 181, 0.45), 0 4px 12px -2px rgba(42, 95, 181, 0.25);
+    transform: translateY(-2px) scale(1.01);
 }
 
 .btn-cta {
@@ -43,8 +43,8 @@
 
 .btn-cta:hover {
     background: linear-gradient(135deg, var(--color-cta-600), #15803D);
-    box-shadow: 0 6px 18px rgba(34, 197, 94, 0.38);
-    transform: translateY(-1px);
+    box-shadow: 0 6px 20px -4px rgba(34, 197, 94, 0.45), 0 4px 12px -2px rgba(34, 197, 94, 0.25);
+    transform: translateY(-2px) scale(1.01);
 }
 
 .btn-success {
@@ -56,8 +56,8 @@
 
 .btn-success:hover {
     background: linear-gradient(135deg, #15803d, #166534);
-    box-shadow: 0 6px 18px rgba(22, 163, 74, 0.38);
-    transform: translateY(-1px);
+    box-shadow: 0 6px 20px -4px rgba(22, 163, 74, 0.45), 0 4px 12px -2px rgba(22, 163, 74, 0.25);
+    transform: translateY(-2px) scale(1.01);
 }
 
 .btn-secondary {
@@ -70,6 +70,8 @@
     background-color: var(--color-primary-50);
     border-color: var(--color-primary-300);
     color: var(--brand);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(42, 95, 181, 0.08);
 }
 
 .btn-outline {
@@ -81,6 +83,8 @@
 .btn-outline:hover {
     background: var(--color-primary-50);
     border-color: var(--brand);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(42, 95, 181, 0.08);
 }
 
 .btn-danger {
@@ -92,8 +96,8 @@
 
 .btn-danger:hover {
     background: linear-gradient(135deg, #b91c1c, #991b1b);
-    box-shadow: 0 6px 18px rgba(220, 38, 38, 0.38);
-    transform: translateY(-1px);
+    box-shadow: 0 6px 20px -4px rgba(220, 38, 38, 0.45), 0 4px 12px -2px rgba(220, 38, 38, 0.25);
+    transform: translateY(-2px) scale(1.01);
 }
 
 .btn-danger-outline {
@@ -105,6 +109,8 @@
 .btn-danger-outline:hover {
     background: #fff5f5;
     border-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
 }
 
 .btn-sm {
@@ -123,16 +129,16 @@
     background: var(--surface);
     border-radius: 1rem;
     border: 1px solid var(--color-border-light);
-    box-shadow: 0 1px 4px rgba(26, 23, 20, 0.06), 0 1px 2px rgba(26, 23, 20, 0.04);
+    box-shadow: 0 1px 3px rgba(26, 23, 20, 0.04), 0 4px 10px -2px rgba(26, 23, 20, 0.03);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .card:hover {
-    box-shadow: 0 8px 24px rgba(42, 95, 181, 0.1), 0 2px 6px rgba(26, 23, 20, 0.06);
+    box-shadow: 0 12px 32px -4px rgba(42, 95, 181, 0.12), 0 4px 12px -2px rgba(26, 23, 20, 0.06);
     border-color: var(--color-primary-200);
-    transform: translateY(-2px);
+    transform: translateY(-3px) scale(1.005);
 }
 
 .card-header {
