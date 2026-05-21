@@ -42,17 +42,19 @@ class ContentFilter {
         return $result === null ? $normalized : $result;
     }
 
-    private static function isWhitelistedContext($normalizedText) {
+    private static function removeWhitelistedTerms($normalizedText) {
         $rules = self::getFilterRules();
         $whitelist = $rules['whitelist'] ?? [];
+        $result = $normalizedText;
 
         foreach ($whitelist as $term) {
-            if (self::containsText($normalizedText, self::toLower((string)$term))) {
-                return true;
+            $normalizedTerm = self::normalizeForFilter((string)$term);
+            if ($normalizedTerm !== '') {
+                $result = str_replace($normalizedTerm, '', $result);
             }
         }
 
-        return false;
+        return $result;
     }
 
     private static function containsProfanity($normalizedText) {
@@ -73,7 +75,8 @@ class ContentFilter {
         $badWords = $rules['extra_bad_words'] ?? [];
 
         foreach ($badWords as $word) {
-            if (self::containsText($normalizedText, self::toLower((string)$word))) {
+            $normalizedWord = self::normalizeForFilter((string)$word);
+            if ($normalizedWord !== '' && self::containsText($normalizedText, $normalizedWord)) {
                 return true;
             }
         }
@@ -151,15 +154,14 @@ class ContentFilter {
             return true;
         }
 
-        if (self::isWhitelistedContext($normalized)) {
-            return false;
-        }
+        // 移除白名單詞後再比對，避免「操作很好用，幹你娘」因「操作」而誤放行
+        $cleaned = self::removeWhitelistedTerms($normalized);
 
-        if (self::containsProfanity($normalized)) {
+        if (self::containsProfanity($cleaned)) {
             return true;
         }
 
-        if (self::containsExtraBadWords($normalized)) {
+        if (self::containsExtraBadWords($cleaned)) {
             return true;
         }
 
