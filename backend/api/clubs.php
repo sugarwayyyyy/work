@@ -744,7 +744,23 @@ class ClubAPI {
             $club['follow_state_known'] = $follow_state_known;
             $club['user_has_reviewed'] = $has_reviewed;
             $club['user_review_status'] = $user_review_status;
-            
+
+            // 檢查用戶是否已加入此社團
+            $is_member = false;
+            $my_fee_type = null;
+            if (Auth::isLoggedIn()) {
+                $membership = Database::getInstance()->fetchOne(
+                    'SELECT fee_type FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role = "member"',
+                    [$club_id, Auth::getCurrentUserId()]
+                );
+                if ($membership) {
+                    $is_member = true;
+                    $my_fee_type = $membership['fee_type'] ?? 'none';
+                }
+            }
+            $club['is_member'] = $is_member;
+            $club['my_fee_type'] = $my_fee_type;
+
             Helper::success('取得社團詳細信息成功', $club);
             
         } catch (Exception $e) {
@@ -993,6 +1009,92 @@ class ClubAPI {
     }
 
     /**
+     * 加入社團（一般成員）
+     * POST /api/clubs.php?action=join_club&id={club_id}
+     */
+    public static function joinClub($club_id) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+        try {
+            $club_id = (int)$club_id;
+            $club = Database::getInstance()->fetchOne('SELECT club_id FROM clubs WHERE club_id = ? AND deleted_at IS NULL', [$club_id]);
+            if (!$club) Helper::error('社團不存在', 404);
+
+            $data = Helper::getRequestInput() ?: [];
+            $allowedFeeTypes = ['none', 'onetime', 'semester', 'session'];
+            $fee_type = in_array($data['fee_type'] ?? '', $allowedFeeTypes, true) ? $data['fee_type'] : 'none';
+
+            $userId = Auth::getCurrentUserId();
+
+            // 已是幹部或社長則不另外加入
+            $existing = Database::getInstance()->fetchOne(
+                'SELECT member_id, role, is_active FROM club_members WHERE club_id = ? AND user_id = ?',
+                [$club_id, $userId]
+            );
+            if ($existing) {
+                if ((int)$existing['is_active'] === 1 && $existing['role'] !== 'member') {
+                    Helper::error('您已是此社團的幹部，無需另外加入', 409);
+                }
+                if ((int)$existing['is_active'] === 1 && $existing['role'] === 'member') {
+                    Helper::error('您已加入此社團', 409);
+                }
+                // is_active = 0（曾退出）→ 重新啟用
+                Database::getInstance()->update(
+                    'club_members',
+                    ['is_active' => 1, 'fee_type' => $fee_type, 'join_date' => date('Y-m-d H:i:s')],
+                    'member_id = ?',
+                    [$existing['member_id']]
+                );
+            } else {
+                dbInsert('club_members', [
+                    'club_id'   => $club_id,
+                    'user_id'   => $userId,
+                    'role'      => 'member',
+                    'is_active' => 1,
+                    'fee_type'  => $fee_type,
+                    'join_date' => date('Y-m-d H:i:s'),
+                ]);
+            }
+
+            Helper::success('已成功加入社團', ['is_member' => true, 'fee_type' => $fee_type]);
+        } catch (Exception $e) {
+            Helper::error('加入失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * 退出社團
+     * POST /api/clubs.php?action=leave_club&id={club_id}
+     */
+    public static function leaveClub($club_id) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+        try {
+            $club_id = (int)$club_id;
+            $userId = Auth::getCurrentUserId();
+            $membership = Database::getInstance()->fetchOne(
+                'SELECT member_id, role FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1',
+                [$club_id, $userId]
+            );
+            if (!$membership) Helper::error('您不是此社團成員', 404);
+            if ($membership['role'] !== 'member') Helper::error('幹部無法透過此方式退出社團', 403);
+
+            Database::getInstance()->update(
+                'club_members',
+                ['is_active' => 0],
+                'member_id = ?',
+                [$membership['member_id']]
+            );
+
+            Helper::success('已退出社團', ['is_member' => false]);
+        } catch (Exception $e) {
+            Helper::error('退出失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * 取得所有標籤
      * GET /api/clubs.php?action=get_all_tags
      */
@@ -1145,6 +1247,10 @@ if ($method === 'POST') {
         ClubAPI::updateTags($data);
     } elseif ($action === 'toggle_follow' && $club_id) {
         ClubAPI::toggleFollowClub($club_id);
+    } elseif ($action === 'join_club' && $club_id) {
+        ClubAPI::joinClub($club_id);
+    } elseif ($action === 'leave_club' && $club_id) {
+        ClubAPI::leaveClub($club_id);
     }
 }
 

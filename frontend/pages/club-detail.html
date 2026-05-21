@@ -152,9 +152,10 @@
                 <div class="card-header">
                     <h1 id="club-name"></h1>
                     <div id="club-last-updated-banner" style="margin-top: 0.35rem; color: var(--text-light); font-size: 0.92rem;">最後更新時間：-</div>
-                    <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+                    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 0.5rem;">
                         <span id="club-badges"></span>
-                        <button id="follow-btn" class="btn btn-primary" onclick="toggleFollow()">追蹤社團</button>
+                        <button id="join-btn" class="btn btn-primary" onclick="openJoinModal()">加入社團</button>
+                        <button id="follow-btn" class="btn btn-secondary" onclick="toggleFollow()">追蹤社團</button>
                     </div>
                 </div>
 
@@ -487,6 +488,11 @@
             const _hasOnetime = (club.club_fee ?? 0) > 0;
             const _hasSemester = club.club_fee_semester != null && club.club_fee_semester > 0;
             const _hasSession = club.club_fee_per_session != null && club.club_fee_per_session > 0;
+            _clubFeeInfo = {
+                onetime:  _hasOnetime  ? Number(club.club_fee) : 0,
+                semester: _hasSemester ? Number(club.club_fee_semester) : 0,
+                session:  _hasSession  ? Number(club.club_fee_per_session) : 0,
+            };
             const _feeParts = [
                 _hasOnetime   ? `入會費 $${club.club_fee}` : null,
                 _hasSemester  ? `學期費 $${club.club_fee_semester} / 學期` : null,
@@ -574,6 +580,8 @@
                     logoNote.textContent = '提醒：此為系統預設頭像，非社團官方提供的實際 Logo。';
                 }
             }
+
+            syncJoinBtn(!!club.is_member, club.my_fee_type ?? null);
 
             const followBtn = document.getElementById('follow-btn');
             if (club.follow_state_known === false) {
@@ -945,6 +953,143 @@
                 PageUtils.showAlert('提交失敗', 'error');
             }
         });
+
+        // ── 加入社團 ────────────────────────────────────────────────────────────
+
+        let _clubFeeInfo = {};  // populated by renderClubDetail
+
+        function syncJoinBtn(isMember, feeType) {
+            const btn = document.getElementById('join-btn');
+            if (!btn) return;
+            if (isMember) {
+                btn.textContent = '已加入';
+                btn.className = 'btn btn-secondary';
+                btn.title = '點擊可退出社團';
+                btn.onclick = leaveClub;
+            } else {
+                btn.textContent = '加入社團';
+                btn.className = 'btn btn-primary';
+                btn.title = '';
+                btn.onclick = openJoinModal;
+            }
+        }
+
+        function openJoinModal() {
+            if (!StorageUtils.isLoggedIn()) {
+                PageUtils.showAlert('請先登入', 'warning');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const fees = _clubFeeInfo;
+            const hasOnetime  = fees.onetime  > 0;
+            const hasSemester = fees.semester > 0;
+            const hasSession  = fees.session  > 0;
+            const feeCount = [hasOnetime, hasSemester, hasSession].filter(Boolean).length;
+
+            let feeHtml = '';
+            if (feeCount === 0) {
+                feeHtml = '<p style="margin:0.5rem 0 1rem;">此社團免費加入。</p>'
+                    + '<input type="hidden" id="join-fee-type" value="none">';
+            } else if (feeCount === 1) {
+                const type  = hasOnetime ? 'onetime' : hasSemester ? 'semester' : 'session';
+                const label = hasOnetime
+                    ? `一次付清 $${fees.onetime} 元`
+                    : hasSemester
+                    ? `學期費 $${fees.semester} 元／學期`
+                    : `單堂費 $${fees.session} 元／堂`;
+                feeHtml = `<p style="margin:0.5rem 0 1rem;">費用：${label}</p>`
+                    + `<input type="hidden" id="join-fee-type" value="${type}">`;
+            } else {
+                const opts = [
+                    hasOnetime  ? `<label class="join-fee-opt"><input type="radio" name="join-fee" value="onetime"> 一次付清 $${fees.onetime} 元</label>` : '',
+                    hasSemester ? `<label class="join-fee-opt"><input type="radio" name="join-fee" value="semester"> 學期費 $${fees.semester} 元／學期</label>` : '',
+                    hasSession  ? `<label class="join-fee-opt"><input type="radio" name="join-fee" value="session"> 單堂費 $${fees.session} 元／堂</label>` : '',
+                ].filter(Boolean).join('');
+                feeHtml = `<p style="margin:0.5rem 0 0.25rem;">請選擇付費方式：</p><div class="join-fee-group" style="display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;">${opts}</div>`;
+            }
+
+            let modal = document.getElementById('join-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'join-modal';
+                modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);';
+                document.body.appendChild(modal);
+            }
+            modal.innerHTML = `
+                <div style="background:#fff;border-radius:12px;padding:1.5rem 2rem;width:min(420px,90vw);box-shadow:0 8px 32px rgba(0,0,0,.18);">
+                    <h3 style="margin:0 0 0.25rem;">加入社團</h3>
+                    <p style="color:#666;font-size:0.9rem;margin:0 0 1rem;">確認加入後即成為一般成員</p>
+                    ${feeHtml}
+                    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                        <button class="btn btn-secondary btn-sm" onclick="closeJoinModal()">取消</button>
+                        <button class="btn btn-primary btn-sm" id="join-confirm-btn" onclick="confirmJoin()">確認加入</button>
+                    </div>
+                </div>`;
+            modal.style.display = 'flex';
+            modal.addEventListener('click', function(e) { if (e.target === modal) closeJoinModal(); }, { once: true });
+
+            // pre-select first option if radio group
+            const firstRadio = modal.querySelector('input[type="radio"]');
+            if (firstRadio) firstRadio.checked = true;
+        }
+
+        function closeJoinModal() {
+            const modal = document.getElementById('join-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function confirmJoin() {
+            const confirmBtn = document.getElementById('join-confirm-btn');
+            if (confirmBtn) confirmBtn.disabled = true;
+
+            // Determine fee type
+            let feeType = 'none';
+            const hidden = document.getElementById('join-fee-type');
+            if (hidden) {
+                feeType = hidden.value;
+            } else {
+                const checked = document.querySelector('input[name="join-fee"]:checked');
+                if (!checked) {
+                    PageUtils.showAlert('請選擇付費方式', 'warning');
+                    if (confirmBtn) confirmBtn.disabled = false;
+                    return;
+                }
+                feeType = checked.value;
+            }
+
+            try {
+                const res = await APIClient.post(`clubs.php?action=join_club&id=${clubId}`, { fee_type: feeType });
+                if (res && res.success) {
+                    closeJoinModal();
+                    PageUtils.showAlert('已成功加入社團！', 'success');
+                    syncJoinBtn(true, feeType);
+                } else {
+                    PageUtils.showAlert(res?.message || '加入失敗', 'error');
+                }
+            } catch (err) {
+                PageUtils.showAlert('加入失敗：' + err.message, 'error');
+            } finally {
+                if (confirmBtn) confirmBtn.disabled = false;
+            }
+        }
+
+        async function leaveClub() {
+            if (!confirm('確定要退出此社團嗎？')) return;
+            try {
+                const res = await APIClient.post(`clubs.php?action=leave_club&id=${clubId}`, {});
+                if (res && res.success) {
+                    PageUtils.showAlert('已退出社團', 'success');
+                    syncJoinBtn(false, null);
+                } else {
+                    PageUtils.showAlert(res?.message || '退出失敗', 'error');
+                }
+            } catch (err) {
+                PageUtils.showAlert('退出失敗：' + err.message, 'error');
+            }
+        }
+
+        // ── End 加入社團 ────────────────────────────────────────────────────────
 
         window.addEventListener('DOMContentLoaded', function() {
             if (!clubId) {
