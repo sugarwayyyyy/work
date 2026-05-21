@@ -1658,8 +1658,11 @@ function ensureNavDropdownStyles() {
     st.id = 'nav-dropdown-style';
     st.textContent = '.nav-user-widget{position:relative;display:inline-flex;align-items:center;gap:6px}'
         + '.nav-bell-btn,.nav-avatar-trigger{display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;border-radius:999px;color:#374151}'
-        + '.nav-bell-btn{width:32px;height:32px}'
+        + '.nav-bell-btn{position:relative;width:32px;height:32px}'
         + '.nav-bell-btn:hover,.nav-avatar-trigger:hover{background:#f3f4f6}'
+        + '.nav-bell-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#ef4444;border:2px solid #fff;display:block}'
+        + '[data-theme="dark"] .nav-bell-dot{border-color:#1e1e2e}'
+        + '@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav-bell-dot{border-color:#1e1e2e}}'
         + '.nav-bell-icon{width:18px;height:18px;display:block}'
         + '.nav-avatar-trigger{padding:2px 6px 2px 2px;gap:6px}'
         + '.nav-avatar-img{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb;display:block}'
@@ -1753,7 +1756,7 @@ function updateNavigation() {
                 : `<span class="nav-avatar-fallback">${safeInitial}</span>`;
 
             userDropdown.innerHTML = '<div class="nav-user-widget">'
-                + `<button class="nav-bell-btn" id="nav-bell-btn" aria-label="通知"><img class="nav-bell-icon" src="${bellIcon}" alt=""></button>`
+                + `<button class="nav-bell-btn" id="nav-bell-btn" aria-label="通知"><img class="nav-bell-icon" src="${bellIcon}" alt=""><span class="nav-bell-dot" id="nav-bell-dot" hidden></span></button>`
                 + `<button class="nav-avatar-trigger" id="nav-avatar-trigger" aria-label="個人頭像" aria-controls="nav-dd-panel" aria-haspopup="true" aria-expanded="false">${avatarTriggerContent}<img class="nav-dd-caret" src="${caretIcon}" alt=""></button>`
                 + '<div class="nav-dd-panel" id="nav-dd-panel" style="display:none">'
                 + '<div class="ndp-head" style="position:relative">'
@@ -1802,6 +1805,15 @@ function updateNavigation() {
                     e.stopPropagation();
                     window.location.href = getPageLink('notifications.html');
                 };
+                (async () => {
+                    try {
+                        const res = await APIClient.get('notifications.php?action=unread_count');
+                        if (res && res.success && res.data && res.data.count > 0) {
+                            const dot = document.getElementById('nav-bell-dot');
+                            if (dot) dot.removeAttribute('hidden');
+                        }
+                    } catch (_) {}
+                })();
             }
 
             if (avatarTrigger && ddPanel) {

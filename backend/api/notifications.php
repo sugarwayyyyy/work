@@ -173,6 +173,27 @@ class NotificationAPI {
     }
 
     /**
+     * 取得未讀通知數量
+     * GET /api/notifications.php?action=unread_count
+     */
+    public static function getUnreadCount() {
+        if (!Auth::isLoggedIn()) {
+            Helper::success('', ['count' => 0]);
+            return;
+        }
+
+        try {
+            $row = Database::getInstance()->fetchOne(
+                'SELECT COUNT(*) AS cnt FROM notifications WHERE user_id = ? AND is_read = 0',
+                [Auth::getCurrentUserId()]
+            );
+            Helper::success('', ['count' => (int)($row['cnt'] ?? 0)]);
+        } catch (Exception $e) {
+            Helper::success('', ['count' => 0]);
+        }
+    }
+
+    /**
      * 標記通知為已讀
      * POST /api/notifications.php?action=mark_read
      */
@@ -211,6 +232,8 @@ $data = ($method === 'POST' || $method === 'PUT')
 if ($method === 'GET') {
     if ($action === 'feed') {
         NotificationAPI::getMyFeed();
+    } elseif ($action === 'unread_count') {
+        NotificationAPI::getUnreadCount();
     } else {
         NotificationAPI::getNotifications();
     }
