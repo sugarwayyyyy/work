@@ -735,22 +735,19 @@
     .club-admin-page .stats-scroll-arrow { display: none; }
 }
 
-/* ── Transfer request panel ── */
+/* ── Section panel header ── */
 .tr-head {
     display: flex;
-    align-items: flex-start;
-    gap: 0.85rem;
-    padding-bottom: 1.25rem;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
     margin-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    background: var(--brand-soft, #ede9fe);
+    border-radius: 0.6rem;
 }
 
 .tr-head__icon {
     flex-shrink: 0;
-    width: 2.4rem;
-    height: 2.4rem;
-    border-radius: 0.55rem;
-    background: var(--brand-soft, #ede9fe);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -758,14 +755,33 @@
 }
 
 .tr-head__title {
-    margin: 0 0 0.2rem;
-    font-size: 1.2rem;
+    margin: 0 0 0.15rem;
+    font-size: 1.1rem;
+    color: var(--brand-hover, #5b21b6);
 }
 
 .tr-head__desc {
     margin: 0;
-    font-size: 0.875rem;
-    color: var(--text-muted, #64748b);
+    font-size: 0.82rem;
+    color: var(--brand-hover, #5b21b6);
+    opacity: 0.75;
+}
+
+.tr-head__desc:empty {
+    display: none;
+}
+
+[data-theme="dark"] .tr-head {
+    background: rgba(124, 58, 237, 0.15);
+}
+
+[data-theme="dark"] .tr-head__title,
+[data-theme="dark"] .tr-head__desc {
+    color: #c4b5fd;
+}
+
+[data-theme="dark"] .tr-head__icon {
+    color: #c4b5fd;
 }
 
 .tr-body {

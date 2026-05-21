@@ -182,16 +182,23 @@
 
         <!-- ── 社團管理 ── -->
         <section class="card admin-panel reveal-up" id="club-management-section" style="display:none;">
-            <div class="admin-panel-head">
-                <h2>社團管理</h2>
-                <span class="admin-panel-subtext" id="club-subtitle"></span>
-            </div>
-            <div class="admin-form-wrapper">
-                <div class="form-preview-card">
-                    <h4>編輯預覽</h4>
-                    <p id="club-preview-text" class="form-preview-text">尚未修改資料</p>
+
+            <header class="tr-head">
+                <div class="tr-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.615 16.428a1.224 1.224 0 01-.569-1.175 6.002 6.002 0 0111.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 017 17a9.953 9.953 0 01-5.385-1.572zM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 00-1.588-3.755 4.502 4.502 0 015.874 2.636.818.818 0 01-.36.98A7.465 7.465 0 0114.5 16z"/></svg>
                 </div>
-                <form id="update-club-form" class="admin-form-grid">
+                <div>
+                    <h2 class="tr-head__title">社團管理</h2>
+                    <p class="tr-head__desc" id="club-subtitle"></p>
+                </div>
+            </header>
+
+            <div class="form-preview-card">
+                <h4>編輯預覽</h4>
+                <p id="club-preview-text" class="form-preview-text">尚未修改資料</p>
+            </div>
+
+            <form id="update-club-form" class="admin-form-grid">
                     <input type="hidden" id="update-club-id">
                     <div class="form-field">
                         <label for="update-club-email">聯絡信箱 <span class="required">*</span></label>
@@ -296,18 +303,24 @@
                         <button type="submit" class="btn btn-primary">更新社團</button>
                     </div>
                 </form>
-            </div>
+
         </section>
 
         <!-- ── 建立活動 ── -->
         <section class="card admin-panel reveal-up" id="create-event-section" style="display:none;">
-            <div class="admin-panel-head">
-                <h2>建立活動</h2>
-                <span class="admin-panel-subtext" id="create-event-hint">請先在「我的社團」選擇要管理的社團</span>
-            </div>
-            <div class="admin-form-wrapper">
-                <form id="create-event-form" class="admin-form-grid">
-                    <input type="hidden" id="event-club-id" required>
+
+            <header class="tr-head">
+                <div class="tr-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm4.5 6.5a.75.75 0 01.75.75v1.25h1.25a.75.75 0 010 1.5H11v1.25a.75.75 0 01-1.5 0V12H8.25a.75.75 0 010-1.5H9.5V9.25a.75.75 0 01.75-.75z" clip-rule="evenodd"/></svg>
+                </div>
+                <div>
+                    <h2 class="tr-head__title">建立活動</h2>
+                    <p class="tr-head__desc" id="create-event-hint">請先在「我的社團」選擇要管理的社團</p>
+                </div>
+            </header>
+
+            <form id="create-event-form" class="admin-form-grid">
+                <input type="hidden" id="event-club-id" required>
                     <div class="form-field">
                         <label for="event-name">活動名稱 <span class="required">*</span></label>
                         <input type="text" id="event-name" required>
@@ -437,25 +450,40 @@
                         <button type="submit" id="create-event-submit" class="btn btn-primary" disabled>建立活動</button>
                     </div>
                 </form>
-            </div>
+
         </section>
 
         <!-- ── 活動列表 ── -->
         <section class="card admin-panel reveal-up" id="club-events-section" style="display:none;">
-            <div class="admin-panel-head">
-                <h2>社團活動列表</h2>
-                <span class="admin-panel-subtext" id="club-events-subtitle">管理所屬社團的活動</span>
-            </div>
+
+            <header class="tr-head">
+                <div class="tr-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd"/></svg>
+                </div>
+                <div>
+                    <h2 class="tr-head__title">社團活動列表</h2>
+                    <p class="tr-head__desc" id="club-events-subtitle">管理所屬社團的活動</p>
+                </div>
+            </header>
+
             <div id="club-events-container" class="admin-list"></div>
+
         </section>
 
+        <!-- ── 活動管理 ── -->
         <section class="card admin-panel reveal-up" id="event-management-section" style="display:none;">
-            <div class="admin-panel-head">
-                <h2>活動管理</h2>
-                <span class="admin-panel-subtext" id="event-manage-title"></span>
-            </div>
-            <div class="admin-form-wrapper">
-                <form id="update-event-form" class="admin-form-grid">
+
+            <header class="tr-head">
+                <div class="tr-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z"/><path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z"/></svg>
+                </div>
+                <div>
+                    <h2 class="tr-head__title">活動管理</h2>
+                    <p class="tr-head__desc" id="event-manage-title"></p>
+                </div>
+            </header>
+
+            <form id="update-event-form" class="admin-form-grid">
                     <input type="hidden" id="update-event-id">
                     <div class="form-field">
                         <label for="update-event-name">活動名稱 <span class="required">*</span></label>
@@ -588,7 +616,7 @@
                         <button type="submit" class="btn btn-primary">更新活動</button>
                     </div>
                 </form>
-            </div>
+
         </section>
 
         <!-- ── 帳戶轉讓 ── -->
