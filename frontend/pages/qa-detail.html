@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -6,6 +6,149 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>提問詳情 - 社團平台</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .qd-wrap {
+            margin: 1.25rem 0 3rem;
+        }
+
+        .qd-nav {
+            margin-bottom: 1rem;
+        }
+
+        .qd-back-link {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: color 0.15s;
+        }
+        .qd-back-link:hover { color: var(--brand); }
+
+        .qd-question {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.4rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+            margin-bottom: 1rem;
+        }
+
+        .qd-question-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .qd-question-head-main { flex: 1; min-width: 0; }
+
+        .qd-title {
+            margin: 0 0 0.5rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+            line-height: 1.35;
+            color: var(--text-strong);
+        }
+
+        .qd-meta {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+        }
+
+        .qd-meta-date {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .qd-content {
+            line-height: 1.65;
+            color: var(--text-default);
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            padding: 1rem 0;
+            border-top: 1px solid var(--color-border-light);
+            border-bottom: 1px solid var(--color-border-light);
+            margin-bottom: 0.85rem;
+        }
+
+        .qd-stats {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-bottom: 0.85rem;
+        }
+
+        .qd-stat-sep { opacity: 0.45; }
+
+        .qd-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--color-border-light);
+        }
+
+        .qd-thread {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+            margin-bottom: 1rem;
+        }
+
+        .qd-thread-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border-light);
+            margin-bottom: 1rem;
+        }
+
+        .qd-thread-title {
+            margin: 0;
+            font-size: 0.97rem;
+            font-weight: 700;
+            color: var(--text-strong);
+        }
+
+        .qd-compose {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+        }
+
+        .qd-login-hint {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .qd-login-hint p { margin: 0; }
+
+        .qd-compose-hd {
+            margin: 0 0 1rem;
+            font-size: 0.97rem;
+            font-weight: 700;
+            color: var(--text-strong);
+        }
+
+        @media (max-width: 600px) {
+            .qd-question-head { flex-direction: column; }
+            .qd-question-head .badge { align-self: flex-start; }
+            .qd-wrap { margin-top: 0.75rem; margin-bottom: 1.5rem; }
+        }
+    </style>
 </head>
 
 <body>
@@ -35,78 +178,68 @@
         </div>
 
         <div id="qa-detail" style="display: none;">
-            <div class="card">
-                <div class="card-header">
-                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                        <div>
-                            <h1 id="question-title"></h1>
-                            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+            <div class="qd-wrap">
+
+                <div class="qd-nav">
+                    <a href="qa.html" class="qd-back-link">← 返回提問列表</a>
+                </div>
+
+                <!-- 問題主體 -->
+                <div class="qd-question">
+                    <div class="qd-question-head">
+                        <div class="qd-question-head-main">
+                            <h1 id="question-title" class="qd-title"></h1>
+                            <div class="qd-meta">
                                 <span id="question-author" class="badge"></span>
-                                <span id="question-date" style="color: var(--text-light);"></span>
+                                <span id="question-date" class="qd-meta-date"></span>
                                 <span id="question-category" class="tag tag-primary"></span>
                             </div>
                         </div>
                         <div id="question-status" class="badge"></div>
                     </div>
-                </div>
 
-                <div class="card-body">
-                    <div id="question-content" style="line-height: 1.6; margin-bottom: 2rem;"></div>
+                    <div id="question-content" class="qd-content"></div>
 
-                    <div style="display: flex; gap: 2rem; margin-bottom: 1rem;">
-                        <div class="stat-card">
-                            <div class="stat-number" id="replies-count">0</div>
-                            <div class="stat-label">回覆數</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="views-count">0</div>
-                            <div class="stat-label">瀏覽數</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="helpful-count">0</div>
-                            <div class="stat-label">有幫助</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="not-helpful-count">0</div>
-                            <div class="stat-label">沒有幫助</div>
-                        </div>
+                    <div class="qd-stats">
+                        <span class="qd-stat"><span id="replies-count">0</span> 則回覆</span>
+                        <span class="qd-stat-sep">·</span>
+                        <span class="qd-stat"><span id="views-count">0</span> 次瀏覽</span>
+                        <span class="qd-stat-sep">·</span>
+                        <span class="qd-stat">👍 <span id="helpful-count">0</span></span>
+                        <span class="qd-stat-sep">·</span>
+                        <span class="qd-stat">👎 <span id="not-helpful-count">0</span></span>
                     </div>
 
-                    <div id="question-actions" style="display: none;">
-                        <button id="mark-solved-btn" class="btn btn-success btn-sm">標記為已解決</button>
-                    </div>
-                    <div style="margin-top: 0.75rem;">
+                    <div class="qd-actions">
+                        <div id="question-actions" style="display: none;">
+                            <button id="mark-solved-btn" class="btn btn-success btn-sm">標記為已解決</button>
+                        </div>
                         <button id="report-question-btn" class="btn btn-secondary btn-sm">檢舉此提問</button>
                     </div>
                 </div>
-            </div>
 
-            <div class="card" style="margin-top: 2rem;">
-                <div class="card-header">
-                    <h3>回覆列表</h3>
-                </div>
-                <div class="card-body">
+                <!-- 回覆串 -->
+                <div class="qd-thread">
+                    <div class="qd-thread-hd">
+                        <h3 class="qd-thread-title">回覆列表</h3>
+                    </div>
                     <div id="replies-list">
                         <p>載入中...</p>
                     </div>
                 </div>
-            </div>
 
-            <div class="card" style="margin-top: 2rem;">
-                <div class="card-header">
-                    <h3>提供回覆</h3>
-                </div>
-                <div class="card-body">
-                    <div id="reply-form-section">
-                        <p style="color: var(--text-light);">請先登入以提供回覆</p>
+                <!-- 回覆表單 -->
+                <div class="qd-compose">
+                    <div id="reply-form-section" class="qd-login-hint">
+                        <p>請先登入以提供回覆</p>
                     </div>
-
                     <div id="reply-form" style="display: none;">
+                        <h4 class="qd-compose-hd">提供回覆</h4>
                         <form id="add-reply-form">
                             <input type="hidden" id="reply-parent-id" value="">
                             <div class="form-group">
                                 <label for="reply-content">回覆內容</label>
-                                <textarea id="reply-content" rows="6" placeholder="提供您的解答或建議..." required></textarea>
+                                <textarea id="reply-content" rows="5" placeholder="提供您的解答或建議..." required></textarea>
                             </div>
                             <div class="form-group">
                                 <label>
@@ -117,13 +250,14 @@
                         </form>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 
     <div id="report-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 1200; align-items: center; justify-content: center; padding: 1rem;">
-        <div class="card" style="max-width: 560px; width: 100%;">
-            <h3 style="margin-top: 0;">送出檢舉</h3>
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 32px rgba(15,23,42,0.18); padding: 1.5rem; max-width: 560px; width: 100%;">
+            <h3 style="margin: 0 0 1.25rem; font-size: 1.1rem; color: var(--text-strong);">送出檢舉</h3>
             <form id="report-form">
                 <div class="form-group">
                     <label for="report-type-select">檢舉事由</label>
@@ -152,24 +286,22 @@
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>
 
-    <script src="../js/main.js?v=20260502f"></script>
+    <script src="../js/main.js?v=20260510"></script>
     <script>
         let currentQuestion = null;
         let reportTarget = null;
 
-        // 獲取URL參數
         function getQuestionId() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('id');
         }
 
-        // 載入提問詳情
         function shouldTrackView(questionId) {
             if (!questionId) return false;
 
             const key = `qa-viewed-${questionId}`;
             const now = Date.now();
-            const cooldownMs = 30 * 60 * 1000; // 30 分鐘內重整不重複計數
+            const cooldownMs = 30 * 60 * 1000;
 
             const lastViewedAt = Number(localStorage.getItem(key) || 0);
             if (Number.isFinite(lastViewedAt) && lastViewedAt > 0 && (now - lastViewedAt) < cooldownMs) {
@@ -206,7 +338,6 @@
             }
         }
 
-        // 顯示提問詳情
         function displayQuestionDetail(question) {
             const title = question.title || question.question_title || '';
             const author = question.author_name || question.user_name || question.display_name || '匿名用戶';
@@ -230,7 +361,6 @@
             document.getElementById('helpful-count').textContent = question.helpful_count;
             document.getElementById('not-helpful-count').textContent = question.not_helpful_count || 0;
 
-            // 設定狀態
             const statusElement = document.getElementById('question-status');
             if (solved) {
                 statusElement.textContent = '已解決';
@@ -240,7 +370,6 @@
                 statusElement.className = 'badge badge-warning';
             }
 
-            // 檢查是否顯示操作按鈕
             const user = StorageUtils.getUser();
             if ((question.can_mark_solved || (user && user.user_id === question.user_id)) && !solved) {
                 document.getElementById('question-actions').style.display = 'block';
@@ -269,7 +398,6 @@
             }
         }
 
-        // 載入回覆列表
         async function loadReplies(questionId) {
             try {
                 const response = await APIClient.get(`qa.php?action=replies&question_id=${questionId}`);
@@ -510,14 +638,13 @@
             }
         }
 
-        // 標記為已解決
         async function markAsSolved() {
             const questionId = getQuestionId();
             try {
                 const response = await APIClient.post('qa.php?action=mark_solved', { question_id: questionId });
                 if (response.success) {
                     PageUtils.showAlert('已標記為已解決', 'success');
-                    loadQuestionDetail(false); // 重新載入
+                    loadQuestionDetail(false);
                 } else {
                     PageUtils.showAlert(response.message, 'error');
                 }
@@ -527,14 +654,13 @@
             }
         }
 
-        // 標記回覆回饋
         async function markReplyVote(replyId, voteType) {
             try {
                 const action = voteType === 'not_helpful' ? 'mark_not_helpful' : 'mark_helpful';
                 const response = await APIClient.post(`qa.php?action=${action}`, { reply_id: replyId });
                 if (response.success) {
                     PageUtils.showAlert('感謝您的回饋', 'success');
-                    loadReplies(getQuestionId()); // 重新載入回覆
+                    loadReplies(getQuestionId());
                     loadQuestionDetail(false);
                 } else {
                     PageUtils.showAlert(response.message, 'error');
@@ -606,7 +732,6 @@
             }
         }
 
-        // 處理回覆提交
         async function handleReplySubmit(e) {
             e.preventDefault();
 
@@ -642,7 +767,7 @@
                         if (parentReplyIdInput) parentReplyIdInput.value = '';
                     }
                     loadReplies(questionId);
-                    loadQuestionDetail(false); // 更新回覆數
+                    loadQuestionDetail(false);
                 } else {
                     PageUtils.showAlert(response.message, 'error');
                 }
@@ -652,7 +777,6 @@
             }
         }
 
-        // 頁面載入時初始化
         window.addEventListener('DOMContentLoaded', async function() {
             loadQuestionDetail(true);
 
@@ -660,7 +784,6 @@
                 await hydrateUserFromSession();
             }
 
-            // 綁定事件
             document.getElementById('mark-solved-btn').addEventListener('click', markAsSolved);
             document.getElementById('add-reply-form').addEventListener('submit', handleReplySubmit);
             document.getElementById('report-form').addEventListener('submit', submitReportForm);
@@ -671,7 +794,6 @@
                 reportContent('qa_question', Number(questionId));
             });
 
-            // 檢查登入狀態顯示回覆表單
             const user = StorageUtils.getUser();
             if (user) {
                 document.getElementById('reply-form-section').style.display = 'none';
