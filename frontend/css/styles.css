@@ -1,9 +1,9 @@
-@import url('./base.css');
+﻿@import url('./base.css');
 @import url('./layout.css');
 @import url('./components.css');
 
 
-/* ?嚙踝蕭??嚙??*/
+/* ── 首頁英雄區 ── */
 .hero {
     background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-400) 60%, var(--color-primary-300) 100%);
     color: white;
@@ -44,6 +44,7 @@
 }
 
 
+/* ── 登入推廣橫幅 ── */
 .auth-promo-banner {
     position: fixed;
     left: 50%;
@@ -167,6 +168,7 @@
 }
 
 
+/* ── Q&A 留言串樣式 ── */
 .qa-reply-card {
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
@@ -427,6 +429,7 @@
 }
 
 
+/* ── 篩選面板（管理頁活動篩選）── */
 .event-filter-panel {
     display: flex;
     flex-direction: column;
@@ -721,6 +724,7 @@
     }
 }
 
+/* ── 公告卡片 ── */
 .announcement-card {
     border-radius: 0.75rem;
     padding: 1rem 1.25rem;
@@ -770,6 +774,7 @@
     color: #6b7280;
 }
 
+/* ── 表單驗證錯誤 ── */
 .field-error {
     color: var(--danger-color);
     font-size: 0.85rem;
@@ -798,7 +803,7 @@
     }
 }
 
-/* 霅佗蕭?/?嚙踝蕭?瘨 */
+/* 警告／提示訊息 */
 .alert {
     padding: 1rem;
     border-radius: 0.5rem;
@@ -824,7 +829,7 @@
     border: 1px solid var(--warning-color);
 }
 
-/* ?嚙踝蕭? */
+/* 頁碼 */
 .pagination {
     display: flex;
     gap: 0.4rem;
@@ -856,7 +861,7 @@
     box-shadow: 0 3px 8px rgba(42, 95, 181, 0.25);
 }
 
-/* ?嚙踝蕭?嚙?*/
+/* 側邊欄 */
 .sidebar {
     background-color: var(--light-gray);
     padding: 1.5rem;
@@ -885,7 +890,7 @@
     color: var(--primary-color);
 }
 
-/* ?嚙踝蕭?閰蕭? */
+/* 評分元件 */
 .rating {
     color: #fbbf24;
     font-size: 1.25rem;
@@ -914,7 +919,7 @@
     color: #fbbf24;
 }
 
-/* ?嚙踝蕭?嚙?*/
+/* 載入中 */
 .loading {
     text-align: center;
     padding: 2rem;
@@ -940,7 +945,7 @@
     }
 }
 
-/* ?嚙質 */
+/* 頁尾 */
 footer {
     background: linear-gradient(135deg, var(--color-primary-800) 0%, var(--color-primary-700) 60%, #1A1714 100%);
     color: rgba(255,255,255,0.9);
@@ -955,7 +960,7 @@ footer p {
     margin: 0;
 }
 
-/* ?嚙踝蕭?撘身嚙?*/
+/* 手機響應式 */
 @media (max-width: 768px) {
 
     .hero h1 {
@@ -968,7 +973,7 @@ footer p {
 
 }
 
-/* 蝞∴蕭??嚙踝蕭?銵冽撠惇 */
+/* 管理頁通用樣式 */
 .admin-page {
     font-family: 'IBM Plex Sans TC', 'Segoe UI', Tahoma, sans-serif;
     background: var(--page-bg);
@@ -1568,7 +1573,7 @@ footer p {
     }
 }
 
-/* Club Admin Dashboard Specific Styles */
+/* ── 社團幹部後台（Club Admin）── */
 .club-admin-page {
     background: var(--page-bg);
 }

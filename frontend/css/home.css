@@ -19,9 +19,7 @@
 .home-right-rail {
     display: grid;
     gap: 0.75rem;
-}
-
-.home-right-rail {
+    grid-column: 2;
     position: sticky;
     top: 5.4rem;
 }
@@ -29,10 +27,6 @@
 .home-main-column {
     min-width: 0;
     grid-column: 1;
-}
-
-.home-right-rail {
-    grid-column: 2;
 }
 
 .rail-card,

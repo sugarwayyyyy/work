@@ -141,6 +141,7 @@
 }
 
 
+/* ── 列表 / 項目卡覆寫 ── */
 .admin-page .admin-list,
 .club-admin-page .admin-list {
     display: grid;
@@ -292,7 +293,7 @@
 .dsm-metric--warn    strong { color: #d97706; }
 .dsm-metric--alert   strong { color: #dc2626; }
 
-/* Account management table UI */
+/* ── 帳號管理表格 ── */
 .user-mgmt-panel {
     border: 1px solid #e5e7eb;
     border-radius: 10px;
@@ -481,6 +482,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background 0.15s, color 0.15s;
 }
 
 .csm-close:hover {
