@@ -277,6 +277,14 @@
                                     <button type="submit" class="btn btn-primary">更新資料</button>
                                 </form>
 
+                                <!-- Google 帳號綁定 -->
+                                <div id="google-bind-section" style="margin-top:1.5rem; padding-top:1.25rem; border-top:1px solid var(--border);">
+                                    <p style="font-weight:600; margin-bottom:0.5rem; font-size:0.95rem; color:var(--text-strong);">Google 帳號綁定</p>
+                                    <div id="google-bind-status" style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+                                        <span id="google-bind-label" style="font-size:0.875rem; color:var(--text-muted);">載入中…</span>
+                                    </div>
+                                </div>
+
                                 <div id="danger-zone" class="danger-zone" style="display: none;">
                                     <p class="danger-zone__title">⚠ 危險區域</p>
                                     <p class="danger-zone__desc">刪除帳號後，所有資料將永久清除且無法回復。</p>
@@ -393,6 +401,7 @@
                     StorageUtils.setUser(currentUser);
                     displayUserProfile(currentUser);
                     applyProfileTabsByRole(currentUser);
+                    renderGoogleBindStatus(currentUser);
 
                     if (currentUser.role !== 'platform_admin') {
                         loadFollowedClubs();
@@ -820,6 +829,114 @@
                 if (e.target === this) closeDeactivateModal();
             });
         });
+
+        /* ── Google 帳號綁定 ─────────────────────────────────────────────── */
+        let _googleClientId = null;
+        let _gisLoaded = false;
+
+        function renderGoogleBindStatus(user) {
+            const label     = document.getElementById('google-bind-label');
+            const statusDiv = document.getElementById('google-bind-status');
+            if (!label || !statusDiv) return;
+
+            statusDiv.querySelectorAll('button, .google-link-wrap').forEach(el => el.remove());
+
+            if (user && user.google_id) {
+                label.textContent = '已綁定 Google 帳號';
+                label.style.color = 'var(--cta)';
+
+                const unlinkBtn = document.createElement('button');
+                unlinkBtn.type = 'button';
+                unlinkBtn.className = 'btn btn-secondary btn-sm';
+                unlinkBtn.textContent = '解除綁定';
+                unlinkBtn.addEventListener('click', handleUnlinkGoogle);
+                statusDiv.appendChild(unlinkBtn);
+            } else {
+                label.textContent = '尚未綁定 Google 帳號';
+                label.style.color = 'var(--text-muted)';
+
+                const wrap = document.createElement('div');
+                wrap.className = 'google-link-wrap';
+                statusDiv.appendChild(wrap);
+                initGoogleLinkButton(wrap);
+            }
+        }
+
+        async function initGoogleLinkButton(container) {
+            if (!_googleClientId) {
+                try {
+                    const res = await APIClient.get('oauth.php?action=google_client_id');
+                    if (!res || !res.success || !res.data || !res.data.client_id) {
+                        container.innerHTML = '<span style="font-size:0.8rem;color:var(--text-soft);">Google 登入未啟用</span>';
+                        return;
+                    }
+                    _googleClientId = res.data.client_id;
+                } catch (e) {
+                    container.innerHTML = '<span style="font-size:0.8rem;color:var(--text-soft);">無法取得 Google 設定</span>';
+                    return;
+                }
+            }
+
+            if (!_gisLoaded) {
+                await new Promise(function (resolve, reject) {
+                    if (window.google && window.google.accounts) { resolve(); return; }
+                    const s = document.createElement('script');
+                    s.src = 'https://accounts.google.com/gsi/client';
+                    s.async = true; s.defer = true;
+                    s.onload = resolve; s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+                _gisLoaded = true;
+            }
+
+            google.accounts.id.initialize({
+                client_id: _googleClientId,
+                callback: handleGoogleLinkCallback,
+                ux_mode: 'popup',
+                cancel_on_tap_outside: true,
+            });
+
+            google.accounts.id.renderButton(container, {
+                type: 'standard', shape: 'rectangular', theme: 'outline',
+                text: 'continue_with', size: 'medium', logo_alignment: 'left',
+            });
+        }
+
+        async function handleGoogleLinkCallback(googleResponse) {
+            const credential = googleResponse.credential;
+            if (!credential) {
+                PageUtils.showAlert('Google 綁定失敗，請重試', 'error');
+                return;
+            }
+            try {
+                const res = await APIClient.post('oauth.php?action=link_google', { credential });
+                if (res && res.success) {
+                    PageUtils.showAlert('Google 帳號綁定成功', 'success');
+                    if (currentUser) currentUser.google_id = (res.data && res.data.google_id) || '_linked';
+                    renderGoogleBindStatus(currentUser);
+                } else {
+                    PageUtils.showAlert((res && res.message) || 'Google 綁定失敗', 'error');
+                }
+            } catch (e) {
+                PageUtils.showAlert('Google 綁定失敗，請稍後重試', 'error');
+            }
+        }
+
+        async function handleUnlinkGoogle() {
+            if (!confirm('確定要解除 Google 帳號綁定嗎？\n\n解除後若尚未設定密碼，將無法以 Email 登入。')) return;
+            try {
+                const res = await APIClient.post('oauth.php?action=unlink_google', {});
+                if (res && res.success) {
+                    PageUtils.showAlert('Google 帳號已解除綁定', 'success');
+                    if (currentUser) { currentUser.google_id = null; currentUser.oauth_provider = 'email'; }
+                    renderGoogleBindStatus(currentUser);
+                } else {
+                    PageUtils.showAlert((res && res.message) || '解除綁定失敗', 'error');
+                }
+            } catch (e) {
+                PageUtils.showAlert('解除綁定失敗，請稍後重試', 'error');
+            }
+        }
     </script>
 </body>
 

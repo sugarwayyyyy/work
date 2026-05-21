@@ -33,6 +33,8 @@ define('SMTP_USER', '');
 define('SMTP_PASSWORD', '');
 define('FROM_EMAIL', '');
 
+defined('GOOGLE_CLIENT_ID') or define('GOOGLE_CLIENT_ID', getenv('GOOGLE_CLIENT_ID') ?: '');
+
 date_default_timezone_set('Asia/Taipei');
 ini_set('default_charset', 'UTF-8');
 if (function_exists('mb_internal_encoding')) {
