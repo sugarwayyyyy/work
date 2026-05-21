@@ -279,6 +279,133 @@ class ClubAdminAPI {
         ]);
     }
 
+    public static function getClubMembers($club_id) {
+        self::requireClubAdmin();
+
+        $club_id = (int)$club_id;
+        if (!$club_id) {
+            Helper::error('缺少社團 ID', 400);
+        }
+
+        $callerId = Auth::getCurrentUserId();
+        $myRole = null;
+
+        if (!Auth::isAdmin()) {
+            $myMembership = Database::getInstance()->fetchOne(
+                'SELECT role FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1
+                 AND role IN ("president","vice_president","public_relations","treasurer","director")',
+                [$club_id, $callerId]
+            );
+            if (!$myMembership) {
+                Helper::error('您無權限查看此社團成員', 403);
+            }
+            $myRole = $myMembership['role'];
+        } else {
+            $row = Database::getInstance()->fetchOne(
+                'SELECT role FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1',
+                [$club_id, $callerId]
+            );
+            $myRole = $row ? $row['role'] : 'platform_admin';
+        }
+
+        $members = Database::getInstance()->fetchAll(
+            'SELECT cm.user_id, cm.role, u.name, u.student_id
+             FROM club_members cm
+             JOIN users u ON cm.user_id = u.user_id
+             WHERE cm.club_id = ? AND cm.is_active = 1
+             ORDER BY FIELD(cm.role,"president","vice_president","public_relations","treasurer","director","member","advisor"),
+                      u.name',
+            [$club_id]
+        );
+
+        Helper::success('取得社團成員成功', ['members' => $members, 'my_role' => $myRole]);
+    }
+
+    public static function updateMemberRole($data) {
+        self::requireClubAdmin();
+
+        $errors = Helper::validateRequired($data, ['club_id', 'target_user_id', 'role']);
+        if (!empty($errors)) {
+            Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+        }
+
+        $club_id       = (int)$data['club_id'];
+        $targetUserId  = (int)$data['target_user_id'];
+        $newRole       = (string)$data['role'];
+        $callerId      = (int)Auth::getCurrentUserId();
+
+        $allowedRoles = ['vice_president', 'public_relations', 'treasurer', 'director', 'member'];
+        if (!in_array($newRole, $allowedRoles, true)) {
+            Helper::error('不允許指派此角色', 400);
+        }
+
+        if ($targetUserId === $callerId) {
+            Helper::error('不能修改自己的角色', 400);
+        }
+
+        // 呼叫者必須是該社團的社長
+        $isPresident = Database::getInstance()->fetchOne(
+            'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND role = "president" AND is_active = 1',
+            [$club_id, $callerId]
+        );
+        if (!$isPresident && !Auth::isAdmin()) {
+            Helper::error('只有社長才能指派角色', 403);
+        }
+
+        // target 必須是該社團的 is_active 成員
+        $targetMember = Database::getInstance()->fetchOne(
+            'SELECT role FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1',
+            [$club_id, $targetUserId]
+        );
+        if (!$targetMember) {
+            Helper::error('找不到此社團成員', 404);
+        }
+
+        // 不能變更另一位社長的角色
+        if ($targetMember['role'] === 'president') {
+            Helper::error('社長職位轉讓請透過帳戶轉讓流程處理', 403);
+        }
+
+        // 獨占職稱：同社團不可有兩人擔任同一職稱
+        $exclusiveRoles = ['vice_president', 'public_relations', 'treasurer', 'director'];
+        if (in_array($newRole, $exclusiveRoles, true)) {
+            $existing = Database::getInstance()->fetchOne(
+                'SELECT user_id FROM club_members WHERE club_id = ? AND role = ? AND is_active = 1 AND user_id != ?',
+                [$club_id, $newRole, $targetUserId]
+            );
+            if ($existing) {
+                $roleNames = [
+                    'vice_president' => '副社長', 'public_relations' => '公關',
+                    'treasurer' => '總務', 'director' => '幹事',
+                ];
+                Helper::error('此社團已有人擔任「' . ($roleNames[$newRole] ?? $newRole) . '」，請先變更該成員的職稱', 409);
+            }
+        }
+
+        Database::getInstance()->update(
+            'club_members',
+            ['role' => $newRole],
+            'club_id = ? AND user_id = ?',
+            [$club_id, $targetUserId]
+        );
+
+        // 同步 target 的全域 role
+        $officerRoles = '"president","vice_president","public_relations","treasurer","director"';
+        $stillOfficer = Database::getInstance()->fetchOne(
+            "SELECT 1 FROM club_members WHERE user_id = ? AND is_active = 1 AND role IN ($officerRoles)",
+            [$targetUserId]
+        );
+        $globalRole = $stillOfficer ? 'club_admin' : 'student';
+        Database::getInstance()->update(
+            'users',
+            ['role' => $globalRole],
+            'user_id = ? AND role != "platform_admin"',
+            [$targetUserId]
+        );
+
+        Helper::success('角色已更新');
+    }
+
     public static function getMyTransferRequests() {
         self::requireClubAdmin();
         $user_id = Auth::getCurrentUserId();
@@ -320,6 +447,8 @@ if ($method === 'GET') {
         ClubAdminAPI::getMyTransferRequests();
     } elseif ($action === 'club_stats' && $club_id) {
         ClubAdminAPI::getClubStats($club_id);
+    } elseif ($action === 'club_members' && $club_id) {
+        ClubAdminAPI::getClubMembers($club_id);
     }
 }
 
@@ -329,6 +458,8 @@ if ($method === 'POST') {
         ClubAdminAPI::createClubEvent($data);
     } elseif ($action === 'submit_transfer_request') {
         ClubAdminAPI::submitTransferRequest($data);
+    } elseif ($action === 'update_member_role') {
+        ClubAdminAPI::updateMemberRole($data);
     }
 }
 

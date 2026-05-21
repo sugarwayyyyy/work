@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>成員管理 — 幹部後台</title>
+    <link rel="stylesheet" href="../css/styles.css?v=20260502k" />
+    <link rel="stylesheet" href="../css/admin.css?v=20260502k" />
+    <link rel="stylesheet" href="../css/club-admin-dashboard.css?v=20260502k" />
+</head>
+<body class="admin-dashboard-page club-admin-page">
+    <header>
+        <nav>
+            <a href="club-admin-club-manage.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
+            <ul class="nav-links"></ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href='login.html'" style="display:none;">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display: none;">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="container admin-dashboard-container">
+
+        <div class="admin-stats-bar-wrap">
+        <div class="admin-stats-bar reveal-up">
+            <div class="stat-item"><strong id="stat-my-clubs">-</strong><span>所屬社團</span></div>
+            <div class="stat-item"><strong id="stat-current-club" class="stat-club-name">—</strong><span>目前管理</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-followers">-</strong><span>追蹤數</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-total-events">-</strong><span>活動總數</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-upcoming">-</strong><span>即將舉行</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-published">-</strong><span>已發布</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-cancelled">-</strong><span>已取消</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-registrations">-</strong><span>總報名</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-avg-rating">-</strong><span>平均評分</span></div>
+            <div class="stat-item stat-club-only"><strong id="stat-unanswered-qa">-</strong><span>未回答 Q&amp;A</span></div>
+        </div>
+        </div>
+
+        <div id="selected-club-banner" class="admin-selected-club-banner" style="display:none;">
+            <span>目前管理：<strong id="selected-club-name">-</strong></span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openClubSwitchPopup()">切換社團</button>
+        </div>
+
+        <section class="card admin-panel reveal-up" id="members-section">
+
+            <header class="tr-head">
+                <div class="tr-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.615 16.428a1.224 1.224 0 01-.569-1.175 6.002 6.002 0 0111.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 017 17a9.953 9.953 0 01-5.385-1.572zM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 00-1.588-3.755 4.502 4.502 0 015.874 2.636.818.818 0 01-.36.98A7.465 7.465 0 0114.5 16z"/></svg>
+                </div>
+                <div>
+                    <h2 class="tr-head__title">成員管理</h2>
+                    <p class="tr-head__desc" id="members-subtitle">檢視社團成員；社長可指派或變更幹部職稱。</p>
+                </div>
+            </header>
+
+            <div id="members-list-wrap">
+                <p class="widget-empty">載入中…</p>
+            </div>
+
+        </section>
+
+    </div>
+
+    <script src="../js/main.js?v=20260510"></script>
+    <script src="../js/club-admin-dashboard.js"></script>
+    <script>
+        (async function () {
+            let clubId = Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
+            let clubName = sessionStorage.getItem('clubAdmin_clubName') || '';
+            if (!clubId) {
+                try {
+                    const res = await APIClient.get('club-admin.php?action=my_clubs');
+                    const firstClub = (res && res.success && res.data && Array.isArray(res.data.clubs))
+                        ? res.data.clubs[0]
+                        : null;
+                    if (firstClub) {
+                        clubId = Number(firstClub.club_id) || 0;
+                        clubName = String(firstClub.club_name || '');
+                        sessionStorage.setItem('clubAdmin_clubId', String(clubId));
+                        sessionStorage.setItem('clubAdmin_clubName', clubName);
+                    }
+                } catch (err) {
+                    console.error('Failed to resolve default club', err);
+                }
+            }
+            if (!clubId) {
+                openClubSwitchPopup();
+                return;
+            }
+            currentClubId = clubId;
+            currentClubName = clubName;
+            const nameEl = document.getElementById('stat-current-club');
+            if (nameEl) nameEl.textContent = clubName || '—';
+            const banner = document.getElementById('selected-club-banner');
+            const bannerName = document.getElementById('selected-club-name');
+            if (bannerName) bannerName.textContent = clubName || '-';
+            if (banner) banner.style.display = '';
+            const subtitle = document.getElementById('members-subtitle');
+            if (subtitle && clubName) subtitle.textContent = clubName + ' 的社團成員';
+            loadClubAdminStats(clubId);
+            loadClubMembers(clubId);
+        })();
+    </script>
+</body>
+</html>

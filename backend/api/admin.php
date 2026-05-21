@@ -173,6 +173,22 @@ class AdminAPI {
             [$club_id, $user['user_id']]
         );
 
+        // 獨占職稱：同社團不可有兩人擔任同一職稱
+        $exclusiveRoles = ['president', 'vice_president', 'public_relations', 'treasurer', 'director'];
+        if ($is_active === 1 && in_array($role, $exclusiveRoles, true)) {
+            $existing = Database::getInstance()->fetchOne(
+                'SELECT user_id FROM club_members WHERE club_id = ? AND role = ? AND is_active = 1 AND user_id != ?',
+                [$club_id, $role, (int)$user['user_id']]
+            );
+            if ($existing) {
+                $roleNames = [
+                    'president' => '社長', 'vice_president' => '副社長',
+                    'public_relations' => '公關', 'treasurer' => '總務', 'director' => '幹事',
+                ];
+                Helper::error('此社團已有人擔任「' . ($roleNames[$role] ?? $role) . '」，請先移除或變更該成員的職稱', 409);
+            }
+        }
+
         $memberData = [
             'club_id' => $club_id,
             'user_id' => (int)$user['user_id'],

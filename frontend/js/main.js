@@ -863,17 +863,14 @@ function shouldRenderGlobalFollowSidebar() {
         '/register.html',
         '/admin-dashboard.html',
         '/admin-overview.html',
-        '/club-admin-dashboard.html',
         '/frontend/pages/login.html',
         '/frontend/pages/register.html',
         '/frontend/pages/admin-dashboard.html',
         '/frontend/pages/admin-overview.html',
-        '/frontend/pages/club-admin-dashboard.html',
         '/pages/login.html',
         '/pages/register.html',
         '/pages/admin-dashboard.html',
-        '/pages/admin-overview.html',
-        '/pages/club-admin-dashboard.html'
+        '/pages/admin-overview.html'
     ];
 
     return !blockedPageSuffixes.some(page => pathname.endsWith(page));
@@ -1391,14 +1388,9 @@ function isAdminSubPage() {
     return pages.some(p => path.endsWith('/frontend/pages/' + p) || path.endsWith('/pages/' + p));
 }
 
-function isClubAdminDashboardPage() {
-    const path = window.location.pathname || '';
-    return path.endsWith('/frontend/pages/club-admin-dashboard.html') || path.endsWith('/pages/club-admin-dashboard.html');
-}
-
 function isClubAdminSubPage() {
     const path = window.location.pathname || '';
-    const pages = ['club-admin-club-manage.html', 'club-admin-create-event.html', 'club-admin-events-list.html', 'club-admin-transfer.html'];
+    const pages = ['club-admin-club-manage.html', 'club-admin-create-event.html', 'club-admin-events-list.html', 'club-admin-transfer.html', 'club-admin-members.html'];
     return pages.some(p => path.endsWith('/frontend/pages/' + p) || path.endsWith('/pages/' + p));
 }
 
@@ -1445,14 +1437,10 @@ function getNavActiveSection(pathname) {
     }
     if (fileName === 'admin-dashboard.html') return 'admin-dashboard.html';
     if (fileName === 'admin-overview.html')  return 'admin-overview.html';
-    if (fileName === 'club-admin-dashboard.html') {
-        return 'club-admin-dashboard.html';
-    }
 
     // Fallback for unusual Apache path rewrites.
     if (path.includes('/admin-dashboard.html')) return 'admin-dashboard.html';
     if (path.includes('/admin-overview.html'))  return 'admin-overview.html';
-    if (path.includes('/club-admin-dashboard.html')) return 'club-admin-dashboard.html';
     if (path.includes('/club-list.html') || path.includes('/club-detail.html')) return 'club-list.html';
     if (path.includes('/events.html') || path.includes('/event-detail.html')) return 'events.html';
     if (path.includes('/qa.html') || path.includes('/qa-detail.html')) return 'qa.html';
@@ -1479,10 +1467,9 @@ function applyActiveNavLink() {
         if (t) t.classList.add('active');
         return;
     }
-    if (isClubAdminSubPage() || isClubAdminDashboardPage()) {
+    if (isClubAdminSubPage()) {
         const filename = (window.location.pathname || '').split('/').pop() || '';
-        const target = filename === 'club-admin-dashboard.html' ? 'club-admin-club-manage.html' : filename;
-        const t = links.find(l => (l.getAttribute('href') || '').includes(target));
+        const t = links.find(l => (l.getAttribute('href') || '').includes(filename));
         if (t) t.classList.add('active');
         return;
     }
@@ -1493,8 +1480,6 @@ function applyActiveNavLink() {
     let target = null;
     if (section === 'index.html') {
         target = links.find((link) => /index\.html(?:$|\?)/i.test(String(link.getAttribute('href') || '')));
-    } else if (section === 'club-admin-dashboard.html') {
-        target = links.find((link) => String(link.getAttribute('href') || '').includes('club-admin-dashboard.html'));
     } else {
         target = links.find((link) => String(link.getAttribute('href') || '').includes(section));
     }
@@ -1875,11 +1860,12 @@ function updateNavigation() {
                 `;
             }
 
-            if (isClubAdminSubPage() || isClubAdminDashboardPage()) {
+            if (isClubAdminSubPage()) {
                 navLinks.innerHTML = `
                     <li><a href="${FRONTEND_HOME_URL}">返回首頁</a></li>
                     <li><a href="${getPageLink('club-admin-club-manage.html')}">社團管理</a></li>
                     <li><a href="${getPageLink('club-admin-events-list.html')}">活動列表</a></li>
+                    <li><a href="${getPageLink('club-admin-members.html')}">成員管理</a></li>
                     <li><a href="${getPageLink('club-admin-transfer.html')}">帳戶轉讓</a></li>
                 `;
             } else if (!isAdminSubPage() && !isAdminDashboardPage() && !isAdminOverviewPage()) {

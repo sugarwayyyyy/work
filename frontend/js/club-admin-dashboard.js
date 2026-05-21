@@ -44,7 +44,7 @@
         }
 
         function hideManagementPanels() {
-            ['club-management-section','create-event-section','transfer-request-section','club-events-section','event-management-section'].forEach(id => {
+            ['club-management-section','create-event-section','transfer-request-section','club-events-section','event-management-section','members-section'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
@@ -52,7 +52,7 @@
 
         function showManagementPanel(panel) {
             hideManagementPanels();
-            const map = { club:'club-management-section', event:'create-event-section', transfer:'transfer-request-section', events:'club-events-section' };
+            const map = { club:'club-management-section', event:'create-event-section', transfer:'transfer-request-section', events:'club-events-section', members:'members-section' };
             const el = document.getElementById(map[panel]);
             if (el) el.style.display = 'block';
         }
@@ -2164,6 +2164,116 @@
             const modal = document.getElementById('participants-modal');
             if (modal) modal.style.display = 'none';
             document.body.style.overflow = '';
+        }
+
+        // ── 成員管理 ─────────────────────────────────────────────────────────────
+
+        const ROLE_LABELS = {
+            president: '社長', vice_president: '副社長',
+            public_relations: '公關', treasurer: '總務',
+            director: '幹事', member: '一般成員', advisor: '顧問'
+        };
+
+        async function loadClubMembers(clubId) {
+            const wrap = document.getElementById('members-list-wrap');
+            if (!wrap) return;
+            wrap.innerHTML = '<p class="widget-empty">載入中…</p>';
+
+            try {
+                const res = await APIClient.get(`club-admin.php?action=club_members&id=${clubId}`);
+                if (!res || !res.success) {
+                    wrap.innerHTML = `<p class="widget-empty">${PageUtils.escapeHtml(res?.message || '載入失敗')}</p>`;
+                    return;
+                }
+
+                const members = res.data.members || [];
+                if (members.length === 0) {
+                    wrap.innerHTML = '<p class="widget-empty">目前尚無成員資料。</p>';
+                    return;
+                }
+
+                const myRole = res.data.my_role || '';
+                const isPresident = myRole === 'president';
+                const user = StorageUtils.getUser();
+                const currentUserId = user ? Number(user.user_id) : 0;
+
+                let html = '<div class="table-shell" style="border-radius:8px;">'
+                    + '<table class="table" style="min-width:0;"><thead><tr>'
+                    + '<th>姓名</th><th>學號</th><th>職稱</th>'
+                    + (isPresident ? '<th>操作</th>' : '')
+                    + '</tr></thead><tbody>';
+
+                members.forEach(m => {
+                    const uid = Number(m.user_id);
+                    const safeN = PageUtils.escapeHtml(m.name || '—');
+                    const safeS = PageUtils.escapeHtml(m.student_id || '—');
+                    const roleLabel = PageUtils.escapeHtml(ROLE_LABELS[m.role] || m.role);
+                    const isSelf = uid === currentUserId;
+                    const isTargetPresident = m.role === 'president';
+
+                    let actionCell = '';
+                    if (isPresident && !isSelf && !isTargetPresident) {
+                        const opts = [
+                            ['vice_president', '副社長'],
+                            ['public_relations', '公關'],
+                            ['treasurer', '總務'],
+                            ['director', '幹事'],
+                            ['member', '一般成員'],
+                        ].map(([v, l]) =>
+                            `<option value="${v}"${m.role === v ? ' selected' : ''}>${l}</option>`
+                        ).join('');
+
+                        actionCell = `<td>`
+                            + `<div style="display:flex;gap:0.4rem;align-items:center;">`
+                            + `<select class="member-role-select" data-uid="${uid}" style="font-size:0.83rem;">${opts}</select>`
+                            + `<button type="button" class="btn btn-primary btn-sm member-role-save-btn" data-uid="${uid}">儲存</button>`
+                            + `</div></td>`;
+                    } else if (isPresident) {
+                        actionCell = '<td></td>';
+                    }
+
+                    html += `<tr><td>${safeN}</td><td>${safeS}</td><td>${roleLabel}</td>${actionCell}</tr>`;
+                });
+
+                html += '</tbody></table></div>';
+                wrap.innerHTML = html;
+
+                wrap.querySelectorAll('.member-role-save-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetUid = Number(btn.dataset.uid);
+                        const sel = wrap.querySelector(`.member-role-select[data-uid="${targetUid}"]`);
+                        if (sel) updateMemberRole(clubId, targetUid, sel.value, sel, btn);
+                    });
+                });
+
+            } catch (err) {
+                wrap.innerHTML = `<p class="widget-empty">載入失敗：${PageUtils.escapeHtml(err.message)}</p>`;
+            }
+        }
+
+        async function updateMemberRole(clubId, targetUserId, newRole, selectEl, saveBtn) {
+            if (selectEl) selectEl.disabled = true;
+            if (saveBtn) saveBtn.disabled = true;
+
+            try {
+                const res = await APIClient.post('club-admin.php?action=update_member_role', {
+                    club_id: clubId,
+                    target_user_id: targetUserId,
+                    role: newRole
+                });
+                if (res && res.success) {
+                    PageUtils.showAlert('角色已更新', 'success');
+                    loadClubMembers(clubId);
+                } else {
+                    PageUtils.showAlert(res?.message || '更新失敗', 'error');
+                    if (selectEl) selectEl.disabled = false;
+                    if (saveBtn) saveBtn.disabled = false;
+                }
+            } catch (err) {
+                PageUtils.showAlert('更新失敗：' + err.message, 'error');
+                if (selectEl) selectEl.disabled = false;
+                if (saveBtn) saveBtn.disabled = false;
+            }
         }
 
         loadUnreadNotificationDot();
