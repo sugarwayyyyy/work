@@ -40,6 +40,7 @@ mysql -u root -p club_platform < database/migrations/2026_04_19_reviews_unique_u
 mysql -u root -p club_platform < database/migrations/2026_04_28_event_time_range.sql
 mysql -u root -p club_platform < database/migrations/2026_05_10_club_fee_semester.sql
 mysql -u root -p club_platform < database/migrations/2026_05_11_remove_categories_religion_misc.sql
+mysql -u root -p club_platform < database/migrations/2026_05_21_google_oauth.sql
 mysql -u root -p club_platform < database/seeds/2026_04_02_school_clubs_seed.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
@@ -57,9 +58,20 @@ mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 // 依照本機環境填寫，AppServ 預設密碼通常為 12345678，XAMPP 預設為空字串
 define('DB_PASSWORD', '12345678');  // AppServ
 // define('DB_PASSWORD', '');       // XAMPP
+
+// （選填）Google OAuth — 填入後登入 / 註冊頁面會出現「以 Google 帳號登入」按鈕
+// 未填則按鈕自動隱藏，不影響 email / password 登入
+// define('GOOGLE_CLIENT_ID', 'YOUR_CLIENT_ID.apps.googleusercontent.com');
 ```
 
 > `backend/config.php` 的預設值為 AppServ（密碼 `12345678`）。若使用 XAMPP（無密碼），只需建立上述檔案並取消 XAMPP 那行的注解即可。
+
+#### 啟用 Google OAuth（選填）
+
+1. 前往 [Google Cloud Console](https://console.cloud.google.com/) → OAuth 2.0 用戶端 → 建立 **Web application** 用戶端。
+2. 在「已授權的 JavaScript 來源」加入本機開發網址，例如 `http://localhost:8000`。
+3. 將產生的 Client ID 填入 `config.local.php` 的 `GOOGLE_CLIENT_ID`。
+4. 設定完成後，登入與註冊頁面會自動顯示 Google 按鈕；未設定則按鈕不出現。
 
 ### 3. 檢查資料夾權限
 確認以下資料夾存在且可寫入：

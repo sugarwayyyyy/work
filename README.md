@@ -167,6 +167,7 @@
 │       ├── events.php
 │       ├── location-preview.php
 │       ├── notifications.php
+│       ├── oauth.php
 │       ├── qa.php
 │       ├── reports.php
 │       ├── reviews.php
@@ -269,6 +270,11 @@ npx playwright test
 - `backend/api/auth.php`
 - 登入、登出、註冊、取得目前使用者
 
+### Google OAuth
+- `backend/api/oauth.php`
+- `GET ?action=google_client_id` — 回傳 Google Client ID（未設定時 404，前端自動隱藏按鈕）
+- `POST ?action=google_verify` — 驗證 GIS credential JWT，自動連結既有帳號或建立新帳號
+
 ### 社團
 - `backend/api/clubs.php`
 - 社團列表、詳情、追蹤與管理
@@ -297,7 +303,7 @@ npx playwright test
 ## 版本與發布紀錄
 
 - [Release Notes 2026-04-04](RELEASE_NOTES_2026-04-04.md)
-- 2026-05-21：UI 全寬修正、登入防重複送出、多項功能細節完善（見上方最近更新）
+- 2026-05-21：Google OAuth 登入 / 註冊、UI 全寬修正、登入防重複送出、多項功能細節完善（見上方最近更新）
 
 ## 文件索引
 
@@ -323,6 +329,7 @@ npx playwright test
 
 | 項目 | 說明 |
 |------|------|
+| Google OAuth | 登入 / 註冊頁面新增「以 Google 帳號登入」按鈕；自動連結既有 email 帳號；未設定 Client ID 時按鈕自動隱藏 |
 | 版面全寬修正 | `club-detail`、`event-detail`、`qa` 頁面不再被 `margin: auto` 壓縮寬度 |
 | 登入防重複送出 | 按鈕送出後立即 disabled，失敗時自動恢復 |
 | 置頂公告下架標示 | `end_date` 過期時首頁 badge 自動顯示「已下架」 |
