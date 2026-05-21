@@ -15,8 +15,6 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
     padding: 0.85rem 2rem;
 }
 
@@ -198,8 +196,9 @@ nav {
 
 .container {
     max-width: 2500px;
-    margin: 0 auto;
+    margin: 0;
     padding: 1rem 2rem 1.5rem;
+    width: 100%;
 }
 
 .grid {
