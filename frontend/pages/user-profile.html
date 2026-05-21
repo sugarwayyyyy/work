@@ -158,7 +158,7 @@
 <body>
     <header>
         <nav>
-            <a href="admin-users.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
+            <a href="../index.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
             <ul class="nav-links">
                 <li><a href="../index.html">首頁</a></li>
                 <li><a href="club-list.html">社團</a></li>
@@ -371,6 +371,9 @@
             const panels = document.querySelectorAll('.profile-tab-panel');
             const exportBtn = document.getElementById('export-proof-btn');
             const isPlatformAdmin = user && user.role === 'platform_admin';
+
+            const logoLink = document.querySelector('a.logo');
+            if (logoLink) logoLink.href = isPlatformAdmin ? 'admin-users.html' : '../index.html';
 
             // 非管理員才顯示危險區域
             const dangerZone = document.getElementById('danger-zone');
