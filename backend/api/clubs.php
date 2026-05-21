@@ -1095,6 +1095,36 @@ class ClubAPI {
     }
 
     /**
+     * 取得目前使用者已加入的社團
+     * GET /api/clubs.php?action=my_memberships
+     */
+    public static function getMyMemberships() {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+        try {
+            $clubs = Database::getInstance()->fetchAll(
+                'SELECT c.club_id, c.club_name, c.logo_path, c.description,
+                        cm.role, cm.fee_type, cm.join_date
+                 FROM clubs c
+                 JOIN club_members cm ON c.club_id = cm.club_id
+                 WHERE cm.user_id = ? AND cm.is_active = 1
+                   AND c.deleted_at IS NULL
+                 ORDER BY cm.join_date DESC',
+                [Auth::getCurrentUserId()]
+            );
+            foreach ($clubs as &$club) {
+                $activityInfo = self::calculateActivityBadge((int)$club['club_id'], null);
+                $club['activity_badge'] = $activityInfo['badge'];
+            }
+            unset($club);
+            Helper::success('取得已加入社團成功', ['clubs' => $clubs]);
+        } catch (Exception $e) {
+            Helper::error('取得已加入社團失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * 取得所有標籤
      * GET /api/clubs.php?action=get_all_tags
      */
@@ -1234,6 +1264,8 @@ if ($method === 'GET') {
         ClubAPI::getClubDetail($club_id);
     } elseif ($action === 'my_follows') {
         ClubAPI::getMyFollows();
+    } elseif ($action === 'my_memberships') {
+        ClubAPI::getMyMemberships();
     }
 }
 

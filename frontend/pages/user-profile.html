@@ -210,6 +210,7 @@
                         <div class="profile-tabs-head">
                             <nav class="profile-tabs-nav" role="tablist">
                                 <button class="profile-tab is-active" role="tab" data-tab="followed-clubs" aria-selected="true">已追蹤的社團</button>
+                                <button class="profile-tab" role="tab" data-tab="joined-clubs" aria-selected="false">已加入的社團</button>
                                 <button class="profile-tab" role="tab" data-tab="my-events" aria-selected="false">我的活動</button>
                                 <button class="profile-tab" role="tab" data-tab="timeline" aria-selected="false">個人動態牆</button>
                                 <button class="profile-tab" role="tab" data-tab="my-questions" aria-selected="false">我的提問</button>
@@ -226,6 +227,13 @@
                             <!-- 已追蹤的社團 (預設) -->
                             <div id="panel-followed-clubs" class="profile-tab-panel" role="tabpanel">
                                 <div id="followed-clubs-list" class="followed-club-grid">
+                                    <p class="profile-empty">載入中...</p>
+                                </div>
+                            </div>
+
+                            <!-- 已加入的社團 -->
+                            <div id="panel-joined-clubs" class="profile-tab-panel" role="tabpanel" hidden>
+                                <div id="joined-clubs-list" class="followed-club-grid">
                                     <p class="profile-empty">載入中...</p>
                                 </div>
                             </div>
@@ -405,6 +413,7 @@
 
                     if (currentUser.role !== 'platform_admin') {
                         loadFollowedClubs();
+                        loadJoinedClubs();
                         loadUserEvents();
                         loadFollowedFeed();
                         loadUserQuestions();
@@ -532,6 +541,94 @@
                 PageUtils.showAlert('操作失敗', 'error');
                 btn.disabled = false;
                 btn.textContent = '取消追蹤';
+            }
+        }
+
+        /* ── 已加入的社團 ── */
+        async function loadJoinedClubs() {
+            try {
+                const response = await APIClient.get('clubs.php?action=my_memberships');
+                const container = document.getElementById('joined-clubs-list');
+                if (!response.success) {
+                    container.innerHTML = '<p class="profile-empty">載入已加入社團失敗</p>';
+                    return;
+                }
+                const clubs = response.data.clubs || [];
+                if (clubs.length === 0) {
+                    container.innerHTML = `
+                        <div class="profile-empty" style="grid-column:1/-1">
+                            <p class="profile-empty__title">尚未加入任何社團</p>
+                            <p>前往社團列表，加入您有興趣的社團</p>
+                            <a href="club-list.html" class="btn btn-primary btn-sm">探索社團</a>
+                        </div>
+                    `;
+                    return;
+                }
+                container.innerHTML = clubs.map(club => renderJoinedClubRow(club)).join('');
+            } catch (error) {
+                console.error('Error loading joined clubs:', error);
+                document.getElementById('joined-clubs-list').innerHTML = '<p class="profile-empty">載入失敗</p>';
+            }
+        }
+
+        const FEE_TYPE_LABELS = { none: '未指定費用', onetime: '一次付清', semester: '學期費', session: '單堂費' };
+        const ROLE_LABELS_PROFILE = {
+            president: '社長', vice_president: '副社長',
+            public_relations: '公關', treasurer: '總務',
+            director: '幹事', member: '一般成員', advisor: '顧問'
+        };
+
+        function renderJoinedClubRow(club) {
+            const name = PageUtils.escapeHtml(club.club_name || '未命名社團');
+            const roleLabel = ROLE_LABELS_PROFILE[club.role] || club.role;
+            const feeLabel = FEE_TYPE_LABELS[club.fee_type] || '';
+            const isOfficer = club.role !== 'member';
+            const badgeMap = {
+                high_active:        { label: '高活躍',   cls: 'club-active' },
+                normal_active:      { label: '穩定活躍', cls: 'club-steady' },
+                no_recent_activity: { label: '低活躍',   cls: 'club-quiet' }
+            };
+            const actBadge = badgeMap[club.activity_badge] || null;
+
+            return `
+                <div class="followed-club-row">
+                    <div class="followed-club-row__layout">
+                        ${PageUtils.renderClubAvatar(club, 40)}
+                        <div>
+                            <h3 class="followed-club-row__name">${name}</h3>
+                            <p class="followed-club-row__desc" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.2rem;">
+                                <span class="profile-status-badge" style="background:var(--accent-bg,#ede9fe);color:var(--accent,#7C3AED);">${PageUtils.escapeHtml(roleLabel)}</span>
+                                ${feeLabel ? `<span class="profile-status-badge" style="background:var(--surface-2,#f3f4f6);color:var(--text-muted);">${PageUtils.escapeHtml(feeLabel)}</span>` : ''}
+                            </p>
+                        </div>
+                        <div class="followed-club-row__footer">
+                            ${actBadge ? `<span class="profile-status-badge profile-status-badge--${actBadge.cls}">${actBadge.label}</span>` : ''}
+                            <a href="club-detail.html?id=${club.club_id}" class="btn btn-primary btn-sm">查看社團</a>
+                            ${!isOfficer ? `<button type="button" class="btn btn-secondary btn-sm" onclick="leaveClubFromProfile(${club.club_id}, this)">退出社團</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function leaveClubFromProfile(clubId, btn) {
+            if (!confirm('確定要退出此社團嗎？')) return;
+            btn.disabled = true;
+            btn.textContent = '處理中...';
+            try {
+                const response = await APIClient.post(`clubs.php?action=leave_club&id=${clubId}`, {});
+                if (response.success) {
+                    loadJoinedClubs();
+                } else {
+                    PageUtils.showAlert(response.message || '退出失敗', 'error');
+                    btn.disabled = false;
+                    btn.textContent = '退出社團';
+                }
+            } catch (error) {
+                console.error('Error leaving club:', error);
+                PageUtils.showAlert('退出失敗', 'error');
+                btn.disabled = false;
+                btn.textContent = '退出社團';
             }
         }
 
