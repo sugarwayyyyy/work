@@ -3,6 +3,7 @@ backend/config.local.php
 
 # IDE and tool settings (machine-specific)
 .claude/settings.json
+.claude/settings.local.json
 .vscode/settings.json
 
 # Runtime uploads (do not commit generated files)

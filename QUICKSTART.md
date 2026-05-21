@@ -82,14 +82,24 @@ define('DB_PASSWORD', '12345678');  // AppServ
 
 ### 一鍵啟動（Windows PowerShell）
 
+> **注意**：`pwsh` 為 PowerShell 7（需另行安裝）。Windows 內建為 `powershell`（PS5），請依照已安裝的版本擇一使用。
+
 ```powershell
+# PowerShell 7（若已安裝）
 pwsh -File scripts/start-local-dev.ps1
+
+# PowerShell 5（Windows 內建）
+powershell -ExecutionPolicy Bypass -File scripts/start-local-dev.ps1
 ```
 
 停止：
 
 ```powershell
+# PowerShell 7
 pwsh -File scripts/stop-local-dev.ps1
+
+# PowerShell 5
+powershell -ExecutionPolicy Bypass -File scripts/stop-local-dev.ps1
 ```
 
 ### 方式一：AppServ / Apache（建議）
