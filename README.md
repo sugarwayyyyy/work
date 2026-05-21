@@ -24,9 +24,9 @@
 本專案以 PHP、MySQL、HTML、CSS、JavaScript 建置，目標是把校園社團的資訊、活動、互動、公告與管理流程集中在同一平台。
 
 ### 角色分工
-- 學生：瀏覽社團、追蹤社團、報名活動、參與評價與提問。
-- 社團幹部：更新社團資訊、建立活動、管理海報與內容。
-- 管理員：維護社團資料、公告、帳號轉讓與平台報表。
+- 學生：瀏覽社團、追蹤或加入社團（含費用方案選擇）、報名活動、參與評價與提問。
+- 社團幹部：更新社團資訊、建立活動、管理海報與內容、管理成員職稱。
+- 管理員：維護社團資料、公告、帳號轉讓與平台報表、指派幹部。
 
 ## AI 與新同事啟用
 
@@ -81,10 +81,12 @@
 
 ### 角色系統（容易踩錯）
 
-- `users.role` 只有兩種有效值：`platform_admin`、`student`。**不要**寫入 `club_admin`。
-- 社團幹部身份由 `club_members.role` 決定（`president`、`vice_president`、`director`、`public_relations`）。
+- `users.role` 有三種有效值：`platform_admin`、`club_admin`、`student`。
+  - `club_admin` 由系統自動維護：當使用者在任一社團擔任幹部（`president`、`vice_president` 等）時寫入；失去所有幹部職位後降回 `student`。**不要**手動在其他情境寫入 `club_admin`。
+- 社團幹部身份的詳細職稱由 `club_members.role` 決定（`president`、`vice_president`、`public_relations`、`treasurer`、`director`）。
 - `Auth::isClubAdmin()` 查的是 `club_members` 資料表，不是 `users.role`。
 - 若需要判斷某使用者是否能管理某社團，呼叫 `canManageClub($clubId)`，不要自己查資料表。
+- 副社長、公關、總務、幹事、社長在同一社團內具**排他性**——同一職稱只能由一位 is_active 成員擔任，後端在 insert/update 前會先驗證衝突並回傳 409。
 
 ### 資料庫變更
 
@@ -129,6 +131,7 @@
 - 社團分類與關鍵字搜尋
 - 社團詳情與活動瀏覽（含社長電話聯絡）
 - 追蹤社團與個人動態
+- 加入社團（含費用方案選擇：一次付清 / 學期費 / 單堂費；退出社團）
 - 評價與 Q&A 互動
 - 通知與個人資料管理（含帳號刪除確認流程）
 - 活動報名與參與者列表
@@ -140,6 +143,7 @@
 - 活動建立、更新與海報上傳（含多張輪播海報）
 - 社團預覽與內容管理
 - 活動清單與管理介面
+- 成員管理（`club-admin-members.html`）：社長可指派副社長、公關、總務、幹事，或將幹部降為一般成員；非社長幹部僅能查看清單
 - 帳號轉讓申請流程
 
 ### 管理員端
@@ -278,6 +282,8 @@ npx playwright test
 ### 社團
 - `backend/api/clubs.php`
 - 社團列表、詳情、追蹤與管理
+- `POST ?action=join_club&id={id}` — 加入社團（需登入；傳入 `fee_type`：`none` / `onetime` / `semester` / `session`）
+- `POST ?action=leave_club&id={id}` — 退出社團（僅限 `role='member'`，幹部不得自行離開）
 
 ### 活動
 - `backend/api/events.php`
@@ -324,6 +330,18 @@ npx playwright test
 - 已實作 Light / Dark mode（CSS token 系統），訪客與登入使用者均可切換。
 - 全站版面採全寬設計（`layout.css` container / nav 均不限寬），各頁面一致。
 - 登入表單已加入送出防抖保護，避免短時間內重複觸發。
+
+### 最近更新（2026-05-22）
+
+| 項目 | 說明 |
+|------|------|
+| 成員職稱管理 | 新增 `club-admin-members.html`：社長可指派或降級同社成員職稱；非社長幹部只讀 |
+| 排他性職稱驗證 | 同社團同職稱只能有一人；後端在 `club-admin.php` 與 `admin.php` 雙路徑均加入 409 檢查 |
+| 加入社團流程 | `club-detail.html` 新增「加入社團」按鈕與費用方案選擇 modal（一次付清 / 學期費 / 單堂費） |
+| 退出社團 | 學生可從 `club-detail.html` 退出社團；幹部職稱者不得自行退出 |
+| fee_type 欄位 | `club_members` 新增 `fee_type ENUM('none','onetime','semester','session')` migration |
+| my_role 回傳 | `club-admin.php?action=club_members` 新增 `my_role` 欄位，讓前端直接從後端取得呼叫者角色 |
+| users.role 同步 | 角色變更時自動同步 `users.role`（有幹部職 → `club_admin`；全無 → `student`） |
 
 ### 最近更新（2026-05-21）
 
