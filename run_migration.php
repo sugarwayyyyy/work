@@ -37,6 +37,7 @@ try {
         __DIR__ . '/database/migrations/2026_04_19_reviews_unique_user_club.sql',
         __DIR__ . '/database/migrations/2026_04_28_event_time_range.sql',
         __DIR__ . '/database/migrations/2026_05_10_club_fee_semester.sql',
+        __DIR__ . '/database/migrations/2026_05_11_remove_categories_religion_misc.sql',
     ];
 
     foreach ($files as $file) {

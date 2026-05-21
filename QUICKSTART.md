@@ -37,10 +37,16 @@ mysql -u root -p club_platform < database/migrations/2026_04_04_qa_reply_helpful
 mysql -u root -p club_platform < database/migrations/2026_04_09_qa_reply_threads.sql
 mysql -u root -p club_platform < database/migrations/2026_04_19_event_comments.sql
 mysql -u root -p club_platform < database/migrations/2026_04_19_reviews_unique_user_club.sql
+mysql -u root -p club_platform < database/migrations/2026_04_28_event_time_range.sql
+mysql -u root -p club_platform < database/migrations/2026_05_10_club_fee_semester.sql
+mysql -u root -p club_platform < database/migrations/2026_05_11_remove_categories_religion_misc.sql
+mysql -u root -p club_platform < database/seeds/2026_04_02_school_clubs_seed.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
 
-可選方案：使用 `run_migration.php` 執行整批遷移（執行前先確認資料庫連線設定）。
+> seed 順序不可顛倒：先匯入 `school_clubs_seed`（社團基礎資料），再匯入 `test_accounts_and_story_data`（測試帳號與活動，會參照社團 ID）。
+
+可選方案：使用 `run_migration.php` 執行整批遷移，再手動補執行兩個 seed 檔案（`run_migration.php` 不含 seed）。
 
 ### 2. 設定本機連線
 
