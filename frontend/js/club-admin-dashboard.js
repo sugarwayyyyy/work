@@ -2225,7 +2225,7 @@
 
                         actionCell = `<td>`
                             + `<div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">`
-                            + `<select class="member-role-select" data-uid="${uid}" style="font-size:0.83rem;">${opts}</select>`
+                            + `<select class="member-role-select" data-uid="${uid}" style="font-size:0.75rem;padding:0.2rem 0.35rem;height:1.8rem;width:6rem;">${opts}</select>`
                             + `<button type="button" class="btn btn-primary btn-sm member-role-save-btn" data-uid="${uid}">儲存</button>`
                             + `<button type="button" class="btn btn-danger-outline btn-sm member-kick-btn" data-uid="${uid}">踢出</button>`
                             + `</div></td>`;
