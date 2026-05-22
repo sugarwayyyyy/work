@@ -406,6 +406,69 @@ class ClubAdminAPI {
         Helper::success('角色已更新');
     }
 
+    public static function removeMember($data) {
+        self::requireClubAdmin();
+
+        $errors = Helper::validateRequired($data, ['club_id', 'target_user_id']);
+        if (!empty($errors)) {
+            Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+        }
+
+        $club_id      = (int)$data['club_id'];
+        $targetUserId = (int)$data['target_user_id'];
+        $callerId     = (int)Auth::getCurrentUserId();
+
+        if ($targetUserId === $callerId) {
+            Helper::error('不能移除自己', 400);
+        }
+
+        // 呼叫者必須是該社團的社長（平台管理員例外）
+        if (!Auth::isAdmin()) {
+            $isPresident = Database::getInstance()->fetchOne(
+                'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND role = "president" AND is_active = 1',
+                [$club_id, $callerId]
+            );
+            if (!$isPresident) {
+                Helper::error('只有社長才能移除成員', 403);
+            }
+        }
+
+        // target 必須是該社團的 is_active 成員
+        $target = Database::getInstance()->fetchOne(
+            'SELECT member_id, role FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1',
+            [$club_id, $targetUserId]
+        );
+        if (!$target) {
+            Helper::error('找不到此社團成員', 404);
+        }
+
+        if ($target['role'] === 'president') {
+            Helper::error('無法移除社長，請透過帳戶轉讓流程處理', 403);
+        }
+
+        Database::getInstance()->update(
+            'club_members',
+            ['is_active' => 0],
+            'member_id = ?',
+            [$target['member_id']]
+        );
+
+        // 同步全域 role
+        $officerRoles = '"president","vice_president","public_relations","treasurer","director"';
+        $stillOfficer = Database::getInstance()->fetchOne(
+            "SELECT 1 FROM club_members WHERE user_id = ? AND is_active = 1 AND role IN ($officerRoles)",
+            [$targetUserId]
+        );
+        Database::getInstance()->update(
+            'users',
+            ['role' => $stillOfficer ? 'club_admin' : 'student'],
+            'user_id = ? AND role != "platform_admin"',
+            [$targetUserId]
+        );
+
+        Helper::success('成員已移除');
+    }
+
     public static function getMyTransferRequests() {
         self::requireClubAdmin();
         $user_id = Auth::getCurrentUserId();
@@ -460,6 +523,8 @@ if ($method === 'POST') {
         ClubAdminAPI::submitTransferRequest($data);
     } elseif ($action === 'update_member_role') {
         ClubAdminAPI::updateMemberRole($data);
+    } elseif ($action === 'remove_member') {
+        ClubAdminAPI::removeMember($data);
     }
 }
 

@@ -2224,9 +2224,10 @@
                         ).join('');
 
                         actionCell = `<td>`
-                            + `<div style="display:flex;gap:0.4rem;align-items:center;">`
+                            + `<div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">`
                             + `<select class="member-role-select" data-uid="${uid}" style="font-size:0.83rem;">${opts}</select>`
                             + `<button type="button" class="btn btn-primary btn-sm member-role-save-btn" data-uid="${uid}">儲存</button>`
+                            + `<button type="button" class="btn btn-danger-outline btn-sm member-kick-btn" data-uid="${uid}">踢出</button>`
                             + `</div></td>`;
                     } else if (isPresident) {
                         actionCell = '<td></td>';
@@ -2243,6 +2244,12 @@
                         const targetUid = Number(btn.dataset.uid);
                         const sel = wrap.querySelector(`.member-role-select[data-uid="${targetUid}"]`);
                         if (sel) updateMemberRole(clubId, targetUid, sel.value, sel, btn);
+                    });
+                });
+
+                wrap.querySelectorAll('.member-kick-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        kickMember(clubId, Number(btn.dataset.uid), btn);
                     });
                 });
 
@@ -2273,6 +2280,30 @@
                 PageUtils.showAlert('更新失敗：' + err.message, 'error');
                 if (selectEl) selectEl.disabled = false;
                 if (saveBtn) saveBtn.disabled = false;
+            }
+        }
+
+        async function kickMember(clubId, targetUserId, kickBtn) {
+            if (!confirm('確定要將此成員移出社團嗎？')) return;
+            kickBtn.disabled = true;
+            kickBtn.textContent = '處理中…';
+            try {
+                const res = await APIClient.post('club-admin.php?action=remove_member', {
+                    club_id: clubId,
+                    target_user_id: targetUserId
+                });
+                if (res && res.success) {
+                    PageUtils.showAlert('成員已移除', 'success');
+                    loadClubMembers(clubId);
+                } else {
+                    PageUtils.showAlert(res?.message || '移除失敗', 'error');
+                    kickBtn.disabled = false;
+                    kickBtn.textContent = '踢出';
+                }
+            } catch (err) {
+                PageUtils.showAlert('移除失敗：' + err.message, 'error');
+                kickBtn.disabled = false;
+                kickBtn.textContent = '踢出';
             }
         }
 

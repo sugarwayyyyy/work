@@ -282,6 +282,7 @@ npx playwright test
 ### 社團
 - `backend/api/clubs.php`
 - 社團列表、詳情、追蹤與管理
+- `GET  ?action=my_memberships` — 取得目前使用者已加入的所有社團（含職稱、費用方案）
 - `POST ?action=join_club&id={id}` — 加入社團（需登入；傳入 `fee_type`：`none` / `onetime` / `semester` / `session`）
 - `POST ?action=leave_club&id={id}` — 退出社團（僅限 `role='member'`，幹部不得自行離開）
 
@@ -296,6 +297,9 @@ npx playwright test
 ### 管理與上傳
 - `backend/api/admin.php`
 - `backend/api/club-admin.php`
+  - `GET  ?action=club_members&id={club_id}` — 社團成員列表（含呼叫者 `my_role`）
+  - `POST ?action=update_member_role` — 社長指派職稱（排他性驗證）
+  - `POST ?action=remove_member` — 社長踢出成員（同步 `users.role`）
 - `backend/api/upload.php`
 - `backend/api/notifications.php`
 
@@ -309,7 +313,8 @@ npx playwright test
 ## 版本與發布紀錄
 
 - [Release Notes 2026-04-04](RELEASE_NOTES_2026-04-04.md)
-- 2026-05-21：Google OAuth 登入 / 註冊、UI 全寬修正、登入防重複送出、多項功能細節完善（見上方最近更新）
+- 2026-05-22：成員職稱管理、踢出成員、加入/退出社團、已加入社團 tab、排他性職稱驗證、啟動腳本修正（見上方最近更新）
+- 2026-05-21：Google OAuth 登入 / 註冊、UI 全寬修正、登入防重複送出、多項功能細節完善
 
 ## 文件索引
 
@@ -336,12 +341,16 @@ npx playwright test
 | 項目 | 說明 |
 |------|------|
 | 成員職稱管理 | 新增 `club-admin-members.html`：社長可指派或降級同社成員職稱；非社長幹部只讀 |
+| 踢出成員 | `club-admin-members.html` 社長新增「踢出」按鈕；後端 `remove_member` 端點負責 `is_active=0` 並同步 `users.role` |
 | 排他性職稱驗證 | 同社團同職稱只能有一人；後端在 `club-admin.php` 與 `admin.php` 雙路徑均加入 409 檢查 |
 | 加入社團流程 | `club-detail.html` 新增「加入社團」按鈕與費用方案選擇 modal（一次付清 / 學期費 / 單堂費） |
 | 退出社團 | 學生可從 `club-detail.html` 退出社團；幹部職稱者不得自行退出 |
+| 已加入社團 tab | `user-profile.html` 新增「已加入的社團」tab，顯示職稱、費用方案，一般成員可直接退出 |
 | fee_type 欄位 | `club_members` 新增 `fee_type ENUM('none','onetime','semester','session')` migration |
 | my_role 回傳 | `club-admin.php?action=club_members` 新增 `my_role` 欄位，讓前端直接從後端取得呼叫者角色 |
-| users.role 同步 | 角色變更時自動同步 `users.role`（有幹部職 → `club_admin`；全無 → `student`） |
+| users.role 同步 | 角色變更或踢出時自動同步 `users.role`（有幹部職 → `club_admin`；全無 → `student`） |
+| Logo 連結修正 | `notifications.html`、`user-profile.html` logo 依角色動態指向首頁或管理後台 |
+| start-local-dev.ps1 | 修正 UTF-8 解析錯誤；補入 AppServ PHP 路徑；修正 MySQL stderr 警告觸發 Stop 政策的問題 |
 
 ### 最近更新（2026-05-21）
 
