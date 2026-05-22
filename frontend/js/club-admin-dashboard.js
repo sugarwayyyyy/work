@@ -2262,23 +2262,14 @@
                     let statusCell = '<td>';
                     if (isTargetOfficer || !clubHasFee) {
                         statusCell += '<span style="color:var(--text-muted);font-size:0.78rem;">—</span>';
-                    } else if (hasFeeType) {
-                        if (isOfficer) {
-                            statusCell += `<button type="button" class="fee-paid-btn" `
-                                + `data-uid="${uid}" data-paid="${feePaid ? '1' : '0'}" `
-                                + `style="${feePaid ? FEE_PAID_TAG_STYLE : FEE_UNPAID_TAG_STYLE}cursor:pointer;">`
-                                + (feePaid ? '已繳' : '未繳') + '</button>';
-                        } else {
-                            statusCell += `<span style="${feePaid ? FEE_PAID_TAG_STYLE : FEE_UNPAID_TAG_STYLE}">${feePaid ? '已繳' : '未繳'}</span>`;
-                        }
+                    } else if (isOfficer) {
+                        statusCell += `<select class="fee-paid-select" data-uid="${uid}" `
+                            + `style="font-size:0.75rem;padding:0.2rem 0.3rem;height:1.8rem;width:5rem;">`
+                            + `<option value="0"${!feePaid ? ' selected' : ''}>未繳</option>`
+                            + `<option value="1"${feePaid ? ' selected' : ''}>已繳</option>`
+                            + `</select>`;
                     } else {
-                        if (isOfficer) {
-                            statusCell += `<button type="button" class="fee-paid-btn" `
-                                + `data-uid="${uid}" data-paid="0" `
-                                + `style="${FEE_UNPAID_TAG_STYLE}cursor:pointer;">未繳</button>`;
-                        } else {
-                            statusCell += `<span style="${FEE_UNPAID_TAG_STYLE}">未繳</span>`;
-                        }
+                        statusCell += `<span style="${feePaid ? FEE_PAID_TAG_STYLE : FEE_UNPAID_TAG_STYLE}">${feePaid ? '已繳' : '未繳'}</span>`;
                     }
                     statusCell += '</td>';
 
@@ -2324,10 +2315,9 @@
                     });
                 });
 
-                wrap.querySelectorAll('.fee-paid-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const newPaid = btn.dataset.paid === '1' ? 0 : 1;
-                        toggleFeePaid(clubId, Number(btn.dataset.uid), newPaid, btn);
+                wrap.querySelectorAll('.fee-paid-select').forEach(sel => {
+                    sel.addEventListener('change', () => {
+                        toggleFeePaid(clubId, Number(sel.dataset.uid), Number(sel.value), sel);
                     });
                 });
 
@@ -2388,8 +2378,8 @@
             }
         }
 
-        async function toggleFeePaid(clubId, targetUserId, newPaid, btn) {
-            btn.disabled = true;
+        async function toggleFeePaid(clubId, targetUserId, newPaid, sel) {
+            sel.disabled = true;
             try {
                 const res = await APIClient.post('club-admin.php?action=update_fee_paid', {
                     club_id: clubId,
@@ -2400,11 +2390,11 @@
                     await loadClubMembers(clubId);
                 } else {
                     PageUtils.showAlert(res?.message || '更新失敗', 'error');
-                    btn.disabled = false;
+                    sel.disabled = false;
                 }
             } catch (err) {
                 PageUtils.showAlert('更新失敗：' + err.message, 'error');
-                btn.disabled = false;
+                sel.disabled = false;
             }
         }
 
