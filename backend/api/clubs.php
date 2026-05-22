@@ -915,7 +915,10 @@ class ClubAPI {
             $update_data = array_filter($update_data, function($v) { return $v !== ''; });
             
             if (!empty($update_data)) {
-                dbUpdate('clubs', $update_data, 'club_id = ?', [$club_id]);
+                $ok = dbUpdate('clubs', $update_data, 'club_id = ?', [$club_id]);
+                if ($ok === false) {
+                    throw new Exception('資料庫更新失敗，請聯絡管理員');
+                }
             }
             
             // 記錄活動
