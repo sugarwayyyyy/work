@@ -2376,8 +2376,8 @@
                     fee_type: newFeeType
                 });
                 if (res && res.success) {
-                    // 重新載入以同步「已繳/未繳」按鈕的顯示
-                    loadClubMembers(clubId);
+                    PageUtils.showAlert('費用類型已更新', 'success');
+                    await loadClubMembers(clubId);
                 } else {
                     PageUtils.showAlert(res?.message || '更新失敗', 'error');
                     sel.disabled = false;
@@ -2397,15 +2397,13 @@
                     fee_paid: newPaid
                 });
                 if (res && res.success) {
-                    btn.dataset.paid = newPaid ? '1' : '0';
-                    btn.textContent = newPaid ? '已繳' : '未繳';
-                    btn.style.cssText = (newPaid ? FEE_PAID_TAG_STYLE : FEE_UNPAID_TAG_STYLE) + 'cursor:pointer;';
+                    await loadClubMembers(clubId);
                 } else {
                     PageUtils.showAlert(res?.message || '更新失敗', 'error');
+                    btn.disabled = false;
                 }
             } catch (err) {
                 PageUtils.showAlert('更新失敗：' + err.message, 'error');
-            } finally {
                 btn.disabled = false;
             }
         }
