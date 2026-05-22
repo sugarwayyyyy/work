@@ -2174,6 +2174,10 @@
             director: '幹事', member: '一般成員', advisor: '顧問'
         };
 
+        const FEE_PAID_TAG_STYLE   = 'display:inline-block;padding:0.18rem 0.55rem;border-radius:12px;font-size:0.72rem;font-weight:500;background:#dcfce7;color:#166534;border:1px solid #86efac;white-space:nowrap;';
+        const FEE_UNPAID_TAG_STYLE = 'display:inline-block;padding:0.18rem 0.55rem;border-radius:12px;font-size:0.72rem;font-weight:500;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;white-space:nowrap;';
+        const FEE_NONE_TAG_STYLE   = 'display:inline-block;padding:0.18rem 0.55rem;border-radius:12px;font-size:0.72rem;background:#f3f4f6;color:#6b7280;border:1px solid #d1d5db;white-space:nowrap;';
+
         async function loadClubMembers(clubId) {
             const wrap = document.getElementById('members-list-wrap');
             if (!wrap) return;
@@ -2196,10 +2200,14 @@
                 const isPresident = myRole === 'president';
                 const user = StorageUtils.getUser();
                 const currentUserId = user ? Number(user.user_id) : 0;
+                const clubFees = res.data.club_fees || { onetime: 0, semester: 0, session: 0 };
+                const clubHasFee = clubFees.onetime > 0 || clubFees.semester > 0 || clubFees.session > 0;
+
+                const isOfficer = ['president','vice_president','public_relations','treasurer','director'].includes(myRole) || myRole === 'platform_admin';
 
                 let html = '<div class="table-shell" style="border-radius:8px;">'
                     + '<table class="table" style="min-width:0;"><thead><tr>'
-                    + '<th>姓名</th><th>學號</th><th>職稱</th>'
+                    + '<th>姓名</th><th>學號</th><th>職稱</th><th>社費</th><th>繳費狀態</th>'
                     + (isPresident ? '<th>操作</th>' : '')
                     + '</tr></thead><tbody>';
 
@@ -2210,6 +2218,69 @@
                     const roleLabel = PageUtils.escapeHtml(ROLE_LABELS[m.role] || m.role);
                     const isSelf = uid === currentUserId;
                     const isTargetPresident = m.role === 'president';
+
+                    const isTargetOfficer = ['president','vice_president','public_relations','treasurer','director'].includes(m.role);
+                    const hasFeeType = m.fee_type && m.fee_type !== 'none';
+                    const feePaid = Number(m.fee_paid) === 1;
+
+                    const feeAmountMap = { onetime: clubFees.onetime, semester: clubFees.semester, session: clubFees.session };
+                    const feeUnitMap   = { onetime: '元', semester: '元/學期', session: '元/堂' };
+                    const feeNameMap   = { onetime: '一次付清', semester: '學期費', session: '單堂費' };
+
+                    let feeLabel = '';
+                    if (hasFeeType) {
+                        const amt  = feeAmountMap[m.fee_type] ?? 0;
+                        const unit = feeUnitMap[m.fee_type]   ?? '';
+                        const name = feeNameMap[m.fee_type]   ?? m.fee_type;
+                        feeLabel = amt > 0 ? `${name} $${amt} ${unit}` : name;
+                    }
+
+                    // 依社團設定產生可選費用選項（只列出金額 > 0 的，加上「未指定」）
+                    const feeOptions = [['none', '未指定']];
+                    if (clubFees.onetime  > 0) feeOptions.push(['onetime',  `一次付清 $${clubFees.onetime}`]);
+                    if (clubFees.semester > 0) feeOptions.push(['semester', `學期費 $${clubFees.semester}`]);
+                    if (clubFees.session  > 0) feeOptions.push(['session',  `單堂費 $${clubFees.session}`]);
+                    const noFeeOptions = feeOptions.length === 1; // 只有「未指定」= 社團無收費
+
+                    let feeCell = '<td>';
+                    if (isTargetOfficer) {
+                        feeCell += '<span style="color:var(--text-muted);font-size:0.78rem;">—</span>';
+                    } else if (isOfficer && clubHasFee) {
+                        // 幹部 + 社團有收費 → 顯示可編輯 select
+                        const opts = feeOptions.map(([v, l]) =>
+                            `<option value="${v}"${m.fee_type === v ? ' selected' : ''}>${l}</option>`
+                        ).join('');
+                        feeCell += `<select class="fee-type-select" data-uid="${uid}" style="font-size:0.75rem;padding:0.2rem 0.3rem;height:1.8rem;width:9rem;">${opts}</select>`;
+                    } else if (!clubHasFee) {
+                        feeCell += '<span style="color:var(--text-muted);font-size:0.78rem;">免費</span>';
+                    } else {
+                        feeCell += `<span style="font-size:0.78rem;">${PageUtils.escapeHtml(feeLabel || '未指定')}</span>`;
+                    }
+                    feeCell += '</td>';
+
+                    // 繳費狀態欄
+                    let statusCell = '<td>';
+                    if (isTargetOfficer || !clubHasFee) {
+                        statusCell += '<span style="color:var(--text-muted);font-size:0.78rem;">—</span>';
+                    } else if (hasFeeType) {
+                        if (isOfficer) {
+                            statusCell += `<button type="button" class="fee-paid-btn" `
+                                + `data-uid="${uid}" data-paid="${feePaid ? '1' : '0'}" `
+                                + `style="${feePaid ? FEE_PAID_TAG_STYLE : FEE_UNPAID_TAG_STYLE}cursor:pointer;">`
+                                + (feePaid ? '已繳' : '未繳') + '</button>';
+                        } else {
+                            statusCell += `<span style="${feePaid ? FEE_PAID_TAG_STYLE : FEE_UNPAID_TAG_STYLE}">${feePaid ? '已繳' : '未繳'}</span>`;
+                        }
+                    } else {
+                        if (isOfficer) {
+                            statusCell += `<button type="button" class="fee-paid-btn" `
+                                + `data-uid="${uid}" data-paid="0" `
+                                + `style="${FEE_UNPAID_TAG_STYLE}cursor:pointer;">未繳</button>`;
+                        } else {
+                            statusCell += `<span style="${FEE_UNPAID_TAG_STYLE}">未繳</span>`;
+                        }
+                    }
+                    statusCell += '</td>';
 
                     let actionCell = '';
                     if (isPresident && !isSelf && !isTargetPresident) {
@@ -2233,7 +2304,7 @@
                         actionCell = '<td></td>';
                     }
 
-                    html += `<tr><td>${safeN}</td><td>${safeS}</td><td>${roleLabel}</td>${actionCell}</tr>`;
+                    html += `<tr><td>${safeN}</td><td>${safeS}</td><td>${roleLabel}</td>${feeCell}${statusCell}${actionCell}</tr>`;
                 });
 
                 html += '</tbody></table></div>';
@@ -2250,6 +2321,19 @@
                 wrap.querySelectorAll('.member-kick-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         kickMember(clubId, Number(btn.dataset.uid), btn);
+                    });
+                });
+
+                wrap.querySelectorAll('.fee-paid-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const newPaid = btn.dataset.paid === '1' ? 0 : 1;
+                        toggleFeePaid(clubId, Number(btn.dataset.uid), newPaid, btn);
+                    });
+                });
+
+                wrap.querySelectorAll('.fee-type-select').forEach(sel => {
+                    sel.addEventListener('change', () => {
+                        updateMemberFeeType(clubId, Number(sel.dataset.uid), sel.value, sel);
                     });
                 });
 
@@ -2280,6 +2364,49 @@
                 PageUtils.showAlert('更新失敗：' + err.message, 'error');
                 if (selectEl) selectEl.disabled = false;
                 if (saveBtn) saveBtn.disabled = false;
+            }
+        }
+
+        async function updateMemberFeeType(clubId, targetUserId, newFeeType, sel) {
+            sel.disabled = true;
+            try {
+                const res = await APIClient.post('club-admin.php?action=update_member_fee_type', {
+                    club_id: clubId,
+                    target_user_id: targetUserId,
+                    fee_type: newFeeType
+                });
+                if (res && res.success) {
+                    // 重新載入以同步「已繳/未繳」按鈕的顯示
+                    loadClubMembers(clubId);
+                } else {
+                    PageUtils.showAlert(res?.message || '更新失敗', 'error');
+                    sel.disabled = false;
+                }
+            } catch (err) {
+                PageUtils.showAlert('更新失敗：' + err.message, 'error');
+                sel.disabled = false;
+            }
+        }
+
+        async function toggleFeePaid(clubId, targetUserId, newPaid, btn) {
+            btn.disabled = true;
+            try {
+                const res = await APIClient.post('club-admin.php?action=update_fee_paid', {
+                    club_id: clubId,
+                    target_user_id: targetUserId,
+                    fee_paid: newPaid
+                });
+                if (res && res.success) {
+                    btn.dataset.paid = newPaid ? '1' : '0';
+                    btn.textContent = newPaid ? '已繳' : '未繳';
+                    btn.style.cssText = (newPaid ? FEE_PAID_TAG_STYLE : FEE_UNPAID_TAG_STYLE) + 'cursor:pointer;';
+                } else {
+                    PageUtils.showAlert(res?.message || '更新失敗', 'error');
+                }
+            } catch (err) {
+                PageUtils.showAlert('更新失敗：' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
             }
         }
 

@@ -309,7 +309,7 @@ class ClubAdminAPI {
         }
 
         $members = Database::getInstance()->fetchAll(
-            'SELECT cm.user_id, cm.role, u.name, u.student_id
+            'SELECT cm.user_id, cm.role, cm.fee_type, cm.fee_paid, u.name, u.student_id
              FROM club_members cm
              JOIN users u ON cm.user_id = u.user_id
              WHERE cm.club_id = ? AND cm.is_active = 1
@@ -318,7 +318,20 @@ class ClubAdminAPI {
             [$club_id]
         );
 
-        Helper::success('取得社團成員成功', ['members' => $members, 'my_role' => $myRole]);
+        $clubFees = Database::getInstance()->fetchOne(
+            'SELECT club_fee, club_fee_semester, club_fee_per_session FROM clubs WHERE club_id = ?',
+            [$club_id]
+        );
+
+        Helper::success('取得社團成員成功', [
+            'members' => $members,
+            'my_role' => $myRole,
+            'club_fees' => [
+                'onetime'  => (int)($clubFees['club_fee']              ?? 0),
+                'semester' => (int)($clubFees['club_fee_semester']     ?? 0),
+                'session'  => (int)($clubFees['club_fee_per_session']  ?? 0),
+            ],
+        ]);
     }
 
     public static function updateMemberRole($data) {
@@ -404,6 +417,93 @@ class ClubAdminAPI {
         );
 
         Helper::success('角色已更新');
+    }
+
+    public static function updateMemberFeeType($data) {
+        self::requireClubAdmin();
+
+        $errors = Helper::validateRequired($data, ['club_id', 'target_user_id', 'fee_type']);
+        if (!empty($errors)) {
+            Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+        }
+
+        $club_id      = (int)$data['club_id'];
+        $targetUserId = (int)$data['target_user_id'];
+        $feeType      = (string)$data['fee_type'];
+
+        if (!in_array($feeType, ['none', 'onetime', 'semester', 'session'], true)) {
+            Helper::error('無效的費用類型', 400);
+        }
+
+        if (!Auth::isAdmin()) {
+            $isOfficer = Database::getInstance()->fetchOne(
+                'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1
+                 AND role IN ("president","vice_president","public_relations","treasurer","director")',
+                [$club_id, Auth::getCurrentUserId()]
+            );
+            if (!$isOfficer) {
+                Helper::error('您無權限更新費用類型', 403);
+            }
+        }
+
+        $target = Database::getInstance()->fetchOne(
+            'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1',
+            [$club_id, $targetUserId]
+        );
+        if (!$target) {
+            Helper::error('找不到此社團成員', 404);
+        }
+
+        Database::getInstance()->update(
+            'club_members',
+            ['fee_type' => $feeType, 'fee_paid' => 0],
+            'member_id = ?',
+            [$target['member_id']]
+        );
+
+        Helper::success('費用類型已更新');
+    }
+
+    public static function updateFeePaid($data) {
+        self::requireClubAdmin();
+
+        $errors = Helper::validateRequired($data, ['club_id', 'target_user_id', 'fee_paid']);
+        if (!empty($errors)) {
+            Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+        }
+
+        $club_id      = (int)$data['club_id'];
+        $targetUserId = (int)$data['target_user_id'];
+        $feePaid      = $data['fee_paid'] ? 1 : 0;
+
+        // 呼叫者必須是該社團的幹部
+        if (!Auth::isAdmin()) {
+            $isOfficer = Database::getInstance()->fetchOne(
+                'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1
+                 AND role IN ("president","vice_president","public_relations","treasurer","director")',
+                [$club_id, Auth::getCurrentUserId()]
+            );
+            if (!$isOfficer) {
+                Helper::error('您無權限更新繳費狀態', 403);
+            }
+        }
+
+        $target = Database::getInstance()->fetchOne(
+            'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1',
+            [$club_id, $targetUserId]
+        );
+        if (!$target) {
+            Helper::error('找不到此社團成員', 404);
+        }
+
+        Database::getInstance()->update(
+            'club_members',
+            ['fee_paid' => $feePaid],
+            'member_id = ?',
+            [$target['member_id']]
+        );
+
+        Helper::success('繳費狀態已更新');
     }
 
     public static function removeMember($data) {
@@ -525,6 +625,10 @@ if ($method === 'POST') {
         ClubAdminAPI::updateMemberRole($data);
     } elseif ($action === 'remove_member') {
         ClubAdminAPI::removeMember($data);
+    } elseif ($action === 'update_fee_paid') {
+        ClubAdminAPI::updateFeePaid($data);
+    } elseif ($action === 'update_member_fee_type') {
+        ClubAdminAPI::updateMemberFeeType($data);
     }
 }
 
