@@ -146,7 +146,6 @@ class APIClient {
         const requestBody = method !== 'GET' ? JSON.stringify(options.data || {}) : undefined;
         let lastError = null;
         let lastFailurePayload = null;
-        let authFailurePayload = null;
 
         const candidateBaseUrls = this.getOrderedCandidates();
 
@@ -192,9 +191,9 @@ class APIClient {
                             continue;
                         }
 
-                        // ?隞???謕?????芰????謕??隞?謅??謚??蹓??謅疵????謕???
-                        authFailurePayload = authFailurePayload || payload;
-                        continue;
+                        // A JSON 401/403 is a real application response, not a
+                        // signal to retry the request against another API base URL.
+                        return payload;
                     }
 
                     // same-origin ?謕??謍啗??蝞貉縣?????∟?????????遛??遴?璆?賹????
@@ -216,10 +215,6 @@ class APIClient {
 
         if (lastFailurePayload) {
             return lastFailurePayload;
-        }
-
-        if (authFailurePayload) {
-            return authFailurePayload;
         }
 
         if (lastError) throw lastError;
