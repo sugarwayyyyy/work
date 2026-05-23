@@ -449,17 +449,39 @@
         [data-theme="dark"] .msg-send-bar {
             background: var(--color-bg-surface);
         }
-        [data-theme="dark"] .msg-textarea {
+        [data-theme="dark"] .msg-shell,
+        [data-theme="dark"] .msg-panel,
+        [data-theme="dark"] .msg-messages {
             background: var(--color-bg-subtle);
+        }
+        [data-theme="dark"] .msg-textarea {
+            background: var(--color-bg-surface);
             color: var(--color-text-default);
             border-color: var(--color-border-default);
         }
         [data-theme="dark"] .msg-bubble {
-            background: var(--color-bg-subtle);
+            background: var(--color-bg-surface);
             border-color: var(--color-border-default);
             color: var(--color-text-default);
         }
+        [data-theme="dark"] .msg-date-divider span {
+            background: var(--color-bg-subtle);
+            color: var(--color-text-default);
+        }
+        [data-theme="dark"] .msg-conv-item:hover,
+        [data-theme="dark"] .msg-bot-item:hover {
+            background: var(--color-bg-surface);
+        }
+        [data-theme="dark"] .msg-conv-item--active,
+        [data-theme="dark"] .msg-bot-item--active {
+            background: var(--color-bg-surface);
+        }
         [data-theme="dark"] .msg-modal { background: var(--color-bg-surface); }
+        [data-theme="dark"] .msg-search-input {
+            background: var(--color-bg-subtle);
+            color: var(--color-text-default);
+            border-color: var(--color-border-default);
+        }
 
         /* mobile responsive */
         @media (max-width: 640px) {
@@ -565,6 +587,7 @@
         let currentUserId = 0;
         let currentConvUserId = 0;
         let pollTimer = null;
+        let _notepadMode = false;
 
         function makeAvatar(name, avatarPath, size) {
             const sz = size || 40;
@@ -641,6 +664,7 @@
 
         function deactivateAllSidebarItems() {
             currentConvUserId = 0;
+            _notepadMode = false;
             clearInterval(pollTimer);
             document.querySelectorAll('.msg-conv-item').forEach(el => el.classList.remove('msg-conv-item--active'));
             document.getElementById('bot-item').classList.remove('msg-bot-item--active');
@@ -785,60 +809,54 @@
             }
         }
 
-        let _noteSaveTimer = null;
-
         async function openNotepad() {
             deactivateAllSidebarItems();
+            _notepadMode = true;
             document.getElementById('notepad-item').classList.add('msg-bot-item--active');
 
-            const panelHead = document.getElementById('panel-head');
             const panelAvatar = document.getElementById('panel-avatar');
-            const panelName = document.getElementById('panel-name');
-            const sendBar = document.getElementById('send-bar');
+            const panelName  = document.getElementById('panel-name');
+            const input      = document.getElementById('msg-input');
 
             panelAvatar.innerHTML = '📝';
             panelAvatar.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
             panelAvatar.style.fontSize = '1.1rem';
             panelName.textContent = '記事本';
-            panelHead.style.display = '';
-            sendBar.style.display = 'none';
+            document.getElementById('panel-head').style.display = '';
+            document.getElementById('send-bar').style.display = '';
+            input.placeholder = '寫下任何想法…';
 
-            const area = document.getElementById('messages-area');
-            area.innerHTML = '<div class="msg-placeholder"><div class="msg-spinner"></div></div>';
-
-            try {
-                const res = await APIClient.get('messages.php?action=note');
-                const content = (res && res.success) ? (res.data.content || '') : '';
-                const updatedAt = (res && res.success && res.data.updated_at) ? res.data.updated_at : null;
-                area.innerHTML = `
-                    <div style="display:flex;flex-direction:column;height:100%;padding:16px;gap:8px;box-sizing:border-box;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <span style="font-size:0.78rem;color:var(--color-text-muted,#9ca3af);" id="note-save-status">${updatedAt ? '上次儲存：' + updatedAt.slice(0,16) : '尚未儲存'}</span>
-                        </div>
-                        <textarea id="notepad-textarea" placeholder="在這裡記錄任何筆記…"
-                            style="flex:1;width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:0.92rem;line-height:1.6;resize:none;font-family:inherit;color:var(--color-text,#374151);background:#fff;box-sizing:border-box;"
-                            maxlength="10000">${PageUtils.escapeHtml(content)}</textarea>
-                    </div>`;
-                const ta = document.getElementById('notepad-textarea');
-                if (ta) {
-                    ta.addEventListener('input', () => {
-                        clearTimeout(_noteSaveTimer);
-                        document.getElementById('note-save-status').textContent = '輸入中…';
-                        _noteSaveTimer = setTimeout(() => saveNote(ta.value), 1500);
-                    });
-                }
-            } catch (e) {
-                area.innerHTML = '<div class="msg-placeholder"><span style="color:var(--color-text-muted);">載入失敗，請重試</span></div>';
-            }
+            await loadNoteMessages();
         }
 
-        async function saveNote(content) {
-            const statusEl = document.getElementById('note-save-status');
+        async function loadNoteMessages() {
+            const area = document.getElementById('messages-area');
+            area.innerHTML = '<div class="msg-placeholder"><div class="msg-spinner"></div></div>';
             try {
-                await APIClient.post('messages.php?action=save_note', { content });
-                if (statusEl) statusEl.textContent = '已儲存 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+                const res = await APIClient.get('messages.php?action=note_messages');
+                const msgs = (res && res.success && res.data && res.data.messages) ? res.data.messages : [];
+                if (msgs.length === 0) {
+                    area.innerHTML = `<div class="msg-placeholder">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        <span>開始記錄你的想法</span>
+                    </div>`;
+                    return;
+                }
+                area.innerHTML = msgs.map(m => {
+                    const t = PageUtils.timeAgo ? PageUtils.timeAgo(m.created_at) : m.created_at;
+                    return `<div class="msg-bubble-row msg-bubble-row--mine">
+                        <div>
+                            <div class="msg-bubble msg-bubble--mine">${PageUtils.escapeHtml(m.content)}</div>
+                            <div class="msg-bubble-time" style="text-align:right;">${t}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+                area.scrollTop = area.scrollHeight;
             } catch (e) {
-                if (statusEl) statusEl.textContent = '儲存失敗';
+                area.innerHTML = '<div class="msg-placeholder"><span style="color:var(--color-text-muted);">載入失敗，請重試</span></div>';
             }
         }
 
@@ -933,7 +951,29 @@
         async function sendMessage() {
             const input = document.getElementById('msg-input');
             const content = input.value.trim();
-            if (!content || !currentConvUserId) return;
+            if (!content) return;
+
+            if (_notepadMode) {
+                const btn = document.getElementById('send-btn');
+                btn.disabled = true;
+                try {
+                    const res = await APIClient.post('messages.php?action=send_note_message', { content });
+                    if (res && res.success) {
+                        input.value = '';
+                        input.style.height = '';
+                        await loadNoteMessages();
+                    } else {
+                        PageUtils.showAlert(res?.message || '傳送失敗', 'error');
+                    }
+                } catch (e) {
+                    PageUtils.showAlert('傳送失敗', 'error');
+                } finally {
+                    btn.disabled = false;
+                }
+                return;
+            }
+
+            if (!currentConvUserId) return;
 
             const btn = document.getElementById('send-btn');
             btn.disabled = true;

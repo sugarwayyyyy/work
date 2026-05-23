@@ -288,6 +288,32 @@ class MessagesAPI {
     }
 
     /**
+     * GET ?action=note_messages
+     */
+    public static function getNoteMessages() {
+        $uid = self::requireLogin();
+        if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+        $rows = Database::getInstance()->fetchAll(
+            'SELECT note_id, content, created_at FROM note_messages WHERE user_id = ? ORDER BY created_at ASC',
+            [$uid]
+        );
+        Helper::success('', ['messages' => $rows]);
+    }
+
+    /**
+     * POST ?action=send_note_message
+     * Body: { content }
+     */
+    public static function sendNoteMessage($data) {
+        $uid = self::requireLogin();
+        $content = trim((string)($data['content'] ?? ''));
+        if ($content === '') Helper::error('內容不可空白', 400);
+        if (mb_strlen($content) > 2000) Helper::error('訊息過長', 400);
+        dbInsert('note_messages', ['user_id' => $uid, 'content' => $content]);
+        Helper::success('已儲存');
+    }
+
+    /**
      * POST ?action=verify_join_code
      * Body: { club_id, code }
      */
@@ -373,15 +399,17 @@ if ($method === 'GET') {
     elseif ($action === 'search_user')  { MessagesAPI::searchUser(); }
     elseif ($action === 'unread_count') { MessagesAPI::getUnreadCount(); }
     elseif ($action === 'bot_messages') { MessagesAPI::getBotMessages(); }
-    elseif ($action === 'note')         { MessagesAPI::getNote(); }
-    else                                { MessagesAPI::getConversations(); }
+    elseif ($action === 'note')          { MessagesAPI::getNote(); }
+    elseif ($action === 'note_messages') { MessagesAPI::getNoteMessages(); }
+    else                                 { MessagesAPI::getConversations(); }
 }
 
 if ($method === 'POST') {
     if ($action === 'send')              { MessagesAPI::sendMessage($data); }
     elseif ($action === 'mark_bot_read') { MessagesAPI::markBotMessageRead($data); }
-    elseif ($action === 'save_note')     { MessagesAPI::saveNote($data); }
-    elseif ($action === 'verify_join_code') { MessagesAPI::verifyJoinCode($data); }
+    elseif ($action === 'save_note')          { MessagesAPI::saveNote($data); }
+    elseif ($action === 'send_note_message')  { MessagesAPI::sendNoteMessage($data); }
+    elseif ($action === 'verify_join_code')   { MessagesAPI::verifyJoinCode($data); }
 }
 
 Helper::error('無效的請求', 400);
