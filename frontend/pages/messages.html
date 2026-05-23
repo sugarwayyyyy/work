@@ -846,13 +846,9 @@
                     return;
                 }
                 area.innerHTML = msgs.map(m => {
-                    const t = PageUtils.timeAgo ? PageUtils.timeAgo(m.created_at) : m.created_at;
-                    return `<div class="msg-bubble-row msg-bubble-row--mine">
-                        <div>
-                            <div class="msg-bubble msg-bubble--mine">${PageUtils.escapeHtml(m.content)}</div>
-                            <div class="msg-bubble-time" style="text-align:right;">${t}</div>
-                        </div>
-                    </div>`;
+                    const d = new Date(String(m.created_at || '').replace(' ', 'T'));
+                    const t = isNaN(d) ? '' : d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+                    return `<div class="msg-bubble-row msg-bubble-row--mine"><div class="msg-bubble msg-bubble--mine">${PageUtils.escapeHtml(m.content)}</div><span class="msg-bubble-time">${t}</span></div>`;
                 }).join('');
                 area.scrollTop = area.scrollHeight;
             } catch (e) {
