@@ -578,7 +578,8 @@ class ClubAdminAPI {
      * GET /api/club-admin.php?action=join_applications&id={club_id}
      */
     public static function getJoinApplications($club_id) {
-        self::requireClubAdmin();
+        if (!Auth::isLoggedIn()) { Helper::error('請先登入', 401); }
+        if (session_status() === PHP_SESSION_ACTIVE) { session_write_close(); }
         $club_id = (int)$club_id;
         if (!$club_id) Helper::error('缺少社團 ID', 400);
 
@@ -610,7 +611,8 @@ class ClubAdminAPI {
      * Body: { application_id, action: 'approve'|'reject' }
      */
     public static function reviewApplication($data) {
-        self::requireClubAdmin();
+        if (!Auth::isLoggedIn()) { Helper::error('請先登入', 401); }
+        if (session_status() === PHP_SESSION_ACTIVE) { session_write_close(); }
 
         $appId  = (int)($data['application_id'] ?? 0);
         $act    = trim($data['action'] ?? '');

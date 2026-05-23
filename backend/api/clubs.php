@@ -143,6 +143,7 @@ class ClubAPI {
         $scoreParams = [];
         $parts = [];
 
+        $searchBlob = "CONCAT_WS(' ', COALESCE(clubs.club_name,''), COALESCE(clubs.description,''), COALESCE(clubs.meeting_day,''), COALESCE(clubs.meeting_time,''), COALESCE(clubs.meeting_location,''), COALESCE(clubs.club_code,''))";
 
         $phraseLike = '%' . $query . '%';
         $parts[] = '(CASE WHEN clubs.club_name LIKE ? THEN 40 ELSE 0 END)';
@@ -354,7 +355,7 @@ class ClubAPI {
                 $sql = "SELECT clubs.*, cc.category_name FROM clubs LEFT JOIN club_categories cc ON cc.category_id = clubs.category_id WHERE $where ORDER BY clubs.last_updated DESC";
                 $stmt = Database::getInstance()->prepare($sql);
                 if ($stmt === false) {
-                    throw new Exception('查詢準備失敗: ' . Database::getInstance()->error);
+                    throw new Exception('查詢準備失敗: ' . Database::getInstance()->getError());
                 }
 
                 if (!empty($params)) {
@@ -374,7 +375,7 @@ class ClubAPI {
                 $sql = "SELECT $selectColumns FROM clubs WHERE $where ORDER BY $orderBy LIMIT ? OFFSET ?";
                 $stmt = Database::getInstance()->prepare($sql);
                 if ($stmt === false) {
-                    throw new Exception('查詢準備失敗: ' . Database::getInstance()->error);
+                    throw new Exception('查詢準備失敗: ' . Database::getInstance()->getError());
                 }
 
                 $queryParams = array_merge($selectTagScoreParams, $params);
@@ -473,7 +474,7 @@ class ClubAPI {
             $count_sql = "SELECT COUNT(*) as total FROM clubs WHERE $where";
             $count_stmt = Database::getInstance()->prepare($count_sql);
             if ($count_stmt === false) {
-                throw new Exception('計數查詢準備失敗: ' . Database::getInstance()->error);
+                throw new Exception('計數查詢準備失敗: ' . Database::getInstance()->getError());
             }
             if (!empty($params)) {
                 $count_types = str_repeat('s', count($params));
@@ -1291,7 +1292,7 @@ class ClubAPI {
             // 刪除舊標籤關聯
             $stmt = Database::getInstance()->prepare('DELETE FROM club_tag_relations WHERE club_id = ?');
             if ($stmt === false) {
-                throw new Exception('刪除舊標籤關聯準備失敗: ' . Database::getInstance()->error);
+                throw new Exception('刪除舊標籤關聯準備失敗: ' . Database::getInstance()->getError());
             }
             $stmt->bind_param('i', $club_id);
             $stmt->execute();

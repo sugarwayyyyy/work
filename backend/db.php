@@ -58,6 +58,10 @@ class Database {
     public function getConnection() {
         return $this->connection;
     }
+
+    public function getError(): string {
+        return (string)($this->connection->error ?? '');
+    }
     
     public function query($sql) {
         $result = $this->connection->query($sql);

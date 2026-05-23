@@ -25,16 +25,17 @@ $mysqlCandidates = @(
 $mysqlPath = $mysqlCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $mysqlPath) { $mysqlPath = 'mysql' }
 
-# Check database (suppress stderr so mysql password-warning doesn't throw)
+# Check database — try empty password (XAMPP) then 12345678 (AppServ)
 $dbCheck = $null
-try {
-    $prev = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
-    $dbCheck = & $mysqlPath -u root -p12345678 -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='club_platform';" 2>$null
-    $ErrorActionPreference = $prev
-} catch { $ErrorActionPreference = 'Stop' }
+$prev = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+$dbCheck = & $mysqlPath -u root -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='club_platform';" 2>$null
 if (-not ($dbCheck -match 'club_platform')) {
-    Write-Host '[!] DB club_platform not found.' -ForegroundColor Red
-    Write-Host '    Run: mysql -u root -p12345678 < database/schema.sql' -ForegroundColor Yellow
+    $dbCheck = & $mysqlPath -u root -p12345678 -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='club_platform';" 2>$null
+}
+$ErrorActionPreference = $prev
+if (-not ($dbCheck -match 'club_platform')) {
+    Write-Host '[!] DB club_platform not found or MySQL not running.' -ForegroundColor Red
+    Write-Host '    Start MySQL, then run: mysql -u root < database/schema.sql' -ForegroundColor Yellow
     exit 1
 }
 
