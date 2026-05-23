@@ -39,6 +39,10 @@ try {
         __DIR__ . '/database/migrations/2026_05_10_club_fee_semester.sql',
         __DIR__ . '/database/migrations/2026_05_11_remove_categories_religion_misc.sql',
         __DIR__ . '/database/migrations/2026_05_21_google_oauth.sql',
+        __DIR__ . '/database/migrations/2026_05_22_club_fee_per_session.sql',
+        __DIR__ . '/database/migrations/2026_05_22_club_member_fee_paid.sql',
+        __DIR__ . '/database/migrations/2026_05_22_club_member_join.sql',
+        __DIR__ . '/database/migrations/2026_05_23_private_messages.sql',
     ];
 
     foreach ($files as $file) {

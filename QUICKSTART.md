@@ -41,6 +41,8 @@ mysql -u root -p club_platform < database/migrations/2026_04_28_event_time_range
 mysql -u root -p club_platform < database/migrations/2026_05_10_club_fee_semester.sql
 mysql -u root -p club_platform < database/migrations/2026_05_11_remove_categories_religion_misc.sql
 mysql -u root -p club_platform < database/migrations/2026_05_21_google_oauth.sql
+mysql -u root -p club_platform < database/migrations/2026_05_22_club_fee_per_session.sql
+mysql -u root -p club_platform < database/migrations/2026_05_22_club_member_fee_paid.sql
 mysql -u root -p club_platform < database/migrations/2026_05_22_club_member_join.sql
 mysql -u root -p club_platform < database/migrations/2026_05_23_private_messages.sql
 mysql -u root -p club_platform < database/seeds/2026_04_02_school_clubs_seed.sql
