@@ -862,6 +862,7 @@
 
         async function openConversation(userId, name, avatarPath) {
             currentConvUserId = userId;
+            _notepadMode = false;
 
             // Deactivate bot/notepad items
             document.getElementById('bot-item').classList.remove('msg-bot-item--active');
@@ -879,6 +880,11 @@
             panelName.textContent = name || '';
             panelHead.style.display = '';
             sendBar.style.display = '';
+
+            const input = document.getElementById('msg-input');
+            input.value = '';
+            input.style.height = '';
+            input.placeholder = '輸入訊息...';
 
             // highlight active conv
             document.querySelectorAll('.msg-conv-item').forEach(el => el.classList.remove('msg-conv-item--active'));
