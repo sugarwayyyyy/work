@@ -133,10 +133,13 @@
 - 追蹤社團與個人動態
 - 加入社團（含費用方案選擇：一次付清 / 學期費 / 單堂費；退出社團）
 - 評價與 Q&A 互動
-- 通知與個人資料管理（含帳號刪除確認流程）
+- 通知中心（未讀紅點、單則已讀、全部已讀、刪除通知）
+- 個人資料管理（含帳號刪除確認流程）
+- **私訊系統**：Discord 式雙欄對話介面，依 user_id 或姓名搜尋用戶，歷史訊息持久儲存，3 秒輪詢即時更新
 - 活動報名與參與者列表
 - 檢舉功能（附 5 次 / 10 分鐘冷卻保護）
 - Light / Dark mode 切換（含訪客未登入狀態）
+- 各頁面（提問、評論、評價）顯示用戶 ID，可點擊直接進入私訊
 
 ### 社團幹部端
 - 社團基本資料編修（含年費 / 入會費 / 單堂費設定）
@@ -170,6 +173,7 @@
 │       ├── dashboard.php
 │       ├── events.php
 │       ├── location-preview.php
+│       ├── messages.php          ← 私訊系統
 │       ├── notifications.php
 │       ├── oauth.php
 │       ├── qa.php
@@ -179,13 +183,18 @@
 ├── database/
 │   ├── schema.sql
 │   ├── migrations/
+│   │   └── 2026_05_23_private_messages.sql   ← 私訊資料表
 │   └── seeds/
 ├── frontend/
 │   ├── index.html
 │   ├── assets/
 │   ├── css/
 │   ├── js/
+│   │   └── main.js               ← 含 injectMessagesNavLink、_pageInitReady
 │   └── pages/
+│       ├── messages.html         ← 私訊頁面
+│       ├── notifications.html
+│       └── ...
 ├── tests/
 │   ├── e2e/
 │   │   ├── user-stories.spec.js
@@ -294,6 +303,14 @@ npx playwright test
 - `backend/api/qa.php`
 - `backend/api/reviews.php`
 
+### 私訊
+- `backend/api/messages.php`
+  - `GET  ?action=conversations` — 對話列表（含最後一則訊息與未讀數）
+  - `GET  ?action=thread&user_id=X` — 取得與用戶 X 的訊息紀錄，同時標記為已讀
+  - `POST ?action=send` — 傳送訊息 `{receiver_id, content}`（最多 2000 字）
+  - `GET  ?action=search_user&q=X` — 依 user_id（精確）、student_id（精確）或姓名（模糊）搜尋
+  - `GET  ?action=unread_count` — 取得未讀私訊總數（供導覽列紅點）
+
 ### 管理與上傳
 - `backend/api/admin.php`
 - `backend/api/club-admin.php`
@@ -302,6 +319,11 @@ npx playwright test
   - `POST ?action=remove_member` — 社長踢出成員（同步 `users.role`）
 - `backend/api/upload.php`
 - `backend/api/notifications.php`
+  - `GET`（預設）— 通知列表（最多 50 則）
+  - `GET  ?action=unread_count` — 未讀通知數
+  - `POST ?action=mark_read` — 標記單則已讀
+  - `POST ?action=mark_all_read` — 全部標記已讀
+  - `POST ?action=delete` — 刪除單則通知 `{notification_id}`
 
 ### 儀表板與檢舉
 - `backend/api/dashboard.php` — 全站統計摘要（僅限平台管理員）
@@ -313,7 +335,8 @@ npx playwright test
 ## 版本與發布紀錄
 
 - [Release Notes 2026-04-04](RELEASE_NOTES_2026-04-04.md)
-- 2026-05-22：成員職稱管理、踢出成員、加入/退出社團、已加入社團 tab、排他性職稱驗證、啟動腳本修正（見上方最近更新）
+- 2026-05-23：私訊系統、Bot 占位元、用戶 ID 全站顯示、通知刪除功能、紅點修正（見下方最近更新）
+- 2026-05-22：成員職稱管理、踢出成員、加入/退出社團、已加入社團 tab、排他性職稱驗證、啟動腳本修正
 - 2026-05-21：Google OAuth 登入 / 註冊、UI 全寬修正、登入防重複送出、多項功能細節完善
 
 ## 文件索引
@@ -335,6 +358,21 @@ npx playwright test
 - 已實作 Light / Dark mode（CSS token 系統），訪客與登入使用者均可切換。
 - 全站版面採全寬設計（`layout.css` container / nav 均不限寬），各頁面一致。
 - 登入表單已加入送出防抖保護，避免短時間內重複觸發。
+- 私訊系統（`messages.html`）已上線，支援多對話管理、搜尋用戶、歷史紀錄。
+
+### 最近更新（2026-05-23）
+
+| 項目 | 說明 |
+|------|------|
+| 私訊系統 | 新增 `messages.html`（Discord 式雙欄 UI）與 `messages.php` API；`private_messages` 資料表 migration |
+| 私訊導覽列連結 | `main.js` 新增 `injectMessagesNavLink()`，自動在「提問」後方注入「私訊」連結 |
+| Bot 占位元 | 私訊側邊欄頂端固定顯示「平台機器人 BOT」項目，點擊顯示「功能即將推出」面板 |
+| 用戶 ID 全站顯示 | 個人頭像下拉選單、個人頁面 hero、提問列表、提問詳情（問題＋回覆）、活動評論、社團評價均顯示 `#user_id`；可點擊直達私訊 |
+| 通知刪除 | 每則通知卡片 hover 顯示 `✕`；後端新增 `POST ?action=delete` 端點 |
+| 通知紅點修正 | 移除「進入通知頁自動全部已讀」行為；修正 `updateNavigation` IIFE 競態導致紅點不清除的問題（`clearedByPage` flag） |
+| 通知「全部標為已讀」按鈕 | 改為持續顯示的真實按鈕（有未讀時可按，全部已讀時 disabled），移除易混淆的純文字「全部已讀」標籤 |
+| 費用狀態下拉選單 | 成員管理頁面費用狀態由多個按鈕改為單一 `<select>` 下拉選單 |
+| AppServ 首次登入修正 | `requireClubAdmin()` 加入 `session_write_close()` + 前端 `_pageInitReady` 序列化，解決並發 PHP session 鎖死問題 |
 
 ### 最近更新（2026-05-22）
 
