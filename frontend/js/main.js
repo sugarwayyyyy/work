@@ -872,14 +872,17 @@ function shouldRenderGlobalFollowSidebar() {
     const blockedPageSuffixes = [
         '/login.html',
         '/register.html',
+        '/messages.html',
         '/admin-dashboard.html',
         '/admin-overview.html',
         '/frontend/pages/login.html',
         '/frontend/pages/register.html',
+        '/frontend/pages/messages.html',
         '/frontend/pages/admin-dashboard.html',
         '/frontend/pages/admin-overview.html',
         '/pages/login.html',
         '/pages/register.html',
+        '/pages/messages.html',
         '/pages/admin-dashboard.html',
         '/pages/admin-overview.html'
     ];
