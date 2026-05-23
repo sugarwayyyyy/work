@@ -35,6 +35,10 @@ class ClubAdminAPI {
         if (!Auth::isClubAdmin()) {
             Helper::error('您無權限執行此操作', 403);
         }
+        // Release PHP session file lock after auth check; remaining work is read-only DB queries.
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
     }
 
     public static function getMyClubs() {

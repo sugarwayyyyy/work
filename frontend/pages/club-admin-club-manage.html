@@ -213,6 +213,11 @@
         window.showManagementPanel = function () {};
 
         (async function () {
+            // Wait for session hydration (hydrateUserFromSession) to finish before
+            // making API calls, so we don't hit concurrent PHP session lock contention.
+            if (window._pageInitReady) {
+                await Promise.race([window._pageInitReady, new Promise(r => setTimeout(r, 3000))]);
+            }
             let clubId = Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
             let clubName = sessionStorage.getItem('clubAdmin_clubName') || '';
             if (!clubId) {

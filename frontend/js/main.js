@@ -67,6 +67,11 @@ let csrfTokenCache = null;
 let csrfTokenPromise = null;
 let activeApiBaseUrl = null;
 
+// Resolves after hydrateUserFromSession() so page-specific IIFEs can serialize
+// their first API call, avoiding concurrent PHP session lock contention.
+let _resolvePageInit;
+window._pageInitReady = new Promise(r => { _resolvePageInit = r; });
+
 class APIClient {
     static getBaseUrl() {
         return activeApiBaseUrl || API_BASE_CANDIDATES[0] || API_URL;
@@ -702,7 +707,12 @@ async function initializePage() {
     injectFjuLogoIcon();
     applyActiveNavLink();
     injectClubNavDropdown();
-    await hydrateUserFromSession();
+    try {
+        await hydrateUserFromSession();
+    } finally {
+        // Signal that session hydration is done so page IIFEs can proceed safely.
+        if (typeof _resolvePageInit === 'function') { _resolvePageInit(); _resolvePageInit = null; }
+    }
     updateNavigation();
     await renderGlobalFollowSidebar();
     renderAuthPromoBanner();
