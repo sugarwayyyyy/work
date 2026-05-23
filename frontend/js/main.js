@@ -1673,7 +1673,7 @@ function ensureNavDropdownStyles() {
         + '.nav-bell-btn,.nav-avatar-trigger{display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;border-radius:999px;color:#374151}'
         + '.nav-bell-btn{position:relative;width:32px;height:32px}'
         + '.nav-bell-btn:hover,.nav-avatar-trigger:hover{background:#f3f4f6}'
-        + '.nav-bell-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#ef4444;border:2px solid #fff;display:block}'
+        + '.nav-bell-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#ef4444;border:2px solid #fff;display:block}.nav-bell-dot[hidden]{display:none}'
         + '[data-theme="dark"] .nav-bell-dot{border-color:#1e1e2e}'
         + '@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav-bell-dot{border-color:#1e1e2e}}'
         + '.nav-bell-icon{width:18px;height:18px;display:block}'
