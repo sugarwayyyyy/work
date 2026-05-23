@@ -626,11 +626,73 @@
             border-color: var(--color-border-default);
         }
 
-        /* mobile responsive */
+        /* back button (hidden on desktop) */
+        .msg-back-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--color-primary-600, #2563eb);
+            flex-shrink: 0;
+            margin-right: 2px;
+        }
+        .msg-back-btn:hover { background: var(--color-bg-subtle, #f3f4f6); }
+
+        /* ── mobile layout (≤ 640 px) ── */
         @media (max-width: 640px) {
-            .msg-sidebar { width: 70px; }
-            .msg-conv-info, .msg-conv-meta, .msg-sidebar-title { display: none; }
-            .msg-conv-item { justify-content: center; padding: 10px 8px; }
+            /* shell clips the sliding panels */
+            .msg-shell {
+                position: relative;
+                overflow: hidden;
+            }
+
+            /* sidebar = full-width "list" screen */
+            .msg-sidebar {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                min-width: 0;
+                max-width: none;
+                z-index: 5;
+                border-right: none;
+                transition: transform 0.25s ease;
+            }
+            .msg-sidebar.mobile-hidden {
+                transform: translateX(-100%);
+                pointer-events: none;
+            }
+
+            /* panel slides in from the right */
+            .msg-panel {
+                position: absolute;
+                inset: 0;
+                transform: translateX(100%);
+                transition: transform 0.25s ease;
+                z-index: 6;
+            }
+            .msg-panel.mobile-active {
+                transform: translateX(0);
+            }
+
+            /* show back button */
+            .msg-back-btn { display: flex; }
+
+            /* sidebar head is now visible (full width) */
+            .msg-sidebar-head { padding: 14px 16px 10px; }
+
+            /* wider bubbles since screen is narrow */
+            .msg-bubble-wrap { max-width: 80%; }
+
+            /* smaller horizontal padding in messages area */
+            .msg-messages { padding: 12px 12px; }
+
+            /* send bar padding */
+            .msg-send-bar { padding: 10px 12px; }
         }
     </style>
 </head>
@@ -703,6 +765,11 @@
         <!-- chat panel -->
         <div class="msg-panel">
             <div class="msg-panel-head" id="panel-head" style="display:none;">
+                <button class="msg-back-btn" onclick="showMobileSidebar()" title="返回">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </button>
                 <div class="msg-conv-avatar" id="panel-avatar"></div>
                 <div class="msg-panel-name" id="panel-name"></div>
             </div>
@@ -738,6 +805,23 @@
         let _notepadMode = false;
         let _openMenuMsgId = null;
         let _replyTo = null;
+
+        function isMobileView() { return window.innerWidth <= 640; }
+
+        function showMobilePanel() {
+            if (!isMobileView()) return;
+            document.querySelector('.msg-panel').classList.add('mobile-active');
+            document.querySelector('.msg-sidebar').classList.add('mobile-hidden');
+        }
+
+        function showMobileSidebar() {
+            document.querySelector('.msg-panel').classList.remove('mobile-active');
+            document.querySelector('.msg-sidebar').classList.remove('mobile-hidden');
+            clearInterval(pollTimer);
+            currentConvUserId = 0;
+            _notepadMode = false;
+            cancelReply();
+        }
 
         function makeAvatar(name, avatarPath, size) {
             const sz = size || 40;
@@ -836,6 +920,7 @@
             panelName.innerHTML = '平台機器人 <span class="msg-bot-badge">BOT</span>';
             panelHead.style.display = '';
             sendBar.style.display = 'none';
+            showMobilePanel();
 
             const area = document.getElementById('messages-area');
             area.innerHTML = '<div class="msg-placeholder"><div class="msg-spinner"></div></div>';
@@ -975,6 +1060,7 @@
             document.getElementById('panel-head').style.display = '';
             document.getElementById('send-bar').style.display = '';
             input.placeholder = '寫下任何想法…';
+            showMobilePanel();
 
             await loadNoteMessages();
         }
@@ -1041,6 +1127,7 @@
             input.value = '';
             input.style.height = '';
             input.placeholder = '輸入訊息...';
+            showMobilePanel();
 
             // highlight active conv
             document.querySelectorAll('.msg-conv-item').forEach(el => el.classList.remove('msg-conv-item--active'));
