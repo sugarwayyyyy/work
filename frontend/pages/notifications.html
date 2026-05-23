@@ -71,6 +71,13 @@
             }
         }
 
+        function syncBellDot(unreadCount) {
+            const dot = document.getElementById('nav-bell-dot');
+            if (!dot) return;
+            if (unreadCount > 0) dot.removeAttribute('hidden');
+            else dot.setAttribute('hidden', '');
+        }
+
         function displayNotifications(notifications) {
             const container = document.getElementById('notifications-list');
             const unreadCountEl = document.getElementById('notif-unread-count');
@@ -80,10 +87,12 @@
                 if (unreadCountEl) unreadCountEl.textContent = '';
                 const markAllBtn = document.getElementById('mark-all-read-btn');
                 if (markAllBtn) markAllBtn.style.display = 'none';
+                syncBellDot(0);
                 return;
             }
 
             const unreadCount = notifications.filter(n => !n.is_read).length;
+            syncBellDot(unreadCount);
             if (unreadCountEl) unreadCountEl.textContent = unreadCount > 0 ? `${unreadCount} 則未讀` : '全部已讀';
             const markAllBtn = document.getElementById('mark-all-read-btn');
             if (markAllBtn) markAllBtn.style.display = unreadCount > 0 ? '' : 'none';
@@ -187,13 +196,21 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', function () {
-            loadNotifications();
+        window.addEventListener('DOMContentLoaded', async function () {
             const user = StorageUtils.getUser();
             if (user && user.role === 'platform_admin') {
                 const logoLink = document.querySelector('a.logo');
                 if (logoLink) logoLink.href = 'admin-users.html';
             }
+            // Wait for session hydration before API calls to avoid PHP session lock contention.
+            if (window._pageInitReady) {
+                await Promise.race([window._pageInitReady, new Promise(r => setTimeout(r, 3000))]);
+            }
+            // Mark all as read on open, then load so the list and bell dot reflect the cleared state.
+            if (StorageUtils.isLoggedIn()) {
+                await APIClient.post('notifications.php?action=mark_all_read', {}).catch(() => {});
+            }
+            loadNotifications();
         });
     </script>
 </body>
