@@ -251,13 +251,6 @@
             flex-shrink: 0;
             align-self: flex-end;
         }
-        .msg-bubble--recalled {
-            background: transparent;
-            border: 1px dashed var(--color-border-default, #e5e7eb);
-            color: var(--color-text-muted, #9ca3af);
-            font-style: italic;
-            font-size: 0.82rem;
-        }
         .msg-recall-btn {
             flex-shrink: 0;
             align-self: center;
@@ -966,11 +959,9 @@
                     : PageUtils.escapeHtml(String(m.sender_name || '?').charAt(0).toUpperCase());
 
                 const isRecalled = !!m.is_recalled;
-                if (isRecalled && !isMine) return; // hide other party's recalled messages
-                const bubbleText = isRecalled
-                    ? '你收回了一則訊息'
-                    : PageUtils.escapeHtml(m.content || '');
-                const bubbleClass = `msg-bubble${isMine ? ' msg-bubble--mine' : ''}${isRecalled ? ' msg-bubble--recalled' : ''}`;
+                if (isRecalled) return; // hide recalled messages completely
+                const bubbleText = PageUtils.escapeHtml(m.content || '');
+                const bubbleClass = `msg-bubble${isMine ? ' msg-bubble--mine' : ''}`;
                 const recallBtn = (isMine && !isRecalled)
                     ? `<button class="msg-recall-btn" onclick="recallMessage(${Number(m.message_id)})" title="收回訊息">收回</button>`
                     : '';
