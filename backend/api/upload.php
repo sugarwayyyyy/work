@@ -23,7 +23,9 @@ set_exception_handler(function ($e) {
     }
     echo json_encode([
         'success' => false,
-        'message' => '上傳服務發生錯誤，請稍後再試'
+        'message' => '上傳服務發生錯誤，請稍後再試',
+        'debug_error' => $e->getMessage(),
+        'debug_trace' => $e->getTraceAsString()
     ]);
     exit;
 });
@@ -42,7 +44,10 @@ register_shutdown_function(function () {
         }
         echo json_encode([
             'success' => false,
-            'message' => '上傳服務發生致命錯誤，請稍後再試'
+            'message' => '上傳服務發生致命錯誤，請稍後再試',
+            'debug_error' => $error['message'],
+            'debug_file' => $error['file'],
+            'debug_line' => $error['line']
         ]);
     }
 });

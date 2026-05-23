@@ -132,6 +132,9 @@ class Database {
         $stmt->bind_param($types, ...$values);
         
         $result = $stmt->execute();
+        if (!$result) {
+            error_log("Insert 錯誤: " . $stmt->error . " | SQL: " . $sql);
+        }
         $insert_id = $this->connection->insert_id;
         $stmt->close();
         
