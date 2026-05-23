@@ -315,7 +315,7 @@ class MessagesAPI {
         $uid = self::requireLogin();
         if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
         $rows = Database::getInstance()->fetchAll(
-            'SELECT note_id, content, created_at FROM note_messages WHERE user_id = ? ORDER BY created_at ASC',
+            'SELECT note_id, content, created_at FROM note_messages WHERE user_id = ? AND is_recalled = 0 ORDER BY created_at ASC',
             [$uid]
         );
         Helper::success('', ['messages' => $rows]);
@@ -332,6 +332,26 @@ class MessagesAPI {
         if (mb_strlen($content) > 2000) Helper::error('訊息過長', 400);
         dbInsert('note_messages', ['user_id' => $uid, 'content' => $content]);
         Helper::success('已儲存');
+    }
+
+    /**
+     * POST ?action=recall_note_message
+     * Body: { note_id }
+     */
+    public static function recallNoteMessage($data) {
+        $uid = self::requireLogin();
+        $noteId = (int)($data['note_id'] ?? 0);
+        if ($noteId <= 0) Helper::error('無效的 ID', 400);
+
+        $row = Database::getInstance()->fetchOne(
+            'SELECT user_id FROM note_messages WHERE note_id = ? AND is_recalled = 0',
+            [$noteId]
+        );
+        if (!$row) Helper::error('找不到此訊息', 404);
+        if ((int)$row['user_id'] !== $uid) Helper::error('無權限', 403);
+
+        dbUpdate('note_messages', ['is_recalled' => 1], 'note_id = ?', [$noteId]);
+        Helper::success('已刪除');
     }
 
     /**
@@ -430,7 +450,8 @@ if ($method === 'POST') {
     elseif ($action === 'mark_bot_read') { MessagesAPI::markBotMessageRead($data); }
     elseif ($action === 'save_note')          { MessagesAPI::saveNote($data); }
     elseif ($action === 'send_note_message')  { MessagesAPI::sendNoteMessage($data); }
-    elseif ($action === 'recall_message')     { MessagesAPI::recallMessage($data); }
+    elseif ($action === 'recall_message')      { MessagesAPI::recallMessage($data); }
+    elseif ($action === 'recall_note_message') { MessagesAPI::recallNoteMessage($data); }
     elseif ($action === 'verify_join_code')   { MessagesAPI::verifyJoinCode($data); }
 }
 

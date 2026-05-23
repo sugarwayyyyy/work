@@ -871,7 +871,8 @@
                 area.innerHTML = msgs.map(m => {
                     const d = new Date(String(m.created_at || '').replace(' ', 'T'));
                     const t = isNaN(d) ? '' : d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-                    return `<div class="msg-bubble-row msg-bubble-row--mine"><div class="msg-bubble msg-bubble--mine">${PageUtils.escapeHtml(m.content)}</div><span class="msg-bubble-time">${t}</span></div>`;
+                    const recallBtn = `<button class="msg-recall-btn" onclick="recallNoteMessage(${Number(m.note_id)})" title="刪除">收回</button>`;
+                    return `<div class="msg-bubble-row msg-bubble-row--mine">${recallBtn}<div class="msg-bubble msg-bubble--mine">${PageUtils.escapeHtml(m.content)}</div><span class="msg-bubble-time">${t}</span></div>`;
                 }).join('');
                 area.scrollTop = area.scrollHeight;
             } catch (e) {
@@ -965,8 +966,9 @@
                     : PageUtils.escapeHtml(String(m.sender_name || '?').charAt(0).toUpperCase());
 
                 const isRecalled = !!m.is_recalled;
+                if (isRecalled && !isMine) return; // hide other party's recalled messages
                 const bubbleText = isRecalled
-                    ? (isMine ? '你收回了一則訊息' : '對方收回了一則訊息')
+                    ? '你收回了一則訊息'
                     : PageUtils.escapeHtml(m.content || '');
                 const bubbleClass = `msg-bubble${isMine ? ' msg-bubble--mine' : ''}${isRecalled ? ' msg-bubble--recalled' : ''}`;
                 const recallBtn = (isMine && !isRecalled)
@@ -1044,6 +1046,20 @@
                 }
             } catch (e) {
                 PageUtils.showAlert('收回失敗', 'error');
+            }
+        }
+
+        async function recallNoteMessage(noteId) {
+            if (!confirm('確定要刪除這則記事嗎？')) return;
+            try {
+                const res = await APIClient.post('messages.php?action=recall_note_message', { note_id: noteId });
+                if (res && res.success) {
+                    await loadNoteMessages();
+                } else {
+                    PageUtils.showAlert(res?.message || '刪除失敗', 'error');
+                }
+            } catch (e) {
+                PageUtils.showAlert('刪除失敗', 'error');
             }
         }
 

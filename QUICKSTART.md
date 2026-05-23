@@ -51,6 +51,7 @@ mysql -u root -p club_platform < database/migrations/2026_05_23_user_notes.sql
 mysql -u root -p club_platform < database/migrations/2026_05_24_event_posters.sql
 mysql -u root -p club_platform < database/migrations/2026_05_24_note_messages.sql
 mysql -u root -p club_platform < database/migrations/2026_05_24_private_message_recall.sql
+mysql -u root -p club_platform < database/migrations/2026_05_24_note_messages_recall.sql
 mysql -u root -p club_platform < database/seeds/2026_04_02_school_clubs_seed.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
