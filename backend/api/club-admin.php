@@ -573,6 +573,109 @@ class ClubAdminAPI {
         Helper::success('成員已移除');
     }
 
+    /**
+     * 取得社團待審核加入申請
+     * GET /api/club-admin.php?action=join_applications&id={club_id}
+     */
+    public static function getJoinApplications($club_id) {
+        self::requireClubAdmin();
+        $club_id = (int)$club_id;
+        if (!$club_id) Helper::error('缺少社團 ID', 400);
+
+        $callerId = Auth::getCurrentUserId();
+        if (!Auth::isAdmin()) {
+            $membership = Database::getInstance()->fetchOne(
+                'SELECT role FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1
+                 AND role IN ("president","vice_president","public_relations","treasurer","director")',
+                [$club_id, $callerId]
+            );
+            if (!$membership) Helper::error('無此社團管理權限', 403);
+        }
+
+        $apps = Database::getInstance()->fetchAll(
+            "SELECT a.application_id, a.user_id, a.fee_type, a.status, a.created_at,
+                    u.name AS user_name, u.student_id, u.avatar_path
+             FROM club_join_applications a
+             JOIN users u ON u.user_id = a.user_id
+             WHERE a.club_id = ? AND a.status = 'pending'
+             ORDER BY a.created_at ASC",
+            [$club_id]
+        );
+        Helper::success('取得申請列表成功', ['applications' => $apps]);
+    }
+
+    /**
+     * 審核加入申請（批准或拒絕）
+     * POST /api/club-admin.php?action=review_application
+     * Body: { application_id, action: 'approve'|'reject' }
+     */
+    public static function reviewApplication($data) {
+        self::requireClubAdmin();
+
+        $appId  = (int)($data['application_id'] ?? 0);
+        $act    = trim($data['action'] ?? '');
+        if (!$appId || !in_array($act, ['approve', 'reject'], true)) {
+            Helper::error('參數錯誤', 400);
+        }
+
+        $app = Database::getInstance()->fetchOne(
+            "SELECT a.*, c.club_name
+             FROM club_join_applications a
+             JOIN clubs c ON c.club_id = a.club_id
+             WHERE a.application_id = ? AND a.status = 'pending'",
+            [$appId]
+        );
+        if (!$app) Helper::error('申請不存在或已處理', 404);
+
+        $callerId = Auth::getCurrentUserId();
+        if (!Auth::isAdmin()) {
+            $membership = Database::getInstance()->fetchOne(
+                'SELECT role FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1
+                 AND role IN ("president","vice_president","public_relations","treasurer","director")',
+                [(int)$app['club_id'], $callerId]
+            );
+            if (!$membership) Helper::error('無此社團管理權限', 403);
+        }
+
+        $now = date('Y-m-d H:i:s');
+
+        if ($act === 'reject') {
+            dbUpdate('club_join_applications',
+                ['status' => 'rejected', 'reviewed_by' => $callerId, 'reviewed_at' => $now],
+                'application_id = ?', [$appId]
+            );
+            dbInsert('bot_messages', [
+                'user_id'      => (int)$app['user_id'],
+                'message_type' => 'join_rejected',
+                'title'        => '社團加入申請未通過',
+                'content'      => '您申請加入「' . $app['club_name'] . '」的申請未獲批准。',
+                'meta'         => json_encode(['club_id' => (int)$app['club_id'], 'club_name' => $app['club_name']]),
+            ]);
+            Helper::success('已拒絕申請');
+            return;
+        }
+
+        // approve: generate verification code
+        $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+        dbUpdate('club_join_applications',
+            ['status' => 'approved', 'verification_code' => $code, 'reviewed_by' => $callerId, 'reviewed_at' => $now],
+            'application_id = ?', [$appId]
+        );
+        dbInsert('bot_messages', [
+            'user_id'      => (int)$app['user_id'],
+            'message_type' => 'join_verification',
+            'title'        => '社團加入申請通過！',
+            'content'      => '您申請加入「' . $app['club_name'] . '」已獲批准，請使用以下驗證碼完成加入：',
+            'meta'         => json_encode([
+                'club_id'           => (int)$app['club_id'],
+                'club_name'         => $app['club_name'],
+                'verification_code' => $code,
+                'application_id'    => $appId,
+            ]),
+        ]);
+        Helper::success('已批准申請，驗證碼已傳送給用戶');
+    }
+
     public static function getMyTransferRequests() {
         self::requireClubAdmin();
         $user_id = Auth::getCurrentUserId();
@@ -616,6 +719,8 @@ if ($method === 'GET') {
         ClubAdminAPI::getClubStats($club_id);
     } elseif ($action === 'club_members' && $club_id) {
         ClubAdminAPI::getClubMembers($club_id);
+    } elseif ($action === 'join_applications' && $club_id) {
+        ClubAdminAPI::getJoinApplications($club_id);
     }
 }
 
@@ -633,6 +738,8 @@ if ($method === 'POST') {
         ClubAdminAPI::updateFeePaid($data);
     } elseif ($action === 'update_member_fee_type') {
         ClubAdminAPI::updateMemberFeeType($data);
+    } elseif ($action === 'review_application') {
+        ClubAdminAPI::reviewApplication($data);
     }
 }
 

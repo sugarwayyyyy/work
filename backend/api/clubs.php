@@ -748,18 +748,31 @@ class ClubAPI {
             // 檢查用戶是否已加入此社團
             $is_member = false;
             $my_fee_type = null;
+            $my_application = null;
             if (Auth::isLoggedIn()) {
+                $currentUserId = Auth::getCurrentUserId();
                 $membership = Database::getInstance()->fetchOne(
                     'SELECT fee_type FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role = "member"',
-                    [$club_id, Auth::getCurrentUserId()]
+                    [$club_id, $currentUserId]
                 );
                 if ($membership) {
                     $is_member = true;
                     $my_fee_type = $membership['fee_type'] ?? 'none';
+                } else {
+                    $app = Database::getInstance()->fetchOne(
+                        "SELECT application_id, status, fee_type FROM club_join_applications
+                         WHERE club_id = ? AND user_id = ?
+                         ORDER BY created_at DESC LIMIT 1",
+                        [$club_id, $currentUserId]
+                    );
+                    if ($app) {
+                        $my_application = $app;
+                    }
                 }
             }
             $club['is_member'] = $is_member;
             $club['my_fee_type'] = $my_fee_type;
+            $club['my_application'] = $my_application;
 
             Helper::success('取得社團詳細信息成功', $club);
             
@@ -1128,6 +1141,61 @@ class ClubAPI {
     }
 
     /**
+     * 申請加入社團（送出申請，等待幹部審核）
+     * POST /api/clubs.php?action=apply_join&id={club_id}
+     */
+    public static function applyJoinClub($club_id) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+        try {
+            $club_id = (int)$club_id;
+            $club = Database::getInstance()->fetchOne(
+                'SELECT club_id, club_name FROM clubs WHERE club_id = ? AND deleted_at IS NULL',
+                [$club_id]
+            );
+            if (!$club) Helper::error('社團不存在', 404);
+
+            $data = Helper::getRequestInput() ?: [];
+            $allowedFeeTypes = ['none', 'onetime', 'semester', 'session'];
+            $fee_type = in_array($data['fee_type'] ?? '', $allowedFeeTypes, true) ? $data['fee_type'] : 'semester';
+
+            $userId = Auth::getCurrentUserId();
+
+            // Already an active member
+            $existing = Database::getInstance()->fetchOne(
+                'SELECT member_id FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1',
+                [$club_id, $userId]
+            );
+            if ($existing) {
+                Helper::error('您已是此社團成員', 409);
+            }
+
+            // Already a pending or approved application
+            $pending = Database::getInstance()->fetchOne(
+                "SELECT application_id, status FROM club_join_applications
+                 WHERE club_id = ? AND user_id = ? AND status IN ('pending','approved') AND code_used = 0",
+                [$club_id, $userId]
+            );
+            if ($pending) {
+                $msg = $pending['status'] === 'approved' ? '您已取得驗證碼，請前往私訊完成驗證' : '您已有待審核的申請';
+                Helper::error($msg, 409);
+            }
+
+            dbInsert('club_join_applications', [
+                'club_id'  => $club_id,
+                'user_id'  => $userId,
+                'fee_type' => $fee_type,
+                'status'   => 'pending',
+            ]);
+
+            Helper::success('申請已送出，等待幹部審核', ['status' => 'pending']);
+        } catch (Exception $e) {
+            Helper::error('申請失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * 取得所有標籤
      * GET /api/clubs.php?action=get_all_tags
      */
@@ -1284,6 +1352,8 @@ if ($method === 'POST') {
         ClubAPI::toggleFollowClub($club_id);
     } elseif ($action === 'join_club' && $club_id) {
         ClubAPI::joinClub($club_id);
+    } elseif ($action === 'apply_join' && $club_id) {
+        ClubAPI::applyJoinClub($club_id);
     } elseif ($action === 'leave_club' && $club_id) {
         ClubAPI::leaveClub($club_id);
     }

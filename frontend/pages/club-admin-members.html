@@ -48,6 +48,21 @@
             <button type="button" class="btn btn-secondary btn-sm" onclick="openClubSwitchPopup()">切換社團</button>
         </div>
 
+        <section class="card admin-panel reveal-up" id="applications-section" style="margin-bottom:1.5rem;">
+            <header class="tr-head">
+                <div class="tr-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 14a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 5.477V16h3a1 1 0 110 2H6a1 1 0 110-2h3V5.477L6.237 6.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 14a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z"/></svg>
+                </div>
+                <div>
+                    <h2 class="tr-head__title">待審核申請 <span id="applications-count" style="font-size:0.85rem;font-weight:400;color:var(--color-text-muted,#6b7280);"></span></h2>
+                    <p class="tr-head__desc">審核成員加入申請，批准後系統將自動傳送驗證碼給申請者。</p>
+                </div>
+            </header>
+            <div id="applications-list-wrap">
+                <p class="widget-empty">載入中…</p>
+            </div>
+        </section>
+
         <section class="card admin-panel reveal-up" id="members-section">
 
             <header class="tr-head">
@@ -108,6 +123,7 @@
             const subtitle = document.getElementById('members-subtitle');
             if (subtitle && clubName) subtitle.textContent = clubName + ' 的社團成員';
             loadClubAdminStats(clubId);
+            loadJoinApplications(clubId);
             loadClubMembers(clubId);
         })();
     </script>

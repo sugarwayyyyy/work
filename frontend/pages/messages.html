@@ -194,6 +194,8 @@
             gap: 8px;
         }
         .msg-placeholder svg { opacity: 0.35; }
+        .msg-spinner { width:28px;height:28px;border:3px solid #e5e7eb;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
 
         .msg-bubble-row {
             display: flex;
@@ -447,6 +449,11 @@
         [data-theme="dark"] .msg-send-bar {
             background: var(--color-bg-surface);
         }
+        [data-theme="dark"] .msg-textarea {
+            background: var(--color-bg-subtle);
+            color: var(--color-text-default);
+            border-color: var(--color-border-default);
+        }
         [data-theme="dark"] .msg-bubble {
             background: var(--color-bg-subtle);
             border-color: var(--color-border-default);
@@ -509,10 +516,18 @@
             </div>
             <!-- Bot is always at the top, hardcoded -->
             <div class="msg-bot-item" id="bot-item" onclick="openBotConversation()">
-                <div class="msg-bot-avatar">🤖</div>
+                <div class="msg-bot-avatar" style="position:relative;">🤖<span id="bot-unread-dot" hidden style="position:absolute;top:0;right:0;width:9px;height:9px;border-radius:50%;background:#ef4444;border:1.5px solid #fff;"></span></div>
                 <div class="msg-conv-info">
                     <div class="msg-conv-name">平台機器人<span class="msg-bot-badge">BOT</span></div>
-                    <div class="msg-conv-preview">功能即將推出...</div>
+                    <div class="msg-conv-preview" id="bot-preview">載入中...</div>
+                </div>
+            </div>
+            <!-- Notepad is second hardcoded item -->
+            <div class="msg-bot-item" id="notepad-item" onclick="openNotepad()">
+                <div class="msg-bot-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706);">📝</div>
+                <div class="msg-conv-info">
+                    <div class="msg-conv-name">記事本</div>
+                    <div class="msg-conv-preview">個人備忘筆記</div>
                 </div>
             </div>
             <div class="msg-conv-list" id="conv-list">
@@ -581,6 +596,19 @@
             }
         }
 
+        async function loadBotUnreadStatus() {
+            try {
+                const res = await APIClient.get('messages.php?action=bot_messages');
+                if (!res || !res.success) return;
+                const msgs = res.data.messages || [];
+                const unread = msgs.filter(m => !m.is_read).length;
+                const dot = document.getElementById('bot-unread-dot');
+                if (dot) dot.hidden = unread === 0;
+                const preview = document.getElementById('bot-preview');
+                if (preview) preview.textContent = msgs.length > 0 ? msgs[0].title : '目前沒有訊息';
+            } catch (e) { /* silent */ }
+        }
+
         function renderConvList(convs) {
             const list = document.getElementById('conv-list');
             if (!convs.length) {
@@ -611,12 +639,16 @@
             }).join('');
         }
 
-        function openBotConversation() {
+        function deactivateAllSidebarItems() {
             currentConvUserId = 0;
             clearInterval(pollTimer);
-
-            // Deactivate conv items
             document.querySelectorAll('.msg-conv-item').forEach(el => el.classList.remove('msg-conv-item--active'));
+            document.getElementById('bot-item').classList.remove('msg-bot-item--active');
+            document.getElementById('notepad-item').classList.remove('msg-bot-item--active');
+        }
+
+        async function openBotConversation() {
+            deactivateAllSidebarItems();
             document.getElementById('bot-item').classList.add('msg-bot-item--active');
 
             const panelHead = document.getElementById('panel-head');
@@ -631,21 +663,191 @@
             panelHead.style.display = '';
             sendBar.style.display = 'none';
 
-            document.getElementById('messages-area').innerHTML = `
-                <div class="msg-placeholder" style="flex-direction:column;gap:12px;">
+            const area = document.getElementById('messages-area');
+            area.innerHTML = '<div class="msg-placeholder"><div class="msg-spinner"></div></div>';
+
+            try {
+                const res = await APIClient.get('messages.php?action=bot_messages');
+                if (!res || !res.success) throw new Error('載入失敗');
+                const msgs = res.data.messages || [];
+                renderBotMessages(msgs, area);
+                // Mark all bot messages as read
+                if (msgs.some(m => !m.is_read)) {
+                    await APIClient.post('messages.php?action=mark_bot_read', {});
+                    const dot = document.getElementById('bot-unread-dot');
+                    if (dot) dot.hidden = true;
+                    const preview = document.getElementById('bot-preview');
+                    if (preview && msgs.length > 0) preview.textContent = msgs[0].title;
+                }
+            } catch (e) {
+                area.innerHTML = '<div class="msg-placeholder"><span style="color:var(--color-text-muted);">載入失敗，請重試</span></div>';
+            }
+        }
+
+        function renderBotMessages(msgs, area) {
+            if (msgs.length === 0) {
+                area.innerHTML = `<div class="msg-placeholder" style="flex-direction:column;gap:12px;">
                     <div style="font-size:3rem;">🤖</div>
                     <div style="font-weight:700;font-size:1rem;color:var(--color-text-strong,#111827);">平台機器人</div>
                     <div style="font-size:0.88rem;color:var(--color-text-muted,#6b7280);text-align:center;max-width:260px;line-height:1.6;">
-                        Bot 功能即將推出，敬請期待！<br>未來將提供通知摘要、活動提醒等自動化服務。
+                        目前沒有 Bot 訊息。<br>申請加入社團通過後，驗證碼將在此顯示。
                     </div>
                 </div>`;
+                return;
+            }
+            area.innerHTML = msgs.map(msg => renderBotCard(msg)).join('');
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function renderBotCard(msg) {
+            const isVerification = msg.message_type === 'join_verification';
+            const isRejected = msg.message_type === 'join_rejected';
+            const meta = msg.meta || {};
+            const time = PageUtils.timeAgo ? PageUtils.timeAgo(msg.created_at) : msg.created_at;
+            const unreadDot = !msg.is_read ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-left:6px;vertical-align:middle;"></span>' : '';
+
+            let cardBody = '';
+            if (isVerification && meta.verification_code) {
+                cardBody = `
+                    <p style="margin:0 0 10px;color:var(--color-text,#374151);">${PageUtils.escapeHtml(msg.content)}</p>
+                    <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:12px 16px;margin-bottom:10px;">
+                        <div style="font-size:0.78rem;color:#166534;margin-bottom:4px;font-weight:500;">社團：${PageUtils.escapeHtml(meta.club_name || '')}</div>
+                        <div style="font-size:1.5rem;letter-spacing:0.3em;font-weight:700;color:#15803d;font-family:monospace;">${PageUtils.escapeHtml(meta.verification_code)}</div>
+                    </div>
+                    ${meta.code_used
+                        ? '<span style="color:#166534;font-size:0.88rem;font-weight:500;">✅ 已完成驗證</span>'
+                        : `<div id="verify-area-${msg.message_id}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <input id="verify-input-${msg.message_id}" type="text" placeholder="輸入驗證碼" maxlength="8"
+                            style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.9rem;width:140px;font-family:monospace;text-transform:uppercase;"
+                            oninput="this.value=this.value.toUpperCase()">
+                        <button class="btn btn-primary btn-sm" onclick="submitVerifyCode(${msg.message_id},${meta.club_id || 0})">驗證並加入</button>
+                    </div>`
+                    }`;
+            } else if (isRejected) {
+                cardBody = `<p style="margin:0;color:var(--color-text,#374151);">${PageUtils.escapeHtml(msg.content)}</p>`;
+            } else {
+                cardBody = `<p style="margin:0;color:var(--color-text,#374151);">${PageUtils.escapeHtml(msg.content)}</p>`;
+            }
+
+            const borderColor = isVerification ? '#86efac' : isRejected ? '#fca5a5' : '#e5e7eb';
+            const iconBg = isVerification ? '#dcfce7' : isRejected ? '#fee2e2' : '#f3f4f6';
+            const icon = isVerification ? '✅' : isRejected ? '❌' : '📢';
+
+            return `<div style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f3f4f6;align-items:flex-start;">
+                <div style="width:36px;height:36px;border-radius:50%;background:${iconBg};display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">${icon}</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;color:var(--color-text-strong,#111827);">
+                        ${PageUtils.escapeHtml(msg.title)}${unreadDot}
+                    </div>
+                    ${cardBody}
+                    <div style="font-size:0.75rem;color:var(--color-text-muted,#9ca3af);margin-top:8px;">${time}</div>
+                </div>
+            </div>`;
+        }
+
+        function buildSuccessCard(clubName) {
+            const name = PageUtils.escapeHtml(clubName || '社團');
+            return `<div style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f3f4f6;align-items:flex-start;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">✅</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;color:var(--color-text-strong,#111827);">你已成功加入${name}！</div>
+                    <p style="margin:0;color:var(--color-text,#374151);font-size:0.88rem;">歡迎成為社團成員，祝你參與愉快！</p>
+                    <div style="font-size:0.75rem;color:var(--color-text-muted,#9ca3af);margin-top:8px;">剛剛</div>
+                </div>
+            </div>`;
+        }
+
+        async function submitVerifyCode(msgId, clubId) {
+            const input = document.getElementById(`verify-input-${msgId}`);
+            const code = input ? input.value.trim().toUpperCase() : '';
+            if (!code) { PageUtils.showAlert('請輸入驗證碼', 'warning'); return; }
+            const areaEl = document.getElementById(`verify-area-${msgId}`);
+            const btn = areaEl ? areaEl.querySelector('button') : null;
+            if (btn) btn.disabled = true;
+            try {
+                const res = await APIClient.post('messages.php?action=verify_join_code', { club_id: clubId, code });
+                if (res && res.success) {
+                    // Remove the input area
+                    if (areaEl) areaEl.remove();
+                    // Append success Bot card
+                    const area = document.getElementById('messages-area');
+                    if (area) {
+                        area.insertAdjacentHTML('beforeend', buildSuccessCard(res.data?.club_name));
+                        area.scrollTop = area.scrollHeight;
+                    }
+                } else {
+                    PageUtils.showAlert(res?.message || '驗證失敗', 'error');
+                    if (btn) btn.disabled = false;
+                }
+            } catch (e) {
+                PageUtils.showAlert('驗證失敗：' + e.message, 'error');
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        let _noteSaveTimer = null;
+
+        async function openNotepad() {
+            deactivateAllSidebarItems();
+            document.getElementById('notepad-item').classList.add('msg-bot-item--active');
+
+            const panelHead = document.getElementById('panel-head');
+            const panelAvatar = document.getElementById('panel-avatar');
+            const panelName = document.getElementById('panel-name');
+            const sendBar = document.getElementById('send-bar');
+
+            panelAvatar.innerHTML = '📝';
+            panelAvatar.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+            panelAvatar.style.fontSize = '1.1rem';
+            panelName.textContent = '記事本';
+            panelHead.style.display = '';
+            sendBar.style.display = 'none';
+
+            const area = document.getElementById('messages-area');
+            area.innerHTML = '<div class="msg-placeholder"><div class="msg-spinner"></div></div>';
+
+            try {
+                const res = await APIClient.get('messages.php?action=note');
+                const content = (res && res.success) ? (res.data.content || '') : '';
+                const updatedAt = (res && res.success && res.data.updated_at) ? res.data.updated_at : null;
+                area.innerHTML = `
+                    <div style="display:flex;flex-direction:column;height:100%;padding:16px;gap:8px;box-sizing:border-box;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:0.78rem;color:var(--color-text-muted,#9ca3af);" id="note-save-status">${updatedAt ? '上次儲存：' + updatedAt.slice(0,16) : '尚未儲存'}</span>
+                        </div>
+                        <textarea id="notepad-textarea" placeholder="在這裡記錄任何筆記…"
+                            style="flex:1;width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:0.92rem;line-height:1.6;resize:none;font-family:inherit;color:var(--color-text,#374151);background:#fff;box-sizing:border-box;"
+                            maxlength="10000">${PageUtils.escapeHtml(content)}</textarea>
+                    </div>`;
+                const ta = document.getElementById('notepad-textarea');
+                if (ta) {
+                    ta.addEventListener('input', () => {
+                        clearTimeout(_noteSaveTimer);
+                        document.getElementById('note-save-status').textContent = '輸入中…';
+                        _noteSaveTimer = setTimeout(() => saveNote(ta.value), 1500);
+                    });
+                }
+            } catch (e) {
+                area.innerHTML = '<div class="msg-placeholder"><span style="color:var(--color-text-muted);">載入失敗，請重試</span></div>';
+            }
+        }
+
+        async function saveNote(content) {
+            const statusEl = document.getElementById('note-save-status');
+            try {
+                await APIClient.post('messages.php?action=save_note', { content });
+                if (statusEl) statusEl.textContent = '已儲存 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                if (statusEl) statusEl.textContent = '儲存失敗';
+            }
         }
 
         async function openConversation(userId, name, avatarPath) {
             currentConvUserId = userId;
 
-            // Deactivate bot item
+            // Deactivate bot/notepad items
             document.getElementById('bot-item').classList.remove('msg-bot-item--active');
+            document.getElementById('notepad-item').classList.remove('msg-bot-item--active');
 
             // update panel header
             const panelHead = document.getElementById('panel-head');
@@ -849,12 +1051,15 @@
 
             initMsgInput();
             await loadConversations();
+            loadBotUnreadStatus();
 
             // Check if opening a specific conversation from URL param
             const params = new URLSearchParams(window.location.search);
             const targetUserId = Number(params.get('user_id') || 0);
             const targetName = decodeURIComponent(params.get('name') || '');
-            if (targetUserId > 0) {
+            if (params.get('open') === 'bot') {
+                openBotConversation();
+            } else if (targetUserId > 0) {
                 openConversation(targetUserId, targetName, '');
             }
         });

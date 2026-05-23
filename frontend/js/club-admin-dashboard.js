@@ -2422,4 +2422,59 @@
             }
         }
 
+        async function loadJoinApplications(clubId) {
+            const wrap = document.getElementById('applications-list-wrap');
+            const countEl = document.getElementById('applications-count');
+            const section = document.getElementById('applications-section');
+            if (!wrap) return;
+            try {
+                const res = await APIClient.get(`club-admin.php?action=join_applications&id=${clubId}`);
+                if (!res || !res.success) { wrap.innerHTML = '<p class="widget-empty">載入失敗</p>'; return; }
+                const apps = res.data.applications || [];
+                if (countEl) countEl.textContent = apps.length > 0 ? `（${apps.length} 筆）` : '';
+                if (apps.length === 0) {
+                    wrap.innerHTML = '<p class="widget-empty">目前沒有待審核申請</p>';
+                    return;
+                }
+                const FEE_LABELS = { none: '免費', onetime: '一次付清', semester: '學期費', session: '單堂費' };
+                wrap.innerHTML = `<table class="members-table">
+                    <thead><tr>
+                        <th>申請人</th><th>學號</th><th>費用類型</th><th>申請時間</th><th>操作</th>
+                    </tr></thead>
+                    <tbody>
+                    ${apps.map(a => `<tr id="app-row-${a.application_id}">
+                        <td>${PageUtils.escapeHtml(a.user_name || '')}</td>
+                        <td>${PageUtils.escapeHtml(a.student_id || '-')}</td>
+                        <td>${FEE_LABELS[a.fee_type] || a.fee_type}</td>
+                        <td>${a.created_at ? a.created_at.slice(0,16) : '-'}</td>
+                        <td style="display:flex;gap:0.5rem;">
+                            <button class="btn btn-primary btn-sm" onclick="reviewApplication(${a.application_id},'approve',${clubId})">批准</button>
+                            <button class="btn btn-secondary btn-sm" onclick="reviewApplication(${a.application_id},'reject',${clubId})">拒絕</button>
+                        </td>
+                    </tr>`).join('')}
+                    </tbody></table>`;
+            } catch (e) {
+                wrap.innerHTML = '<p class="widget-empty">載入失敗</p>';
+            }
+        }
+
+        async function reviewApplication(appId, action, clubId) {
+            const row = document.getElementById(`app-row-${appId}`);
+            const btns = row ? row.querySelectorAll('button') : [];
+            btns.forEach(b => b.disabled = true);
+            try {
+                const res = await APIClient.post('club-admin.php?action=review_application', { application_id: appId, action });
+                if (res && res.success) {
+                    PageUtils.showAlert(action === 'approve' ? '已批准，驗證碼已傳送給申請者' : '已拒絕申請', 'success');
+                    loadJoinApplications(clubId);
+                } else {
+                    PageUtils.showAlert(res?.message || '操作失敗', 'error');
+                    btns.forEach(b => b.disabled = false);
+                }
+            } catch (e) {
+                PageUtils.showAlert('操作失敗：' + e.message, 'error');
+                btns.forEach(b => b.disabled = false);
+            }
+        }
+
         loadUnreadNotificationDot();

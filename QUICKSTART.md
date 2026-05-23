@@ -43,6 +43,9 @@ mysql -u root -p club_platform < database/migrations/2026_05_11_remove_categorie
 mysql -u root -p club_platform < database/migrations/2026_05_21_google_oauth.sql
 mysql -u root -p club_platform < database/migrations/2026_05_22_club_member_join.sql
 mysql -u root -p club_platform < database/migrations/2026_05_23_private_messages.sql
+mysql -u root -p club_platform < database/migrations/2026_05_23_club_join_applications.sql
+mysql -u root -p club_platform < database/migrations/2026_05_23_bot_messages.sql
+mysql -u root -p club_platform < database/migrations/2026_05_23_user_notes.sql
 mysql -u root -p club_platform < database/seeds/2026_04_02_school_clubs_seed.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```

@@ -202,6 +202,143 @@ class MessagesAPI {
     }
 
     /**
+     * GET ?action=bot_messages
+     * 取得 Bot 系統訊息列表
+     */
+    public static function getBotMessages() {
+        $uid = self::requireLogin();
+        try {
+            $messages = Database::getInstance()->fetchAll(
+                'SELECT message_id, message_type, title, content, meta, is_read, created_at
+                 FROM bot_messages WHERE user_id = ? ORDER BY created_at DESC LIMIT 50',
+                [$uid]
+            );
+            foreach ($messages as &$msg) {
+                $msg['meta'] = $msg['meta'] ? (json_decode($msg['meta'], true) ?: []) : [];
+                if ($msg['message_type'] === 'join_verification' && !empty($msg['meta']['application_id'])) {
+                    $app = Database::getInstance()->fetchOne(
+                        'SELECT code_used FROM club_join_applications WHERE application_id = ?',
+                        [(int)$msg['meta']['application_id']]
+                    );
+                    $msg['meta']['code_used'] = $app ? (bool)$app['code_used'] : false;
+                }
+            }
+            Helper::success('取得 Bot 訊息成功', ['messages' => $messages]);
+        } catch (Exception $e) {
+            Helper::error('取得 Bot 訊息失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * POST ?action=mark_bot_read
+     * Body: { message_id } 或空 body（標記全部）
+     */
+    public static function markBotMessageRead($data) {
+        $uid = self::requireLogin();
+        $msgId = (int)($data['message_id'] ?? 0);
+        try {
+            if ($msgId > 0) {
+                dbUpdate('bot_messages', ['is_read' => 1], 'message_id = ? AND user_id = ?', [$msgId, $uid]);
+            } else {
+                dbUpdate('bot_messages', ['is_read' => 1], 'user_id = ?', [$uid]);
+            }
+            Helper::success('已標記已讀');
+        } catch (Exception $e) {
+            Helper::error('標記失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * GET ?action=note
+     * 取得個人記事本內容
+     */
+    public static function getNote() {
+        $uid = self::requireLogin();
+        try {
+            $row = Database::getInstance()->fetchOne(
+                'SELECT content, updated_at FROM user_notes WHERE user_id = ?', [$uid]
+            );
+            Helper::success('', ['content' => $row ? $row['content'] : '', 'updated_at' => $row ? $row['updated_at'] : null]);
+        } catch (Exception $e) {
+            Helper::success('', ['content' => '', 'updated_at' => null]);
+        }
+    }
+
+    /**
+     * POST ?action=save_note
+     * Body: { content }
+     */
+    public static function saveNote($data) {
+        $uid = self::requireLogin();
+        $content = (string)($data['content'] ?? '');
+        if (mb_strlen($content) > 10000) {
+            Helper::error('記事本不得超過 10000 字', 400);
+        }
+        try {
+            $existing = Database::getInstance()->fetchOne('SELECT note_id FROM user_notes WHERE user_id = ?', [$uid]);
+            if ($existing) {
+                dbUpdate('user_notes', ['content' => $content], 'user_id = ?', [$uid]);
+            } else {
+                dbInsert('user_notes', ['user_id' => $uid, 'content' => $content]);
+            }
+            Helper::success('已儲存');
+        } catch (Exception $e) {
+            Helper::error('儲存失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * POST ?action=verify_join_code
+     * Body: { club_id, code }
+     */
+    public static function verifyJoinCode($data) {
+        $uid = self::requireLogin();
+        $code   = strtoupper(trim((string)($data['code'] ?? '')));
+        $clubId = (int)($data['club_id'] ?? 0);
+        if (!$code || !$clubId) Helper::error('請填寫驗證碼', 400);
+
+        try {
+            $app = Database::getInstance()->fetchOne(
+                "SELECT a.*, c.club_name FROM club_join_applications a
+                 JOIN clubs c ON c.club_id = a.club_id
+                 WHERE a.club_id = ? AND a.user_id = ? AND a.status = 'approved' AND a.code_used = 0",
+                [$clubId, $uid]
+            );
+            if (!$app) Helper::error('找不到有效申請，請確認社團或重新申請', 404);
+            if ($app['verification_code'] !== $code) Helper::error('驗證碼錯誤', 400);
+
+            dbUpdate('club_join_applications', ['code_used' => 1], 'application_id = ?', [(int)$app['application_id']]);
+
+            $allowedFeeTypes = ['none', 'onetime', 'semester', 'session'];
+            $feeType = in_array($app['fee_type'], $allowedFeeTypes, true) ? $app['fee_type'] : 'semester';
+
+            $existing = Database::getInstance()->fetchOne(
+                'SELECT member_id, is_active FROM club_members WHERE club_id = ? AND user_id = ?',
+                [$clubId, $uid]
+            );
+            if ($existing) {
+                Database::getInstance()->update('club_members',
+                    ['is_active' => 1, 'fee_type' => $feeType, 'join_date' => date('Y-m-d H:i:s')],
+                    'member_id = ?', [(int)$existing['member_id']]
+                );
+            } else {
+                dbInsert('club_members', [
+                    'club_id'   => $clubId,
+                    'user_id'   => $uid,
+                    'role'      => 'member',
+                    'is_active' => 1,
+                    'fee_type'  => $feeType,
+                    'join_date' => date('Y-m-d H:i:s'),
+                ]);
+            }
+
+            Helper::success('驗證成功，已加入社團！', ['club_name' => $app['club_name'], 'club_id' => $clubId]);
+        } catch (Exception $e) {
+            Helper::error('驗證失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * GET ?action=unread_count
      * 取得未讀私訊總數（供導覽列紅點）
      */
@@ -232,14 +369,19 @@ $action = $_GET['action'] ?? 'conversations';
 $data   = ($method === 'POST') ? Helper::getRequestInput() : [];
 
 if ($method === 'GET') {
-    if ($action === 'thread')       { MessagesAPI::getThread(); }
-    elseif ($action === 'search_user') { MessagesAPI::searchUser(); }
+    if ($action === 'thread')           { MessagesAPI::getThread(); }
+    elseif ($action === 'search_user')  { MessagesAPI::searchUser(); }
     elseif ($action === 'unread_count') { MessagesAPI::getUnreadCount(); }
-    else                            { MessagesAPI::getConversations(); }
+    elseif ($action === 'bot_messages') { MessagesAPI::getBotMessages(); }
+    elseif ($action === 'note')         { MessagesAPI::getNote(); }
+    else                                { MessagesAPI::getConversations(); }
 }
 
 if ($method === 'POST') {
-    if ($action === 'send') { MessagesAPI::sendMessage($data); }
+    if ($action === 'send')              { MessagesAPI::sendMessage($data); }
+    elseif ($action === 'mark_bot_read') { MessagesAPI::markBotMessageRead($data); }
+    elseif ($action === 'save_note')     { MessagesAPI::saveNote($data); }
+    elseif ($action === 'verify_join_code') { MessagesAPI::verifyJoinCode($data); }
 }
 
 Helper::error('無效的請求', 400);

@@ -581,7 +581,7 @@
                 }
             }
 
-            syncJoinBtn(!!club.is_member, club.my_fee_type ?? null);
+            syncJoinBtn(!!club.is_member, club.my_fee_type ?? null, club.my_application ?? null);
 
             const followBtn = document.getElementById('follow-btn');
             if (club.follow_state_known === false) {
@@ -963,18 +963,32 @@
 
         let _clubFeeInfo = {};  // populated by renderClubDetail
 
-        function syncJoinBtn(isMember, feeType) {
+        function syncJoinBtn(isMember, feeType, application) {
             const btn = document.getElementById('join-btn');
             if (!btn) return;
             if (isMember) {
                 btn.textContent = '已加入';
                 btn.className = 'btn btn-secondary';
                 btn.title = '點擊可退出社團';
+                btn.disabled = false;
                 btn.onclick = leaveClub;
+            } else if (application && application.status === 'pending') {
+                btn.textContent = '申請審核中';
+                btn.className = 'btn btn-secondary';
+                btn.title = '您的申請正在等待幹部審核';
+                btn.disabled = true;
+                btn.onclick = null;
+            } else if (application && application.status === 'approved') {
+                btn.textContent = '前往驗證';
+                btn.className = 'btn btn-primary';
+                btn.title = '申請已通過，請前往私訊 Bot 輸入驗證碼';
+                btn.disabled = false;
+                btn.onclick = () => window.location.href = 'messages.html?open=bot';
             } else {
-                btn.textContent = '加入社團';
+                btn.textContent = '申請加入';
                 btn.className = 'btn btn-primary';
                 btn.title = '';
+                btn.disabled = false;
                 btn.onclick = openJoinModal;
             }
         }
@@ -1023,12 +1037,12 @@
             }
             modal.innerHTML = `
                 <div style="background:#fff;border-radius:12px;padding:1.5rem 2rem;width:min(420px,90vw);box-shadow:0 8px 32px rgba(0,0,0,.18);">
-                    <h3 style="margin:0 0 0.25rem;">加入社團</h3>
-                    <p style="color:#666;font-size:0.9rem;margin:0 0 1rem;">確認加入後即成為一般成員</p>
+                    <h3 style="margin:0 0 0.25rem;">申請加入社團</h3>
+                    <p style="color:#666;font-size:0.9rem;margin:0 0 1rem;">送出申請後由幹部審核，通過後將透過私訊 Bot 傳送驗證碼</p>
                     ${feeHtml}
                     <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
                         <button class="btn btn-secondary btn-sm" onclick="closeJoinModal()">取消</button>
-                        <button class="btn btn-primary btn-sm" id="join-confirm-btn" onclick="confirmJoin()">確認加入</button>
+                        <button class="btn btn-primary btn-sm" id="join-confirm-btn" onclick="confirmJoin()">送出申請</button>
                     </div>
                 </div>`;
             modal.style.display = 'flex';
@@ -1064,16 +1078,16 @@
             }
 
             try {
-                const res = await APIClient.post(`clubs.php?action=join_club&id=${clubId}`, { fee_type: feeType });
+                const res = await APIClient.post(`clubs.php?action=apply_join&id=${clubId}`, { fee_type: feeType });
                 if (res && res.success) {
                     closeJoinModal();
-                    PageUtils.showAlert('已成功加入社團！', 'success');
-                    syncJoinBtn(true, feeType);
+                    PageUtils.showAlert('申請已送出，等待幹部審核！', 'success');
+                    syncJoinBtn(false, null, { status: 'pending' });
                 } else {
-                    PageUtils.showAlert(res?.message || '加入失敗', 'error');
+                    PageUtils.showAlert(res?.message || '申請失敗', 'error');
                 }
             } catch (err) {
-                PageUtils.showAlert('加入失敗：' + err.message, 'error');
+                PageUtils.showAlert('申請失敗：' + err.message, 'error');
             } finally {
                 if (confirmBtn) confirmBtn.disabled = false;
             }
