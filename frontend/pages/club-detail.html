@@ -719,13 +719,18 @@
                 const safeReviewTitle = PageUtils.escapeHtml(review.review_title || author);
                 const safeReviewContent = PageUtils.escapeHtml(review.review_content || '');
                 const reviewId = Number(review.review_id || 0);
+                const reviewUserId = Number(review.user_id || 0);
+                const reviewAuthorRaw = review.author_name || review.display_name || '';
+                const reviewIdTagHtml = reviewUserId > 0
+                    ? `<a href="messages.html?user_id=${reviewUserId}&name=${encodeURIComponent(reviewAuthorRaw)}" style="margin-left:5px;font-size:0.73rem;color:var(--text-muted,#6b7280);font-family:monospace;text-decoration:none;" title="傳送私訊">#${reviewUserId}</a>`
+                    : '';
                 html += `
                     <div style="padding: 1.5rem 0; border-bottom: 1px solid var(--border-color);">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
                             <div>
                                 <strong>${safeReviewTitle}</strong>
                                 <div style="color: var(--text-light); font-size: 0.9rem;">
-                                    ${author} • ${relativeTime}（${absoluteDate}）
+                                    ${author}${reviewIdTagHtml} • ${relativeTime}（${absoluteDate}）
                                 </div>
                             </div>
                             <div style="text-align: right;">

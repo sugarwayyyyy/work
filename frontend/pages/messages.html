@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>私訊 - 社團平台</title>
+    <link rel="stylesheet" href="../css/styles.css?v=20260502k">
+    <style>
+        /* ── messages layout ── */
+        .msg-shell {
+            display: flex;
+            height: calc(100vh - 64px);
+            overflow: hidden;
+            background: var(--color-bg-default, #f9fafb);
+        }
+
+        /* sidebar */
+        .msg-sidebar {
+            width: 300px;
+            min-width: 220px;
+            max-width: 340px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--color-border-default, #e5e7eb);
+            background: var(--color-bg-surface, #fff);
+            overflow: hidden;
+        }
+
+        .msg-sidebar-head {
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid var(--color-border-light, #f1f5f9);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .msg-sidebar-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--color-text-strong, #111827);
+            flex: 1;
+        }
+
+        .msg-new-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--color-text-muted, #6b7280);
+            font-size: 1.2rem;
+            transition: background 0.15s;
+        }
+        .msg-new-btn:hover { background: var(--color-bg-subtle, #f3f4f6); }
+
+        .msg-conv-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .msg-conv-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: background 0.12s;
+        }
+        .msg-conv-item:hover { background: var(--color-bg-subtle, #f3f4f6); }
+        .msg-conv-item--active {
+            background: var(--color-primary-50, #eff6ff);
+            border-left-color: var(--color-primary-600, #2563eb);
+        }
+
+        .msg-conv-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--color-primary-600, #2563eb);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .msg-conv-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .msg-conv-info { flex: 1; min-width: 0; }
+        .msg-conv-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--color-text-strong, #111827);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .msg-conv-preview {
+            font-size: 0.78rem;
+            color: var(--color-text-muted, #6b7280);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+        .msg-conv-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .msg-conv-time {
+            font-size: 0.72rem;
+            color: var(--color-text-muted, #6b7280);
+        }
+        .msg-conv-badge {
+            background: var(--color-primary-600, #2563eb);
+            color: #fff;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+        }
+
+        .msg-empty-conv {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: var(--color-text-muted, #6b7280);
+            font-size: 0.88rem;
+        }
+
+        /* chat panel */
+        .msg-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--color-bg-default, #f9fafb);
+        }
+
+        .msg-panel-head {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--color-border-default, #e5e7eb);
+            background: var(--color-bg-surface, #fff);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .msg-panel-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--color-text-strong, #111827);
+        }
+
+        .msg-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .msg-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--color-text-muted, #6b7280);
+            font-size: 0.95rem;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .msg-placeholder svg { opacity: 0.35; }
+
+        .msg-bubble-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        .msg-bubble-row--mine {
+            flex-direction: row-reverse;
+        }
+
+        .msg-bubble-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--color-primary-600, #2563eb);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .msg-bubble-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .msg-bubble {
+            max-width: 65%;
+            padding: 8px 12px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            word-break: break-word;
+            background: var(--color-bg-surface, #fff);
+            border: 1px solid var(--color-border-default, #e5e7eb);
+            color: var(--color-text-default, #374151);
+        }
+        .msg-bubble--mine {
+            background: var(--color-primary-600, #2563eb);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .msg-bubble-time {
+            font-size: 0.7rem;
+            color: var(--color-text-muted, #6b7280);
+            margin: 2px 4px 0;
+            flex-shrink: 0;
+            align-self: flex-end;
+        }
+
+        .msg-date-divider {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--color-text-muted, #6b7280);
+            margin: 8px 0 4px;
+            position: relative;
+        }
+        .msg-date-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--color-border-light, #f1f5f9);
+            z-index: 0;
+        }
+        .msg-date-divider span {
+            position: relative;
+            background: var(--color-bg-default, #f9fafb);
+            padding: 0 8px;
+        }
+
+        /* send bar */
+        .msg-send-bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--color-border-default, #e5e7eb);
+            background: var(--color-bg-surface, #fff);
+            flex-shrink: 0;
+        }
+
+        .msg-textarea {
+            flex: 1;
+            resize: none;
+            border: 1px solid var(--color-border-default, #e5e7eb);
+            border-radius: 12px;
+            padding: 9px 12px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            line-height: 1.5;
+            max-height: 140px;
+            min-height: 40px;
+            background: var(--color-bg-subtle, #f9fafb);
+            color: var(--color-text-default, #374151);
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .msg-textarea:focus { border-color: var(--color-primary-600, #2563eb); }
+
+        .msg-send-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: var(--color-primary-600, #2563eb);
+            color: #fff;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.15s, opacity 0.15s;
+        }
+        .msg-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .msg-send-btn:not(:disabled):hover { background: var(--color-primary-700, #1d4ed8); }
+
+        /* search user modal */
+        .msg-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+        }
+        .msg-modal-overlay[hidden] { display: none; }
+
+        .msg-modal {
+            background: var(--color-bg-surface, #fff);
+            border-radius: 16px;
+            padding: 24px;
+            width: 400px;
+            max-width: calc(100vw - 32px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .msg-modal-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 14px;
+            color: var(--color-text-strong, #111827);
+        }
+
+        .msg-search-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .msg-search-input {
+            flex: 1;
+            border: 1px solid var(--color-border-default, #e5e7eb);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            outline: none;
+            color: var(--color-text-default, #374151);
+            background: var(--color-bg-default, #f9fafb);
+        }
+        .msg-search-input:focus { border-color: var(--color-primary-600, #2563eb); }
+
+        .msg-search-results { min-height: 40px; }
+
+        .msg-user-result {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+        .msg-user-result:hover { background: var(--color-bg-subtle, #f3f4f6); }
+
+        .msg-user-result-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--color-text-strong, #111827);
+        }
+        .msg-user-result-id {
+            font-size: 0.78rem;
+            color: var(--color-text-muted, #6b7280);
+        }
+
+        .msg-modal-close {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--color-text-muted, #6b7280);
+            padding: 0 4px;
+        }
+        .msg-modal-close:hover { color: var(--color-text-strong, #111827); }
+
+        /* bot entry */
+        .msg-bot-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--color-border-light, #f1f5f9);
+            border-left: 3px solid transparent;
+            transition: background 0.12s;
+        }
+        .msg-bot-item:hover { background: var(--color-bg-subtle, #f3f4f6); }
+        .msg-bot-item--active {
+            background: var(--color-primary-50, #eff6ff);
+            border-left-color: var(--color-primary-600, #2563eb);
+        }
+        .msg-bot-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.1rem;
+        }
+        .msg-bot-badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.68rem;
+            font-weight: 700;
+            background: #6366f1;
+            color: #fff;
+            border-radius: 4px;
+            padding: 1px 5px;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+
+        /* dark mode */
+        [data-theme="dark"] .msg-sidebar,
+        [data-theme="dark"] .msg-panel-head,
+        [data-theme="dark"] .msg-send-bar {
+            background: var(--color-bg-surface);
+        }
+        [data-theme="dark"] .msg-bubble {
+            background: var(--color-bg-subtle);
+            border-color: var(--color-border-default);
+            color: var(--color-text-default);
+        }
+        [data-theme="dark"] .msg-modal { background: var(--color-bg-surface); }
+
+        /* mobile responsive */
+        @media (max-width: 640px) {
+            .msg-sidebar { width: 70px; }
+            .msg-conv-info, .msg-conv-meta, .msg-sidebar-title { display: none; }
+            .msg-conv-item { justify-content: center; padding: 10px 8px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="../index.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
+            <ul class="nav-links">
+                <li><a href="../index.html">首頁</a></li>
+                <li><a href="club-list.html">社團</a></li>
+                <li><a href="events.html">活動</a></li>
+                <li><a href="qa.html">提問</a></li>
+                <li><a href="messages.html">私訊</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="login-btn" class="btn btn-primary btn-sm" onclick="window.location.href='login.html'" style="display:none;">登入</button>
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()" style="display:none;">登出</button>
+                <span id="user-dropdown" style="display:none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <!-- search user modal -->
+    <div class="msg-modal-overlay" id="search-modal" hidden>
+        <div class="msg-modal">
+            <button class="msg-modal-close" onclick="closeSearchModal()">✕</button>
+            <div class="msg-modal-title">新增對話</div>
+            <div class="msg-search-row">
+                <input class="msg-search-input" id="search-input" type="text" placeholder="輸入用戶 ID 或姓名..." autocomplete="off">
+                <button class="btn btn-primary btn-sm" onclick="doSearch()">搜尋</button>
+            </div>
+            <div class="msg-search-results" id="search-results"></div>
+        </div>
+    </div>
+
+    <div class="msg-shell">
+        <!-- sidebar -->
+        <div class="msg-sidebar">
+            <div class="msg-sidebar-head">
+                <span class="msg-sidebar-title">私訊</span>
+                <button class="msg-new-btn" title="新增對話" onclick="openSearchModal()">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                        <line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/>
+                    </svg>
+                </button>
+            </div>
+            <!-- Bot is always at the top, hardcoded -->
+            <div class="msg-bot-item" id="bot-item" onclick="openBotConversation()">
+                <div class="msg-bot-avatar">🤖</div>
+                <div class="msg-conv-info">
+                    <div class="msg-conv-name">平台機器人<span class="msg-bot-badge">BOT</span></div>
+                    <div class="msg-conv-preview">功能即將推出...</div>
+                </div>
+            </div>
+            <div class="msg-conv-list" id="conv-list">
+                <div class="msg-empty-conv">載入中...</div>
+            </div>
+        </div>
+
+        <!-- chat panel -->
+        <div class="msg-panel">
+            <div class="msg-panel-head" id="panel-head" style="display:none;">
+                <div class="msg-conv-avatar" id="panel-avatar"></div>
+                <div class="msg-panel-name" id="panel-name"></div>
+            </div>
+            <div class="msg-messages" id="messages-area">
+                <div class="msg-placeholder">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>選擇一個對話，或點擊 ＋ 開始新對話</span>
+                </div>
+            </div>
+            <div class="msg-send-bar" id="send-bar" style="display:none;">
+                <textarea class="msg-textarea" id="msg-input" rows="1" placeholder="輸入訊息..." maxlength="2000"></textarea>
+                <button class="msg-send-btn" id="send-btn" title="傳送" onclick="sendMessage()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/main.js?v=20260510"></script>
+    <script>
+        let currentUserId = 0;
+        let currentConvUserId = 0;
+        let pollTimer = null;
+
+        function makeAvatar(name, avatarPath, size) {
+            const sz = size || 40;
+            if (avatarPath) {
+                const url = PageUtils.resolveMediaUrl(avatarPath);
+                const safe = PageUtils.escapeAttribute(url);
+                return `<div class="msg-conv-avatar" style="width:${sz}px;height:${sz}px;"><img src="${safe}" alt="" onerror="this.onerror=null;this.style.display='none'"></div>`;
+            }
+            const initial = String(name || '?').charAt(0).toUpperCase();
+            return `<div class="msg-conv-avatar" style="width:${sz}px;height:${sz}px;">${PageUtils.escapeHtml(initial)}</div>`;
+        }
+
+        function setAvatarEl(el, name, avatarPath) {
+            if (avatarPath) {
+                const url = PageUtils.resolveMediaUrl(avatarPath);
+                el.innerHTML = `<img src="${PageUtils.escapeAttribute(url)}" alt="" onerror="this.onerror=null;this.style.display='none'">`;
+            } else {
+                el.textContent = String(name || '?').charAt(0).toUpperCase();
+            }
+        }
+
+        async function loadConversations() {
+            try {
+                const res = await APIClient.get('messages.php?action=conversations');
+                if (!res || !res.success) return;
+                renderConvList(res.data.conversations || []);
+            } catch (e) {
+                console.error('loadConversations', e);
+            }
+        }
+
+        function renderConvList(convs) {
+            const list = document.getElementById('conv-list');
+            if (!convs.length) {
+                list.innerHTML = '<div class="msg-empty-conv">還沒有對話<br>點擊 ＋ 開始</div>';
+                return;
+            }
+            list.innerHTML = convs.map(c => {
+                const isActive = c.user_id == currentConvUserId;
+                const initial = String(c.name || '?').charAt(0).toUpperCase();
+                const avatarHtml = c.avatar_path
+                    ? `<img src="${PageUtils.escapeAttribute(PageUtils.resolveMediaUrl(c.avatar_path))}" alt="" onerror="this.onerror=null;this.style.display='none'">`
+                    : PageUtils.escapeHtml(initial);
+                const badge = Number(c.unread_count) > 0
+                    ? `<span class="msg-conv-badge">${Number(c.unread_count)}</span>` : '';
+                const timeStr = c.last_time ? PageUtils.timeAgo(c.last_time) : '';
+                const preview = PageUtils.escapeHtml((c.last_content || '').substring(0, 40));
+                return `<div class="msg-conv-item${isActive ? ' msg-conv-item--active' : ''}" onclick="openConversation(${Number(c.user_id)}, '${PageUtils.escapeAttribute(c.name || '')}', '${PageUtils.escapeAttribute(c.avatar_path || '')}')">
+                    <div class="msg-conv-avatar">${avatarHtml}</div>
+                    <div class="msg-conv-info">
+                        <div class="msg-conv-name">${PageUtils.escapeHtml(c.name || '')}</div>
+                        <div class="msg-conv-preview">${preview}</div>
+                    </div>
+                    <div class="msg-conv-meta">
+                        <span class="msg-conv-time">${timeStr}</span>
+                        ${badge}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function openBotConversation() {
+            currentConvUserId = 0;
+            clearInterval(pollTimer);
+
+            // Deactivate conv items
+            document.querySelectorAll('.msg-conv-item').forEach(el => el.classList.remove('msg-conv-item--active'));
+            document.getElementById('bot-item').classList.add('msg-bot-item--active');
+
+            const panelHead = document.getElementById('panel-head');
+            const panelAvatar = document.getElementById('panel-avatar');
+            const panelName = document.getElementById('panel-name');
+            const sendBar = document.getElementById('send-bar');
+
+            panelAvatar.innerHTML = '🤖';
+            panelAvatar.style.background = 'linear-gradient(135deg,#6366f1,#8b5cf6)';
+            panelAvatar.style.fontSize = '1.1rem';
+            panelName.innerHTML = '平台機器人 <span class="msg-bot-badge">BOT</span>';
+            panelHead.style.display = '';
+            sendBar.style.display = 'none';
+
+            document.getElementById('messages-area').innerHTML = `
+                <div class="msg-placeholder" style="flex-direction:column;gap:12px;">
+                    <div style="font-size:3rem;">🤖</div>
+                    <div style="font-weight:700;font-size:1rem;color:var(--color-text-strong,#111827);">平台機器人</div>
+                    <div style="font-size:0.88rem;color:var(--color-text-muted,#6b7280);text-align:center;max-width:260px;line-height:1.6;">
+                        Bot 功能即將推出，敬請期待！<br>未來將提供通知摘要、活動提醒等自動化服務。
+                    </div>
+                </div>`;
+        }
+
+        async function openConversation(userId, name, avatarPath) {
+            currentConvUserId = userId;
+
+            // Deactivate bot item
+            document.getElementById('bot-item').classList.remove('msg-bot-item--active');
+
+            // update panel header
+            const panelHead = document.getElementById('panel-head');
+            const panelAvatar = document.getElementById('panel-avatar');
+            const panelName = document.getElementById('panel-name');
+            const sendBar = document.getElementById('send-bar');
+
+            panelAvatar.style.background = '';
+            panelAvatar.style.fontSize = '';
+            setAvatarEl(panelAvatar, name, avatarPath);
+            panelName.textContent = name || '';
+            panelHead.style.display = '';
+            sendBar.style.display = '';
+
+            // highlight active conv
+            document.querySelectorAll('.msg-conv-item').forEach(el => el.classList.remove('msg-conv-item--active'));
+            const items = document.querySelectorAll('.msg-conv-item');
+            items.forEach(el => {
+                if (el.getAttribute('onclick') && el.getAttribute('onclick').includes(`openConversation(${userId},`)) {
+                    el.classList.add('msg-conv-item--active');
+                }
+            });
+
+            await loadThread(userId);
+
+            clearInterval(pollTimer);
+            pollTimer = setInterval(() => loadThread(userId, true), 3000);
+        }
+
+        async function loadThread(userId, isPoll) {
+            try {
+                const res = await APIClient.get(`messages.php?action=thread&user_id=${userId}`);
+                if (!res || !res.success) return;
+
+                const area = document.getElementById('messages-area');
+                const wasAtBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 60;
+
+                renderMessages(res.data.messages || [], res.data.other_user);
+
+                if (!isPoll || wasAtBottom) {
+                    area.scrollTop = area.scrollHeight;
+                }
+
+                if (!isPoll) loadConversations();
+            } catch (e) {
+                console.error('loadThread', e);
+            }
+        }
+
+        function renderMessages(messages, otherUser) {
+            const area = document.getElementById('messages-area');
+            if (!messages.length) {
+                const name = otherUser ? otherUser.name : '';
+                area.innerHTML = `<div class="msg-placeholder"><span>和 ${PageUtils.escapeHtml(name)} 開始對話吧！</span></div>`;
+                return;
+            }
+
+            let html = '';
+            let lastDate = '';
+            messages.forEach(m => {
+                const isMine = Number(m.sender_id) === currentUserId;
+                const d = new Date(String(m.created_at || '').replace(' ', 'T'));
+                const dateStr = isNaN(d) ? '' : d.toLocaleDateString('zh-TW');
+                if (dateStr && dateStr !== lastDate) {
+                    lastDate = dateStr;
+                    html += `<div class="msg-date-divider"><span>${dateStr}</span></div>`;
+                }
+                const timeStr = isNaN(d) ? '' : d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+
+                const avatarHtml = m.sender_avatar
+                    ? `<img src="${PageUtils.escapeAttribute(PageUtils.resolveMediaUrl(m.sender_avatar))}" alt="">`
+                    : PageUtils.escapeHtml(String(m.sender_name || '?').charAt(0).toUpperCase());
+
+                html += `<div class="msg-bubble-row${isMine ? ' msg-bubble-row--mine' : ''}">
+                    <div class="msg-bubble-avatar">${avatarHtml}</div>
+                    <div class="msg-bubble${isMine ? ' msg-bubble--mine' : ''}">${PageUtils.escapeHtml(m.content || '')}</div>
+                    <span class="msg-bubble-time">${timeStr}</span>
+                </div>`;
+            });
+            area.innerHTML = html;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('msg-input');
+            const content = input.value.trim();
+            if (!content || !currentConvUserId) return;
+
+            const btn = document.getElementById('send-btn');
+            btn.disabled = true;
+            try {
+                const res = await APIClient.post('messages.php?action=send', {
+                    receiver_id: currentConvUserId,
+                    content
+                });
+                if (res && res.success) {
+                    input.value = '';
+                    input.style.height = '';
+                    await loadThread(currentConvUserId);
+                    const area = document.getElementById('messages-area');
+                    area.scrollTop = area.scrollHeight;
+                    loadConversations();
+                } else {
+                    PageUtils.showAlert(res?.message || '傳送失敗', 'error');
+                }
+            } catch (e) {
+                PageUtils.showAlert('傳送失敗', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // textarea auto-resize + Enter to send
+        function initMsgInput() {
+            const input = document.getElementById('msg-input');
+            input.addEventListener('input', () => {
+                input.style.height = '';
+                input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        // search modal
+        function openSearchModal() {
+            document.getElementById('search-modal').removeAttribute('hidden');
+            document.getElementById('search-input').focus();
+            document.getElementById('search-results').innerHTML = '';
+        }
+
+        function closeSearchModal() {
+            document.getElementById('search-modal').setAttribute('hidden', '');
+            document.getElementById('search-input').value = '';
+            document.getElementById('search-results').innerHTML = '';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeSearchModal();
+        });
+
+        async function doSearch() {
+            const q = document.getElementById('search-input').value.trim();
+            if (!q) return;
+            const resultsEl = document.getElementById('search-results');
+            resultsEl.innerHTML = '<div style="color:var(--color-text-muted);font-size:0.85rem;padding:8px 0;">搜尋中...</div>';
+            try {
+                const res = await APIClient.get(`messages.php?action=search_user&q=${encodeURIComponent(q)}`);
+                const users = (res && res.success && res.data && res.data.users) ? res.data.users : [];
+                if (!users.length) {
+                    resultsEl.innerHTML = '<div style="color:var(--color-text-muted);font-size:0.85rem;padding:8px 0;">找不到用戶</div>';
+                    return;
+                }
+                resultsEl.innerHTML = users.map(u => {
+                    const initial = String(u.name || '?').charAt(0).toUpperCase();
+                    const avatarHtml = u.avatar_path
+                        ? `<img src="${PageUtils.escapeAttribute(PageUtils.resolveMediaUrl(u.avatar_path))}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+                        : PageUtils.escapeHtml(initial);
+                    return `<div class="msg-user-result" onclick="startConversation(${Number(u.user_id)}, '${PageUtils.escapeAttribute(u.name || '')}', '${PageUtils.escapeAttribute(u.avatar_path || '')}')">
+                        <div class="msg-conv-avatar" style="width:36px;height:36px;flex-shrink:0;">${avatarHtml}</div>
+                        <div>
+                            <div class="msg-user-result-name">${PageUtils.escapeHtml(u.name || '')}</div>
+                            <div class="msg-user-result-id">ID: ${Number(u.user_id)}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                resultsEl.innerHTML = '<div style="color:var(--color-text-muted);font-size:0.85rem;padding:8px 0;">搜尋失敗</div>';
+            }
+        }
+
+        document.getElementById('search-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doSearch();
+        });
+
+        function startConversation(userId, name, avatarPath) {
+            closeSearchModal();
+            openConversation(userId, name, avatarPath);
+            loadConversations();
+        }
+
+        window.addEventListener('DOMContentLoaded', async function () {
+            const user = StorageUtils.getUser();
+            if (user && user.role === 'platform_admin') {
+                const logoLink = document.querySelector('a.logo');
+                if (logoLink) logoLink.href = 'admin-users.html';
+            }
+
+            if (window._pageInitReady) {
+                await Promise.race([window._pageInitReady, new Promise(r => setTimeout(r, 3000))]);
+            }
+
+            const currentUser = StorageUtils.getUser();
+            if (!currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUserId = Number(currentUser.user_id || currentUser.id || 0);
+
+            initMsgInput();
+            await loadConversations();
+
+            // Check if opening a specific conversation from URL param
+            const params = new URLSearchParams(window.location.search);
+            const targetUserId = Number(params.get('user_id') || 0);
+            const targetName = decodeURIComponent(params.get('name') || '');
+            if (targetUserId > 0) {
+                openConversation(targetUserId, targetName, '');
+            }
+        });
+
+        window.addEventListener('beforeunload', () => clearInterval(pollTimer));
+    </script>
+</body>
+</html>

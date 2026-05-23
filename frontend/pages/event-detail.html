@@ -515,11 +515,16 @@
                         const ratingHtml = PageUtils.renderStars(comment.rating);
                         const author = PageUtils.escapeHtml(comment.author_name || comment.user_name || '匿名用戶');
                         const safeComment = PageUtils.escapeHtml(comment.comment || '');
+                        const commentUserId = Number(comment.user_id || 0);
+                        const commentAuthorRaw = comment.author_name || comment.user_name || '';
+                        const idTagHtml = commentUserId > 0
+                            ? `<a href="messages.html?user_id=${commentUserId}&name=${encodeURIComponent(commentAuthorRaw)}" style="margin-left:5px;font-size:0.73rem;color:var(--text-muted,#6b7280);font-family:monospace;text-decoration:none;" title="傳送私訊">#${commentUserId}</a>`
+                            : '';
                         html += `
                             <div class="comment-item">
                                 <div class="comment-item__header">
                                     <div>
-                                        <div class="comment-item__author">${author}</div>
+                                        <div class="comment-item__author">${author}${idTagHtml}</div>
                                         <div class="comment-item__time">${PageUtils.timeAgo(comment.created_at)}</div>
                                     </div>
                                     <div>${ratingHtml}</div>

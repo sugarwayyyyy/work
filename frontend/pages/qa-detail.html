@@ -351,7 +351,16 @@
                     : 'background: #868e96; color: white;');
 
             document.getElementById('question-title').textContent = title;
-            document.getElementById('question-author').textContent = author;
+            const authorEl = document.getElementById('question-author');
+            authorEl.textContent = author;
+            if (question.user_id) {
+                const idTag = document.createElement('a');
+                idTag.href = `messages.html?user_id=${Number(question.user_id)}&name=${encodeURIComponent(author)}`;
+                idTag.style.cssText = 'margin-left:6px;font-size:0.75rem;color:var(--text-muted,#6b7280);font-family:monospace;text-decoration:none;';
+                idTag.title = '傳送私訊';
+                idTag.textContent = `#${Number(question.user_id)}`;
+                authorEl.appendChild(idTag);
+            }
             document.getElementById('question-date').textContent = PageUtils.formatDate(question.created_at);
             document.getElementById('question-category').textContent = urgencyLabel;
             document.getElementById('question-category').style.cssText = urgencyStyle;
@@ -467,6 +476,16 @@
                         const author = document.createElement('strong');
                         author.textContent = reply.author_name || reply.user_name || '匿名用戶';
                         identity.appendChild(author);
+
+                        if (reply.user_id) {
+                            const replyIdTag = document.createElement('a');
+                            const replyAuthorName = reply.author_name || reply.user_name || '';
+                            replyIdTag.href = `messages.html?user_id=${Number(reply.user_id)}&name=${encodeURIComponent(replyAuthorName)}`;
+                            replyIdTag.style.cssText = 'margin-left:5px;font-size:0.73rem;color:var(--text-muted,#6b7280);font-family:monospace;text-decoration:none;font-weight:400;';
+                            replyIdTag.title = '傳送私訊';
+                            replyIdTag.textContent = `#${Number(reply.user_id)}`;
+                            identity.appendChild(replyIdTag);
+                        }
 
                         if (reply.is_official) {
                             const official = document.createElement('span');

@@ -707,6 +707,7 @@ async function initializePage() {
     injectFjuLogoIcon();
     applyActiveNavLink();
     injectClubNavDropdown();
+    injectMessagesNavLink();
     try {
         await hydrateUserFromSession();
     } finally {
@@ -1445,6 +1446,7 @@ function getNavActiveSection(pathname) {
     if (fileName === 'qa.html' || fileName === 'qa-detail.html') {
         return 'qa.html';
     }
+    if (fileName === 'messages.html') return 'messages.html';
     if (fileName === 'admin-dashboard.html') return 'admin-dashboard.html';
     if (fileName === 'admin-overview.html')  return 'admin-overview.html';
 
@@ -1454,6 +1456,7 @@ function getNavActiveSection(pathname) {
     if (path.includes('/club-list.html') || path.includes('/club-detail.html')) return 'club-list.html';
     if (path.includes('/events.html') || path.includes('/event-detail.html')) return 'events.html';
     if (path.includes('/qa.html') || path.includes('/qa-detail.html')) return 'qa.html';
+    if (path.includes('/messages.html')) return 'messages.html';
 
     return '';
 }
@@ -1559,6 +1562,21 @@ function injectClubNavDropdown() {
         ul.appendChild(item);
     });
     li.appendChild(ul);
+}
+
+function injectMessagesNavLink() {
+    const navLinks = document.querySelector('.nav-links');
+    if (!navLinks) return;
+    if (navLinks.querySelector('a[href*="messages.html"]')) return;
+
+    const qaLink = navLinks.querySelector('a[href*="qa.html"]');
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="${getPageLink('messages.html')}">私訊</a>`;
+    if (qaLink) {
+        qaLink.closest('li').after(li);
+    } else {
+        navLinks.appendChild(li);
+    }
 }
 
 function getFrontendAssetPath(assetPath) {
@@ -1757,7 +1775,7 @@ function updateNavigation() {
                 + '<div class="ndp-head" style="position:relative">'
                 + `<div class="ndp-avatar-lg">${profileAvatar}</div>`
                 + '<div class="ndp-user-meta">'
-                + `<div class="ndp-name">${PageUtils.escapeHtml(user.name || '')}</div>`
+                + `<div class="ndp-name">${PageUtils.escapeHtml(user.name || '')}<span style="margin-left:6px;font-size:0.72rem;font-weight:400;color:var(--color-text-muted,#6b7280);font-family:monospace;">#${Number(user.user_id || user.id || 0)}</span></div>`
                 + `<div class="ndp-mail">${PageUtils.escapeHtml(user.email || '')}</div>`
                 + '</div>'
                 + '<button class="ndp-theme-toggle" id="ndp-theme-toggle"></button>'

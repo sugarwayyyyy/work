@@ -198,6 +198,7 @@
                         <div class="profile-hero__meta">
                             <span class="profile-role-badge" id="hero-role"></span>
                             <span class="profile-hero__student-id" id="hero-student-id"></span>
+                            <span id="hero-user-id" style="font-size:0.78rem;color:var(--text-muted,#6b7280);font-family:monospace;"></span>
                         </div>
                     </div>
                 </div>
@@ -450,6 +451,8 @@
             document.getElementById('hero-email').textContent = user.email || '';
             document.getElementById('hero-role').textContent = getRoleName(user.role);
             document.getElementById('hero-student-id').textContent = user.student_id ? `學號：${user.student_id}` : '';
+            const uid = user.user_id || user.id;
+            document.getElementById('hero-user-id').textContent = uid ? `用戶 ID：#${uid}` : '';
 
             document.getElementById('edit-name').value = user.name || '';
             const studentIdInput = document.getElementById('edit-student-id');
