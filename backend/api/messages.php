@@ -86,16 +86,44 @@ class MessagesAPI {
             );
 
             $messages = Database::getInstance()->fetchAll(
-                'SELECT m.message_id, m.sender_id, m.receiver_id, m.content, m.is_read, m.is_recalled, m.created_at,
-                        u.name AS sender_name, u.avatar_path AS sender_avatar
+                'SELECT m.message_id, m.sender_id, m.receiver_id, m.content,
+                        m.is_read, m.is_recalled, m.reply_to_id, m.created_at,
+                        u.name AS sender_name, u.avatar_path AS sender_avatar,
+                        rm.content AS reply_content, rm.sender_id AS reply_sender_id,
+                        ru.name AS reply_sender_name
                  FROM private_messages m
                  JOIN users u ON u.user_id = m.sender_id
+                 LEFT JOIN private_messages rm ON rm.message_id = m.reply_to_id
+                 LEFT JOIN users ru ON ru.user_id = rm.sender_id
                  WHERE (m.sender_id = ? AND m.receiver_id = ?)
                     OR (m.sender_id = ? AND m.receiver_id = ?)
                  ORDER BY m.created_at ASC
                  LIMIT 200',
                 [$uid, $otherId, $otherId, $uid]
             );
+
+            // Attach emoji reactions
+            $ids = array_column($messages, 'message_id');
+            if ($ids) {
+                $ph = implode(',', array_fill(0, count($ids), '?'));
+                $rxns = Database::getInstance()->fetchAll(
+                    "SELECT message_id, emoji, COUNT(*) AS cnt, GROUP_CONCAT(user_id) AS uids
+                     FROM message_reactions WHERE message_id IN ($ph) GROUP BY message_id, emoji",
+                    $ids
+                );
+                $rxnMap = [];
+                foreach ($rxns as $r) {
+                    $rxnMap[$r['message_id']][] = [
+                        'emoji'    => $r['emoji'],
+                        'count'    => (int)$r['cnt'],
+                        'user_ids' => array_map('intval', explode(',', $r['uids'])),
+                    ];
+                }
+                foreach ($messages as &$msg) {
+                    $msg['reactions'] = $rxnMap[$msg['message_id']] ?? [];
+                }
+                unset($msg);
+            }
 
             $otherUser = Database::getInstance()->fetchOne(
                 'SELECT user_id, name, avatar_path FROM users WHERE user_id = ?',
@@ -141,6 +169,8 @@ class MessagesAPI {
 
         $receiverId = (int)($data['receiver_id'] ?? 0);
         $content = trim((string)($data['content'] ?? ''));
+        $replyToId = isset($data['reply_to_id']) ? (int)$data['reply_to_id'] : null;
+        if ($replyToId !== null && $replyToId <= 0) $replyToId = null;
 
         if ($receiverId <= 0) {
             Helper::error('無效的收件人 ID', 400);
@@ -164,11 +194,13 @@ class MessagesAPI {
                 Helper::error('找不到該用戶', 404);
             }
 
-            $messageId = dbInsert('private_messages', [
+            $insertData = [
                 'sender_id'   => $uid,
                 'receiver_id' => $receiverId,
                 'content'     => $content,
-            ]);
+            ];
+            if ($replyToId !== null) $insertData['reply_to_id'] = $replyToId;
+            $messageId = dbInsert('private_messages', $insertData);
 
             if (!$messageId) {
                 Helper::error('傳送失敗', 500);
@@ -355,6 +387,38 @@ class MessagesAPI {
     }
 
     /**
+     * POST ?action=toggle_reaction
+     * Body: { message_id, emoji }
+     */
+    public static function toggleReaction($data) {
+        $uid = self::requireLogin();
+        $msgId = (int)($data['message_id'] ?? 0);
+        $emoji = trim((string)($data['emoji'] ?? ''));
+        $allowed = ['👍', '❤️', '😂', '😮', '😢', '👏'];
+        if (!$msgId || !in_array($emoji, $allowed, true)) Helper::error('無效參數', 400);
+
+        $msg = Database::getInstance()->fetchOne(
+            'SELECT sender_id, receiver_id FROM private_messages WHERE message_id = ?',
+            [$msgId]
+        );
+        if (!$msg || !in_array($uid, [(int)$msg['sender_id'], (int)$msg['receiver_id']])) {
+            Helper::error('無權限', 403);
+        }
+
+        $existing = Database::getInstance()->fetchOne(
+            'SELECT reaction_id FROM message_reactions WHERE message_id = ? AND user_id = ? AND emoji = ?',
+            [$msgId, $uid, $emoji]
+        );
+        if ($existing) {
+            dbDelete('message_reactions', 'reaction_id = ?', [(int)$existing['reaction_id']]);
+            Helper::success('已移除');
+        } else {
+            dbInsert('message_reactions', ['message_id' => $msgId, 'user_id' => $uid, 'emoji' => $emoji]);
+            Helper::success('已新增');
+        }
+    }
+
+    /**
      * POST ?action=verify_join_code
      * Body: { club_id, code }
      */
@@ -452,6 +516,7 @@ if ($method === 'POST') {
     elseif ($action === 'send_note_message')  { MessagesAPI::sendNoteMessage($data); }
     elseif ($action === 'recall_message')      { MessagesAPI::recallMessage($data); }
     elseif ($action === 'recall_note_message') { MessagesAPI::recallNoteMessage($data); }
+    elseif ($action === 'toggle_reaction')     { MessagesAPI::toggleReaction($data); }
     elseif ($action === 'verify_join_code')   { MessagesAPI::verifyJoinCode($data); }
 }
 

@@ -52,11 +52,13 @@ mysql -u root -p club_platform < database/migrations/2026_05_24_event_posters.sq
 mysql -u root -p club_platform < database/migrations/2026_05_24_note_messages.sql
 mysql -u root -p club_platform < database/migrations/2026_05_24_private_message_recall.sql
 mysql -u root -p club_platform < database/migrations/2026_05_24_note_messages_recall.sql
+mysql -u root -p club_platform < database/migrations/2026_05_24_message_reactions.sql
+mysql -u root -p club_platform < database/migrations/2026_05_24_private_message_reply.sql
 mysql -u root -p club_platform < database/seeds/2026_04_02_school_clubs_seed.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
 
-> migration 清單需與 `database/migrations/` 完全一致（目前共 21 支）；新增 migration 後請同步更新此段。
+> migration 清單需與 `database/migrations/` 完全一致（目前共 23 支）；新增 migration 後請同步更新此段。
 
 #### 活動海報規格（對應資料庫）
 - 活動海報資料表：`event_posters`（migration：`2026_05_24_event_posters.sql`）。

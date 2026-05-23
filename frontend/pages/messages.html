@@ -227,8 +227,146 @@
             display: block;
         }
 
-        .msg-bubble {
+        /* bubble wrapper — holds the ⋯ button, popup, bubble, and reaction pills */
+        .msg-bubble-wrap {
+            position: relative;
+            display: inline-flex;
+            flex-direction: column;
             max-width: 65%;
+        }
+
+        /* ⋯ menu trigger button */
+        .msg-menu-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--color-bg-surface, #fff);
+            border: 1px solid var(--color-border-default, #e5e7eb);
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity .15s;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+            z-index: 10;
+        }
+        .msg-bubble-row:hover .msg-menu-btn { opacity: 1; }
+
+        /* dropdown popup */
+        .msg-menu-popup {
+            display: none;
+            position: absolute;
+            top: 22px;
+            left: 0;
+            right: auto;
+            background: var(--color-bg-surface, #fff);
+            border: 1px solid var(--color-border-default, #e5e7eb);
+            border-radius: 10px;
+            padding: 4px;
+            box-shadow: 0 4px 16px rgba(0,0,0,.12);
+            z-index: 200;
+            min-width: 150px;
+        }
+        .msg-bubble-row--mine .msg-menu-popup { left: auto; right: 0; }
+        .msg-menu-popup.open { display: block; }
+        .msg-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            padding: 6px 10px;
+            border: none;
+            background: none;
+            border-radius: 7px;
+            font-size: 0.85rem;
+            color: var(--color-text-default, #374151);
+            cursor: pointer;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .msg-menu-item:hover { background: var(--color-bg-subtle, #f3f4f6); }
+        .msg-menu-item--danger:hover { background: #fee2e2; color: #dc2626; }
+        .msg-menu-emoji-row { display: flex; gap: 2px; padding: 4px 6px; }
+        .msg-menu-emoji-btn {
+            font-size: 1.1rem;
+            padding: 4px;
+            border: none;
+            background: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform .1s;
+        }
+        .msg-menu-emoji-btn:hover { transform: scale(1.25); background: var(--color-bg-subtle, #f3f4f6); }
+        .msg-menu-emoji-btn.active { background: rgba(99,102,241,.12); }
+
+        /* reaction pills below the bubble */
+        .msg-reactions-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .msg-reaction-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 7px;
+            border-radius: 99px;
+            font-size: 0.78rem;
+            background: var(--color-bg-subtle, #f3f4f6);
+            border: 1px solid var(--color-border-default, #e5e7eb);
+            cursor: pointer;
+            user-select: none;
+        }
+        .msg-reaction-pill--mine {
+            background: rgba(99,102,241,.12);
+            border-color: rgba(99,102,241,.3);
+            color: #4f46e5;
+        }
+
+        /* reply quote bar inside bubble */
+        .msg-reply-quote {
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            border-left: 3px solid rgba(255,255,255,.5);
+            background: rgba(0,0,0,.08);
+            border-radius: 6px;
+            font-size: 0.78rem;
+            opacity: .85;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        .msg-bubble:not(.msg-bubble--mine) .msg-reply-quote {
+            border-left-color: var(--color-primary-400, #60a5fa);
+            background: rgba(0,0,0,.05);
+        }
+
+        /* reply bar above send bar */
+        #reply-bar {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-top: 1px solid var(--color-border-default, #e5e7eb);
+            background: var(--color-bg-surface, #fff);
+            font-size: 0.82rem;
+            color: var(--color-text-muted, #6b7280);
+            flex-shrink: 0;
+        }
+        #reply-bar.active { display: flex; }
+        #reply-bar-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #reply-cancel-btn {
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--color-text-muted, #9ca3af);
+            flex-shrink: 0;
+        }
+
+        .msg-bubble {
             padding: 8px 12px;
             border-radius: 16px;
             font-size: 0.9rem;
@@ -251,22 +389,6 @@
             flex-shrink: 0;
             align-self: flex-end;
         }
-        .msg-recall-btn {
-            flex-shrink: 0;
-            align-self: center;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 3px 5px;
-            border-radius: 6px;
-            font-size: 0.72rem;
-            color: var(--color-text-muted, #9ca3af);
-            opacity: 0;
-            transition: opacity 0.15s, background 0.15s;
-            white-space: nowrap;
-        }
-        .msg-bubble-row:hover .msg-recall-btn { opacity: 1; }
-        .msg-recall-btn:hover { background: var(--color-bg-subtle, #f3f4f6); color: #ef4444; }
 
         .msg-date-divider {
             text-align: center;
@@ -492,6 +614,11 @@
         [data-theme="dark"] .msg-bot-item--active {
             background: var(--color-bg-surface);
         }
+        [data-theme="dark"] .msg-menu-btn,
+        [data-theme="dark"] .msg-menu-popup { background: var(--color-bg-surface); border-color: var(--color-border-default); }
+        [data-theme="dark"] .msg-menu-item { color: var(--color-text-default); }
+        [data-theme="dark"] .msg-reaction-pill { background: var(--color-bg-surface); border-color: var(--color-border-default); color: var(--color-text-default); }
+        [data-theme="dark"] #reply-bar { background: var(--color-bg-surface); border-color: var(--color-border-default); }
         [data-theme="dark"] .msg-modal { background: var(--color-bg-surface); }
         [data-theme="dark"] .msg-search-input {
             background: var(--color-bg-subtle);
@@ -587,6 +714,11 @@
                     <span>選擇一個對話，或點擊 ＋ 開始新對話</span>
                 </div>
             </div>
+            <div id="reply-bar">
+                <span>↩</span>
+                <span id="reply-bar-text"></span>
+                <button id="reply-cancel-btn" onclick="cancelReply()">✕</button>
+            </div>
             <div class="msg-send-bar" id="send-bar" style="display:none;">
                 <textarea class="msg-textarea" id="msg-input" rows="1" placeholder="輸入訊息..." maxlength="2000"></textarea>
                 <button class="msg-send-btn" id="send-btn" title="傳送" onclick="sendMessage()">
@@ -604,6 +736,8 @@
         let currentConvUserId = 0;
         let pollTimer = null;
         let _notepadMode = false;
+        let _openMenuMsgId = null;
+        let _replyTo = null;
 
         function makeAvatar(name, avatarPath, size) {
             const sz = size || 40;
@@ -864,8 +998,17 @@
                 area.innerHTML = msgs.map(m => {
                     const d = new Date(String(m.created_at || '').replace(' ', 'T'));
                     const t = isNaN(d) ? '' : d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-                    const recallBtn = `<button class="msg-recall-btn" onclick="recallNoteMessage(${Number(m.note_id)})" title="刪除">收回</button>`;
-                    return `<div class="msg-bubble-row msg-bubble-row--mine">${recallBtn}<div class="msg-bubble msg-bubble--mine">${PageUtils.escapeHtml(m.content)}</div><span class="msg-bubble-time">${t}</span></div>`;
+                    const nid = Number(m.note_id);
+                    return `<div class="msg-bubble-row msg-bubble-row--mine">
+                        <div class="msg-bubble-wrap">
+                            <button class="msg-menu-btn" onclick="toggleMsgMenu('note-${nid}')">⋯</button>
+                            <div class="msg-menu-popup" id="msg-menu-note-${nid}">
+                                <button class="msg-menu-item msg-menu-item--danger" onclick="recallNoteMessage(${nid});closeMsgMenu()">🗑 刪除</button>
+                            </div>
+                            <div class="msg-bubble msg-bubble--mine">${PageUtils.escapeHtml(m.content)}</div>
+                        </div>
+                        <span class="msg-bubble-time">${t}</span>
+                    </div>`;
                 }).join('');
                 area.scrollTop = area.scrollHeight;
             } catch (e) {
@@ -934,6 +1077,54 @@
             }
         }
 
+        const EMOJI_LIST = ['👍','❤️','😂','😮','😢','👏'];
+
+        function emojiButtons(msgId, reactions) {
+            const myEmojis = new Set(
+                (reactions || []).filter(r => r.user_ids && r.user_ids.includes(currentUserId)).map(r => r.emoji)
+            );
+            return EMOJI_LIST.map(e =>
+                `<button class="msg-menu-emoji-btn${myEmojis.has(e) ? ' active' : ''}" onclick="toggleReaction(${msgId},'${e}')">${e}</button>`
+            ).join('');
+        }
+
+        function toggleMsgMenu(key) {
+            const popup = document.getElementById(`msg-menu-${key}`);
+            if (!popup) return;
+            if (_openMenuMsgId !== null && _openMenuMsgId !== key) closeMsgMenu();
+            popup.classList.toggle('open');
+            _openMenuMsgId = popup.classList.contains('open') ? key : null;
+        }
+
+        function closeMsgMenu() {
+            if (_openMenuMsgId !== null) {
+                document.getElementById(`msg-menu-${_openMenuMsgId}`)?.classList.remove('open');
+                _openMenuMsgId = null;
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (_openMenuMsgId && !e.target.closest('.msg-bubble-wrap')) closeMsgMenu();
+        });
+
+        async function toggleReaction(msgId, emoji) {
+            closeMsgMenu();
+            const res = await APIClient.post('messages.php?action=toggle_reaction', { message_id: msgId, emoji });
+            if (res && res.success) await loadThread(currentConvUserId, true);
+        }
+
+        function startReply(msgId, content, senderName) {
+            _replyTo = { msgId, content, senderName };
+            document.getElementById('reply-bar-text').textContent = `${senderName}: ${content.slice(0, 60)}`;
+            document.getElementById('reply-bar').classList.add('active');
+            document.getElementById('msg-input').focus();
+        }
+
+        function cancelReply() {
+            _replyTo = null;
+            document.getElementById('reply-bar').classList.remove('active');
+        }
+
         function renderMessages(messages, otherUser) {
             const area = document.getElementById('messages-area');
             if (!messages.length) {
@@ -945,6 +1136,7 @@
             let html = '';
             let lastDate = '';
             messages.forEach(m => {
+                if (m.is_recalled) return;
                 const isMine = Number(m.sender_id) === currentUserId;
                 const d = new Date(String(m.created_at || '').replace(' ', 'T'));
                 const dateStr = isNaN(d) ? '' : d.toLocaleDateString('zh-TW');
@@ -953,22 +1145,36 @@
                     html += `<div class="msg-date-divider"><span>${dateStr}</span></div>`;
                 }
                 const timeStr = isNaN(d) ? '' : d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-
                 const avatarHtml = m.sender_avatar
                     ? `<img src="${PageUtils.escapeAttribute(PageUtils.resolveMediaUrl(m.sender_avatar))}" alt="">`
                     : PageUtils.escapeHtml(String(m.sender_name || '?').charAt(0).toUpperCase());
 
-                const isRecalled = !!m.is_recalled;
-                if (isRecalled) return; // hide recalled messages completely
-                const bubbleText = PageUtils.escapeHtml(m.content || '');
-                const bubbleClass = `msg-bubble${isMine ? ' msg-bubble--mine' : ''}`;
-                const recallBtn = (isMine && !isRecalled)
-                    ? `<button class="msg-recall-btn" onclick="recallMessage(${Number(m.message_id)})" title="收回訊息">收回</button>`
+                const replyQuote = m.reply_to_id
+                    ? `<div class="msg-reply-quote">${PageUtils.escapeHtml(m.reply_sender_name || '')}: ${PageUtils.escapeHtml((m.reply_content || '').slice(0, 60))}</div>`
                     : '';
 
+                const reactions = m.reactions || [];
+                const reactionsHtml = reactions.map(r => {
+                    const mine = r.user_ids && r.user_ids.includes(currentUserId);
+                    return `<span class="msg-reaction-pill${mine ? ' msg-reaction-pill--mine' : ''}" onclick="toggleReaction(${m.message_id},'${r.emoji}')">${r.emoji} ${r.count}</span>`;
+                }).join('');
+                const reactionsRow = reactionsHtml ? `<div class="msg-reactions-row">${reactionsHtml}</div>` : '';
+
+                const menuId = `msg-menu-${m.message_id}`;
+                const replyBtn = `<button class="msg-menu-item" onclick="startReply(${m.message_id},'${PageUtils.escapeAttribute(m.content || '')}','${PageUtils.escapeAttribute(m.sender_name || '')}');closeMsgMenu()">↩ 回復</button>`;
+                const menuItems = isMine
+                    ? `<div class="msg-menu-emoji-row">${emojiButtons(m.message_id, reactions)}</div>${replyBtn}<button class="msg-menu-item msg-menu-item--danger" onclick="recallMessage(${m.message_id});closeMsgMenu()">🗑 收回</button>`
+                    : `<div class="msg-menu-emoji-row">${emojiButtons(m.message_id, reactions)}</div>${replyBtn}`;
+
+                const bubbleClass = `msg-bubble${isMine ? ' msg-bubble--mine' : ''}`;
                 html += `<div class="msg-bubble-row${isMine ? ' msg-bubble-row--mine' : ''}">
                     <div class="msg-bubble-avatar">${avatarHtml}</div>
-                    ${recallBtn}<div class="${bubbleClass}">${bubbleText}</div>
+                    <div class="msg-bubble-wrap">
+                        <button class="msg-menu-btn" onclick="toggleMsgMenu(${m.message_id})">⋯</button>
+                        <div class="msg-menu-popup" id="${menuId}">${menuItems}</div>
+                        <div class="${bubbleClass}">${replyQuote}${PageUtils.escapeHtml(m.content || '')}</div>
+                        ${reactionsRow}
+                    </div>
                     <span class="msg-bubble-time">${timeStr}</span>
                 </div>`;
             });
@@ -1005,13 +1211,13 @@
             const btn = document.getElementById('send-btn');
             btn.disabled = true;
             try {
-                const res = await APIClient.post('messages.php?action=send', {
-                    receiver_id: currentConvUserId,
-                    content
-                });
+                const payload = { receiver_id: currentConvUserId, content };
+                if (_replyTo) payload.reply_to_id = _replyTo.msgId;
+                const res = await APIClient.post('messages.php?action=send', payload);
                 if (res && res.success) {
                     input.value = '';
                     input.style.height = '';
+                    cancelReply();
                     await loadThread(currentConvUserId);
                     const area = document.getElementById('messages-area');
                     area.scrollTop = area.scrollHeight;
