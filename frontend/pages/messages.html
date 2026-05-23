@@ -251,6 +251,29 @@
             flex-shrink: 0;
             align-self: flex-end;
         }
+        .msg-bubble--recalled {
+            background: transparent;
+            border: 1px dashed var(--color-border-default, #e5e7eb);
+            color: var(--color-text-muted, #9ca3af);
+            font-style: italic;
+            font-size: 0.82rem;
+        }
+        .msg-recall-btn {
+            flex-shrink: 0;
+            align-self: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 3px 5px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            color: var(--color-text-muted, #9ca3af);
+            opacity: 0;
+            transition: opacity 0.15s, background 0.15s;
+            white-space: nowrap;
+        }
+        .msg-bubble-row:hover .msg-recall-btn { opacity: 1; }
+        .msg-recall-btn:hover { background: var(--color-bg-subtle, #f3f4f6); color: #ef4444; }
 
         .msg-date-divider {
             text-align: center;
@@ -941,9 +964,18 @@
                     ? `<img src="${PageUtils.escapeAttribute(PageUtils.resolveMediaUrl(m.sender_avatar))}" alt="">`
                     : PageUtils.escapeHtml(String(m.sender_name || '?').charAt(0).toUpperCase());
 
+                const isRecalled = !!m.is_recalled;
+                const bubbleText = isRecalled
+                    ? (isMine ? '你收回了一則訊息' : '對方收回了一則訊息')
+                    : PageUtils.escapeHtml(m.content || '');
+                const bubbleClass = `msg-bubble${isMine ? ' msg-bubble--mine' : ''}${isRecalled ? ' msg-bubble--recalled' : ''}`;
+                const recallBtn = (isMine && !isRecalled)
+                    ? `<button class="msg-recall-btn" onclick="recallMessage(${Number(m.message_id)})" title="收回訊息">收回</button>`
+                    : '';
+
                 html += `<div class="msg-bubble-row${isMine ? ' msg-bubble-row--mine' : ''}">
                     <div class="msg-bubble-avatar">${avatarHtml}</div>
-                    <div class="msg-bubble${isMine ? ' msg-bubble--mine' : ''}">${PageUtils.escapeHtml(m.content || '')}</div>
+                    ${recallBtn}<div class="${bubbleClass}">${bubbleText}</div>
                     <span class="msg-bubble-time">${timeStr}</span>
                 </div>`;
             });
@@ -998,6 +1030,20 @@
                 PageUtils.showAlert('傳送失敗', 'error');
             } finally {
                 btn.disabled = false;
+            }
+        }
+
+        async function recallMessage(messageId) {
+            if (!confirm('確定要收回這則訊息嗎？')) return;
+            try {
+                const res = await APIClient.post('messages.php?action=recall_message', { message_id: messageId });
+                if (res && res.success) {
+                    await loadThread(currentConvUserId, true);
+                } else {
+                    PageUtils.showAlert(res?.message || '收回失敗', 'error');
+                }
+            } catch (e) {
+                PageUtils.showAlert('收回失敗', 'error');
             }
         }
 

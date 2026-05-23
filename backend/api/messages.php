@@ -86,7 +86,7 @@ class MessagesAPI {
             );
 
             $messages = Database::getInstance()->fetchAll(
-                'SELECT m.message_id, m.sender_id, m.receiver_id, m.content, m.is_read, m.created_at,
+                'SELECT m.message_id, m.sender_id, m.receiver_id, m.content, m.is_read, m.is_recalled, m.created_at,
                         u.name AS sender_name, u.avatar_path AS sender_avatar
                  FROM private_messages m
                  JOIN users u ON u.user_id = m.sender_id
@@ -115,6 +115,27 @@ class MessagesAPI {
      * POST ?action=send
      * Body: {receiver_id, content}
      */
+    /**
+     * POST ?action=recall_message
+     * Body: { message_id }
+     */
+    public static function recallMessage($data) {
+        $uid = self::requireLogin();
+        $msgId = (int)($data['message_id'] ?? 0);
+        if ($msgId <= 0) Helper::error('無效的訊息 ID', 400);
+
+        $msg = Database::getInstance()->fetchOne(
+            'SELECT sender_id, is_recalled FROM private_messages WHERE message_id = ?',
+            [$msgId]
+        );
+        if (!$msg) Helper::error('找不到此訊息', 404);
+        if ((int)$msg['sender_id'] !== $uid) Helper::error('只能收回自己發送的訊息', 403);
+        if ($msg['is_recalled']) Helper::error('訊息已收回', 400);
+
+        dbUpdate('private_messages', ['is_recalled' => 1], 'message_id = ?', [$msgId]);
+        Helper::success('訊息已收回');
+    }
+
     public static function sendMessage($data) {
         $uid = self::requireLogin();
 
@@ -409,6 +430,7 @@ if ($method === 'POST') {
     elseif ($action === 'mark_bot_read') { MessagesAPI::markBotMessageRead($data); }
     elseif ($action === 'save_note')          { MessagesAPI::saveNote($data); }
     elseif ($action === 'send_note_message')  { MessagesAPI::sendNoteMessage($data); }
+    elseif ($action === 'recall_message')     { MessagesAPI::recallMessage($data); }
     elseif ($action === 'verify_join_code')   { MessagesAPI::verifyJoinCode($data); }
 }
 
