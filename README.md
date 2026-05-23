@@ -98,6 +98,7 @@
 ### 上傳處理
 
 - 圖片限制定義在 `backend/config.php`：`MAX_FILE_SIZE`（10 MB）、`ALLOWED_IMAGE_TYPES`。
+- 活動海報資料儲存在 `event_posters`（`2026_05_24_event_posters.sql`）；每個活動最多 10 張海報由 `upload.php` 上傳流程驗證。
 - **不要**在 upload.php 以外的地方處理檔案上傳。
 - `$_POST` 與 `$_FILES` 同時為空且 `Content-Length > 0`，代表 PHP 的 `post_max_size` 被超過，需單獨偵測並回傳 413，不要誤報「缺少 ID」。
 - 上傳成功後的 path 格式固定為 `assets/uploads/{prefix}_{time}_{uniqid}.{ext}`。
@@ -143,7 +144,7 @@
 
 ### 社團幹部端
 - 社團基本資料編修（含年費 / 入會費 / 單堂費設定）
-- 活動建立、更新與海報上傳（含多張輪播海報）
+- 活動建立、更新與海報上傳（含多張輪播海報；每活動最多 10 張、每張 10MB、僅支援 JPG／PNG／GIF／WebP）
 - 社團預覽與內容管理
 - 活動清單與管理介面
 - 成員管理（`club-admin-members.html`）：社長可指派副社長、公關、總務、幹事，或將幹部降為一般成員；非社長幹部僅能查看清單
@@ -183,7 +184,9 @@
 ├── database/
 │   ├── schema.sql
 │   ├── migrations/
-│   │   └── 2026_05_23_private_messages.sql   ← 私訊資料表
+│   │   ├── 2026_05_23_private_messages.sql
+│   │   ├── 2026_05_24_event_posters.sql
+│   │   └── ...（其餘 migration）
 │   └── seeds/
 ├── frontend/
 │   ├── index.html
@@ -222,9 +225,10 @@
 
 快速摘要：
 1. 匯入 `database/schema.sql` 與 `database/migrations/*`。
-2. 建立 `backend/config.local.php` 設定本機資料庫連線（此檔案不進 git）。
-3. 確認 `frontend/assets/uploads`、`logs` 可寫入。
-4. 安裝 e2e 測試依賴：`npm install`。
+2. 匯入 seed：`database/seeds/2026_04_02_school_clubs_seed.sql`、`database/seeds/test_accounts_and_story_data.sql`。
+3. 建立 `backend/config.local.php` 設定本機資料庫連線（此檔案不進 git）。
+4. 確認 `frontend/assets/uploads`、`logs` 可寫入。
+5. 安裝 e2e 測試依賴：`npm install`。
 
 ## 執行方式
 
@@ -335,6 +339,7 @@ npx playwright test
 ## 版本與發布紀錄
 
 - [Release Notes 2026-04-04](RELEASE_NOTES_2026-04-04.md)
+- 2026-05-24：新增活動多圖海報 `event_posters` 資料表與對應 migration。
 - 2026-05-23：私訊系統、Bot 占位元、用戶 ID 全站顯示、通知刪除功能、紅點修正（見下方最近更新）
 - 2026-05-22：成員職稱管理、踢出成員、加入/退出社團、已加入社團 tab、排他性職稱驗證、啟動腳本修正
 - 2026-05-21：Google OAuth 登入 / 註冊、UI 全寬修正、登入防重複送出、多項功能細節完善
@@ -360,10 +365,11 @@ npx playwright test
 - 登入表單已加入送出防抖保護，避免短時間內重複觸發。
 - 私訊系統（`messages.html`）已上線，支援多對話管理、搜尋用戶、歷史紀錄。
 
-### 最近更新（2026-05-23）
+### 最近更新（2026-05-24 / 2026-05-23）
 
 | 項目 | 說明 |
 |------|------|
+| 活動海報資料表（2026-05-24） | 新增 `2026_05_24_event_posters.sql`，支援活動多圖海報資料存取；每活動最多 10 張，每張 10MB，格式限 JPG／PNG／GIF／WebP |
 | 私訊系統 | 新增 `messages.html`（Discord 式雙欄 UI）與 `messages.php` API；`private_messages` 資料表 migration |
 | 私訊導覽列連結 | `main.js` 新增 `injectMessagesNavLink()`，自動在「提問」後方注入「私訊」連結 |
 | Bot 占位元 | 私訊側邊欄頂端固定顯示「平台機器人 BOT」項目，點擊顯示「功能即將推出」面板 |

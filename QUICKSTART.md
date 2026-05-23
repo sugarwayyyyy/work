@@ -1,30 +1,30 @@
-﻿# 敹恍?憪???
+﻿# 快速開始指南
 
-?祆?隞嗆?靘??剛楝敺???瘚?嚗?洵銝甈⊿蝵脫??撽??啣??蝙?具?
+本文件提供最短路徑的啟動流程，適合第一次部署或重新驗證環境時使用。
 
-## ?桅?
-- [?桃?](#?桃?)
-- [?蔭璇辣](#?蔭璇辣)
-- [摰?甇仿?](#摰?甇仿?)
-- [???孵?](#???孵?)
-- [皜祈岫撣唾?](#皜祈岫撣唾?)
-- [撣貉???](#撣貉???)
-- [?賊??辣](#?賊??辣)
+## 目錄
+- [目的](#目的)
+- [前置條件](#前置條件)
+- [安裝步驟](#安裝步驟)
+- [啟動方式](#啟動方式)
+- [測試帳號](#測試帳號)
+- [常見問題](#常見問題)
+- [相關文件](#相關文件)
 
-## ?桃?
+## 目的
 
-???澈??蝡航??垢敹恍?韏瑚?嚗Ⅱ隤像?啣隞交迤撣貊汗??乓?
+把資料庫、後端與前端快速跑起來，確認平台可以正常瀏覽與登入。
 
-## ?蔭璇辣
+## 前置條件
 
-- Windows ?摰寧??祆??啣?
-- AppServ ??XAMPP嚗 Apache + PHP嚗?
-- MySQL 8.0+ ??MariaDB
-- ?臬銵?PowerShell
+- Windows 或相容的本機環境
+- AppServ 或 XAMPP（含 Apache + PHP）
+- MySQL 8.0+ 或 MariaDB
+- 可執行 PowerShell
 
-## 摰?甇仿?
+## 安裝步驟
 
-### 1. ?臬鞈?摨?
+### 1. 匯入資料庫
 
 ```bash
 mysql -u root -p < database/schema.sql
@@ -53,54 +53,61 @@ mysql -u root -p club_platform < database/seeds/2026_04_02_school_clubs_seed.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
 
-> seed ??銝憿????`school_clubs_seed`嚗冗?蝷???嚗??臬 `test_accounts_and_story_data`嚗葫閰血董??瘣餃?嚗??蝷曉? ID嚗?
+> migration 清單需與 `database/migrations/` 完全一致（目前共 21 支）；新增 migration 後請同步更新此段。
 
-?舫?寞?嚗蝙??`run_migration.php` ?瑁??湔?瑞宏嚗???鋆銵??seed 瑼?嚗run_migration.php` 銝 seed嚗?
+#### 活動海報規格（對應資料庫）
+- 活動海報資料表：`event_posters`（migration：`2026_05_24_event_posters.sql`）。
+- 每個活動最多 10 張海報（由 `backend/api/upload.php` 上傳流程驗證）。
+- 每張上限 10MB、僅支援 JPG／PNG／GIF／WebP（由 `backend/config.php` 的 `MAX_FILE_SIZE` 與 `ALLOWED_IMAGE_TYPES` 控制）。
 
-### 2. 閮剖??祆????
+> seed 順序不可顛倒：先匯入 `school_clubs_seed`（社團基礎資料），再匯入 `test_accounts_and_story_data`（測試帳號與活動，會參照社團 ID）。
 
-撱箇? `backend/config.local.php`嚗迨瑼?撌脣???`.gitignore`嚗???git嚗?
+可選方案：使用 `run_migration.php` 執行整批遷移，再手動補執行兩個 seed 檔案（`run_migration.php` 不含 seed）。
+
+### 2. 設定本機連線
+
+建立 `backend/config.local.php`（此檔案已加入 `.gitignore`，不會進 git）：
 
 ```php
 <?php
-// 靘?祆??啣?憛怠神嚗ppServ ?身撖Ⅳ?虜??12345678嚗AMPP ?身?箇征摮葡
+// 依照本機環境填寫，AppServ 預設密碼通常為 12345678，XAMPP 預設為空字串
 define('DB_PASSWORD', '12345678');  // AppServ
 // define('DB_PASSWORD', '');       // XAMPP
 
-// 嚗憛恬?Google OAuth ??憛怠敺??/ 閮餃????整誑 Google 撣唾??餃????
-// ?芸‵??????銝蔣??email / password ?餃
+// （選填）Google OAuth — 填入後登入 / 註冊頁面會出現「以 Google 帳號登入」按鈕
+// 未填則按鈕自動隱藏，不影響 email / password 登入
 // define('GOOGLE_CLIENT_ID', 'YOUR_CLIENT_ID.apps.googleusercontent.com');
 ```
 
-> `backend/config.php` ??閮剖潛 AppServ嚗?蝣?`12345678`嚗雿輻 XAMPP嚗撖Ⅳ嚗??芷?撱箇?銝膩瑼?銝血?瘨?XAMPP ????釣閫??胯?
+> `backend/config.php` 的預設值為 AppServ（密碼 `12345678`）。若使用 XAMPP（無密碼），只需建立上述檔案並取消 XAMPP 那行的注解即可。
 
-#### ? Google OAuth嚗憛恬?
+#### 啟用 Google OAuth（選填）
 
-1. ?? [Google Cloud Console](https://console.cloud.google.com/) ??OAuth 2.0 ?冽蝡???撱箇? **Web application** ?冽蝡胯?
-2. ?具歇????JavaScript 靘????交璈??潛雯?嚗?憒?`http://localhost:8000`??
-3. 撠?? Client ID 憛怠 `config.local.php` ??`GOOGLE_CLIENT_ID`??
-4. 閮剖?摰?敺??餃?酉???Ｘ??芸?憿舐內 Google ??嚗閮剖??????箇??
+1. 前往 [Google Cloud Console](https://console.cloud.google.com/) → OAuth 2.0 用戶端 → 建立 **Web application** 用戶端。
+2. 在「已授權的 JavaScript 來源」加入本機開發網址，例如 `http://localhost:8000`。
+3. 將產生的 Client ID 填入 `config.local.php` 的 `GOOGLE_CLIENT_ID`。
+4. 設定完成後，登入與註冊頁面會自動顯示 Google 按鈕；未設定則按鈕不出現。
 
-### 3. 瑼Ｘ鞈?憭暹???
-蝣箄?隞乩?鞈?憭曉??其??臬神?伐?
+### 3. 檢查資料夾權限
+確認以下資料夾存在且可寫入：
 - `frontend/assets/uploads`
 - `logs`
 
-## ???孵?
+## 啟動方式
 
-### 銝?萄???Windows PowerShell嚗?
+### 一鍵啟動（Windows PowerShell）
 
-> **瘜冽?**嚗pwsh` ??PowerShell 7嚗??西?摰?嚗indows ?批遣??`powershell`嚗S5嚗?隢??批歇摰????祆?銝雿輻??
+> **注意**：`pwsh` 為 PowerShell 7（需另行安裝）。Windows 內建為 `powershell`（PS5），請依照已安裝的版本擇一使用。
 
 ```powershell
-# PowerShell 7嚗撌脣?鋆?
+# PowerShell 7（若已安裝）
 pwsh -File scripts/start-local-dev.ps1
 
-# PowerShell 5嚗indows ?批遣嚗?
+# PowerShell 5（Windows 內建）
 powershell -ExecutionPolicy Bypass -File scripts/start-local-dev.ps1
 ```
 
-?迫嚗?
+停止：
 
 ```powershell
 # PowerShell 7
@@ -110,62 +117,62 @@ pwsh -File scripts/stop-local-dev.ps1
 powershell -ExecutionPolicy Bypass -File scripts/stop-local-dev.ps1
 ```
 
-### ?孵?銝嚗ppServ / Apache嚗遣霅堆?
+### 方式一：AppServ / Apache（建議）
 
-蝣箔?撠?雿 Web ?寧??嚗?仿???
+確保專案位於 Web 根目錄後，直接開啟：
 
 ```text
-http://localhost/蝷曉?瘣餃?鞈?蝯望撟喳/frontend/index.html
+http://localhost/社團活動資訊統整平台/frontend/index.html
 ```
 
-### ?孵?鈭?PHP ?批遣?垢隡箸??剁?localhost:8000嚗?
+### 方式二：PHP 內建前端伺服器（localhost:8000）
 
 ```bash
 cd frontend
 php -S localhost:8000
 ```
 
-?? `http://localhost:8000` ?喳??
+打開 `http://localhost:8000` 即可。
 
-?乩蝙?冽撘?嚗?蝡?API ????舐嚗?
+若使用方式二，後端 API 需擇一可用：
 
-1. Apache ??敺垢嚗http://localhost/蝷曉?瘣餃?鞈?蝯望撟喳/backend/api`
-2. ?函???敺垢嚗?
+1. Apache 提供後端：`http://localhost/社團活動資訊統整平台/backend/api`
+2. 獨立啟動後端：
 
 ```bash
 cd backend
 php -S localhost:8080
 ```
 
-?亙??`localhost:8000` ??蝡舀??嚗??Ｘ?憿舐內雿???瘙?憭望???
+若只開 `localhost:8000` 而後端未提供，頁面會顯示但資料請求會失敗。
 
-## 皜祈岫撣唾?
+## 測試帳號
 
-- 蝞∠??∴?admin@univ.edu / Test123456
-- 撟寥嚗lubadmin@univ.edu / Test123456
-- 摮貊?嚗tudent@univ.edu / Test123456
+- 管理員：admin@univ.edu / Test123456
+- 幹部：clubadmin@univ.edu / Test123456
+- 學生：student@univ.edu / Test123456
 
-## 撣貉???
+## 常見問題
 
-### ?⊥????鞈?摨?
-- 蝣箄? MySQL 撌脣???
-- 蝣箄?撌脣遣蝡?`backend/config.local.php` 銝血‵?交迤蝣箏?蝣潘?AppServ: `12345678`嚗AMPP: 蝛箏?銝?`''`嚗?
-- 蝣箄?鞈?摨怠?蝔望 `club_platform`
+### 無法連線資料庫
+- 確認 MySQL 已啟動
+- 確認已建立 `backend/config.local.php` 並填入正確密碼（AppServ: `12345678`，XAMPP: 空字串 `''`）
+- 確認資料庫名稱是 `club_platform`
 
-### ?瘝?璅??
-- 瑼Ｘ `frontend/css/styles.css` ???刻楝敺?
-- 蝣箄??桀???? `frontend/index.html` ??`frontend/pages/*`
+### 頁面沒有樣式
+- 檢查 `frontend/css/styles.css` 的引用路徑
+- 確認目前開啟的是 `frontend/index.html` 或 `frontend/pages/*`
 
-### API ? 404
-- 瑼Ｘ?垢 `main.js` ??API 頝臬?
-- 蝣箄?敺垢鞈?憭曆???`backend/`
-- ?亙?蝡臭蝙??`localhost:8000`嚗?蝣箄? Apache ??`localhost:8080` ?喳?銝蝔桀?蝡舀芋撘歇??
+### API 回傳 404
+- 檢查前端 `main.js` 的 API 路徑
+- 確認後端資料夾位於 `backend/`
+- 若前端使用 `localhost:8000`，請確認 Apache 或 `localhost:8080` 至少一種後端模式已啟動
 
-## ?賊??辣
+## 相關文件
 
 - [README](README.md)
-- [撠??脣漲](PROJECT_STATUS.md)
-- [摰?蝮賜?](COMPLETION_REPORT.md)
-- [皜祈岫?勗?](TESTING_REPORT.md)
-- [??撽皜](tests/manual/user_story_acceptance_checklist.md)
-- [??澆?蝝?(RELEASE_NOTES_2026-04-04.md)
+- [專案進度](PROJECT_STATUS.md)
+- [完成總結](COMPLETION_REPORT.md)
+- [測試報告](TESTING_REPORT.md)
+- [手動驗收清單](tests/manual/user_story_acceptance_checklist.md)
+- [版本發布紀錄](RELEASE_NOTES_2026-04-04.md)
