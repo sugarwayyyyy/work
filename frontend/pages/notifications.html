@@ -36,7 +36,7 @@
                     <h2 class="portal-section-title">通知中心</h2>
                     <div style="display:flex;align-items:center;gap:0.6rem;">
                         <span id="notif-unread-count" style="font-size:0.78rem;color:var(--text-muted);"></span>
-                        <button id="mark-all-read-btn" class="btn btn-secondary btn-sm" onclick="markAllAsRead()" style="display:none;">全部已讀</button>
+                        <button id="mark-all-read-btn" class="btn btn-secondary btn-sm" onclick="markAllAsRead()" style="display:none;">全部標為已讀</button>
                     </div>
                 </div>
                 <div id="notifications-list" class="feed-stream-list">
@@ -54,6 +54,40 @@
     <footer>
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>
+
+    <style>
+        .notif-card-wrap {
+            position: relative;
+        }
+        .notif-delete-btn {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-muted, #9ca3af);
+            font-size: 1rem;
+            opacity: 0;
+            transition: opacity 0.15s, background 0.15s, color 0.15s;
+            z-index: 1;
+        }
+        .notif-card-wrap:hover .notif-delete-btn {
+            opacity: 1;
+        }
+        .notif-delete-btn:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .feed-item-link { padding-right: 36px; }
+    </style>
 
     <script src="../js/main.js?v=20260510"></script>
     <script>
@@ -74,8 +108,13 @@
         function syncBellDot(unreadCount) {
             const dot = document.getElementById('nav-bell-dot');
             if (!dot) return;
-            if (unreadCount > 0) dot.removeAttribute('hidden');
-            else dot.setAttribute('hidden', '');
+            if (unreadCount > 0) {
+                dot.removeAttribute('hidden');
+                delete dot.dataset.clearedByPage;
+            } else {
+                dot.setAttribute('hidden', '');
+                dot.dataset.clearedByPage = '1';
+            }
         }
 
         function displayNotifications(notifications) {
@@ -83,19 +122,23 @@
             const unreadCountEl = document.getElementById('notif-unread-count');
 
             if (notifications.length === 0) {
-                container.innerHTML = '<div class="feed-item-card" style="text-align:center;padding:2.5rem 0;color:var(--text-muted);">目前沒有新通知</div>';
+                container.innerHTML = '<div class="feed-item-card" style="text-align:center;padding:2.5rem 0;color:var(--text-muted);">目前沒有通知</div>';
                 if (unreadCountEl) unreadCountEl.textContent = '';
                 const markAllBtn = document.getElementById('mark-all-read-btn');
-                if (markAllBtn) markAllBtn.style.display = 'none';
+                if (markAllBtn) { markAllBtn.style.display = 'none'; }
                 syncBellDot(0);
                 return;
             }
 
             const unreadCount = notifications.filter(n => !n.is_read).length;
             syncBellDot(unreadCount);
-            if (unreadCountEl) unreadCountEl.textContent = unreadCount > 0 ? `${unreadCount} 則未讀` : '全部已讀';
+            if (unreadCountEl) unreadCountEl.textContent = unreadCount > 0 ? `${unreadCount} 則未讀` : '';
             const markAllBtn = document.getElementById('mark-all-read-btn');
-            if (markAllBtn) markAllBtn.style.display = unreadCount > 0 ? '' : 'none';
+            if (markAllBtn) {
+                markAllBtn.style.display = '';
+                markAllBtn.disabled = unreadCount === 0;
+                markAllBtn.textContent = '全部標為已讀';
+            }
 
             let html = '';
             notifications.forEach(notification => {
@@ -113,9 +156,11 @@
                     ? ` onclick="handleNotificationClick(${notificationId}, '${safeTargetUrl}', ${alreadyRead})"`
                     : (isUnread ? ` onclick="handleNotificationClick(${notificationId}, '', false)"` : '');
 
+                const deleteBtn = `<button class="notif-delete-btn" onclick="deleteNotification(event, ${notificationId})" title="刪除通知">✕</button>`;
+
                 if (isClickable) {
                     html += `
-                    <div class="feed-item-card">
+                    <div class="feed-item-card notif-card-wrap">
                         <button class="feed-item-link feed-item-link--announcement"${clickAttr}>
                             <div class="feed-item-head">
                                 <h3 class="feed-item-title"${isUnread ? '' : ' style="color:var(--text-muted);font-weight:400;"'}>${title}</h3>
@@ -124,10 +169,11 @@
                             ${message ? `<p class="feed-item-body">${message}</p>` : ''}
                             <time class="feed-item-time">${timeAgo}</time>
                         </button>
+                        ${deleteBtn}
                     </div>`;
                 } else {
                     html += `
-                    <div class="feed-item-card">
+                    <div class="feed-item-card notif-card-wrap">
                         <div class="feed-item-link" style="cursor:default;">
                             <div class="feed-item-head">
                                 <h3 class="feed-item-title" style="color:var(--text-muted);font-weight:400;">${title}</h3>
@@ -135,6 +181,7 @@
                             ${message ? `<p class="feed-item-body">${message}</p>` : ''}
                             <time class="feed-item-time">${timeAgo}</time>
                         </div>
+                        ${deleteBtn}
                     </div>`;
                 }
             });
@@ -158,10 +205,9 @@
 
         async function markAsRead(notificationId) {
             try {
-                const response = await APIClient.post('notifications.php?action=mark_read', {
+                await APIClient.post('notifications.php?action=mark_read', {
                     notification_id: notificationId
                 });
-                if (response.success) loadNotifications();
             } catch (error) {
                 console.error('Error:', error);
             }
@@ -170,11 +216,10 @@
         async function handleNotificationClick(notificationId, targetUrl, alreadyRead) {
             if (!alreadyRead && notificationId > 0) {
                 await markAsRead(notificationId);
+                await loadNotifications();
             }
             if (targetUrl) {
                 window.location.href = targetUrl;
-            } else if (!alreadyRead) {
-                loadNotifications();
             }
         }
 
@@ -184,15 +229,35 @@
             try {
                 const response = await APIClient.post('notifications.php?action=mark_all_read', {});
                 if (response.success) {
-                    loadNotifications();
+                    syncBellDot(0);
+                    await loadNotifications();
                 } else {
                     PageUtils.showAlert(response.message || '操作失敗', 'error');
-                    if (btn) { btn.disabled = false; btn.textContent = '全部已讀'; }
+                    if (btn) { btn.disabled = false; btn.textContent = '全部標為已讀'; }
                 }
             } catch (error) {
                 console.error('Error:', error);
                 PageUtils.showAlert('操作失敗', 'error');
-                if (btn) { btn.disabled = false; btn.textContent = '全部已讀'; }
+                if (btn) { btn.disabled = false; btn.textContent = '全部標為已讀'; }
+            }
+        }
+
+        async function deleteNotification(event, notificationId) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!notificationId) return;
+            try {
+                const response = await APIClient.post('notifications.php?action=delete', {
+                    notification_id: notificationId
+                });
+                if (response.success) {
+                    await loadNotifications();
+                } else {
+                    PageUtils.showAlert(response.message || '刪除失敗', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('刪除失敗', 'error');
             }
         }
 
@@ -202,13 +267,8 @@
                 const logoLink = document.querySelector('a.logo');
                 if (logoLink) logoLink.href = 'admin-users.html';
             }
-            // Wait for session hydration before API calls to avoid PHP session lock contention.
             if (window._pageInitReady) {
                 await Promise.race([window._pageInitReady, new Promise(r => setTimeout(r, 3000))]);
-            }
-            // Mark all as read on open, then load so the list and bell dot reflect the cleared state.
-            if (StorageUtils.isLoggedIn()) {
-                await APIClient.post('notifications.php?action=mark_all_read', {}).catch(() => {});
             }
             loadNotifications();
         });

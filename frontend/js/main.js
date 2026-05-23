@@ -1822,8 +1822,9 @@ function updateNavigation() {
                     try {
                         const res = await APIClient.get('notifications.php?action=unread_count');
                         if (res && res.success && res.data && res.data.count > 0) {
+                            // Only show the dot if it hasn't been explicitly cleared by the page.
                             const dot = document.getElementById('nav-bell-dot');
-                            if (dot) dot.removeAttribute('hidden');
+                            if (dot && !dot.dataset.clearedByPage) dot.removeAttribute('hidden');
                         }
                     } catch (_) {}
                 })();

@@ -194,6 +194,32 @@ class NotificationAPI {
     }
 
     /**
+     * 刪除單則通知
+     * POST /api/notifications.php?action=delete
+     */
+    public static function deleteNotification($data) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        try {
+            $errors = Helper::validateRequired($data, ['notification_id']);
+            if (!empty($errors)) {
+                Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+            }
+
+            dbDelete('notifications', 'notification_id = ? AND user_id = ?', [
+                (int)$data['notification_id'],
+                Auth::getCurrentUserId()
+            ]);
+
+            Helper::success('刪除成功');
+        } catch (Exception $e) {
+            Helper::error('刪除失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * 標記通知為已讀
      * POST /api/notifications.php?action=mark_read
      */
@@ -244,6 +270,8 @@ if ($method === 'POST') {
         NotificationAPI::markAllAsRead();
     } elseif ($action === 'mark_read') {
         NotificationAPI::markAsRead($data);
+    } elseif ($action === 'delete') {
+        NotificationAPI::deleteNotification($data);
     }
 }
 
