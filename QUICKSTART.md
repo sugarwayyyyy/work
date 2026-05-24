@@ -69,6 +69,16 @@ mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 
 可選方案：使用 `run_migration.php` 執行整批遷移，再手動補執行兩個 seed 檔案（`run_migration.php` 不含 seed）。
 
+#### 驗證資料庫是否完整
+
+匯入完成後，可執行以下指令確認所有資料表與欄位均已建立：
+
+```bash
+php scripts/check_tables.php
+```
+
+輸出會列出所有資料表及欄位清單；若發現缺少資料表或欄位，代表對應的 migration 尚未執行。
+
 ### 2. 設定本機連線
 
 建立 `backend/config.local.php`（此檔案已加入 `.gitignore`，不會進 git）：

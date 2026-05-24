@@ -206,6 +206,7 @@
 │   ├── api/
 │   └── manual/
 ├── scripts/
+│   ├── check_tables.php          ← 列出本機 DB 所有資料表與欄位，驗證 migration 完整性
 │   ├── seed-e2e-test-data.php
 │   └── cleanup-e2e-test-data.php
 ├── logs/
