@@ -768,6 +768,7 @@ test.describe('Additional Regression: Data Integrity & Safety', () => {
 
   test('AR-34 club admin cannot archive events of non-owned clubs', async ({ page }) => {
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    await page.waitForLoadState('domcontentloaded');
 
     const ownedClubIds = await page.evaluate(async () => {
       const resp = await window.APIClient.get('club-admin.php?action=my_clubs');

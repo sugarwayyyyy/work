@@ -79,6 +79,13 @@ INSERT INTO events (club_id, event_name, description, event_date, location, capa
 SELECT @club2, '上學期舊活動（過期）', '用於驗收過期活動隱藏', DATE_SUB(NOW(), INTERVAL 30 DAY), '體育館 B 場', 20, 0, DATE_SUB(NOW(), INTERVAL 31 DAY), 'published', FALSE, DATE_SUB(NOW(), INTERVAL 40 DAY)
 WHERE NOT EXISTS (SELECT 1 FROM events WHERE club_id = @club2 AND event_name = '上學期舊活動（過期）');
 
+-- AR-34 專用：提供一個 clubadmin 不管理的社團的公開活動，確保測試不依賴並行 worker 的臨時資料
+SET @club_foreign = (SELECT club_id FROM clubs WHERE club_code = '049' LIMIT 1);
+INSERT INTO events (club_id, event_name, description, event_date, location, capacity, fee, registration_deadline, event_status, is_registration_open, published_at)
+SELECT @club_foreign, '健言社公開演講賽', '年度公開演講比賽', DATE_ADD(NOW(), INTERVAL 10 DAY), '人文館 H101', 100, 0, DATE_ADD(NOW(), INTERVAL 9 DAY), 'published', TRUE, NOW()
+WHERE @club_foreign IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM events WHERE club_id = @club_foreign AND event_name = '健言社公開演講賽');
+
 -- Ensure club_tags exist (cleanup may have wiped them; these mirror schema.sql defaults)
 INSERT IGNORE INTO club_tags (tag_name) VALUES
   ('程式設計'), ('音樂'), ('運動'), ('藝術'), ('語言'),

@@ -6,7 +6,7 @@ $eventNamePrefixes = ['US15-TS-', 'US22-PUB-', 'US22-LIST-', 'US22 活動 '];
 $eventDescriptionNeedles = ['E2E 自動化建立活動：', 'Automated E2E event ', 'US22 活動內容'];
 $seededUserEmails = ['admin@univ.edu', 'clubadmin@univ.edu', 'student@univ.edu'];
 $seededFollowClubCodes = ['CSC001', '090'];
-$seededEventNames = ['程式社期初說明會', '演算法工作坊', '羽球新生體驗日', '上學期舊活動（過期）'];
+$seededEventNames = ['程式社期初說明會', '演算法工作坊', '羽球新生體驗日', '上學期舊活動（過期）', '健言社公開演講賽'];
 $seededAnnouncementTitles = ['社團博覽會公告', '平台維護通知'];
 $fullCleanup = in_array('--full', $argv, true);
 
