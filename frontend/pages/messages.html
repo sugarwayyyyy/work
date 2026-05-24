@@ -6,10 +6,17 @@
     <title>私訊 - 社團平台</title>
     <link rel="stylesheet" href="../css/styles.css?v=20260502k">
     <style>
+        /* body fills viewport; shell takes remaining height via flex */
+        html, body { height: 100%; }
+        body { display: flex; flex-direction: column; overflow: hidden; }
+        header { flex-shrink: 0; }
+        #alert-container { flex-shrink: 0; }
+
         /* ── messages layout ── */
         .msg-shell {
             display: flex;
-            height: calc(100vh - 64px);
+            flex: 1;
+            min-height: 0;
             overflow: hidden;
             background: var(--color-bg-default, #f9fafb);
         }
@@ -42,6 +49,38 @@
             color: var(--color-text-strong, #111827);
             flex: 1;
         }
+
+        /* sidebar collapsed state */
+        .msg-sidebar.sidebar-collapsed {
+            width: 0;
+            min-width: 0;
+            overflow: hidden;
+            border-right: none;
+        }
+        .msg-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--color-text-muted, #6b7280);
+            transition: background 0.15s;
+            flex-shrink: 0;
+        }
+        .msg-toggle-btn:hover { background: var(--color-bg-subtle, #f3f4f6); }
+        /* expand button shown at top of panel when sidebar is collapsed */
+        #panel-expand-btn {
+            display: none;
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 10;
+        }
+        .msg-panel { position: relative; }
 
         .msg-new-btn {
             display: inline-flex;
@@ -660,6 +699,15 @@
         }
         .msg-back-btn:hover { background: var(--color-bg-subtle, #f3f4f6); }
 
+        /* ── tablet layout (641 – 900 px) ── */
+        @media (max-width: 900px) and (min-width: 641px) {
+            .msg-sidebar {
+                width: 240px;
+                min-width: 200px;
+            }
+            .msg-bubble-wrap { max-width: 72%; }
+        }
+
         /* ── mobile layout (≤ 640 px) ── */
         @media (max-width: 640px) {
             /* shell clips the sliding panels */
@@ -757,6 +805,11 @@
                         <line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/>
                     </svg>
                 </button>
+                <button class="msg-toggle-btn" id="sidebar-collapse-btn" title="收合側欄" onclick="toggleSidebar()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </button>
             </div>
             <!-- Bot is always at the top, hardcoded -->
             <div class="msg-bot-item" id="bot-item" onclick="openBotConversation()">
@@ -781,6 +834,11 @@
 
         <!-- chat panel -->
         <div class="msg-panel">
+            <button class="msg-toggle-btn" id="panel-expand-btn" title="展開側欄" onclick="toggleSidebar()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </button>
             <div class="msg-panel-head" id="panel-head" style="display:none;">
                 <button class="msg-back-btn" onclick="showMobileSidebar()" title="返回">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -827,6 +885,14 @@
         let _replyTo = null;
 
         function isMobileView() { return window.innerWidth <= 640; }
+
+        function toggleSidebar() {
+            if (isMobileView()) return;
+            const sidebar = document.querySelector('.msg-sidebar');
+            const btn = document.getElementById('panel-expand-btn');
+            sidebar.classList.toggle('sidebar-collapsed');
+            btn.style.display = sidebar.classList.contains('sidebar-collapsed') ? 'inline-flex' : 'none';
+        }
 
         function showMobilePanel() {
             if (!isMobileView()) return;
