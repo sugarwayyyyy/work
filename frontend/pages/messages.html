@@ -273,6 +273,7 @@
             min-width: 150px;
         }
         .msg-bubble-row--mine .msg-menu-popup { left: auto; right: 0; }
+        .msg-menu-popup.popup-up { top: auto; bottom: 26px; }
         .msg-menu-popup.open { display: block; }
         .msg-menu-item {
             display: flex;
@@ -326,21 +327,37 @@
 
         /* reply quote bar inside bubble */
         .msg-reply-quote {
-            padding: 4px 8px;
-            margin-bottom: 4px;
-            border-left: 3px solid rgba(255,255,255,.5);
-            background: rgba(0,0,0,.08);
-            border-radius: 6px;
+            padding: 5px 8px;
+            margin-bottom: 6px;
+            border-left: 3px solid rgba(255,255,255,.55);
+            background: rgba(0,0,0,.12);
+            border-radius: 4px;
             font-size: 0.78rem;
-            opacity: .85;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        .msg-reply-quote__name {
+            font-weight: 600;
+            display: block;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 100%;
+            color: rgba(255,255,255,.95);
+            margin-bottom: 1px;
+        }
+        .msg-reply-quote__text {
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            opacity: .82;
         }
         .msg-bubble:not(.msg-bubble--mine) .msg-reply-quote {
             border-left-color: var(--color-primary-400, #60a5fa);
-            background: rgba(0,0,0,.05);
+            background: rgba(96,165,250,.10);
+        }
+        .msg-bubble:not(.msg-bubble--mine) .msg-reply-quote__name {
+            color: var(--color-primary-500, #3b82f6);
         }
 
         /* reply bar above send bar */
@@ -348,15 +365,15 @@
             display: none;
             align-items: center;
             gap: 8px;
-            padding: 6px 14px;
+            padding: 7px 14px 7px 10px;
             border-top: 1px solid var(--color-border-default, #e5e7eb);
-            background: var(--color-bg-surface, #fff);
+            border-left: 3px solid var(--color-primary-400, #60a5fa);
+            background: var(--color-primary-50, rgba(96,165,250,.08));
             font-size: 0.82rem;
             color: var(--color-text-muted, #6b7280);
             flex-shrink: 0;
         }
         #reply-bar.active { display: flex; }
-        #reply-bar-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #reply-cancel-btn {
             border: none;
             background: none;
@@ -782,8 +799,11 @@
                 </div>
             </div>
             <div id="reply-bar">
-                <span>↩</span>
-                <span id="reply-bar-text"></span>
+                <span style="color:var(--color-primary-400,#60a5fa);font-size:1rem;flex-shrink:0">↩</span>
+                <div style="flex:1;overflow:hidden">
+                    <div id="reply-bar-name" style="font-weight:600;font-size:0.78rem;color:var(--color-primary-400,#60a5fa);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+                    <div id="reply-bar-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+                </div>
                 <button id="reply-cancel-btn" onclick="cancelReply()">✕</button>
             </div>
             <div class="msg-send-bar" id="send-bar" style="display:none;">
@@ -1179,6 +1199,16 @@
             const popup = document.getElementById(`msg-menu-${key}`);
             if (!popup) return;
             if (_openMenuMsgId !== null && _openMenuMsgId !== key) closeMsgMenu();
+            const willOpen = !popup.classList.contains('open');
+            if (willOpen) {
+                const container = document.querySelector('.msg-messages');
+                const wrap = popup.closest('.msg-bubble-wrap');
+                if (container && wrap) {
+                    const cRect = container.getBoundingClientRect();
+                    const wRect = wrap.getBoundingClientRect();
+                    popup.classList.toggle('popup-up', cRect.bottom - wRect.bottom < 220);
+                }
+            }
             popup.classList.toggle('open');
             _openMenuMsgId = popup.classList.contains('open') ? key : null;
         }
@@ -1202,7 +1232,8 @@
 
         function startReply(msgId, content, senderName) {
             _replyTo = { msgId, content, senderName };
-            document.getElementById('reply-bar-text').textContent = `${senderName}: ${content.slice(0, 60)}`;
+            document.getElementById('reply-bar-name').textContent = senderName;
+            document.getElementById('reply-bar-text').textContent = content.slice(0, 80);
             document.getElementById('reply-bar').classList.add('active');
             document.getElementById('msg-input').focus();
         }
@@ -1237,7 +1268,7 @@
                     : PageUtils.escapeHtml(String(m.sender_name || '?').charAt(0).toUpperCase());
 
                 const replyQuote = m.reply_to_id
-                    ? `<div class="msg-reply-quote">${PageUtils.escapeHtml(m.reply_sender_name || '')}: ${PageUtils.escapeHtml((m.reply_content || '').slice(0, 60))}</div>`
+                    ? `<div class="msg-reply-quote"><span class="msg-reply-quote__name">${PageUtils.escapeHtml(m.reply_sender_name || '')}</span><span class="msg-reply-quote__text">${PageUtils.escapeHtml((m.reply_content || '').slice(0, 80))}</span></div>`
                     : '';
 
                 const reactions = m.reactions || [];

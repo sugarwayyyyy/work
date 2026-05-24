@@ -253,11 +253,11 @@
                         const role = response.data.role;
                         const canManageClubs = Boolean(response.data.can_manage_clubs);
                         if (role === 'platform_admin') {
-                            window.location.href = 'admin-users.html';
+                            window.location.href = 'admin-users.html?_reload=1';
                         } else if (canManageClubs) {
-                            window.location.href = 'club-admin-club-manage.html?v=20260508a';
+                            window.location.href = '../index.html?_reload=1';
                         } else {
-                            window.location.href = '../index.html';
+                            window.location.href = '../index.html?_reload=1';
                         }
                     }, 1000);
                 } else {
@@ -338,11 +338,11 @@
                         const role = response.data.role;
                         const canManageClubs = Boolean(response.data.can_manage_clubs);
                         if (role === 'platform_admin') {
-                            window.location.href = 'admin-users.html';
+                            window.location.href = 'admin-users.html?_reload=1';
                         } else if (canManageClubs) {
-                            window.location.href = 'club-admin-club-manage.html?v=20260508a';
+                            window.location.href = '../index.html?_reload=1';
                         } else {
-                            window.location.href = '../index.html';
+                            window.location.href = '../index.html?_reload=1';
                         }
                     }, 1000);
                 } else {

@@ -4,6 +4,7 @@
  */
 
 require_once '../auth.php';
+require_once '../content_filter.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     Helper::applyCorsHeaders();
@@ -184,6 +185,9 @@ class MessagesAPI {
         if (mb_strlen($content) > 2000) {
             Helper::error('訊息內容不得超過 2000 字', 400);
         }
+        if (ContentFilter::containsRestrictedLanguage($content)) {
+            Helper::error('訊息內容包含不適當字眼，請修改後再送出', 400);
+        }
 
         try {
             $receiver = Database::getInstance()->fetchOne(
@@ -362,6 +366,9 @@ class MessagesAPI {
         $content = trim((string)($data['content'] ?? ''));
         if ($content === '') Helper::error('內容不可空白', 400);
         if (mb_strlen($content) > 2000) Helper::error('訊息過長', 400);
+        if (ContentFilter::containsRestrictedLanguage($content)) {
+            Helper::error('訊息內容包含不適當字眼，請修改後再送出', 400);
+        }
         dbInsert('note_messages', ['user_id' => $uid, 'content' => $content]);
         Helper::success('已儲存');
     }

@@ -1,4 +1,16 @@
 ﻿// ?璇? JavaScript ?????API ?鈭??
+// 登入後強制刷新一次，確保 PHP session 已寫入後再載入頁面
+(function () {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('_reload') === '1') {
+        params.delete('_reload');
+        var newSearch = params.toString();
+        var newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
+        window.history.replaceState({}, '', newUrl);
+        window.location.reload();
+    }
+}());
+
 function detectAppBasePath() {
     const path = window.location.pathname || '';
     const frontendIndex = path.indexOf('/frontend/');
@@ -820,7 +832,7 @@ function renderAuthPromoBanner() {
     document.body.appendChild(banner);
 }
 
-async function hydrateUserFromSession() {
+async function hydrateUserFromSession(retryCount = 0) {
     // 沒有本地登入快照時，先不主動探測 current，避免未登入首頁持續出現 401 噪音。
     if (!StorageUtils.isLoggedIn()) {
         return;
@@ -840,8 +852,12 @@ async function hydrateUserFromSession() {
                 student_id: user.student_id || null,
                 avatar_path: user.avatar_path || null
             });
+        } else if (retryCount < 1) {
+            // 登入後第一次載入頁面可能出現 session 尚未寫入的競爭，等待後重試一次。
+            await new Promise(r => setTimeout(r, 500));
+            return hydrateUserFromSession(retryCount + 1);
         } else {
-            // 僅在後端明確回傳未登入時清除，避免暫時性網路錯誤造成 UI 狀態跳動。
+            // 後端明確回傳未登入（重試後仍失敗）→ 清除本地快照。
             StorageUtils.clearUser();
         }
     } catch (error) {

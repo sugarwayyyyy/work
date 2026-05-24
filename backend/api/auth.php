@@ -147,7 +147,9 @@ class UserAPI {
                 'name' => $user['name']
             ]);
             $clubSummary = self::getClubManagementSummary((int)$user['user_id']);
-            
+            $csrfToken = Helper::generateCSRFToken();
+            session_write_close();
+
             Helper::success('登入成功', [
                 'user_id' => $user['user_id'],
                 'name' => $user['name'],
@@ -155,7 +157,7 @@ class UserAPI {
                 'role' => $user['role'],
                 'can_manage_clubs' => $clubSummary['can_manage_clubs'],
                 'managed_club_count' => $clubSummary['managed_club_count'],
-                'csrf_token' => Helper::generateCSRFToken()
+                'csrf_token' => $csrfToken
             ]);
             
         } catch (Exception $e) {
