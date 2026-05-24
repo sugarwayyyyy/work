@@ -58,7 +58,7 @@ mysql -u root -p club_platform < database/seeds/2026_04_02_school_clubs_seed.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
 
-> migration 清單需與 `database/migrations/` 完全一致（目前共 23 支）；新增 migration 後請同步更新此段。
+> migration 清單需與 `database/migrations/` 完全一致（目前共 26 支）；新增 migration 後請同步更新此段。
 
 #### 活動海報規格（對應資料庫）
 - 活動海報資料表：`event_posters`（migration：`2026_05_24_event_posters.sql`）。
@@ -82,6 +82,12 @@ define('DB_PASSWORD', '12345678');  // AppServ
 // （選填）Google OAuth — 填入後登入 / 註冊頁面會出現「以 Google 帳號登入」按鈕
 // 未填則按鈕自動隱藏，不影響 email / password 登入
 // define('GOOGLE_CLIENT_ID', 'YOUR_CLIENT_ID.apps.googleusercontent.com');
+
+// （選填）AppServ / Windows 本機若出現 Google tokeninfo curl error 60（SSL 憑證錯誤）：
+// 1. 從 https://curl.se/ca/cacert.pem 下載 cacert.pem
+// 2. 存至 PHP 目錄（例如 D:/app/appserv/php7/cacert.pem）
+// 3. 取消下方注解並填入正確路徑
+// define('GOOGLE_CA_BUNDLE', 'D:/app/appserv/php7/cacert.pem');
 ```
 
 > `backend/config.php` 的預設值為 AppServ（密碼 `12345678`）。若使用 XAMPP（無密碼），只需建立上述檔案並取消 XAMPP 那行的注解即可。
