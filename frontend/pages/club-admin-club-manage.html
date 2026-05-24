@@ -249,6 +249,9 @@
             if (bannerName) bannerName.textContent = clubName || '-';
             if (banner) banner.style.display = '';
             loadClubAdminStats(clubId);
+            if (typeof initializeClubManagePage === 'function') {
+                await initializeClubManagePage(clubId);
+            }
         })();
     </script>
 </body>

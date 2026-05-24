@@ -351,6 +351,25 @@
             }
         }
 
+        async function waitForPageInitReady(timeoutMs = 3000) {
+            if (!window._pageInitReady) return;
+
+            await Promise.race([
+                window._pageInitReady,
+                new Promise(resolve => setTimeout(resolve, timeoutMs))
+            ]);
+        }
+
+        async function initializeClubManagePage(clubId) {
+            await waitForPageInitReady();
+            await loadAllTags();
+            if (clubId) {
+                await loadClubDetails(Number(clubId));
+            }
+        }
+
+        window.initializeClubManagePage = initializeClubManagePage;
+
         async function searchOrCreateTag() {
             const input = document.getElementById('tag-search-input').value.trim();
             if (!input) {
@@ -1793,10 +1812,6 @@
                 }
             });
             setClubMeetingTimeFromValue('');
-
-            loadAllTags();
-            const saved = sessionStorage.getItem('clubAdmin_clubId');
-            if (saved) loadClubDetails(Number(saved));
 
             document.addEventListener('clubadmin:switch', e => loadClubDetails(e.detail.clubId));
         })();
