@@ -142,16 +142,23 @@ class OAuthAPI {
     private static function httpGet(string $url, int $timeout): ?string {
         if (function_exists('curl_init')) {
             $ch = curl_init($url);
-            curl_setopt_array($ch, [
+            $options = [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT        => $timeout,
                 CURLOPT_CONNECTTIMEOUT => 3,
                 CURLOPT_SSL_VERIFYPEER => true,
                 CURLOPT_FOLLOWLOCATION => false,
                 CURLOPT_USERAGENT      => 'ClubPlatformOAuth/1.0',
-            ]);
+            ];
+            if (defined('GOOGLE_CA_BUNDLE') && is_readable(GOOGLE_CA_BUNDLE)) {
+                $options[CURLOPT_CAINFO] = GOOGLE_CA_BUNDLE;
+            }
+            curl_setopt_array($ch, $options);
             $result = curl_exec($ch);
             $err    = curl_errno($ch);
+            if ($err !== 0) {
+                Helper::logError('Google tokeninfo curl error ' . $err . ': ' . curl_error($ch));
+            }
             curl_close($ch);
             return ($err === 0 && is_string($result)) ? $result : null;
         }
