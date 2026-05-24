@@ -147,6 +147,7 @@
 - 活動建立、更新與海報上傳（含多張輪播海報；每活動最多 10 張、每張 10MB、僅支援 JPG／PNG／GIF／WebP）
 - 社團預覽與內容管理
 - 活動清單與管理介面
+- 加入申請審核（`club-admin-members.html`）：審核待審核的成員加入申請；批准後系統自動以 Bot 訊息傳送 6 碼驗證碼給申請者；拒絕則發送通知
 - 成員管理（`club-admin-members.html`）：社長可指派副社長、公關、總務、幹事，或將幹部降為一般成員；非社長幹部僅能查看清單
 - 帳號轉讓申請流程
 
@@ -319,6 +320,8 @@ npx playwright test
 ### 管理與上傳
 - `backend/api/admin.php`
 - `backend/api/club-admin.php`
+  - `GET  ?action=join_applications&id={club_id}` — 取得待審核加入申請列表（所有幹部皆可）
+  - `POST ?action=review_application` — 審核申請 `{application_id, action:'approve'|'reject'}`；批准時產生 6 碼驗證碼並以 Bot 訊息通知申請者
   - `GET  ?action=club_members&id={club_id}` — 社團成員列表（含呼叫者 `my_role`）
   - `POST ?action=update_member_role` — 社長指派職稱（排他性驗證）
   - `POST ?action=remove_member` — 社長踢出成員（同步 `users.role`）
@@ -364,12 +367,13 @@ npx playwright test
 - 已實作 Light / Dark mode（CSS token 系統），訪客與登入使用者均可切換。
 - 全站版面採全寬設計（`layout.css` container / nav 均不限寬），各頁面一致。
 - 登入表單已加入送出防抖保護，避免短時間內重複觸發。
-- 私訊系統（`messages.html`）已上線，支援多對話管理、搜尋用戶、歷史紀錄。
+- 私訊系統（`messages.html`）已上線，支援多對話管理、搜尋用戶、歷史紀錄、響應式排版（行動版全螢幕切換、平板雙欄壓縮、桌面可折疊側欄）。
 
 ### 最近更新（2026-05-24 / 2026-05-23）
 
 | 項目 | 說明 |
 |------|------|
+| 私訊頁面響應式改版（2026-05-24） | `messages.html` 新增行動版全螢幕滑動切換、平板雙欄壓縮、桌面可折疊側欄（toggle 按鈕）；`body` 改為 flex 佈局解決 `100dvh` 截切問題 |
 | 活動海報資料表（2026-05-24） | 新增 `2026_05_24_event_posters.sql`，支援活動多圖海報資料存取；每活動最多 10 張，每張 10MB，格式限 JPG／PNG／GIF／WebP |
 | 私訊系統 | 新增 `messages.html`（Discord 式雙欄 UI）與 `messages.php` API；`private_messages` 資料表 migration |
 | 私訊導覽列連結 | `main.js` 新增 `injectMessagesNavLink()`，自動在「提問」後方注入「私訊」連結 |
