@@ -291,6 +291,28 @@ try {
                 deleteWhereIn($db, 'event_comments', 'user_id', $fullSeededUserIds);
             }
             deleteWhereIn($db, 'reviews', 'user_id', $fullSeededUserIds);
+            // messaging tables
+            if (tableExists($db, 'message_reactions')) {
+                $msgIds = fetchColumnValues($db, 'private_messages', 'sender_id', 'message_id', array_map('strval', $fullSeededUserIds));
+                $msgIds2 = fetchColumnValues($db, 'private_messages', 'receiver_id', 'message_id', array_map('strval', $fullSeededUserIds));
+                $allMsgIds = array_values(array_unique(array_merge($msgIds, $msgIds2)));
+                if (!empty($allMsgIds)) {
+                    deleteWhereIn($db, 'message_reactions', 'message_id', $allMsgIds);
+                }
+            }
+            if (tableExists($db, 'private_messages')) {
+                deleteWhereIn($db, 'private_messages', 'sender_id', $fullSeededUserIds);
+                deleteWhereIn($db, 'private_messages', 'receiver_id', $fullSeededUserIds);
+            }
+            if (tableExists($db, 'note_messages')) {
+                deleteWhereIn($db, 'note_messages', 'user_id', $fullSeededUserIds);
+            }
+            if (tableExists($db, 'bot_messages')) {
+                deleteWhereIn($db, 'bot_messages', 'user_id', $fullSeededUserIds);
+            }
+            if (tableExists($db, 'club_join_applications')) {
+                deleteWhereIn($db, 'club_join_applications', 'user_id', $fullSeededUserIds);
+            }
         }
 
         $clubIds = fetchColumnValues($db, 'clubs', 'club_code', 'club_id', ['090']);
