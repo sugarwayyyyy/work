@@ -600,6 +600,7 @@ test.describe('Additional Regression: Data Integrity & Safety', () => {
   test('AR-28 should reject stale last_updated on concurrent club update', async ({ page }) => {
     test.setTimeout(60000);
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    await page.waitForLoadState('networkidle');
 
     const clubId = await fetchMyManagedClubId(page);
     expect(clubId).toBeTruthy();
@@ -744,6 +745,7 @@ test.describe('Additional Regression: Data Integrity & Safety', () => {
 
   test('AR-33 club admin cannot modify tags of non-owned clubs', async ({ page }) => {
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    await page.waitForLoadState('networkidle');
 
     const ownedClubIds = await page.evaluate(async () => {
       const resp = await window.APIClient.get('club-admin.php?action=my_clubs');
@@ -768,7 +770,7 @@ test.describe('Additional Regression: Data Integrity & Safety', () => {
 
   test('AR-34 club admin cannot archive events of non-owned clubs', async ({ page }) => {
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
-    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
 
     const ownedClubIds = await page.evaluate(async () => {
       const resp = await window.APIClient.get('club-admin.php?action=my_clubs');

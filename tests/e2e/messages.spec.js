@@ -286,7 +286,7 @@ test.describe.serial('入社驗證碼功能', () => {
     expect(clubId, '找不到可申請的社團，請確認 seed 資料').not.toBeNull();
     shared.clubId = clubId;
 
-    // 提出加入申請（retry 安全：若已有驗證碼則跳過）
+    // 提出加入申請（retry 安全：若已有驗證碼或已有待審核申請則跳過 assert）
     const applyRes = await apiPostJson(
       studentPage,
       `clubs.php?action=apply_join&id=${clubId}`,
@@ -294,12 +294,14 @@ test.describe.serial('入社驗證碼功能', () => {
     );
     const alreadyApproved = !applyRes.body.success &&
       String(applyRes.body.message || '').includes('已取得驗證碼');
-    if (!alreadyApproved) {
+    const alreadyPending = !applyRes.body.success &&
+      String(applyRes.body.message || '').includes('已有待審核');
+    if (!alreadyApproved && !alreadyPending) {
       expect(applyRes.body.success, `申請失敗: ${applyRes.body.message}`).toBe(true);
     }
 
     if (!alreadyApproved) {
-      // ── Step 2: 幹部批准申請 ──
+      // ── Step 2: 幹部批准申請（parallel browser 可能已批准，找不到 pending 時跳過）──
       const adminCtx = await browser.newContext();
       const adminPage = await adminCtx.newPage();
       await login(adminPage, CLUB_ADMIN.email, CLUB_ADMIN.password);
@@ -312,29 +314,36 @@ test.describe.serial('入社驗證碼功能', () => {
         return apps.find(a => a.status === 'pending')?.application_id ?? null;
       }, clubId);
 
-      expect(appId, '找不到 pending 申請').not.toBeNull();
-
-      const approveRes = await apiPostJson(
-        adminPage,
-        'club-admin.php?action=review_application',
-        { application_id: appId, action: 'approve' }
-      );
-      expect(approveRes.body.success, `批准失敗: ${approveRes.body.message}`).toBe(true);
+      if (appId) {
+        // 不 assert 成功：另一個 browser worker 可能同時批准
+        await apiPostJson(
+          adminPage,
+          'club-admin.php?action=review_application',
+          { application_id: appId, action: 'approve' }
+        );
+      } else if (!alreadyPending) {
+        expect(appId, '找不到 pending 申請').not.toBeNull();
+      }
       await adminCtx.close();
     }
 
-    // ── Step 3: 從 bot_messages 取出驗證碼（meta 已由伺服器解碼為物件）──
-    const verificationCode = await studentPage.evaluate(async (cid) => {
-      const res = await window.APIClient.get('messages.php?action=bot_messages');
-      const msgs = res?.data?.messages || [];
-      const vm = msgs.find(m => {
-        const meta = m.meta && typeof m.meta === 'object' ? m.meta : {};
-        return m.message_type === 'join_verification' && Number(meta.club_id) === Number(cid);
-      });
-      if (!vm) return null;
-      const meta = vm.meta && typeof vm.meta === 'object' ? vm.meta : {};
-      return meta.verification_code ?? null;
-    }, clubId);
+    // ── Step 3: 從 bot_messages 取出驗證碼（輪詢等待 parallel browser 批准完成）──
+    let verificationCode = null;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      verificationCode = await studentPage.evaluate(async (cid) => {
+        const res = await window.APIClient.get('messages.php?action=bot_messages');
+        const msgs = res?.data?.messages || [];
+        const vm = msgs.find(m => {
+          const meta = m.meta && typeof m.meta === 'object' ? m.meta : {};
+          return m.message_type === 'join_verification' && Number(meta.club_id) === Number(cid);
+        });
+        if (!vm) return null;
+        const meta = vm.meta && typeof vm.meta === 'object' ? vm.meta : {};
+        return meta.verification_code ?? null;
+      }, clubId);
+      if (verificationCode) break;
+      await studentPage.waitForTimeout(1000);
+    }
 
     expect(verificationCode, 'bot_messages 中找不到驗證碼').not.toBeNull();
 
