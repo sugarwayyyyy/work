@@ -79,6 +79,7 @@ php scripts/cleanup-e2e-test-data.php --full
 tests/e2e/
 ├── user-stories.spec.js          # 主要使用者故事測試（US 1.1–4.1 + 登入/頁面可訪問性）
 ├── additional-regression.spec.js # 補充迴歸測試（AR-01–AR-40）
+├── messages.spec.js              # 私訊與入社驗證碼功能測試（PM-01–PM-07、VC-01–VC-03）
 ├── global-setup.js               # 測試前自動清理 + seed 資料
 ├── global-teardown.js            # 測試後清理
 ├── dev-router.php                # Playwright webServer 路由（整合前後端）
@@ -103,6 +104,8 @@ tests/e2e/
 | 活動頁篩選器 | additional-regression | ✅ |
 | QA 互動細節 | additional-regression | ✅ |
 | 社團編輯同步驗證 | additional-regression | ✅ |
+| 私訊（傳送、收回、回復、emoji 反應、記事本）| messages | PM-01–PM-07 ✅ |
+| 入社驗證碼（bot 訊息、錯誤/正確驗證碼）| messages | VC-01–VC-03 ✅ |
 
 ## 測試帳號
 
