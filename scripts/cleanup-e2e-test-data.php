@@ -315,17 +315,7 @@ try {
             }
         }
 
-        $clubIds = fetchColumnValues($db, 'clubs', 'club_code', 'club_id', ['090']);
-        if (!empty($clubIds)) {
-            deleteWhereIn($db, 'club_followers', 'club_id', $clubIds);
-            deleteWhereIn($db, 'club_members', 'club_id', $clubIds);
-            deleteWhereIn($db, 'events', 'club_id', $clubIds);
-            deleteWhereIn($db, 'clubs', 'club_id', $clubIds);
-        }
-
-        if (!empty($fullSeededUserIds)) {
-            deleteWhereIn($db, 'users', 'user_id', $fullSeededUserIds);
-        }
+        // 不刪除 club 090（羽球社）和測試帳號，由 teardown 重 seed 還原基礎狀態
     }
 
     $db->commit();

@@ -23,11 +23,11 @@ UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'stude
 
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
-SELECT 'CSC001', '程式社', 10, '介紹本學期課程與專題方向', 2010, 0, '週三', '18:00-20:00', '資工館 R201', 'csc.club@univ.edu', '0911111111', 'active'
+SELECT 'CSC001', '程式社', 2, '介紹本學期課程與專題方向', 2010, 0, '週三', '18:00-20:00', '資工館 R201', 'csc.club@univ.edu', '0911111111', 'active'
 WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = 'CSC001');
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
-SELECT '090', '羽球社', 9, '歡迎零基礎與進階同學一起運動', 2015, 500, '週二', '18:30-20:30', '體育館 A 場', 'badminton.club@univ.edu', '0922333444', 'active'
+SELECT '090', '羽球社', 1, '歡迎零基礎與進階同學一起運動', 2015, 500, '週二', '18:30-20:30', '體育館 A 場', 'badminton.club@univ.edu', '0922333444', 'active'
 WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = '090');
 
 -- 確保 CSC001 必填欄位有值（舊資料可能是 NULL）
