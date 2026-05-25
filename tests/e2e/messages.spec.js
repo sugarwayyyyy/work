@@ -264,29 +264,37 @@ test.describe.serial('入社驗證碼功能', () => {
   };
 
   test.beforeAll(async ({ browser }) => {
-    // ── Step 1: 學生申請加入某個尚未加入的社團 ──
+    // ── Step 1: 幹部先登入，取得管理的社團清單 ──
+    const adminCtx = await browser.newContext();
+    const adminPage = await adminCtx.newPage();
+    await login(adminPage, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    await adminPage.waitForLoadState('networkidle');
+
+    const adminManagedClubIds = await adminPage.evaluate(async () => {
+      const res = await window.APIClient.get('club-admin.php?action=my_clubs');
+      return (res?.data?.clubs || []).map(c => Number(c.club_id));
+    });
+
+    // ── Step 2: 學生登入，從幹部管理的社團中找一個尚未加入的 ──
     const studentCtx = await browser.newContext();
     const studentPage = await studentCtx.newPage();
     await login(studentPage, STUDENT.email, STUDENT.password);
     await studentPage.waitForLoadState('networkidle');
 
-    // 找第一個學生尚未加入的社團
-    const clubId = await studentPage.evaluate(async () => {
-      const listRes = await window.APIClient.get('clubs.php?action=list&limit=50');
-      const clubs = listRes?.data?.clubs || [];
-      for (const c of clubs) {
-        const detailRes = await window.APIClient.get(`clubs.php?action=detail&id=${c.club_id}`);
+    const clubId = await studentPage.evaluate(async (managedIds) => {
+      for (const cid of managedIds) {
+        const detailRes = await window.APIClient.get(`clubs.php?action=detail&id=${cid}`);
         if (detailRes?.success && !detailRes.data?.is_member) {
-          return c.club_id;
+          return cid;
         }
       }
       return null;
-    });
+    }, adminManagedClubIds);
 
-    expect(clubId, '找不到可申請的社團，請確認 seed 資料').not.toBeNull();
+    expect(clubId, '找不到可申請且由 CLUB_ADMIN 管理的社團，請確認 seed 資料').not.toBeNull();
     shared.clubId = clubId;
 
-    // 提出加入申請（retry 安全：若已有驗證碼或已有待審核申請則跳過 assert）
+    // ── Step 3: 學生提出加入申請（retry 安全：若已有驗證碼或已有待審核申請則跳過 assert）──
     const applyRes = await apiPostJson(
       studentPage,
       `clubs.php?action=apply_join&id=${clubId}`,
@@ -296,18 +304,14 @@ test.describe.serial('入社驗證碼功能', () => {
       String(applyRes.body.message || '').includes('已取得驗證碼');
     const alreadyPending = !applyRes.body.success &&
       String(applyRes.body.message || '').includes('已有待審核');
-    if (!alreadyApproved && !alreadyPending) {
+    const alreadyMember = !applyRes.body.success &&
+      String(applyRes.body.message || '').includes('已是社團成員');
+    if (!alreadyApproved && !alreadyPending && !alreadyMember) {
       expect(applyRes.body.success, `申請失敗: ${applyRes.body.message}`).toBe(true);
     }
 
     if (!alreadyApproved) {
-      // ── Step 2: 幹部批准申請（parallel browser 可能已批准，找不到 pending 時跳過）──
-      const adminCtx = await browser.newContext();
-      const adminPage = await adminCtx.newPage();
-      await login(adminPage, CLUB_ADMIN.email, CLUB_ADMIN.password);
-      await adminPage.waitForLoadState('networkidle');
-
-      // 取得 pending 申請 ID
+      // ── Step 4: 幹部批准申請（parallel browser 可能已批准，找不到 pending 時跳過）──
       const appId = await adminPage.evaluate(async (cid) => {
         const res = await window.APIClient.get(`club-admin.php?action=join_applications&id=${cid}`);
         const apps = res?.data?.applications || [];
@@ -321,13 +325,13 @@ test.describe.serial('入社驗證碼功能', () => {
           'club-admin.php?action=review_application',
           { application_id: appId, action: 'approve' }
         );
-      } else if (!alreadyPending) {
+      } else if (!alreadyPending && !alreadyMember) {
         expect(appId, '找不到 pending 申請').not.toBeNull();
       }
-      await adminCtx.close();
     }
+    await adminCtx.close();
 
-    // ── Step 3: 從 bot_messages 取出驗證碼（輪詢等待 parallel browser 批准完成）──
+    // ── Step 5: 從 bot_messages 取出驗證碼（輪詢等待 parallel browser 批准完成）──
     let verificationCode = null;
     for (let attempt = 0; attempt < 10; attempt++) {
       verificationCode = await studentPage.evaluate(async (cid) => {

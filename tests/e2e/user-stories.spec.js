@@ -152,8 +152,8 @@ async function publishEventAsClubAdmin(page, eventName) {
   );
   await submitBtn.click();
   const createResponse = await createResponsePromise;
-  expect(createResponse.ok()).toBeTruthy();
   const createPayload = await createResponse.json();
+  expect(createResponse.ok(), `createEvent HTTP ${createResponse.status()} — ${JSON.stringify(createPayload)}`).toBeTruthy();
   expect(createPayload?.success).toBeTruthy();
   const eventId = Number(createPayload?.data?.event_id || 0);
   expect(eventId).toBeGreaterThan(0);
@@ -338,7 +338,7 @@ test.describe('US 1.5: 資料時間戳', () => {
 
   test('AC2: 新發布活動在活動詳情頁顯示最新上傳時間', async ({ page }) => {
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
-    const eventName = `US15-TS-${Date.now()}`;
+    const eventName = `US15-TS-${Date.now().toString(36)}`;
 
     const { eventId } = await publishEventAsClubAdmin(page, eventName);
 
@@ -389,7 +389,7 @@ test.describe('US 2.2: 社團活動發布', () => {
   test('AC1: 幹部可發布活動', async ({ page }) => {
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
 
-    const eventName = `US22-PUB-${Date.now()}`;
+    const eventName = `US22-PUB-${Date.now().toString(36)}`;
     const { eventId: createdEventId } = await publishEventAsClubAdmin(page, eventName);
 
     // After creating, we're already on club-admin-events-list.html — verify the section is visible.
@@ -400,7 +400,7 @@ test.describe('US 2.2: 社團活動發布', () => {
 
   test('AC2: 發布後可在前台查到，且活動列表為近到遠排序', async ({ page }) => {
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
-    const eventName = `US22-LIST-${Date.now()}`;
+    const eventName = `US22-LIST-${Date.now().toString(36)}`;
     const { eventId } = await publishEventAsClubAdmin(page, eventName);
 
     await page.goto(`${BASE_URL}/pages/events.html`);

@@ -44,6 +44,7 @@ async function logoutViaUserMenu(page) {
 }
 
 async function fetchMyManagedClubId(page) {
+  await page.waitForLoadState('networkidle');
   return await page.evaluate(async () => {
     const myClubsResp = await window.APIClient.get('club-admin.php?action=my_clubs');
     if (!myClubsResp?.success) return null;
@@ -611,7 +612,7 @@ test.describe('Additional Regression: Data Integrity & Safety', () => {
 
     const staleLastUpdated = snapshot.last_updated;
     const payloadA = {
-      description: `${snapshot.description || ''}\n[AR-28-A-${Date.now()}]`,
+      description: `${snapshot.description || ''}\n[AR-28-A-${Date.now().toString(36)}]`,
       meeting_day: snapshot.meeting_day || '',
       meeting_time: snapshot.meeting_time || '',
       meeting_location: snapshot.meeting_location || '',
@@ -623,7 +624,7 @@ test.describe('Additional Regression: Data Integrity & Safety', () => {
 
     const payloadB = {
       ...payloadA,
-      description: `${snapshot.description || ''}\n[AR-28-B-${Date.now()}]`,
+      description: `${snapshot.description || ''}\n[AR-28-B-${Date.now().toString(36)}]`,
       last_updated: staleLastUpdated
     };
 
@@ -803,7 +804,7 @@ test.describe('Additional Regression: Data Integrity & Safety', () => {
     expect(snapshot).toBeTruthy();
     expect(snapshot.last_updated).toBeTruthy();
 
-    const marker = `[AR-35-${Date.now()}]`;
+    const marker = `[AR-35-${Date.now().toString(36)}]`;
     const nextDescription = `${snapshot.description || ''}\n${marker}`;
 
     const updatePayload = {
