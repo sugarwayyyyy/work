@@ -58,6 +58,8 @@ async function apiPostJson(page, endpoint, payload) {
 }
 
 async function navigateToMessages(page) {
+  // webkit may have a pending JS redirect after login; wait for load to settle first
+  await page.waitForLoadState('load');
   await page.goto(`${BASE_URL}/pages/messages.html`);
   await page.waitForLoadState('networkidle');
   await expect(page.locator('.msg-sidebar')).toBeVisible({ timeout: 10000 });
@@ -254,6 +256,13 @@ test.describe('私訊功能', () => {
 
 // ─── 入社驗證碼功能 ───────────────────────────────────────────────────────────
 
+// 每個 browser 用各自的學生帳號，避免並行時申請狀態互相污染
+const VC_STUDENT_BY_BROWSER = {
+  chromium: STUDENT,
+  firefox:  { email: 'student_ff@univ.edu', password: 'Test123456', name: 'Firefox學生測試員' },
+  webkit:   { email: 'student_wk@univ.edu', password: 'Test123456', name: 'WebKit學生測試員' },
+};
+
 test.describe.serial('入社驗證碼功能', () => {
   /** 跨 VC 測試共用狀態（serial 模式，依序執行） */
   const shared = {
@@ -264,6 +273,9 @@ test.describe.serial('入社驗證碼功能', () => {
   };
 
   test.beforeAll(async ({ browser }) => {
+    const browserName = browser.browserType().name();
+    const vcStudent = VC_STUDENT_BY_BROWSER[browserName] ?? STUDENT;
+
     // ── Step 1: 幹部先登入，取得管理的社團清單 ──
     const adminCtx = await browser.newContext();
     const adminPage = await adminCtx.newPage();
@@ -278,7 +290,7 @@ test.describe.serial('入社驗證碼功能', () => {
     // ── Step 2: 學生登入，從幹部管理的社團中找一個尚未加入的 ──
     const studentCtx = await browser.newContext();
     const studentPage = await studentCtx.newPage();
-    await login(studentPage, STUDENT.email, STUDENT.password);
+    await login(studentPage, vcStudent.email, vcStudent.password);
     await studentPage.waitForLoadState('networkidle');
 
     const clubId = await studentPage.evaluate(async (managedIds) => {
@@ -357,6 +369,14 @@ test.describe.serial('入社驗證碼功能', () => {
   });
 
   test.afterAll(async () => {
+    // 清除 VC 測試讓學生加入的社團，避免污染下一個 browser worker 的 beforeAll
+    if (shared.studentPage && shared.clubId) {
+      try {
+        await shared.studentPage.evaluate(async (cid) => {
+          await window.APIClient.post(`clubs.php?action=leave_club&id=${cid}`, {});
+        }, shared.clubId);
+      } catch (_) { /* leave API 可能不存在或已離開，忽略 */ }
+    }
     if (shared.studentCtx) {
       await shared.studentCtx.close();
     }
