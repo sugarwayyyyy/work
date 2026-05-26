@@ -11,6 +11,13 @@ const path = require('path');
 const fs = require('fs');
 const { test, expect } = require('@playwright/test');
 
+// This file uses a shared cleanup script that removes all US15/US22 test events.
+// Keep its tests serial so one test's cleanup cannot delete another test's event mid-flow.
+test.describe.configure({ mode: 'serial' });
+// The publish-event flows also run synchronous PHP DB cleanup in afterEach.
+// Give them enough budget under the full parallel browser matrix.
+test.setTimeout(60000);
+
 function resolvePhp() {
   const candidates = [
     'C:\\xampp\\php\\php.exe',
@@ -46,6 +53,36 @@ const STUDENT = {
 };
 
 const CLEANUP_SCRIPT = path.resolve(__dirname, '../../scripts/cleanup-e2e-test-data.php');
+const SAFE_TOKEN_ALPHABET = 'mnprsuvwxyz';
+let safeTokenSequence = 0;
+
+function safeUniqueToken() {
+  let value = Date.now() + process.pid + (++safeTokenSequence);
+  let token = '';
+  do {
+    token = SAFE_TOKEN_ALPHABET[value % SAFE_TOKEN_ALPHABET.length] + token;
+    value = Math.floor(value / SAFE_TOKEN_ALPHABET.length);
+  } while (value > 0);
+  return token;
+}
+
+async function gotoWithRetry(page, url, options = {}) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await page.goto(url, options);
+    } catch (error) {
+      const message = String(error && error.message ? error.message : error);
+      const transientRefusal =
+        message.includes('NS_ERROR_CONNECTION_REFUSED') ||
+        message.includes('ERR_CONNECTION_REFUSED') ||
+        message.includes('ECONNREFUSED');
+      if (!transientRefusal || attempt === 2) {
+        throw error;
+      }
+      await page.waitForTimeout(500);
+    }
+  }
+}
 
 function cleanupE2ETestData(fullCleanup = false) {
   const args = [CLEANUP_SCRIPT];
@@ -59,7 +96,7 @@ function cleanupE2ETestData(fullCleanup = false) {
  * 登入幫助函數
  */
 async function login(page, email, password) {
-  await page.goto(`${BASE_URL}/pages/login.html`);
+  await gotoWithRetry(page, `${BASE_URL}/pages/login.html`);
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
   await Promise.all([
@@ -77,12 +114,12 @@ function toDateInputValue(date) {
 
 async function openCreateEventFormFromClubAdminDashboard(page) {
   // club-admin-club-manage.html auto-selects the first club and persists clubId in sessionStorage.
-  await page.goto(`${BASE_URL}/pages/club-admin-club-manage.html`);
+  await gotoWithRetry(page, `${BASE_URL}/pages/club-admin-club-manage.html`);
   await page.waitForLoadState('networkidle');
   await expect(page.locator('#selected-club-banner')).toBeVisible({ timeout: 15000 });
 
   // The create-event page redirects to events-list; use the events-list page directly.
-  await page.goto(`${BASE_URL}/pages/club-admin-events-list.html`);
+  await gotoWithRetry(page, `${BASE_URL}/pages/club-admin-events-list.html`);
   await page.waitForLoadState('networkidle');
   await expect(page.locator('#club-events-section')).toBeVisible({ timeout: 10000 });
 
@@ -132,7 +169,7 @@ async function publishEventAsClubAdmin(page, eventName) {
 
   await page.fill('#update-event-name', eventName);
   await page.fill('#update-event-location', '綜合教學大樓 R201');
-  await page.fill('#update-event-description', `Automated E2E event ${eventName}`);
+  await page.fill('#update-event-description', 'Automated E2E activity record');
 
   await page.fill('#update-event-date-date', toDateInputValue(startAt));
   await page.selectOption('#update-event-date-hour', String(startAt.getHours()).padStart(2, '0'));
@@ -203,7 +240,7 @@ test.afterEach(async () => {
  */
 test.describe('US 1.1: 社團列表與搜尋篩選', () => {
   test('AC1: 前台具備分類與熱門標籤介面元素', async ({ page }) => {
-    await page.goto(`${BASE_URL}/pages/club-list.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/club-list.html`);
     await page.waitForLoadState('networkidle');
     
     // 檢查分類篩選框
@@ -216,7 +253,7 @@ test.describe('US 1.1: 社團列表與搜尋篩選', () => {
   });
 
   test('AC2: 分類與標籤 OR 篩選 API 可用', async ({ page }) => {
-    await page.goto(`${BASE_URL}/pages/club-list.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/club-list.html`);
     
     // 等待頁面加載
     await page.waitForTimeout(1000);
@@ -228,7 +265,7 @@ test.describe('US 1.1: 社團列表與搜尋篩選', () => {
   });
 
   test('AC3: 空結果防呆 - 搜尋無結果顯示提示', async ({ page }) => {
-    await page.goto(`${BASE_URL}/pages/club-list.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/club-list.html`);
     await page.waitForLoadState('networkidle');
     const keyword = '__NO_MATCH__' + Date.now();
     
@@ -263,7 +300,7 @@ test.describe('US 1.3: 追蹤功能與個人動態牆', () => {
     await login(page, STUDENT.email, STUDENT.password);
     
     // 進入社團列表後前往第一個社團詳情頁，追蹤按鈕位於詳情頁
-    await page.goto(`${BASE_URL}/pages/club-list.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/club-list.html`);
     await page.waitForLoadState('networkidle');
     const detailLink = page.locator('a[href*="club-detail.html?id="]').first();
     await expect(detailLink).toBeVisible();
@@ -299,9 +336,9 @@ test.describe('US 1.3: 追蹤功能與個人動態牆', () => {
     await login(page, STUDENT.email, STUDENT.password);
     
     // 進入通知/動態頁面
-    await page.goto(`${BASE_URL}/pages/notifications.html`).catch(() => {
+    await gotoWithRetry(page, `${BASE_URL}/pages/notifications.html`).catch(() => {
       // 如果通知頁不存在，嘗試首頁
-      return page.goto(`${BASE_URL}/index.html`);
+      return gotoWithRetry(page, `${BASE_URL}/index.html`);
     });
     
     // 驗證頁面加載
@@ -320,7 +357,7 @@ test.describe('US 1.3: 追蹤功能與個人動態牆', () => {
  */
 test.describe('US 1.5: 資料時間戳', () => {
   test('AC1: 社團更新時有 last_updated 時間戳', async ({ page }) => {
-    await page.goto(`${BASE_URL}/pages/club-list.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/club-list.html`);
     await page.waitForLoadState('networkidle');
     
     // 點進社團詳情
@@ -338,15 +375,15 @@ test.describe('US 1.5: 資料時間戳', () => {
 
   test('AC2: 新發布活動在活動詳情頁顯示最新上傳時間', async ({ page }) => {
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
-    const eventName = `US15-TS-${Date.now().toString(36)}`;
+    const eventName = `US15-TS-${safeUniqueToken()}`;
 
     const { eventId } = await publishEventAsClubAdmin(page, eventName);
 
-    await page.goto(`${BASE_URL}/pages/events.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/events.html`);
     await page.waitForLoadState('networkidle');
     expect(eventId).toBeGreaterThan(0);
 
-    await page.goto(`${BASE_URL}/pages/event-detail.html?id=${eventId}`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/event-detail.html?id=${eventId}`);
     await page.waitForLoadState('load');
 
     const latestUpload = page.locator('#event-last-updated');
@@ -366,7 +403,7 @@ test.describe('US 2.1: 社團幹部編輯社團資訊', () => {
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
     
     // 進入社團管理頁面
-    await page.goto(`${BASE_URL}/pages/club-admin-dashboard.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/club-admin-dashboard.html`);
     
     await page.waitForLoadState('networkidle');
     
@@ -389,7 +426,7 @@ test.describe('US 2.2: 社團活動發布', () => {
   test('AC1: 幹部可發布活動', async ({ page }) => {
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
 
-    const eventName = `US22-PUB-${Date.now().toString(36)}`;
+    const eventName = `US22-PUB-${safeUniqueToken()}`;
     const { eventId: createdEventId } = await publishEventAsClubAdmin(page, eventName);
 
     // After creating, we're already on club-admin-events-list.html — verify the section is visible.
@@ -400,15 +437,15 @@ test.describe('US 2.2: 社團活動發布', () => {
 
   test('AC2: 發布後可在前台查到，且活動列表為近到遠排序', async ({ page }) => {
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
-    const eventName = `US22-LIST-${Date.now().toString(36)}`;
+    const eventName = `US22-LIST-${safeUniqueToken()}`;
     const { eventId } = await publishEventAsClubAdmin(page, eventName);
 
-    await page.goto(`${BASE_URL}/pages/events.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/events.html`);
     await page.waitForLoadState('networkidle');
 
     expect(eventId).toBeGreaterThan(0);
 
-    await page.goto(`${BASE_URL}/pages/event-detail.html?id=${eventId}`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/event-detail.html?id=${eventId}`);
     await page.waitForLoadState('load');
     // #event-detail is revealed in the finally block after the API call completes
     await expect(page.locator('#event-detail')).toBeVisible({ timeout: 30000 });
@@ -463,7 +500,7 @@ test.describe('US 4.1: 平台管理員功能', () => {
     await login(page, ADMIN.email, ADMIN.password);
     
     // 進入管理儀表板
-    await page.goto(`${BASE_URL}/pages/admin-dashboard.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/admin-dashboard.html`);
     
     await page.waitForLoadState('networkidle');
     
@@ -504,7 +541,7 @@ test.describe('登入與權限', () => {
   });
 
   test('密碼錯誤登入失敗', async ({ page }) => {
-    await page.goto(`${BASE_URL}/pages/login.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/login.html`);
     
     await page.fill('input[name="email"]', STUDENT.email);
     await page.fill('input[name="password"]', 'wrongpassword');
@@ -526,7 +563,7 @@ test.describe('登入與權限', () => {
  */
 test.describe('頁面可訪問性', () => {
   test('首頁可正常加載', async ({ page }) => {
-    await page.goto(`${BASE_URL}`);
+    await gotoWithRetry(page, `${BASE_URL}`);
     
     const body = page.locator('body');
     await expect(body).toBeVisible();
@@ -537,7 +574,7 @@ test.describe('頁面可訪問性', () => {
   });
 
   test('社團列表頁可正常加載', async ({ page }) => {
-    await page.goto(`${BASE_URL}/pages/club-list.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/club-list.html`);
     
     await page.waitForLoadState('networkidle');
     
@@ -546,7 +583,7 @@ test.describe('頁面可訪問性', () => {
   });
 
   test('活動頁可正常加載', async ({ page }) => {
-    await page.goto(`${BASE_URL}/pages/events.html`);
+    await gotoWithRetry(page, `${BASE_URL}/pages/events.html`);
     
     await page.waitForLoadState('networkidle');
     

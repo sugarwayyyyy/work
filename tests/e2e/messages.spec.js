@@ -58,9 +58,21 @@ async function apiPostJson(page, endpoint, payload) {
 }
 
 async function navigateToMessages(page) {
-  // webkit may have a pending JS redirect after login; wait for load to settle first
+  // WebKit can still be finishing the login redirect; retry if that navigation wins the race.
   await page.waitForLoadState('load');
-  await page.goto(`${BASE_URL}/pages/messages.html`);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await page.goto(`${BASE_URL}/pages/messages.html`, { waitUntil: 'load' });
+      break;
+    } catch (error) {
+      const message = String(error && error.message ? error.message : error);
+      if (!message.includes('interrupted by another navigation') || attempt === 2) {
+        throw error;
+      }
+      await page.waitForLoadState('load').catch(() => {});
+      await page.waitForTimeout(300);
+    }
+  }
   await page.waitForLoadState('networkidle');
   await expect(page.locator('.msg-sidebar')).toBeVisible({ timeout: 10000 });
 }
@@ -84,6 +96,38 @@ async function sendPrivateMessage(page, text) {
     page.click('#send-btn'),
   ]);
   return res;
+}
+
+function rowForMessage(page, text) {
+  return page.locator('.msg-bubble-row').filter({
+    has: page.locator('.msg-bubble').filter({ hasText: text }),
+  }).last();
+}
+
+async function openMessageMenu(page, text) {
+  const popup = page.locator('.msg-menu-popup.open');
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const row = rowForMessage(page, text);
+      await expect(row).toBeVisible({ timeout: 8000 });
+      await row.scrollIntoViewIfNeeded();
+      await row.hover();
+
+      const menuButton = row.locator('.msg-menu-btn');
+      await expect(menuButton).toBeAttached({ timeout: 5000 });
+      await menuButton.click({ force: true });
+      await expect(popup).toBeVisible({ timeout: 2000 });
+      return popup;
+    } catch (error) {
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.mouse.click(5, 5).catch(() => {});
+      await page.waitForTimeout(250);
+      if (attempt === 2) throw error;
+    }
+  }
+
+  throw new Error(`Could not open message menu for: ${text}`);
 }
 
 // ─── 私訊功能 ────────────────────────────────────────────────────────────────
@@ -129,17 +173,13 @@ test.describe('私訊功能', () => {
     await expect(bubble).toBeVisible({ timeout: 8000 });
 
     // 找到包含此 bubble 的 row，點 ⋯
-    const row = page.locator('.msg-bubble-row').filter({
-      has: page.locator('.msg-bubble--mine').filter({ hasText: msgText }),
-    }).last();
-    await row.locator('.msg-menu-btn').click();
-    await expect(page.locator('.msg-menu-popup.open')).toBeVisible({ timeout: 5000 });
+    const menu = await openMessageMenu(page, msgText);
 
     // 點收回（recallMessage 有 confirm 對話框，預先接受）
     page.once('dialog', d => d.accept());
     await Promise.all([
       page.waitForResponse(r => r.url().includes('action=recall_message'), { timeout: 12000 }),
-      page.locator('.msg-menu-popup.open .msg-menu-item--danger').click(),
+      menu.locator('.msg-menu-item--danger').click(),
     ]);
 
     await expect(
@@ -159,12 +199,8 @@ test.describe('私訊功能', () => {
     await expect(origBubble).toBeVisible({ timeout: 8000 });
 
     // 開啟選單並點回復
-    const row = page.locator('.msg-bubble-row').filter({
-      has: page.locator('.msg-bubble--mine').filter({ hasText: origText }),
-    }).last();
-    await row.locator('.msg-menu-btn').click();
-    await expect(page.locator('.msg-menu-popup.open')).toBeVisible({ timeout: 5000 });
-    await page.locator('.msg-menu-popup.open .msg-menu-item').filter({ hasText: '回復' }).click();
+    const menu = await openMessageMenu(page, origText);
+    await menu.locator('.msg-menu-item').filter({ hasText: '回復' }).click();
 
     // reply bar 應出現且有內容
     await expect(page.locator('#reply-bar')).toHaveClass(/active/, { timeout: 5000 });
@@ -191,13 +227,9 @@ test.describe('私訊功能', () => {
     const bubble = page.locator('.msg-bubble--mine').filter({ hasText: msgText }).last();
     await expect(bubble).toBeVisible({ timeout: 8000 });
 
-    const row = page.locator('.msg-bubble-row').filter({
-      has: page.locator('.msg-bubble--mine').filter({ hasText: msgText }),
-    }).last();
-    await row.locator('.msg-menu-btn').click();
-    await expect(page.locator('.msg-menu-popup.open')).toBeVisible({ timeout: 5000 });
+    const menu = await openMessageMenu(page, msgText);
 
-    const emojiBtn = page.locator('.msg-menu-popup.open .msg-menu-emoji-btn').first();
+    const emojiBtn = menu.locator('.msg-menu-emoji-btn').first();
     await Promise.all([
       page.waitForResponse(r => r.url().includes('action=toggle_reaction'), { timeout: 12000 }),
       emojiBtn.click(),
@@ -234,17 +266,13 @@ test.describe('私訊功能', () => {
     ).toBeVisible({ timeout: 8000 });
 
     // 點 ⋯ → 刪除
-    const noteRow = page.locator('#messages-area .msg-bubble-row').filter({
-      has: page.locator('.msg-bubble').filter({ hasText: noteText }),
-    }).last();
-    await noteRow.locator('.msg-menu-btn').click();
-    await expect(page.locator('.msg-menu-popup.open')).toBeVisible({ timeout: 5000 });
+    const menu = await openMessageMenu(page, noteText);
 
     // recallNoteMessage 有 confirm 對話框，預先接受
     page.once('dialog', d => d.accept());
     await Promise.all([
       page.waitForResponse(r => r.url().includes('action=recall_note_message'), { timeout: 12000 }),
-      page.locator('.msg-menu-popup.open .msg-menu-item--danger').click(),
+      menu.locator('.msg-menu-item--danger').click(),
     ]);
 
     await expect(
