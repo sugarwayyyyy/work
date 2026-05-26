@@ -761,12 +761,18 @@
         }
 
         /* ── 社團匹配測驗 ── */
+        .quiz-card {
+            position: sticky; top: 0; z-index: 10;
+            background: #fff;
+            border-bottom: 2px solid #ede9fe;
+            box-shadow: 0 2px 8px rgba(124,58,237,.07);
+        }
         .quiz-option-btn {
-            text-align: left; padding: 10px 14px;
+            text-align: left; padding: 9px 13px;
             border: 1.5px solid #e5e7eb; border-radius: 8px;
             background: #fff; cursor: pointer; width: 100%;
-            font-size: 0.875rem; color: #374151;
-            transition: border-color 0.15s, background 0.15s, color 0.15s;
+            font-size: 0.855rem; color: #374151;
+            transition: border-color .15s, background .15s, color .15s;
         }
         .quiz-option-btn:hover { border-color: #7c3aed; background: #f5f3ff; color: #4c1d95; }
     </style>
@@ -823,7 +829,7 @@
             </div>
             <!-- Bot is always at the top, hardcoded -->
             <div class="msg-bot-item" id="bot-item" onclick="openBotConversation()">
-                <div class="msg-bot-avatar" style="position:relative;">🤖<span id="bot-unread-dot" hidden style="position:absolute;top:0;right:0;width:9px;height:9px;border-radius:50%;background:#ef4444;border:1.5px solid #fff;"></span></div>
+                <div class="msg-bot-avatar">🤖</div>
                 <div class="msg-conv-info">
                     <div class="msg-conv-name">平台機器人<span class="msg-bot-badge">BOT</span></div>
                     <div class="msg-conv-preview" id="bot-preview">載入中...</div>
@@ -981,11 +987,8 @@
                 const res = await APIClient.get('messages.php?action=bot_messages');
                 if (!res || !res.success) return;
                 const msgs = res.data.messages || [];
-                const unread = msgs.filter(m => !m.is_read).length;
-                const dot = document.getElementById('bot-unread-dot');
-                if (dot) dot.hidden = unread === 0;
                 const preview = document.getElementById('bot-preview');
-                if (preview) preview.textContent = msgs.length > 0 ? msgs[0].title : '目前沒有訊息';
+                if (preview) preview.textContent = msgs.length > 0 ? msgs[msgs.length - 1].title : '目前沒有訊息';
             } catch (e) { /* silent */ }
         }
 
@@ -1056,10 +1059,6 @@
                 // Mark all bot messages as read
                 if (msgs.some(m => !m.is_read)) {
                     await APIClient.post('messages.php?action=mark_bot_read', {});
-                    const dot = document.getElementById('bot-unread-dot');
-                    if (dot) dot.hidden = true;
-                    const preview = document.getElementById('bot-preview');
-                    if (preview && msgs.length > 0) preview.textContent = msgs[0].title;
                 }
             } catch (e) {
                 area.innerHTML = '<div class="msg-placeholder"><span style="color:var(--color-text-muted);">載入失敗，請重試</span></div>';
@@ -1067,39 +1066,39 @@
         }
 
         function _renderQuizInvitation() {
-            return `<div id="bot-quiz-card" style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f3f4f6;align-items:flex-start;background:linear-gradient(135deg,#faf5ff,#f5f3ff);">
-                <div style="width:36px;height:36px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🎯</div>
+            return `<div id="bot-quiz-card" class="quiz-card" style="display:flex;align-items:center;gap:10px;padding:10px 16px;">
+                <div style="width:34px;height:34px;border-radius:8px;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">🎯</div>
                 <div style="flex:1;min-width:0;">
-                    <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;color:#4c1d95;">社團匹配測驗</div>
-                    <p style="margin:0 0 10px;color:var(--color-text,#374151);font-size:0.85rem;">不知道加入哪個社團？回答 4 個問題，讓機器人為你推薦最適合的社團！</p>
-                    <button onclick="startClubQuiz()" style="background:#7c3aed;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.85rem;">開始測驗 🎯</button>
+                    <div style="font-size:0.82rem;font-weight:600;color:#5b21b6;line-height:1.3;">社團適配測驗</div>
+                    <div style="font-size:0.73rem;color:#9ca3af;margin-top:1px;">回答 4 題，找到最適合你的社團</div>
                 </div>
+                <button onclick="startClubQuiz()" style="flex-shrink:0;background:#7c3aed;color:#fff;border:none;padding:6px 16px;border-radius:20px;cursor:pointer;font-size:0.8rem;font-weight:600;letter-spacing:.02em;">開始</button>
             </div>`;
         }
 
         function _renderQuizStep() {
             const q = QUIZ_QUESTIONS[_quizStep];
             const total = QUIZ_QUESTIONS.length;
-            const pct = Math.round((_quizStep / total) * 100);
+            const pct = Math.round(((_quizStep) / total) * 100);
             const optionsHtml = q.options.map(o =>
                 `<button class="quiz-option-btn" onclick="advanceQuiz('${o.value}')">${o.label}</button>`
             ).join('');
-            return `<div id="bot-quiz-card" style="padding:14px 16px;border-bottom:1px solid #f3f4f6;background:linear-gradient(135deg,#faf5ff,#f5f3ff);">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                    <div style="flex:1;height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;">
-                        <div style="width:${pct}%;height:100%;background:#7c3aed;border-radius:2px;transition:width 0.3s;"></div>
+            return `<div id="bot-quiz-card" class="quiz-card" style="padding:12px 16px 14px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                    <div style="flex:1;height:3px;background:#ede9fe;border-radius:2px;overflow:hidden;">
+                        <div style="width:${pct}%;height:100%;background:#7c3aed;border-radius:2px;transition:width .3s;"></div>
                     </div>
-                    <span style="font-size:0.75rem;color:#6b7280;white-space:nowrap;">第 ${_quizStep + 1} / ${total} 題</span>
+                    <span style="font-size:0.72rem;color:#9ca3af;white-space:nowrap;font-weight:500;">${_quizStep + 1} / ${total}</span>
                 </div>
-                <div style="font-weight:600;font-size:0.9rem;color:#4c1d95;margin-bottom:10px;">${q.text}</div>
+                <div style="font-size:0.88rem;font-weight:600;color:#1f2937;margin-bottom:10px;">${q.text}</div>
                 <div style="display:flex;flex-direction:column;gap:6px;">${optionsHtml}</div>
             </div>`;
         }
 
         function _renderQuizLoading() {
-            return `<div id="bot-quiz-card" style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #f3f4f6;background:linear-gradient(135deg,#faf5ff,#f5f3ff);">
+            return `<div id="bot-quiz-card" class="quiz-card" style="display:flex;align-items:center;gap:10px;padding:11px 16px;">
                 <div class="msg-spinner"></div>
-                <span style="color:#6b7280;font-size:0.88rem;">正在為你尋找最適合的社團…</span>
+                <span style="color:#7c3aed;font-size:0.84rem;font-weight:500;">正在為你分析最適合的社團…</span>
             </div>`;
         }
 
@@ -1133,38 +1132,34 @@
                     `messages.php?action=quiz_recommend&category=${encodeURIComponent(category)}&intensity=${encodeURIComponent(intensity)}&budget=${encodeURIComponent(budget)}`
                 );
                 if (res && res.success) {
-                    _renderQuizResultInline(res.data.clubs || []);
+                    // 恢復常駐卡，結果顯示在訊息串流中
+                    const qCard = document.getElementById('bot-quiz-card');
+                    if (qCard) qCard.outerHTML = _renderQuizInvitation();
+                    await _reloadBotMessageFeed();
                 } else {
                     throw new Error(res?.message || '取得推薦失敗');
                 }
             } catch (e) {
                 const errCard = document.getElementById('bot-quiz-card');
-                if (errCard) errCard.outerHTML = `<div id="bot-quiz-card" style="padding:14px 16px;border-bottom:1px solid #f3f4f6;background:linear-gradient(135deg,#faf5ff,#f5f3ff);">
-                    <p style="color:#dc2626;font-size:0.88rem;margin:0 0 8px;">取得推薦時發生錯誤，請稍後再試。</p>
-                    <button onclick="startClubQuiz()" style="background:#7c3aed;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.85rem;">重新測驗</button>
+                if (errCard) errCard.outerHTML = `<div id="bot-quiz-card" class="quiz-card" style="display:flex;align-items:center;gap:10px;padding:10px 16px;">
+                    <span style="color:#dc2626;font-size:0.83rem;flex:1;">取得推薦時發生錯誤，請稍後再試。</span>
+                    <button onclick="startClubQuiz()" style="flex-shrink:0;background:#7c3aed;color:#fff;border:none;padding:5px 14px;border-radius:20px;cursor:pointer;font-size:0.8rem;font-weight:600;">重試</button>
                 </div>`;
             }
         }
 
-        function _renderQuizResultInline(clubs) {
-            const clubsHtml = clubs.length === 0
-                ? `<p style="color:var(--color-text-muted,#6b7280);font-size:0.85rem;margin:0 0 10px;">目前找不到完全符合條件的社團，可嘗試放寬條件後重新測驗。</p>`
-                : clubs.map(c => `<div style="background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
-                    <div style="font-weight:600;font-size:0.88rem;color:#4c1d95;">${PageUtils.escapeHtml(c.club_name)}</div>
-                    <div style="font-size:0.75rem;color:#7c3aed;margin:2px 0 4px;">${PageUtils.escapeHtml(c.category_name || '')}${c.member_count ? ' · ' + c.member_count + ' 人' : ''}</div>
-                    ${c.description ? `<div style="font-size:0.82rem;color:#374151;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${PageUtils.escapeHtml(c.description)}</div>` : ''}
-                    ${c.meeting_day ? `<div style="font-size:0.75rem;color:#6b7280;margin-top:4px;">📅 ${PageUtils.escapeHtml(c.meeting_day)}${c.meeting_time ? ' ' + PageUtils.escapeHtml(c.meeting_time) : ''}</div>` : ''}
-                    <a href="club-detail.html?id=${c.club_id}" style="display:inline-block;margin-top:6px;font-size:0.78rem;color:#7c3aed;text-decoration:none;">查看社團 →</a>
-                </div>`).join('');
-            const card = document.getElementById('bot-quiz-card');
-            if (card) card.outerHTML = `<div id="bot-quiz-card" style="padding:14px 16px;border-bottom:1px solid #f3f4f6;background:linear-gradient(135deg,#faf5ff,#f5f3ff);">
-                <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;">
-                    <div style="width:32px;height:32px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">🎯</div>
-                    <div style="font-weight:600;font-size:0.88rem;color:#4c1d95;">社團匹配結果</div>
-                </div>
-                ${clubsHtml}
-                <button onclick="startClubQuiz()" style="background:#f3f4f6;color:#374151;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;margin-top:4px;">重新測驗</button>
-            </div>`;
+        async function _reloadBotMessageFeed() {
+            const area = document.getElementById('messages-area');
+            if (!area) return;
+            try {
+                const res = await APIClient.get('messages.php?action=bot_messages');
+                if (!res?.success) return;
+                const msgs = res.data.messages || [];
+                const quizCard = document.getElementById('bot-quiz-card');
+                const quizHtml = quizCard ? quizCard.outerHTML : _renderQuizInvitation();
+                area.innerHTML = quizHtml + msgs.map(msg => renderBotCard(msg)).join('');
+                area.scrollTop = area.scrollHeight;
+            } catch (_) {}
         }
 
         function renderBotMessages(msgs, area) {
@@ -1194,22 +1189,25 @@
             if (msg.message_type === 'club_match_result') {
                 const clubs = meta.clubs || [];
                 const clubsHtml = clubs.length === 0
-                    ? `<p style="color:var(--color-text-muted,#6b7280);font-size:0.85rem;margin:0 0 10px;">目前找不到符合條件的社團，可重新測驗調整條件。</p>`
-                    : clubs.map(c => `<div style="background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
-                        <div style="font-weight:600;font-size:0.88rem;color:#4c1d95;">${PageUtils.escapeHtml(c.club_name)}</div>
-                        <div style="font-size:0.75rem;color:#7c3aed;margin:2px 0 4px;">${PageUtils.escapeHtml(c.category_name || '')}${c.member_count ? ' · ' + c.member_count + ' 人' : ''}</div>
-                        ${c.description ? `<div style="font-size:0.82rem;color:#374151;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${PageUtils.escapeHtml(c.description)}</div>` : ''}
-                        ${c.meeting_day ? `<div style="font-size:0.75rem;color:#6b7280;margin-top:4px;">📅 ${PageUtils.escapeHtml(c.meeting_day)}${c.meeting_time ? ' ' + PageUtils.escapeHtml(c.meeting_time) : ''}</div>` : ''}
-                        <a href="club-detail.html?id=${c.club_id}" style="display:inline-block;margin-top:6px;font-size:0.78rem;color:#7c3aed;text-decoration:none;">查看社團 →</a>
+                    ? `<p style="color:var(--color-text-muted,#6b7280);font-size:0.83rem;margin:0;">目前找不到符合條件的社團，可重新測驗調整條件。</p>`
+                    : clubs.map(c => `<div style="border:1px solid #e9d5ff;border-radius:10px;padding:10px 12px;margin-bottom:6px;background:#faf5ff;">
+                        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:3px;">
+                            <span style="font-weight:700;font-size:0.88rem;color:#1f2937;">${PageUtils.escapeHtml(c.club_name)}</span>
+                            <span style="font-size:0.7rem;color:#7c3aed;background:#ede9fe;border-radius:4px;padding:1px 6px;">${PageUtils.escapeHtml(c.category_name || '')}</span>
+                        </div>
+                        ${c.description ? `<div style="font-size:0.8rem;color:#6b7280;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:6px;">${PageUtils.escapeHtml(c.description)}</div>` : ''}
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            ${c.meeting_day ? `<span style="font-size:0.72rem;color:#9ca3af;">📅 ${PageUtils.escapeHtml(c.meeting_day)}</span>` : '<span></span>'}
+                            <a href="club-detail.html?id=${c.club_id}" style="font-size:0.78rem;color:#7c3aed;text-decoration:none;font-weight:600;white-space:nowrap;">查看社團 →</a>
+                        </div>
                     </div>`).join('');
-                return `<div style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f3f4f6;align-items:flex-start;">
-                    <div style="width:36px;height:36px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">🎯</div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;color:var(--color-text-strong,#111827);">社團匹配結果${unreadDot}</div>
-                        <p style="margin:0 0 10px;color:var(--color-text,#374151);font-size:0.85rem;">${PageUtils.escapeHtml(msg.content)}</p>
-                        ${clubsHtml}
-                        <div style="font-size:0.75rem;color:var(--color-text-muted,#9ca3af);margin-top:8px;">${time}</div>
+                return `<div style="padding:12px 16px;border-bottom:1px solid #f3f4f6;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                        <span style="font-size:1rem;">🎯</span>
+                        <span style="font-size:0.82rem;font-weight:600;color:#5b21b6;flex:1;">社團適配結果</span>
+                        <span style="font-size:0.72rem;color:#9ca3af;">${time}</span>
                     </div>
+                    ${clubsHtml}
                 </div>`;
             }
 

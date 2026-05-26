@@ -267,7 +267,7 @@ class MessagesAPI {
         try {
             $messages = Database::getInstance()->fetchAll(
                 'SELECT message_id, message_type, title, content, meta, is_read, created_at
-                 FROM bot_messages WHERE user_id = ? ORDER BY created_at DESC LIMIT 50',
+                 FROM bot_messages WHERE user_id = ? ORDER BY created_at ASC LIMIT 50',
                 [$uid]
             );
             foreach ($messages as &$msg) {
@@ -517,6 +517,16 @@ class MessagesAPI {
         if (!in_array($category, $validCats, true)) {
             Helper::error('無效的社團類別', 400);
         }
+        // Map frontend display names to actual DB category_name values
+        $catMap = [
+            '體育性' => '運動',
+            '學術性' => '學術',
+            '藝文性' => '藝文',
+            '服務性' => '服務',
+            '休閒性' => '休閒',
+        ];
+        $dbCategory = $catMap[$category] ?? $category;
+
         if (!in_array($budget, ['0', '500', 'any'], true)) $budget = 'any';
         if (!in_array($intensity, ['light', 'active', 'any'], true)) $intensity = 'any';
 
@@ -558,7 +568,7 @@ class MessagesAPI {
                    END,
                    member_count DESC
                  LIMIT 3",
-                [$category, $uid]
+                [$dbCategory, $uid]
             );
 
             dbInsert('bot_messages', [
@@ -584,10 +594,11 @@ if ($method === 'GET') {
     if ($action === 'thread')           { MessagesAPI::getThread(); }
     elseif ($action === 'search_user')  { MessagesAPI::searchUser(); }
     elseif ($action === 'unread_count') { MessagesAPI::getUnreadCount(); }
-    elseif ($action === 'bot_messages') { MessagesAPI::getBotMessages(); }
-    elseif ($action === 'note')          { MessagesAPI::getNote(); }
-    elseif ($action === 'note_messages') { MessagesAPI::getNoteMessages(); }
-    else                                 { MessagesAPI::getConversations(); }
+    elseif ($action === 'bot_messages')   { MessagesAPI::getBotMessages(); }
+    elseif ($action === 'note')           { MessagesAPI::getNote(); }
+    elseif ($action === 'note_messages')  { MessagesAPI::getNoteMessages(); }
+    elseif ($action === 'quiz_recommend') { MessagesAPI::quizRecommend(); }
+    else                                  { MessagesAPI::getConversations(); }
 }
 
 if ($method === 'POST') {
@@ -599,7 +610,6 @@ if ($method === 'POST') {
     elseif ($action === 'recall_note_message') { MessagesAPI::recallNoteMessage($data); }
     elseif ($action === 'toggle_reaction')     { MessagesAPI::toggleReaction($data); }
     elseif ($action === 'verify_join_code')   { MessagesAPI::verifyJoinCode($data); }
-    elseif ($action === 'quiz_recommend')     { MessagesAPI::quizRecommend(); }
 }
 
 Helper::error('無效的請求', 400);
