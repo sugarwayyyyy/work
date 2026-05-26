@@ -210,6 +210,7 @@ const STUDENT    = { email: 'student@univ.edu',    password: 'Test123456', role:
 - **`reuseExistingServer: true`（非 CI）**：本機 port 8000 若已有服務在跑，Playwright 會直接使用。若有異常請先確認 port 沒被其他程式佔用。
 - **勿使用 `page.waitForNavigation()`**：此 API 在較新版 Playwright 已棄用，改用 `page.waitForURL()` 或 `page.waitForLoadState()`。
 - **Firefox sandbox**：Windows 上 Firefox 需停用 sandbox（已設定於 `playwright.config.js`），不需要額外處理。
+- **內容過濾器陷阱**：活動名稱、社團說明等受內容過濾器審查的欄位，不可直接嵌入 `Date.now()` 數字（13 位數時間戳約有 11% 機率含 `78` 等被禁數字，導致 HTTP 400）；改用 `Date.now().toString(36)` 轉 base-36 字串。
 
 ## 常見問題
 
