@@ -440,15 +440,11 @@ test.describe('US 2.2: 社團活動發布', () => {
     const eventName = `US22-LIST-${safeUniqueToken()}`;
     const { eventId } = await publishEventAsClubAdmin(page, eventName);
 
-    await gotoWithRetry(page, `${BASE_URL}/pages/events.html`);
-    await page.waitForLoadState('networkidle');
-
     expect(eventId).toBeGreaterThan(0);
 
     await gotoWithRetry(page, `${BASE_URL}/pages/event-detail.html?id=${eventId}`);
-    await page.waitForLoadState('load');
-    // #event-detail is revealed in the finally block after the API call completes
-    await expect(page.locator('#event-detail')).toBeVisible({ timeout: 30000 });
+    // #event-detail is revealed after the API call completes
+    await expect(page.locator('#event-detail')).toBeVisible({ timeout: 15000 });
 
     const sortedCheck = await page.evaluate(async () => {
       const response = await window.APIClient.get('events.php?page=1&filter=open');

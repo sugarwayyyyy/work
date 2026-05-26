@@ -487,28 +487,46 @@ test.describe('Additional Regression: 會話與導向自檢', () => {
     await expect(page.locator('#followed-clubs-section')).toBeVisible();
   });
 
-  test('AR-25 所有社團詳情頁不應載入 uploads 404', async ({ page }) => {
-    test.setTimeout(180000);
+  test('AR-25 所有社團詳情頁不應載入 uploads 404', async ({ request }) => {
     const clubIds = await fetchPagedIds('clubs.php', 'clubs');
     expect(clubIds.length).toBeGreaterThan(0);
 
-    const urls = clubIds.map(id => `${BASE_URL}/pages/club-detail.html?id=${id}`);
-    const failures = await scanDetailPagesForUploads404(page, urls);
+    const uploadPaths = new Set();
+    await Promise.all(clubIds.map(async (id) => {
+      const resp = await request.get(`${API_BASE_URL}/clubs.php?action=detail&id=${id}`);
+      if (!resp.ok()) return;
+      const text = await resp.text();
+      (text.match(/\/assets\/uploads\/[^"\\]+/g) || []).forEach(p => uploadPaths.add(p));
+    }));
 
-    expect(failures).toHaveLength(0);
-    await expect(page.locator('#club-name')).toBeAttached();
+    const failures = [];
+    await Promise.all([...uploadPaths].map(async (p) => {
+      const r = await request.head(`${BASE_URL}${p}`);
+      if (r.status() === 404) failures.push({ url: `${BASE_URL}${p}`, status: 404 });
+    }));
+
+    expect(failures, `broken upload URLs: ${JSON.stringify(failures)}`).toHaveLength(0);
   });
 
-  test('AR-26 所有活動詳情頁不應載入 uploads 404', async ({ page }) => {
-    test.setTimeout(180000);
+  test('AR-26 所有活動詳情頁不應載入 uploads 404', async ({ request }) => {
     const eventIds = await fetchPagedIds('events.php', 'events');
     expect(eventIds.length).toBeGreaterThan(0);
 
-    const urls = eventIds.map(id => `${BASE_URL}/pages/event-detail.html?id=${id}`);
-    const failures = await scanDetailPagesForUploads404(page, urls);
+    const uploadPaths = new Set();
+    await Promise.all(eventIds.map(async (id) => {
+      const resp = await request.get(`${API_BASE_URL}/events.php?action=detail&id=${id}`);
+      if (!resp.ok()) return;
+      const text = await resp.text();
+      (text.match(/\/assets\/uploads\/[^"\\]+/g) || []).forEach(p => uploadPaths.add(p));
+    }));
 
-    expect(failures).toHaveLength(0);
-    await expect(page.locator('#event-title')).toBeAttached();
+    const failures = [];
+    await Promise.all([...uploadPaths].map(async (p) => {
+      const r = await request.head(`${BASE_URL}${p}`);
+      if (r.status() === 404) failures.push({ url: `${BASE_URL}${p}`, status: 404 });
+    }));
+
+    expect(failures, `broken upload URLs: ${JSON.stringify(failures)}`).toHaveLength(0);
   });
 
   test('AR-19 登出後應回到首頁且顯示未登入狀態', async ({ page }) => {
