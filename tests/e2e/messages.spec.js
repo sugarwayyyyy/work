@@ -58,7 +58,21 @@ async function apiPostJson(page, endpoint, payload) {
 }
 
 async function navigateToMessages(page) {
-  await page.goto(`${BASE_URL}/pages/messages.html`);
+  // WebKit can still be finishing the login redirect; retry if that navigation wins the race.
+  await page.waitForLoadState('load');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await page.goto(`${BASE_URL}/pages/messages.html`, { waitUntil: 'load' });
+      break;
+    } catch (error) {
+      const message = String(error && error.message ? error.message : error);
+      if (!message.includes('interrupted by another navigation') || attempt === 2) {
+        throw error;
+      }
+      await page.waitForLoadState('load').catch(() => {});
+      await page.waitForTimeout(300);
+    }
+  }
   await page.waitForLoadState('networkidle');
   await expect(page.locator('.msg-sidebar')).toBeVisible({ timeout: 10000 });
 }
@@ -82,6 +96,38 @@ async function sendPrivateMessage(page, text) {
     page.click('#send-btn'),
   ]);
   return res;
+}
+
+function rowForMessage(page, text) {
+  return page.locator('.msg-bubble-row').filter({
+    has: page.locator('.msg-bubble').filter({ hasText: text }),
+  }).last();
+}
+
+async function openMessageMenu(page, text) {
+  const popup = page.locator('.msg-menu-popup.open');
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const row = rowForMessage(page, text);
+      await expect(row).toBeVisible({ timeout: 8000 });
+      await row.scrollIntoViewIfNeeded();
+      await row.hover();
+
+      const menuButton = row.locator('.msg-menu-btn');
+      await expect(menuButton).toBeAttached({ timeout: 5000 });
+      await menuButton.click({ force: true });
+      await expect(popup).toBeVisible({ timeout: 2000 });
+      return popup;
+    } catch (error) {
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.mouse.click(5, 5).catch(() => {});
+      await page.waitForTimeout(250);
+      if (attempt === 2) throw error;
+    }
+  }
+
+  throw new Error(`Could not open message menu for: ${text}`);
 }
 
 // ─── 私訊功能 ────────────────────────────────────────────────────────────────
@@ -127,17 +173,13 @@ test.describe('私訊功能', () => {
     await expect(bubble).toBeVisible({ timeout: 8000 });
 
     // 找到包含此 bubble 的 row，點 ⋯
-    const row = page.locator('.msg-bubble-row').filter({
-      has: page.locator('.msg-bubble--mine').filter({ hasText: msgText }),
-    }).last();
-    await row.locator('.msg-menu-btn').click();
-    await expect(page.locator('.msg-menu-popup.open')).toBeVisible({ timeout: 5000 });
+    const menu = await openMessageMenu(page, msgText);
 
     // 點收回（recallMessage 有 confirm 對話框，預先接受）
     page.once('dialog', d => d.accept());
     await Promise.all([
       page.waitForResponse(r => r.url().includes('action=recall_message'), { timeout: 12000 }),
-      page.locator('.msg-menu-popup.open .msg-menu-item--danger').click(),
+      menu.locator('.msg-menu-item--danger').click(),
     ]);
 
     await expect(
@@ -157,12 +199,8 @@ test.describe('私訊功能', () => {
     await expect(origBubble).toBeVisible({ timeout: 8000 });
 
     // 開啟選單並點回復
-    const row = page.locator('.msg-bubble-row').filter({
-      has: page.locator('.msg-bubble--mine').filter({ hasText: origText }),
-    }).last();
-    await row.locator('.msg-menu-btn').click();
-    await expect(page.locator('.msg-menu-popup.open')).toBeVisible({ timeout: 5000 });
-    await page.locator('.msg-menu-popup.open .msg-menu-item').filter({ hasText: '回復' }).click();
+    const menu = await openMessageMenu(page, origText);
+    await menu.locator('.msg-menu-item').filter({ hasText: '回復' }).click();
 
     // reply bar 應出現且有內容
     await expect(page.locator('#reply-bar')).toHaveClass(/active/, { timeout: 5000 });
@@ -189,13 +227,9 @@ test.describe('私訊功能', () => {
     const bubble = page.locator('.msg-bubble--mine').filter({ hasText: msgText }).last();
     await expect(bubble).toBeVisible({ timeout: 8000 });
 
-    const row = page.locator('.msg-bubble-row').filter({
-      has: page.locator('.msg-bubble--mine').filter({ hasText: msgText }),
-    }).last();
-    await row.locator('.msg-menu-btn').click();
-    await expect(page.locator('.msg-menu-popup.open')).toBeVisible({ timeout: 5000 });
+    const menu = await openMessageMenu(page, msgText);
 
-    const emojiBtn = page.locator('.msg-menu-popup.open .msg-menu-emoji-btn').first();
+    const emojiBtn = menu.locator('.msg-menu-emoji-btn').first();
     await Promise.all([
       page.waitForResponse(r => r.url().includes('action=toggle_reaction'), { timeout: 12000 }),
       emojiBtn.click(),
@@ -232,17 +266,13 @@ test.describe('私訊功能', () => {
     ).toBeVisible({ timeout: 8000 });
 
     // 點 ⋯ → 刪除
-    const noteRow = page.locator('#messages-area .msg-bubble-row').filter({
-      has: page.locator('.msg-bubble').filter({ hasText: noteText }),
-    }).last();
-    await noteRow.locator('.msg-menu-btn').click();
-    await expect(page.locator('.msg-menu-popup.open')).toBeVisible({ timeout: 5000 });
+    const menu = await openMessageMenu(page, noteText);
 
     // recallNoteMessage 有 confirm 對話框，預先接受
     page.once('dialog', d => d.accept());
     await Promise.all([
       page.waitForResponse(r => r.url().includes('action=recall_note_message'), { timeout: 12000 }),
-      page.locator('.msg-menu-popup.open .msg-menu-item--danger').click(),
+      menu.locator('.msg-menu-item--danger').click(),
     ]);
 
     await expect(
@@ -254,6 +284,13 @@ test.describe('私訊功能', () => {
 
 // ─── 入社驗證碼功能 ───────────────────────────────────────────────────────────
 
+// 每個 browser 用各自的學生帳號，避免並行時申請狀態互相污染
+const VC_STUDENT_BY_BROWSER = {
+  chromium: STUDENT,
+  firefox:  { email: 'student_ff@univ.edu', password: 'Test123456', name: 'Firefox學生測試員' },
+  webkit:   { email: 'student_wk@univ.edu', password: 'Test123456', name: 'WebKit學生測試員' },
+};
+
 test.describe.serial('入社驗證碼功能', () => {
   /** 跨 VC 測試共用狀態（serial 模式，依序執行） */
   const shared = {
@@ -263,36 +300,41 @@ test.describe.serial('入社驗證碼功能', () => {
     studentPage: null,
   };
 
-  // 所有瀏覽器共用同一個 student@univ.edu 帳號，並行執行會導致資料庫競爭；
-  // API 行為與瀏覽器無關，僅在 chromium 上執行即可涵蓋完整功能驗證。
-  test.beforeAll(async ({ browser, browserName }) => {
-    test.skip(browserName !== 'chromium');
-    // ── Step 1: 學生申請加入 CSC001（由 clubadmin@univ.edu 管理的社團）──
-    const studentCtx = await browser.newContext();
-    const studentPage = await studentCtx.newPage();
-    await login(studentPage, STUDENT.email, STUDENT.password);
-    await studentPage.waitForLoadState('networkidle');
+  test.beforeAll(async ({ browser }) => {
+    const browserName = browser.browserType().name();
+    const vcStudent = VC_STUDENT_BY_BROWSER[browserName] ?? STUDENT;
 
-    // 找 CSC001 的 club_id（clubadmin 管理的社團）
-    const clubId = await studentPage.evaluate(async () => {
-      const listRes = await window.APIClient.get('clubs.php?action=list&limit=50');
-      const clubs = listRes?.data?.clubs || [];
-      const c = clubs.find(x => x.club_code === 'CSC001');
-      return c?.club_id ?? null;
+    // ── Step 1: 幹部先登入，取得管理的社團清單 ──
+    const adminCtx = await browser.newContext();
+    const adminPage = await adminCtx.newPage();
+    await login(adminPage, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    await adminPage.waitForLoadState('networkidle');
+
+    const adminManagedClubIds = await adminPage.evaluate(async () => {
+      const res = await window.APIClient.get('club-admin.php?action=my_clubs');
+      return (res?.data?.clubs || []).map(c => Number(c.club_id));
     });
 
-    expect(clubId, '找不到 CSC001，請確認 seed 資料').not.toBeNull();
+    // ── Step 2: 學生登入，從幹部管理的社團中找一個尚未加入的 ──
+    const studentCtx = await browser.newContext();
+    const studentPage = await studentCtx.newPage();
+    await login(studentPage, vcStudent.email, vcStudent.password);
+    await studentPage.waitForLoadState('networkidle');
+
+    const clubId = await studentPage.evaluate(async (managedIds) => {
+      for (const cid of managedIds) {
+        const detailRes = await window.APIClient.get(`clubs.php?action=detail&id=${cid}`);
+        if (detailRes?.success && !detailRes.data?.is_member) {
+          return cid;
+        }
+      }
+      return null;
+    }, adminManagedClubIds);
+
+    expect(clubId, '找不到可申請且由 CLUB_ADMIN 管理的社團，請確認 seed 資料').not.toBeNull();
     shared.clubId = clubId;
 
-    // 若學生已是成員（seed 預設加入），先退出以重置狀態
-    const detailRes = await studentPage.evaluate(async (cid) => {
-      return window.APIClient.get(`clubs.php?action=detail&id=${cid}`);
-    }, clubId);
-    if (detailRes?.data?.is_member) {
-      await apiPostJson(studentPage, `clubs.php?action=leave_club&id=${clubId}`, {});
-    }
-
-    // 提出加入申請（retry 安全：若已有驗證碼則跳過）
+    // ── Step 3: 學生提出加入申請（retry 安全：若已有驗證碼或已有待審核申請則跳過 assert）──
     const applyRes = await apiPostJson(
       studentPage,
       `clubs.php?action=apply_join&id=${clubId}`,
@@ -301,48 +343,51 @@ test.describe.serial('入社驗證碼功能', () => {
     const alreadyApproved = !applyRes.body.success &&
       String(applyRes.body.message || '').includes('已取得驗證碼');
     const alreadyPending = !applyRes.body.success &&
-      String(applyRes.body.message || '').includes('已有待審核的申請');
-    if (!alreadyApproved && !alreadyPending) {
+      String(applyRes.body.message || '').includes('已有待審核');
+    const alreadyMember = !applyRes.body.success &&
+      String(applyRes.body.message || '').includes('已是社團成員');
+    if (!alreadyApproved && !alreadyPending && !alreadyMember) {
       expect(applyRes.body.success, `申請失敗: ${applyRes.body.message}`).toBe(true);
     }
 
     if (!alreadyApproved) {
-      // ── Step 2: 幹部批准申請 ──
-      const adminCtx = await browser.newContext();
-      const adminPage = await adminCtx.newPage();
-      await login(adminPage, CLUB_ADMIN.email, CLUB_ADMIN.password);
-      await adminPage.waitForLoadState('networkidle');
-
-      // 取得 pending 申請 ID
+      // ── Step 4: 幹部批准申請（parallel browser 可能已批准，找不到 pending 時跳過）──
       const appId = await adminPage.evaluate(async (cid) => {
         const res = await window.APIClient.get(`club-admin.php?action=join_applications&id=${cid}`);
         const apps = res?.data?.applications || [];
         return apps.find(a => a.status === 'pending')?.application_id ?? null;
       }, clubId);
 
-      expect(appId, '找不到 pending 申請').not.toBeNull();
-
-      const approveRes = await apiPostJson(
-        adminPage,
-        'club-admin.php?action=review_application',
-        { application_id: appId, action: 'approve' }
-      );
-      expect(approveRes.body.success, `批准失敗: ${approveRes.body.message}`).toBe(true);
-      await adminCtx.close();
+      if (appId) {
+        // 不 assert 成功：另一個 browser worker 可能同時批准
+        await apiPostJson(
+          adminPage,
+          'club-admin.php?action=review_application',
+          { application_id: appId, action: 'approve' }
+        );
+      } else if (!alreadyPending && !alreadyMember) {
+        expect(appId, '找不到 pending 申請').not.toBeNull();
+      }
     }
+    await adminCtx.close();
 
-    // ── Step 3: 從 bot_messages 取出驗證碼（meta 已由伺服器解碼為物件）──
-    const verificationCode = await studentPage.evaluate(async (cid) => {
-      const res = await window.APIClient.get('messages.php?action=bot_messages');
-      const msgs = res?.data?.messages || [];
-      const vm = msgs.find(m => {
-        const meta = m.meta && typeof m.meta === 'object' ? m.meta : {};
-        return m.message_type === 'join_verification' && Number(meta.club_id) === Number(cid);
-      });
-      if (!vm) return null;
-      const meta = vm.meta && typeof vm.meta === 'object' ? vm.meta : {};
-      return meta.verification_code ?? null;
-    }, clubId);
+    // ── Step 5: 從 bot_messages 取出驗證碼（輪詢等待 parallel browser 批准完成）──
+    let verificationCode = null;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      verificationCode = await studentPage.evaluate(async (cid) => {
+        const res = await window.APIClient.get('messages.php?action=bot_messages');
+        const msgs = res?.data?.messages || [];
+        const vm = msgs.find(m => {
+          const meta = m.meta && typeof m.meta === 'object' ? m.meta : {};
+          return m.message_type === 'join_verification' && Number(meta.club_id) === Number(cid);
+        });
+        if (!vm) return null;
+        const meta = vm.meta && typeof vm.meta === 'object' ? vm.meta : {};
+        return meta.verification_code ?? null;
+      }, clubId);
+      if (verificationCode) break;
+      await studentPage.waitForTimeout(1000);
+    }
 
     expect(verificationCode, 'bot_messages 中找不到驗證碼').not.toBeNull();
 
@@ -352,6 +397,14 @@ test.describe.serial('入社驗證碼功能', () => {
   });
 
   test.afterAll(async () => {
+    // 清除 VC 測試讓學生加入的社團，避免污染下一個 browser worker 的 beforeAll
+    if (shared.studentPage && shared.clubId) {
+      try {
+        await shared.studentPage.evaluate(async (cid) => {
+          await window.APIClient.post(`clubs.php?action=leave_club&id=${cid}`, {});
+        }, shared.clubId);
+      } catch (_) { /* leave API 可能不存在或已離開，忽略 */ }
+    }
     if (shared.studentCtx) {
       await shared.studentCtx.close();
     }

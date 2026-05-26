@@ -40,7 +40,7 @@ php run_migration.php
 npm test
 ```
 
-預期結果：**162 個測試全數通過**（Chromium、Firefox、WebKit 三瀏覽器各 54 個）。
+預期結果：全部測試通過（Chromium、Firefox、WebKit 三瀏覽器）。
 
 測試開始前，`global-setup.js` 會自動執行完整的資料清理（`--full`）與 seed，不需要手動準備測試資料。
 
@@ -68,13 +68,14 @@ npx playwright show-report                    # 開啟 HTML 測試報告
 
 ```
 tests/e2e/
-├── user-stories.spec.js        # 主要使用者故事測試（US 1.1–4.1 + 登入/頁面可訪問性）
+├── user-stories.spec.js          # 主要使用者故事測試（US 1.1–4.1 + 登入/頁面可訪問性）
 ├── additional-regression.spec.js # 補充迴歸測試（AR-01–AR-40）
-├── global-setup.js             # 測試前自動清理 + seed 資料
-├── global-teardown.js          # 測試後清理
-├── dev-router.php              # Playwright webServer 路由（整合前後端）
-├── RUNNING_TESTS.md            # 本文件
-└── README.md                   # 詳細說明文件
+├── messages.spec.js              # 私訊與入社驗證碼功能測試（PM-01–PM-07、VC-01–VC-03）
+├── global-setup.js               # 測試前自動清理 + seed 資料
+├── global-teardown.js            # 測試後清理
+├── dev-router.php                # Playwright webServer 路由（整合前後端）
+├── RUNNING_TESTS.md              # 本文件
+└── README.md                     # 詳細說明文件
 ```
 
 ### 測試覆蓋範圍

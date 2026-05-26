@@ -4,7 +4,7 @@ require_once __DIR__ . '/../backend/config.php';
 
 $eventNamePrefixes = ['US15-TS-', 'US22-PUB-', 'US22-LIST-', 'US22 活動 '];
 $eventDescriptionNeedles = ['E2E 自動化建立活動：', 'Automated E2E event ', 'US22 活動內容'];
-$seededUserEmails = ['admin@univ.edu', 'clubadmin@univ.edu', 'student@univ.edu'];
+$seededUserEmails = ['admin@univ.edu', 'clubadmin@univ.edu', 'student@univ.edu', 'student_ff@univ.edu', 'student_wk@univ.edu'];
 $seededFollowClubCodes = ['CSC001', '090'];
 $seededEventNames = ['程式社期初說明會', '演算法工作坊', '羽球新生體驗日', '上學期舊活動（過期）', '健言社公開演講賽'];
 $seededAnnouncementTitles = ['社團博覽會公告', '平台維護通知'];
@@ -96,6 +96,24 @@ function cleanupAcceptanceStoryClubPollution(mysqli $conn): void {
     $stmt->bind_param('ss', $fallbackName, $fallbackDescription);
     $stmt->execute();
     $stmt->close();
+
+    // TST001 is used by webkit AR-28; reset description if polluted
+    $fallbackNameTst = '測試社';
+    $fallbackDescriptionTst = 'E2E 測試用社團';
+    $stmtTst = $conn->prepare(
+        'UPDATE clubs
+         SET club_name = ?,
+             description = ?,
+             last_updated = NOW()
+         WHERE club_code = "TST001"
+           AND description LIKE "%[AR-28-%"'
+    );
+    if ($stmtTst === false) {
+        throw new RuntimeException($conn->error);
+    }
+    $stmtTst->bind_param('ss', $fallbackNameTst, $fallbackDescriptionTst);
+    $stmtTst->execute();
+    $stmtTst->close();
 }
 
 function deleteWhereIn(mysqli $conn, string $table, string $column, array $ids): int {
@@ -202,11 +220,12 @@ try {
         cleanupAcceptanceStoryClubPollution($db);
     }
 
-    $userStmt = $db->prepare('SELECT user_id, email FROM users WHERE email IN (?, ?, ?)');
+    $userPlaceholders = implode(',', array_fill(0, count($seededUserEmails), '?'));
+    $userStmt = $db->prepare("SELECT user_id, email FROM users WHERE email IN ({$userPlaceholders})");
     if ($userStmt === false) {
         throw new RuntimeException($db->error);
     }
-    $userStmt->bind_param('sss', ...$seededUserEmails);
+    $userStmt->bind_param(str_repeat('s', count($seededUserEmails)), ...$seededUserEmails);
     $userStmt->execute();
     $userResult = $userStmt->get_result();
     $userIds = [];
@@ -263,11 +282,12 @@ try {
             deleteWhereIn($db, 'system_announcements', 'announcement_id', $announcementIds);
         }
 
-        $userStmt = $db->prepare('SELECT user_id, email FROM users WHERE email IN (?, ?, ?)');
+        $userPlaceholders2 = implode(',', array_fill(0, count($seededUserEmails), '?'));
+        $userStmt = $db->prepare("SELECT user_id, email FROM users WHERE email IN ({$userPlaceholders2})");
         if ($userStmt === false) {
             throw new RuntimeException($db->error);
         }
-        $userStmt->bind_param('sss', ...$seededUserEmails);
+        $userStmt->bind_param(str_repeat('s', count($seededUserEmails)), ...$seededUserEmails);
         $userStmt->execute();
         $userResult = $userStmt->get_result();
         $userIds = [];
@@ -276,11 +296,7 @@ try {
         }
         $userStmt->close();
 
-        $fullSeededUserIds = array_values(array_filter([
-            $userIds['admin@univ.edu'] ?? null,
-            $userIds['clubadmin@univ.edu'] ?? null,
-            $userIds['student@univ.edu'] ?? null,
-        ]));
+        $fullSeededUserIds = array_values(array_filter(array_values($userIds)));
 
         if (!empty($fullSeededUserIds)) {
             deleteWhereIn($db, 'notifications', 'user_id', $fullSeededUserIds);
@@ -315,17 +331,7 @@ try {
             }
         }
 
-        $clubIds = fetchColumnValues($db, 'clubs', 'club_code', 'club_id', ['090']);
-        if (!empty($clubIds)) {
-            deleteWhereIn($db, 'club_followers', 'club_id', $clubIds);
-            deleteWhereIn($db, 'club_members', 'club_id', $clubIds);
-            deleteWhereIn($db, 'events', 'club_id', $clubIds);
-            deleteWhereIn($db, 'clubs', 'club_id', $clubIds);
-        }
-
-        if (!empty($fullSeededUserIds)) {
-            deleteWhereIn($db, 'users', 'user_id', $fullSeededUserIds);
-        }
+        // 不刪除 club 090（羽球社）和測試帳號，由 teardown 重 seed 還原基礎狀態
     }
 
     $db->commit();

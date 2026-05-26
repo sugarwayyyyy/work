@@ -16,10 +16,20 @@ INSERT INTO users (email, password, student_id, name, role, is_active)
 SELECT 'student@univ.edu', @pwd_hash, 'S000001', '一般學生測試員', 'student', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'student@univ.edu');
 
+INSERT INTO users (email, password, student_id, name, role, is_active)
+SELECT 'student_ff@univ.edu', @pwd_hash, 'S000002', 'Firefox學生測試員', 'student', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'student_ff@univ.edu');
+
+INSERT INTO users (email, password, student_id, name, role, is_active)
+SELECT 'student_wk@univ.edu', @pwd_hash, 'S000003', 'WebKit學生測試員', 'student', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'student_wk@univ.edu');
+
 -- 強制還原角色，防止前次測試（或外部工具）遺留錯誤的 role 值
 UPDATE users SET role = 'platform_admin', is_active = TRUE WHERE email = 'admin@univ.edu';
 UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'clubadmin@univ.edu';
 UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'student@univ.edu';
+UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'student_ff@univ.edu';
+UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'student_wk@univ.edu';
 
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
@@ -33,6 +43,10 @@ SELECT '090', '羽球社',
     (SELECT category_id FROM club_categories WHERE category_name = '運動' LIMIT 1),
     '歡迎零基礎與進階同學一起揮拍，定期舉辦友誼賽與校際交流。', 2015, 500, '週二', '18:30-20:30', '體育館 A 場', 'badminton.club@univ.edu', '0922333444', 'active'
 WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = '090');
+
+INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
+SELECT 'TST001', '測試社', 2, 'E2E 測試用社團', 2020, 0, '週四', '19:00-21:00', '測試館 T001', 'tst.club@univ.edu', '0933333333', 'active'
+WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = 'TST001');
 
 -- 確保 CSC001 必填欄位有值（舊資料可能是 NULL）
 UPDATE clubs SET
@@ -58,9 +72,12 @@ WHERE club_code = '090'
   AND (category_id IS NULL OR category_id NOT IN (SELECT category_id FROM club_categories));
 
 SET @club_admin_id = (SELECT user_id FROM users WHERE email = 'clubadmin@univ.edu' LIMIT 1);
-SET @student_id = (SELECT user_id FROM users WHERE email = 'student@univ.edu' LIMIT 1);
+SET @student_id    = (SELECT user_id FROM users WHERE email = 'student@univ.edu'    LIMIT 1);
+SET @student_ff_id = (SELECT user_id FROM users WHERE email = 'student_ff@univ.edu' LIMIT 1);
+SET @student_wk_id = (SELECT user_id FROM users WHERE email = 'student_wk@univ.edu' LIMIT 1);
 SET @club1 = (SELECT club_id FROM clubs WHERE club_code = 'CSC001' LIMIT 1);
-SET @club2 = (SELECT club_id FROM clubs WHERE club_code = '090' LIMIT 1);
+SET @club2 = (SELECT club_id FROM clubs WHERE club_code = '090'    LIMIT 1);
+SET @club3 = (SELECT club_id FROM clubs WHERE club_code = 'TST001' LIMIT 1);
 
 INSERT INTO club_members (club_id, user_id, role)
 SELECT @club1, @club_admin_id, 'president'
@@ -69,6 +86,10 @@ WHERE NOT EXISTS (SELECT 1 FROM club_members WHERE club_id = @club1 AND user_id 
 INSERT INTO club_members (club_id, user_id, role)
 SELECT @club2, @club_admin_id, 'director'
 WHERE NOT EXISTS (SELECT 1 FROM club_members WHERE club_id = @club2 AND user_id = @club_admin_id);
+
+INSERT INTO club_members (club_id, user_id, role)
+SELECT @club3, @club_admin_id, 'president'
+WHERE NOT EXISTS (SELECT 1 FROM club_members WHERE club_id = @club3 AND user_id = @club_admin_id);
 
 INSERT INTO club_members (club_id, user_id, role)
 SELECT @club1, @student_id, 'member'
