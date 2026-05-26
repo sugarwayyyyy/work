@@ -759,6 +759,16 @@
             /* send bar padding */
             .msg-send-bar { padding: 10px 12px; }
         }
+
+        /* ── 社團匹配測驗 ── */
+        .quiz-option-btn {
+            text-align: left; padding: 10px 14px;
+            border: 1.5px solid #e5e7eb; border-radius: 8px;
+            background: #fff; cursor: pointer; width: 100%;
+            font-size: 0.875rem; color: #374151;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
+        }
+        .quiz-option-btn:hover { border-color: #7c3aed; background: #f5f3ff; color: #4c1d95; }
     </style>
 </head>
 <body>
@@ -883,6 +893,33 @@
         let _notepadMode = false;
         let _openMenuMsgId = null;
         let _replyTo = null;
+        let _quizStep = -1;
+        let _quizAnswers = {};
+
+        const QUIZ_QUESTIONS = [
+            { id: 'q1', text: '你對哪種活動最感興趣？', options: [
+                { value: '體育性', label: '🏃 運動競賽' },
+                { value: '學術性', label: '🧠 學術技能' },
+                { value: '藝文性', label: '🎨 藝術文化' },
+                { value: '服務性', label: '🤝 服務公益' },
+                { value: '休閒性', label: '🎮 休閒娛樂' },
+            ]},
+            { id: 'q2', text: '你期望從社團得到什麼？', options: [
+                { value: 'sport',    label: '💪 強身健體、運動樂趣' },
+                { value: 'academic', label: '📚 技能提升、知識學習' },
+                { value: 'arts',     label: '🎵 創意表達、藝術欣賞' },
+                { value: 'social',   label: '🌍 服務社會、廣交朋友' },
+            ]},
+            { id: 'q3', text: '希望的參與強度？', options: [
+                { value: 'light',  label: '🍃 輕鬆型，偶爾參加就好' },
+                { value: 'active', label: '🔥 積極型，定期出席投入' },
+            ]},
+            { id: 'q4', text: '社費預算大約是？', options: [
+                { value: '0',   label: '🆓 越便宜越好' },
+                { value: '500', label: '💰 一學期 500 元以內可以' },
+                { value: 'any', label: '💳 不在意費用，以興趣優先' },
+            ]},
+        ];
 
         function isMobileView() { return window.innerWidth <= 640; }
 
@@ -1029,9 +1066,111 @@
             }
         }
 
+        function _renderQuizInvitation() {
+            return `<div id="bot-quiz-card" style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f3f4f6;align-items:flex-start;background:linear-gradient(135deg,#faf5ff,#f5f3ff);">
+                <div style="width:36px;height:36px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🎯</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;color:#4c1d95;">社團匹配測驗</div>
+                    <p style="margin:0 0 10px;color:var(--color-text,#374151);font-size:0.85rem;">不知道加入哪個社團？回答 4 個問題，讓機器人為你推薦最適合的社團！</p>
+                    <button onclick="startClubQuiz()" style="background:#7c3aed;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.85rem;">開始測驗 🎯</button>
+                </div>
+            </div>`;
+        }
+
+        function _renderQuizStep() {
+            const q = QUIZ_QUESTIONS[_quizStep];
+            const total = QUIZ_QUESTIONS.length;
+            const pct = Math.round((_quizStep / total) * 100);
+            const optionsHtml = q.options.map(o =>
+                `<button class="quiz-option-btn" onclick="advanceQuiz('${o.value}')">${o.label}</button>`
+            ).join('');
+            return `<div id="bot-quiz-card" style="padding:14px 16px;border-bottom:1px solid #f3f4f6;background:linear-gradient(135deg,#faf5ff,#f5f3ff);">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <div style="flex:1;height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;">
+                        <div style="width:${pct}%;height:100%;background:#7c3aed;border-radius:2px;transition:width 0.3s;"></div>
+                    </div>
+                    <span style="font-size:0.75rem;color:#6b7280;white-space:nowrap;">第 ${_quizStep + 1} / ${total} 題</span>
+                </div>
+                <div style="font-weight:600;font-size:0.9rem;color:#4c1d95;margin-bottom:10px;">${q.text}</div>
+                <div style="display:flex;flex-direction:column;gap:6px;">${optionsHtml}</div>
+            </div>`;
+        }
+
+        function _renderQuizLoading() {
+            return `<div id="bot-quiz-card" style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #f3f4f6;background:linear-gradient(135deg,#faf5ff,#f5f3ff);">
+                <div class="msg-spinner"></div>
+                <span style="color:#6b7280;font-size:0.88rem;">正在為你尋找最適合的社團…</span>
+            </div>`;
+        }
+
+        function startClubQuiz() {
+            _quizStep = 0;
+            _quizAnswers = {};
+            const card = document.getElementById('bot-quiz-card');
+            if (card) card.outerHTML = _renderQuizStep();
+        }
+
+        function advanceQuiz(value) {
+            const q = QUIZ_QUESTIONS[_quizStep];
+            _quizAnswers[q.id] = value;
+            _quizStep++;
+            if (_quizStep >= QUIZ_QUESTIONS.length) {
+                submitQuiz();
+            } else {
+                const card = document.getElementById('bot-quiz-card');
+                if (card) card.outerHTML = _renderQuizStep();
+            }
+        }
+
+        async function submitQuiz() {
+            const card = document.getElementById('bot-quiz-card');
+            if (card) card.outerHTML = _renderQuizLoading();
+            const category  = _quizAnswers.q1 || '';
+            const intensity = _quizAnswers.q3 || 'any';
+            const budget    = _quizAnswers.q4 || 'any';
+            try {
+                const res = await APIClient.get(
+                    `messages.php?action=quiz_recommend&category=${encodeURIComponent(category)}&intensity=${encodeURIComponent(intensity)}&budget=${encodeURIComponent(budget)}`
+                );
+                if (res && res.success) {
+                    _renderQuizResultInline(res.data.clubs || []);
+                } else {
+                    throw new Error(res?.message || '取得推薦失敗');
+                }
+            } catch (e) {
+                const errCard = document.getElementById('bot-quiz-card');
+                if (errCard) errCard.outerHTML = `<div id="bot-quiz-card" style="padding:14px 16px;border-bottom:1px solid #f3f4f6;background:linear-gradient(135deg,#faf5ff,#f5f3ff);">
+                    <p style="color:#dc2626;font-size:0.88rem;margin:0 0 8px;">取得推薦時發生錯誤，請稍後再試。</p>
+                    <button onclick="startClubQuiz()" style="background:#7c3aed;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.85rem;">重新測驗</button>
+                </div>`;
+            }
+        }
+
+        function _renderQuizResultInline(clubs) {
+            const clubsHtml = clubs.length === 0
+                ? `<p style="color:var(--color-text-muted,#6b7280);font-size:0.85rem;margin:0 0 10px;">目前找不到完全符合條件的社團，可嘗試放寬條件後重新測驗。</p>`
+                : clubs.map(c => `<div style="background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+                    <div style="font-weight:600;font-size:0.88rem;color:#4c1d95;">${PageUtils.escapeHtml(c.club_name)}</div>
+                    <div style="font-size:0.75rem;color:#7c3aed;margin:2px 0 4px;">${PageUtils.escapeHtml(c.category_name || '')}${c.member_count ? ' · ' + c.member_count + ' 人' : ''}</div>
+                    ${c.description ? `<div style="font-size:0.82rem;color:#374151;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${PageUtils.escapeHtml(c.description)}</div>` : ''}
+                    ${c.meeting_day ? `<div style="font-size:0.75rem;color:#6b7280;margin-top:4px;">📅 ${PageUtils.escapeHtml(c.meeting_day)}${c.meeting_time ? ' ' + PageUtils.escapeHtml(c.meeting_time) : ''}</div>` : ''}
+                    <a href="club-detail.html?id=${c.club_id}" style="display:inline-block;margin-top:6px;font-size:0.78rem;color:#7c3aed;text-decoration:none;">查看社團 →</a>
+                </div>`).join('');
+            const card = document.getElementById('bot-quiz-card');
+            if (card) card.outerHTML = `<div id="bot-quiz-card" style="padding:14px 16px;border-bottom:1px solid #f3f4f6;background:linear-gradient(135deg,#faf5ff,#f5f3ff);">
+                <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">🎯</div>
+                    <div style="font-weight:600;font-size:0.88rem;color:#4c1d95;">社團匹配結果</div>
+                </div>
+                ${clubsHtml}
+                <button onclick="startClubQuiz()" style="background:#f3f4f6;color:#374151;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;margin-top:4px;">重新測驗</button>
+            </div>`;
+        }
+
         function renderBotMessages(msgs, area) {
+            const quizHtml = _renderQuizInvitation();
             if (msgs.length === 0) {
-                area.innerHTML = `<div class="msg-placeholder" style="flex-direction:column;gap:12px;">
+                area.innerHTML = quizHtml + `<div class="msg-placeholder" style="flex-direction:column;gap:12px;">
                     <div style="font-size:3rem;">🤖</div>
                     <div style="font-weight:700;font-size:1rem;color:var(--color-text-strong,#111827);">平台機器人</div>
                     <div style="font-size:0.88rem;color:var(--color-text-muted,#6b7280);text-align:center;max-width:260px;line-height:1.6;">
@@ -1040,7 +1179,7 @@
                 </div>`;
                 return;
             }
-            area.innerHTML = msgs.map(msg => renderBotCard(msg)).join('');
+            area.innerHTML = quizHtml + msgs.map(msg => renderBotCard(msg)).join('');
             area.scrollTop = area.scrollHeight;
         }
 
@@ -1050,6 +1189,29 @@
             const meta = msg.meta || {};
             const time = PageUtils.timeAgo ? PageUtils.timeAgo(msg.created_at) : msg.created_at;
             const unreadDot = !msg.is_read ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-left:6px;vertical-align:middle;"></span>' : '';
+
+            // 社團匹配結果
+            if (msg.message_type === 'club_match_result') {
+                const clubs = meta.clubs || [];
+                const clubsHtml = clubs.length === 0
+                    ? `<p style="color:var(--color-text-muted,#6b7280);font-size:0.85rem;margin:0 0 10px;">目前找不到符合條件的社團，可重新測驗調整條件。</p>`
+                    : clubs.map(c => `<div style="background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+                        <div style="font-weight:600;font-size:0.88rem;color:#4c1d95;">${PageUtils.escapeHtml(c.club_name)}</div>
+                        <div style="font-size:0.75rem;color:#7c3aed;margin:2px 0 4px;">${PageUtils.escapeHtml(c.category_name || '')}${c.member_count ? ' · ' + c.member_count + ' 人' : ''}</div>
+                        ${c.description ? `<div style="font-size:0.82rem;color:#374151;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${PageUtils.escapeHtml(c.description)}</div>` : ''}
+                        ${c.meeting_day ? `<div style="font-size:0.75rem;color:#6b7280;margin-top:4px;">📅 ${PageUtils.escapeHtml(c.meeting_day)}${c.meeting_time ? ' ' + PageUtils.escapeHtml(c.meeting_time) : ''}</div>` : ''}
+                        <a href="club-detail.html?id=${c.club_id}" style="display:inline-block;margin-top:6px;font-size:0.78rem;color:#7c3aed;text-decoration:none;">查看社團 →</a>
+                    </div>`).join('');
+                return `<div style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f3f4f6;align-items:flex-start;">
+                    <div style="width:36px;height:36px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">🎯</div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;color:var(--color-text-strong,#111827);">社團匹配結果${unreadDot}</div>
+                        <p style="margin:0 0 10px;color:var(--color-text,#374151);font-size:0.85rem;">${PageUtils.escapeHtml(msg.content)}</p>
+                        ${clubsHtml}
+                        <div style="font-size:0.75rem;color:var(--color-text-muted,#9ca3af);margin-top:8px;">${time}</div>
+                    </div>
+                </div>`;
+            }
 
             let cardBody = '';
             if (isVerification && meta.verification_code) {

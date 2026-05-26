@@ -16,6 +16,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 class UserAPI {
+    private static function checkLoginRateLimit(string $email): void {
+        $r = Database::getInstance()->fetchOne(
+            'SELECT COUNT(*) AS c, MIN(attempted_at) AS oldest
+             FROM login_attempts
+             WHERE email = ? AND attempted_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)',
+            [$email]
+        );
+        if ((int)($r['c'] ?? 0) >= 10) {
+            $lockUntil = strtotime($r['oldest']) + 300;
+            $remaining = max(1, (int)ceil(($lockUntil - time()) / 60));
+            Helper::error('登入嘗試次數過多，請等待 ' . $remaining . ' 分鐘後再試', 429);
+        }
+    }
+
+    private static function recordLoginFailure(string $email): void {
+        try {
+            dbInsert('login_attempts', ['email' => $email]);
+        } catch (Exception $e) {
+            Helper::logError('Rate limit insert failed: ' . $e->getMessage());
+        }
+    }
+
+    private static function clearLoginAttempts(string $email): void {
+        try {
+            dbDelete('login_attempts', 'email = ?', [$email]);
+        } catch (Exception $e) {
+            // non-critical
+        }
+    }
+
     private static function getClubManagementSummary($user_id) {
         $row = Database::getInstance()->fetchOne(
             'SELECT COUNT(*) AS managed_club_count
@@ -113,13 +143,17 @@ class UserAPI {
             if (!empty($errors)) {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
-            
+
+            $email = $data['email'];
+            self::checkLoginRateLimit($email);
+
             $user = Database::getInstance()->fetchOne(
                 'SELECT * FROM users WHERE email = ?',
-                [$data['email']]
+                [$email]
             );
-            
+
             if (!$user) {
+                self::recordLoginFailure($email);
                 Helper::error('郵箱或密碼錯誤', 401);
             }
             
@@ -139,13 +173,15 @@ class UserAPI {
             }
             
             if (!$passwordValid) {
+                self::recordLoginFailure($email);
                 Helper::error('郵箱或密碼錯誤', 401);
             }
-            
+
             Auth::setLogin($user['user_id'], [
                 'role' => $user['role'],
                 'name' => $user['name']
             ]);
+            self::clearLoginAttempts($email);
             $clubSummary = self::getClubManagementSummary((int)$user['user_id']);
             $csrfToken = Helper::generateCSRFToken();
             session_write_close();

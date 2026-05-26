@@ -23,11 +23,15 @@ UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'stude
 
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
-SELECT 'CSC001', '程式社', 10, '介紹本學期課程與專題方向', 2010, 0, '週三', '18:00-20:00', '資工館 R201', 'csc.club@univ.edu', '0911111111', 'active'
+SELECT 'CSC001', '程式社',
+    (SELECT category_id FROM club_categories WHERE category_name = '學術' LIMIT 1),
+    '學習程式設計、演算法與軟體開發，定期舉辦工作坊與專題競賽。', 2010, 0, '週三', '18:00-20:00', '資工館 R201', 'csc.club@univ.edu', '0911111111', 'active'
 WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = 'CSC001');
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
-SELECT '090', '羽球社', 9, '歡迎零基礎與進階同學一起運動', 2015, 500, '週二', '18:30-20:30', '體育館 A 場', 'badminton.club@univ.edu', '0922333444', 'active'
+SELECT '090', '羽球社',
+    (SELECT category_id FROM club_categories WHERE category_name = '運動' LIMIT 1),
+    '歡迎零基礎與進階同學一起揮拍，定期舉辦友誼賽與校際交流。', 2015, 500, '週二', '18:30-20:30', '體育館 A 場', 'badminton.club@univ.edu', '0922333444', 'active'
 WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = '090');
 
 -- 確保 CSC001 必填欄位有值（舊資料可能是 NULL）
@@ -37,6 +41,21 @@ UPDATE clubs SET
     contact_email    = COALESCE(NULLIF(contact_email, ''),    'csc.club@univ.edu'),
     contact_phone    = COALESCE(NULLIF(contact_phone, ''),    '0911111111')
 WHERE club_code = 'CSC001';
+
+-- 修正已存在社團的 category_id（舊資料可能用了錯誤的 hardcoded ID）
+UPDATE clubs SET
+    category_id     = (SELECT category_id FROM club_categories WHERE category_name = '學術' LIMIT 1),
+    club_fee_semester = 0,
+    activity_badge  = 'high_active'
+WHERE club_code = 'CSC001'
+  AND (category_id NOT IN (SELECT category_id FROM club_categories) OR club_fee_semester IS NULL);
+
+UPDATE clubs SET
+    category_id     = (SELECT category_id FROM club_categories WHERE category_name = '運動' LIMIT 1),
+    club_fee_semester = COALESCE(club_fee_semester, 300),
+    activity_badge  = COALESCE(NULLIF(activity_badge,''), 'normal_active')
+WHERE club_code = '090'
+  AND (category_id IS NULL OR category_id NOT IN (SELECT category_id FROM club_categories));
 
 SET @club_admin_id = (SELECT user_id FROM users WHERE email = 'clubadmin@univ.edu' LIMIT 1);
 SET @student_id = (SELECT user_id FROM users WHERE email = 'student@univ.edu' LIMIT 1);

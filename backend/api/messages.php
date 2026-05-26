@@ -500,6 +500,80 @@ class MessagesAPI {
             Helper::success('', ['count' => 0]);
         }
     }
+
+    /**
+     * GET ?action=quiz_recommend&category=體育性&intensity=light|active|any&budget=0|500|any
+     * 社團匹配測驗推薦端點：依類別、強度、預算找最多 3 個適合的社團，並存入 bot_messages
+     */
+    public static function quizRecommend() {
+        $uid = self::requireLogin();
+        if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+
+        $category  = trim($_GET['category']  ?? '');
+        $budget    = trim($_GET['budget']    ?? 'any');
+        $intensity = trim($_GET['intensity'] ?? 'any');
+
+        $validCats = ['體育性', '學術性', '藝文性', '服務性', '休閒性'];
+        if (!in_array($category, $validCats, true)) {
+            Helper::error('無效的社團類別', 400);
+        }
+        if (!in_array($budget, ['0', '500', 'any'], true)) $budget = 'any';
+        if (!in_array($intensity, ['light', 'active', 'any'], true)) $intensity = 'any';
+
+        // 動態子句由白名單驗證過的固定字串組成，不含使用者輸入
+        $budgetSql = '';
+        if ($budget === '0') {
+            $budgetSql = 'AND (c.club_fee_semester IS NULL OR c.club_fee_semester = 0)';
+        } elseif ($budget === '500') {
+            $budgetSql = 'AND (c.club_fee_semester IS NULL OR c.club_fee_semester <= 500)';
+        }
+
+        $intensitySql = '';
+        if ($intensity === 'active') {
+            $intensitySql = "AND c.activity_badge IN ('high_active','normal_active')";
+        }
+
+        try {
+            $clubs = Database::getInstance()->fetchAll(
+                "SELECT c.club_id, c.club_name,
+                        LEFT(c.description, 100) AS description,
+                        c.logo_path, cat.category_name,
+                        c.club_fee_semester, c.activity_badge,
+                        c.meeting_day, c.meeting_time,
+                        (SELECT COUNT(*) FROM club_members cm2
+                         WHERE cm2.club_id = c.club_id AND cm2.is_active = 1) AS member_count
+                 FROM clubs c
+                 LEFT JOIN club_categories cat ON cat.category_id = c.category_id
+                 WHERE cat.category_name = ?
+                   AND c.activity_status = 'active'
+                   AND c.club_id NOT IN (
+                       SELECT club_id FROM club_members WHERE user_id = ? AND is_active = 1
+                   )
+                   $budgetSql $intensitySql
+                 ORDER BY
+                   CASE c.activity_badge
+                     WHEN 'high_active'   THEN 1
+                     WHEN 'normal_active' THEN 2
+                     ELSE 3
+                   END,
+                   member_count DESC
+                 LIMIT 3",
+                [$category, $uid]
+            );
+
+            dbInsert('bot_messages', [
+                'user_id'      => $uid,
+                'message_type' => 'club_match_result',
+                'title'        => '社團匹配結果 🎯',
+                'content'      => '根據你的測驗結果，為你推薦以下社團：',
+                'meta'         => json_encode(['clubs' => $clubs, 'category' => $category]),
+            ]);
+
+            Helper::success('已取得推薦社團', ['clubs' => $clubs]);
+        } catch (Exception $e) {
+            Helper::error('推薦失敗：' . $e->getMessage(), 500);
+        }
+    }
 }
 
 $method = Helper::getRequestMethod();
@@ -525,6 +599,7 @@ if ($method === 'POST') {
     elseif ($action === 'recall_note_message') { MessagesAPI::recallNoteMessage($data); }
     elseif ($action === 'toggle_reaction')     { MessagesAPI::toggleReaction($data); }
     elseif ($action === 'verify_join_code')   { MessagesAPI::verifyJoinCode($data); }
+    elseif ($action === 'quiz_recommend')     { MessagesAPI::quizRecommend(); }
 }
 
 Helper::error('無效的請求', 400);
