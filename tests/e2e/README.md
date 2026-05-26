@@ -93,7 +93,7 @@ tests/e2e/
 |------|---------|--------|
 | US 1.1 社團列表與搜尋篩選 | user-stories | 3/3 ✅ |
 | US 1.3 追蹤功能與動態牆 | user-stories | 2/3 ✅ |
-| US 1.5 資料時間戳 | user-stories | 1/2 ✅ |
+| US 1.5 資料時間戳 | user-stories | 2/2 ✅ |
 | US 2.1 社團幹部編輯資訊 | user-stories | 3/3 ✅ |
 | US 2.2 社團活動發布 | user-stories | 2/2 ✅ |
 | US 4.1 平台管理員功能 | user-stories | 2/2 ✅ |
@@ -188,12 +188,17 @@ test.describe('AR-41: 功能名稱', () => { ... });
 
 | 函式 | 說明 |
 |------|------|
-| `login(page, email, password)` | 導覽到登入頁並完成登入，等待跳轉完成 |
-| `publishEventAsClubAdmin(page, eventName)` | 以社團幹部身份建立並發布活動，回傳 `{ startAt, eventId }` |
+| `login(page, email, password)` | 導覽到登入頁並完成登入（UI 流程），等待跳轉完成 |
+| `loginViaApi(page, email, password)` | 以 API POST 登入，回傳 `csrf_token`；比 UI 登入快，適合不需要驗登入畫面的測試 |
+| `publishEventAsClubAdmin(page, eventName)` | 以社團幹部身份走完整 UI 流程建立並發布活動，回傳 `{ startAt, eventId }` |
+| `publishEventViaApi(page, eventName, csrfToken)` | 以 API 建立並發布活動，回傳 `{ startAt, eventId }`；適合只需要前置資料、不需要驗 UI 的測試 |
+| `gotoWithRetry(page, url, options)` | 導覽到指定 URL，遇到 ECONNREFUSED 最多重試 3 次 |
 | `openClubAdminTab(page, tabName, panelSelector, tabKey)` | 點選社團後台的指定分頁並等待面板出現 |
 | `waitForEventIdByName(page, eventName)` | 輪詢 API 直到活動出現，回傳 `eventId` |
 | `waitForEventCardByName(page, eventName)` | 輪詢前台活動列表直到卡片出現，回傳 locator |
 | `toDateInputValue(date)` | 將 `Date` 物件轉為 `YYYY-MM-DD` 字串 |
+| `toDateTimeInputValue(date)` | 將 `Date` 物件轉為 `YYYY-MM-DD HH:mm:ss` 字串 |
+| `safeUniqueToken()` | 產生純字母的唯一字串（字母表不含數字），用於需通過內容過濾器的欄位 |
 
 ### 測試帳號常數（直接使用，不要 hardcode 字串）
 ```js
@@ -210,7 +215,7 @@ const STUDENT    = { email: 'student@univ.edu',    password: 'Test123456', role:
 - **`reuseExistingServer: true`（非 CI）**：本機 port 8000 若已有服務在跑，Playwright 會直接使用。若有異常請先確認 port 沒被其他程式佔用。
 - **勿使用 `page.waitForNavigation()`**：此 API 在較新版 Playwright 已棄用，改用 `page.waitForURL()` 或 `page.waitForLoadState()`。
 - **Firefox sandbox**：Windows 上 Firefox 需停用 sandbox（已設定於 `playwright.config.js`），不需要額外處理。
-- **內容過濾器陷阱**：活動名稱、社團說明等受內容過濾器審查的欄位，不可直接嵌入 `Date.now()` 數字（13 位數時間戳約有 11% 機率含 `78` 等被禁數字，導致 HTTP 400）；改用 `Date.now().toString(36)` 轉 base-36 字串。
+- **內容過濾器陷阱**：活動名稱、社團說明等受內容過濾器審查的欄位，不可直接嵌入 `Date.now()` 數字（13 位數時間戳約有 11% 機率含 `78` 等被禁數字，導致 HTTP 400）；改用 `safeUniqueToken()` 產生純字母唯一字串（字母表不含任何數字，從根本排除此類問題）。
 
 ## 常見問題
 

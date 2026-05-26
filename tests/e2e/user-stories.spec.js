@@ -53,6 +53,7 @@ const STUDENT = {
 };
 
 const CLEANUP_SCRIPT = path.resolve(__dirname, '../../scripts/cleanup-e2e-test-data.php');
+const API_BASE_URL = `${BASE_URL}/backend/api`;
 const SAFE_TOKEN_ALPHABET = 'mnprsuvwxyz';
 let safeTokenSequence = 0;
 
@@ -105,11 +106,27 @@ async function login(page, email, password) {
   ]);
 }
 
+async function loginViaApi(page, email, password) {
+  const loginResponse = await page.context().request.post(`${API_BASE_URL}/auth.php?action=login`, {
+    data: { email, password },
+  });
+  const response = await loginResponse.json();
+
+  expect(response?.success, response?.message || 'API login failed').toBeTruthy();
+  return response?.data?.csrf_token || '';
+}
+
 function toDateInputValue(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function toDateTimeInputValue(date) {
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${toDateInputValue(date)} ${hours}:${minutes}:00`;
 }
 
 async function openCreateEventFormFromClubAdminDashboard(page) {
@@ -196,6 +213,48 @@ async function publishEventAsClubAdmin(page, eventName) {
   expect(eventId).toBeGreaterThan(0);
   await expect(page.locator('#alert-container .alert-success')).toBeVisible({ timeout: 15000 });
 
+  return { startAt, eventId };
+}
+
+async function publishEventViaApi(page, eventName, csrfToken = '') {
+  const startAt = new Date();
+  startAt.setDate(startAt.getDate() + 7);
+  startAt.setHours(14, 0, 0, 0);
+
+  const deadlineAt = new Date(startAt.getTime());
+  deadlineAt.setDate(deadlineAt.getDate() - 1);
+  deadlineAt.setHours(21, 0, 0, 0);
+
+  const api = page.context().request;
+  const clubsResponse = await api.get(`${API_BASE_URL}/club-admin.php?action=my_clubs`);
+  const clubsPayload = await clubsResponse.json();
+  expect(clubsPayload?.success, clubsPayload?.message || 'Failed to load manageable clubs').toBeTruthy();
+
+  const clubs = Array.isArray(clubsPayload?.data?.clubs) ? clubsPayload.data.clubs : [];
+  const club = clubs.find(item => String(item?.activity_status || 'active') === 'active') || clubs[0];
+  expect(Number(club?.club_id || 0), 'No manageable club found').toBeGreaterThan(0);
+
+  const createResponse = await api.post(`${API_BASE_URL}/events.php?action=create`, {
+    headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+    data: {
+      club_id: club.club_id,
+      event_name: eventName,
+      description: 'Automated E2E activity record',
+      event_date: toDateTimeInputValue(startAt),
+      location: 'E2E Room R201',
+      capacity: '',
+      fee: '0',
+      registration_deadline: toDateTimeInputValue(deadlineAt),
+      event_status: 'published',
+      is_registration_open: '1',
+      collaborative_club_ids: [],
+    },
+  });
+  const createPayload = await createResponse.json();
+
+  expect(createPayload?.success, createPayload?.message || `createEvent HTTP ${createResponse.status()}`).toBeTruthy();
+  const eventId = Number(createPayload?.data?.event_id || 0);
+  expect(eventId).toBeGreaterThan(0);
   return { startAt, eventId };
 }
 
@@ -374,17 +433,14 @@ test.describe('US 1.5: 資料時間戳', () => {
   });
 
   test('AC2: 新發布活動在活動詳情頁顯示最新上傳時間', async ({ page }) => {
-    await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    const csrfToken = await loginViaApi(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
     const eventName = `US15-TS-${safeUniqueToken()}`;
 
-    const { eventId } = await publishEventAsClubAdmin(page, eventName);
+    const { eventId } = await publishEventViaApi(page, eventName, csrfToken);
 
-    await gotoWithRetry(page, `${BASE_URL}/pages/events.html`);
-    await page.waitForLoadState('networkidle');
     expect(eventId).toBeGreaterThan(0);
 
-    await gotoWithRetry(page, `${BASE_URL}/pages/event-detail.html?id=${eventId}`);
-    await page.waitForLoadState('load');
+    await gotoWithRetry(page, `${BASE_URL}/pages/event-detail.html?id=${eventId}`, { waitUntil: 'domcontentloaded' });
 
     const latestUpload = page.locator('#event-last-updated');
     await expect(latestUpload).toBeVisible({ timeout: 15000 });
@@ -436,9 +492,9 @@ test.describe('US 2.2: 社團活動發布', () => {
   });
 
   test('AC2: 發布後可在前台查到，且活動列表為近到遠排序', async ({ page }) => {
-    await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    const csrfToken = await loginViaApi(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
     const eventName = `US22-LIST-${safeUniqueToken()}`;
-    const { eventId } = await publishEventAsClubAdmin(page, eventName);
+    const { eventId } = await publishEventViaApi(page, eventName, csrfToken);
 
     expect(eventId).toBeGreaterThan(0);
 
