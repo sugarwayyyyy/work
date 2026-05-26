@@ -45,7 +45,9 @@ SELECT '090', '羽球社',
 WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = '090');
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
-SELECT 'TST001', '測試社', 2, 'E2E 測試用社團', 2020, 0, '週四', '19:00-21:00', '測試館 T001', 'tst.club@univ.edu', '0933333333', 'active'
+SELECT 'TST001', '測試社',
+    (SELECT category_id FROM club_categories WHERE category_name = '學術' LIMIT 1),
+    'E2E 測試用社團', 2020, 0, '週四', '19:00-21:00', '測試館 T001', 'tst.club@univ.edu', '0933333333', 'active'
 WHERE NOT EXISTS (SELECT 1 FROM clubs WHERE club_code = 'TST001');
 
 -- 確保 CSC001 必填欄位有值（舊資料可能是 NULL）
