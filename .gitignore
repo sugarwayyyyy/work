@@ -25,3 +25,4 @@ yarn-error.log
 test-results/
 playwright-report/
 .auth/
+debug.log
