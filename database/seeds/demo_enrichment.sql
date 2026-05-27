@@ -1,764 +1,693 @@
-﻿-- Demo 撅內鞈?嚗‵?冗?底?暑?????-- 閮剛??箏???瑁?嚗蝑?嚗蝙??WHERE NOT EXISTS / INSERT IGNORE / 撘瑕 UPDATE
--- 瘜冽?嚗?亙撥?嗉?撖恬?銝? WHERE 璇辣?嚗Ⅱ靽隢?潛雿?憟
+-- Demo 展示資料：填充社團詳情、活動、公告、評價、Q&A
+-- 設計為可重複執行（冪等性）：使用 WHERE NOT EXISTS / INSERT IGNORE / 冪等 UPDATE
+-- 編碼：UTF-8（無 BOM）
 USE club_platform;
 
 -- =============================================================
--- 1. ?湔 20 ?蜓閬冗??撅內鞈?嚗撥?嗉?撖恬?
+-- Section 1. 更新 20 個社團詳細資訊
 -- =============================================================
 
--- ??嚗?冗
+-- 熱舞社（067）
 UPDATE clubs SET
-    description      = '瘨菔?銵??-POP?憯怎?憭??◢嚗?摮豢??齒憭批???撅?嚗?∪???瑟暑????蝷曉?銋??迭餈?箇??飛銝韏瑕??伐??勗飛?瑕?敺蝷葆韏瘀?鈭怠?????頞??',
-    meeting_day      = '?曹?',
+    description      = '熱舞社成立於 2005 年，以 K-POP、HipHop、Street Dance 等流行舞蹈風格為主軸。不限舞蹈基礎，所有對舞蹈有熱情的同學皆歡迎加入。每週三晚間在人文館 A305 舞蹈排練室集訓，期末舉辦年度公演，歡迎踴躍報名。',
+    meeting_day      = '週三',
     meeting_time     = '18:00-21:00',
-    meeting_location = '??憭扳? A305 ???恕',
+    meeting_location = '人文館 A305 舞蹈排練室',
     contact_email    = 'dance.club@univ.edu',
-    contact_phone    = '0912345001',
+    contact_phone    = '0912-345-001',
     club_fee         = 300,
     activity_badge   = 'high_active',
     last_activity_date = NOW(),
     last_updated     = NOW()
 WHERE club_code = '067';
 
--- ??嚗?敶梁冗
+-- 攝影社（066）
 UPDATE clubs SET
-    description      = '?券?剛???瘣餌?蝢末?祇?嚗飛蝧?敶望???蝺??刻? Lightroom 敺ˊ?銵?摮豢??齒銝駁??蔣撅??游???蝜??暑??敺?撅望?瘚瑕硫嚗????臬??臬末?唳??,
-    meeting_day      = '?勗?',
+    description      = '攝影社致力推廣攝影藝術，涵蓋人像、風景、街拍、黑白膠片等多元風格。定期舉辦主題外拍、後製教學（Lightroom / Photoshop）及作品展覽。社內備有借用設備，手機攝影同樣歡迎，入社無須自備相機。',
+    meeting_day      = '週四',
     meeting_time     = '19:00-21:00',
-    meeting_location = '??擗?3F ?蔣撖阡?摰?,
+    meeting_location = '視聽館 3F 影像製作實驗室',
     contact_email    = 'photo.club@univ.edu',
-    contact_phone    = '0912345002',
+    contact_phone    = '0912-345-002',
     club_fee         = 200,
     activity_badge   = 'high_active',
     last_activity_date = DATE_SUB(NOW(), INTERVAL 2 DAY),
     last_updated     = NOW()
 WHERE club_code = '066';
 
--- ??嚗?璅冗
+-- 國樂社（061）
 UPDATE clubs SET
-    description      = '?單銝剛????嚗?憟?嗚??～蝞?摮??喟絞璅??隢?豢??脤??舐隞?蝺剁???蝷曆誑蝎曄溶瞍??銵帑?璅?蝢?撟渲?颲西?璅?嚗迭餈璅?憟質??乓?,
-    meeting_day      = '?曹?',
+    description      = '國樂社傳承中華音樂文化，指導演奏二胡、琵琶、笛子、揚琴等傳統樂器。無論初學或有基礎，皆可加入學習。每學期舉辦聯合音樂會，並積極參與校外藝文展演，讓傳統音樂在校園中延續生命力。',
+    meeting_day      = '週六',
     meeting_time     = '14:00-17:00',
-    meeting_location = '?單?撱?B1 ?毀摰?,
+    meeting_location = '藝術館 B1 音樂排練室',
     contact_email    = 'music.club@univ.edu',
-    contact_phone    = '0912345003',
+    contact_phone    = '0912-345-003',
     club_fee         = 500,
     activity_badge   = 'normal_active',
     last_activity_date = DATE_SUB(NOW(), INTERVAL 5 DAY),
     last_updated     = NOW()
 WHERE club_code = '061';
 
--- ??嚗瘜冗
+-- 書法社（064）
 UPDATE clubs SET
-    description      = '??瘥??豢???嚗?璆瑟???詨?嚗???銝???箇???銋??冗隤脩?豢??葦??嚗???颲行瘥急?鞈質?雿?撅?霈蝯望???曆誨?∪?銝剖辣蝥?,
-    meeting_day      = '?曹?',
+    description      = '書法社推廣中國書法美學，從楷書入門，進而學習行書、草書及各家書風。備有完善教學資源，定期邀請書法名師蒞校指導。不論基礎深淺，歡迎對文字藝術有興趣的同學共同體驗筆墨世界。',
+    meeting_day      = '週二',
     meeting_time     = '19:00-21:00',
-    meeting_location = '鈭箸?擗?H301 ?豢??恕',
+    meeting_location = '人文館 H301 書法教室',
     contact_email    = 'calligraphy.club@univ.edu',
-    contact_phone    = '0912345004',
+    contact_phone    = '0912-345-004',
     club_fee         = 200,
     activity_badge   = 'normal_active',
     last_activity_date = DATE_SUB(NOW(), INTERVAL 10 DAY),
     last_updated     = NOW()
 WHERE club_code = '064';
 
--- ??嚗?渡冗
+-- 鋼琴社（123）
 UPDATE clubs SET
-    description      = '蝤函毀?潛瞍??撌改?敺?豢??唳?銵?桀?嗡蒂?身?犖蝺渡??挾嚗???颲血??璅?鈭急?嚗?瘥?蝷曉?賣?璈??刻??唬?撅瞍?????,
-    meeting_day      = '?曹?',
+    description      = '鋼琴社提供個別指導與合奏訓練，適合入門至進階各程度的演奏者。社內設有練習琴房，社員可預約使用。每學期舉辦成果發表會，並不定期邀請音樂系學生分享演奏技巧與心得體驗。',
+    meeting_day      = '週五',
     meeting_time     = '19:00-21:00',
-    meeting_location = '?單?撱?B1 ?湔',
+    meeting_location = '藝術館 B1 琴房',
     contact_email    = 'piano.club@univ.edu',
-    contact_phone    = '0912345005',
+    contact_phone    = '0912-345-005',
     club_fee         = 300,
     activity_badge   = 'normal_active',
     last_activity_date = DATE_SUB(NOW(), INTERVAL 7 DAY),
     last_updated     = NOW()
 WHERE club_code = '123';
 
--- 擃嚗撅梁冗
+-- 登山社（075）
 UPDATE clubs SET
-    description      = '閬??啁?控?撅梯楝蝺?敺?撅勗銵?曉眾?嚗擗控???質??嗅?摰蝝??????渲???湛?瘥?摰?撅梯?嚗??飛?典之?芰銝剔ㄗ蝺渲澈敹?,
-    meeting_day      = '?勗',
-    meeting_time     = '07:00-12:00',
-    meeting_location = '擃擗典誨?湛??箇??暺?',
-    contact_email    = 'mountain.club@univ.edu',
-    contact_phone    = '0912345006',
-    club_fee         = 400,
+    description      = '登山社每月定期舉辦郊山與中級山健行，以培養體能、親近自然為宗旨。活動設計注重安全教育，備有急救基本訓練。新生無須特殊體能，帶著好奇心與活力即可出發探索台灣山林！',
+    meeting_day      = '週日',
+    meeting_time     = '07:00-17:00',
+    meeting_location = '校門口集合（活動日）',
+    contact_email    = 'hiking.club@univ.edu',
+    contact_phone    = '0912-345-006',
+    club_fee         = 100,
     activity_badge   = 'high_active',
     last_activity_date = DATE_SUB(NOW(), INTERVAL 3 DAY),
     last_updated     = NOW()
 WHERE club_code = '075';
 
--- 擃嚗?銵冗
+-- 國術社（084）
 UPDATE clubs SET
-    description      = '?單銝剛甇西?蝎暸?嚗憿批撥頨怠擃????單???箇???啣?頝臬?蝺湛??梯?瘛望?蝺渲扛?芣?撠?????郎銵漱瘚魚嚗??曄揹撖血?摨?,
-    meeting_day      = '?曹?',
-    meeting_time     = '19:00-21:00',
-    meeting_location = '甇西?擗?M101',
-    contact_email    = 'martial.club@univ.edu',
-    contact_phone    = '0912345007',
-    club_fee         = 300,
-    activity_badge   = 'normal_active',
-    last_activity_date = DATE_SUB(NOW(), INTERVAL 8 DAY),
-    last_updated     = NOW()
-WHERE club_code = '084';
-
--- 擃嚗??冗
-UPDATE clubs SET
-    description      = '?Ｙ揣???情璉?摮?蝑?撘???甇∟??飛?擃????冗隤脫?璉??飛?儔?文???摰??齒蝷曉?隢魚嚗蒂蝛扔???⊿?璉魚??,
-    meeting_day      = '?勗?',
-    meeting_time     = '19:30-21:30',
-    meeting_location = '?擗?1F 璉??梯汗摰?,
-    contact_email    = 'chess.club@univ.edu',
-    contact_phone    = '0912345008',
-    club_fee         = 100,
-    activity_badge   = 'normal_active',
-    last_activity_date = DATE_SUB(NOW(), INTERVAL 6 DAY),
-    last_updated     = NOW()
-WHERE club_code = '082';
-
--- 擃嚗雯?冗
-UPDATE clubs SET
-    description      = '摮貊?蝬脩??箇??格??郊瘜??啗?撣?嚗迭餈?箇??圈脤?蝔漲?飛?????撅祉毀蝧?堆?摰??齒蝷曉?航魚嚗蒂???∠雯?冗?脰??盲鈭斗???,
-    meeting_day      = '?曹?',
-    meeting_time     = '17:00-19:00',
-    meeting_location = '擃擗函雯?嚗?湛?',
-    contact_email    = 'tennis.club@univ.edu',
-    contact_phone    = '0912345009',
-    club_fee         = 400,
+    description      = '國術社傳承中華武術精髓，課程涵蓋太極拳、長拳、散打基本功等。強調強身健體與武德並重，適合各年齡層同學學習。定期參加校際武術競賽，亦歡迎純粹以興趣加入的社員。',
+    meeting_day      = '週二',
+    meeting_time     = '18:00-20:00',
+    meeting_location = '綜合體育館 武術練習室',
+    contact_email    = 'martialarts.club@univ.edu',
+    contact_phone    = '0912-345-007',
+    club_fee         = 200,
     activity_badge   = 'normal_active',
     last_activity_date = DATE_SUB(NOW(), INTERVAL 4 DAY),
     last_updated     = NOW()
+WHERE club_code = '084';
+
+-- 棋藝社（082）
+UPDATE clubs SET
+    description      = '棋藝社涵蓋圍棋、象棋、西洋棋三大棋種，設有入門至進階分組教學。備有定期對弈賽與讀書會，並參加全國大學棋藝聯賽。無論棋力強弱，皆歡迎來棋藝社切磋、交流。',
+    meeting_day      = '週四',
+    meeting_time     = '18:00-21:00',
+    meeting_location = '社團活動中心 206 室',
+    contact_email    = 'chess.club@univ.edu',
+    contact_phone    = '0912-345-008',
+    club_fee         = 150,
+    activity_badge   = 'normal_active',
+    last_activity_date = DATE_SUB(NOW(), INTERVAL 8 DAY),
+    last_updated     = NOW()
+WHERE club_code = '082';
+
+-- 網球社（092）
+UPDATE clubs SET
+    description      = '網球社歡迎零基礎到有經驗的球員加入，提供教練指導與社員互打練習。定期舉辦校內友誼賽，並組隊參加大學網球聯賽。費用含球場租借，球拍可向社辦借用，不必自備。',
+    meeting_day      = '週三',
+    meeting_time     = '17:00-19:00',
+    meeting_location = '校內網球場',
+    contact_email    = 'tennis.club@univ.edu',
+    contact_phone    = '0912-345-009',
+    club_fee         = 300,
+    activity_badge   = 'normal_active',
+    last_activity_date = DATE_SUB(NOW(), INTERVAL 6 DAY),
+    last_updated     = NOW()
 WHERE club_code = '092';
 
--- 擃嚗噬?冗嚗???閮?靽????箇?鞈?嚗?UPDATE clubs SET
+-- 羽球社（090）
+UPDATE clubs SET
+    description      = '羽球社是校內最活躍的球類社團之一，提供教練指導與社員自由練習時間。每週兩次訓練，分初學與進階班。定期舉辦校內盃及校際邀請賽，並提供選訓機會給有意參賽的社員。',
+    meeting_day      = '週一、週四',
+    meeting_time     = '18:00-21:00',
+    meeting_location = '綜合體育館 羽球場',
+    contact_email    = 'badminton.club@univ.edu',
+    contact_phone    = '0912-345-010',
+    club_fee         = 250,
     activity_badge   = 'high_active',
     last_activity_date = DATE_SUB(NOW(), INTERVAL 1 DAY),
     last_updated     = NOW()
 WHERE club_code = '090';
 
--- 摮貉?嚗閮蝷?UPDATE clubs SET
-    description      = '?寥?瞍??劑隢??敺?頛舀雁?啣憸典???Ｘ?????颲血撣剜?雓?鞈賬劑隢魚?冗?漱瘚??臬飛??∪??抒ㄗ蝺游?遣蝡靽∠??雿喳像?啜?,
-    meeting_day      = '?曹?',
-    meeting_time     = '19:00-21:00',
-    meeting_location = '鈭箸?擗?H101 瞍?撱?,
+-- 健言社（049）
+UPDATE clubs SET
+    description      = '健言社致力培養同學的演講、即席問答與辯論能力。每週社課透過主題討論、模擬比賽強化口語表達。每年定期舉辦校際即席演講賽，鼓勵社員積極參加校外語言競賽，拓展視野與競爭力。',
+    meeting_day      = '週五',
+    meeting_time     = '18:30-21:00',
+    meeting_location = '人文館 H101 演講廳',
     contact_email    = 'speech.club@univ.edu',
-    contact_phone    = '0912345010',
-    club_fee         = 200,
+    contact_phone    = '0912-345-011',
+    club_fee         = 100,
     activity_badge   = 'high_active',
-    last_activity_date = DATE_SUB(NOW(), INTERVAL 1 DAY),
+    last_activity_date = DATE_SUB(NOW(), INTERVAL 2 DAY),
     last_updated     = NOW()
 WHERE club_code = '049';
 
--- 摮貉?嚗?啣璆剔冗
+-- 創新創業社（192）
 UPDATE clubs SET
-    description      = '瞈?澆璆剔?????摮貉??璆剛?皞?颲血?璆剜芋撘奎鞈賬璆剖?鈭急??平撣怨?撠暑????飛撠???撖阡??航???璆剛??恬???銝?閫隡平??,
-    meeting_day      = '?曹?',
+    description      = '創新創業社連結有理想的創業者與各領域專才，提供商業計畫書撰寫、簡報製作及業師輔導等資源。定期舉辦創業工作坊、與校外新創公司交流，並籌辦年度 Startup Weekend 挑戰賽。',
+    meeting_day      = '週三',
     meeting_time     = '19:00-21:00',
-    meeting_location = '?菜?脫?銝剖? Innovation Lab',
+    meeting_location = '創新育成中心 302 會議室',
     contact_email    = 'startup.club@univ.edu',
-    contact_phone    = '0912345011',
+    contact_phone    = '0912-345-012',
     club_fee         = 200,
     activity_badge   = 'high_active',
-    last_activity_date = NOW(),
+    last_activity_date = DATE_SUB(NOW(), INTERVAL 3 DAY),
     last_updated     = NOW()
 WHERE club_code = '192';
 
--- 摮貉?嚗予?冗
+-- 天文社（051）
 UPDATE clubs SET
-    description      = '?Ｙ揣摰?憟抒?嚗???颲行?鞊∟?皜研予??摨扯?憭拇??蔣瘣餃?????批予?雿輻甈?瘥Ｘ????憌?憭抵情敹齒憭?瘣餃?嚗迭餈??征?遛憟賢?????,
-    meeting_day      = '?曹?',
+    description      = '天文社以探索星空為使命，定期辦理觀星活動、天象講座及太空科學工作坊。設有望遠鏡借用服務，並與校方合作在天文觀測台舉辦夜間觀測活動。歡迎對宇宙充滿好奇的同學一起仰望星空。',
+    meeting_day      = '週五',
     meeting_time     = '19:30-21:30',
-    meeting_location = '?飛?Ｗ??予?',
+    meeting_location = '理工館 R502 天文觀測台',
     contact_email    = 'astro.club@univ.edu',
-    contact_phone    = '0912345012',
-    club_fee         = 200,
-    activity_badge   = 'normal_active',
-    last_activity_date = DATE_SUB(NOW(), INTERVAL 14 DAY),
-    last_updated     = NOW()
-WHERE club_code = '051';
-
--- 摮貉?嚗???鞈?蝛嗥冗
-UPDATE clubs SET
-    description      = '?弦??撣????鞈??伐??齒璅⊥?∠巨蝡嗉魚?瓷???極雿??平??摨扼?蝮賡?蝬??啣??嚗???脣??璆剔??飛??撖行瞍毀撟喳??,
-    meeting_day      = '?勗?',
-    meeting_time     = '19:00-21:00',
-    meeting_location = '?飛??B101 鞎∠恣?恕',
-    contact_email    = 'finance.club@univ.edu',
-    contact_phone    = '0912345013',
-    club_fee         = 300,
+    contact_phone    = '0912-345-013',
+    club_fee         = 150,
     activity_badge   = 'normal_active',
     last_activity_date = DATE_SUB(NOW(), INTERVAL 9 DAY),
     last_updated     = NOW()
+WHERE club_code = '051';
+
+-- 金融投資研究社（401）
+UPDATE clubs SET
+    description      = '金融投資研究社聚焦股票分析、ETF 投資、總體經濟研判等主題，定期舉辦讀書會與模擬操盤競賽。邀請業界人士分享實戰經驗，協助社員建立系統化的投資思維框架，為未來職涯做準備。',
+    meeting_day      = '週四',
+    meeting_time     = '18:00-20:00',
+    meeting_location = '管理學院 M302 討論室',
+    contact_email    = 'finance.club@univ.edu',
+    contact_phone    = '0912-345-014',
+    club_fee         = 200,
+    activity_badge   = 'normal_active',
+    last_activity_date = DATE_SUB(NOW(), INTERVAL 6 DAY),
+    last_updated     = NOW()
 WHERE club_code = '401';
 
--- ??嚗交?摨瑁?蝷?UPDATE clubs SET
-    description      = '?典誨?交??亥?嚗閮??箏儔?西?嚗PR嚗ED 雿輻???交?霅瑟??賬???颲行交?閮毀隤脩?嚗?瘥?蝷曉?質?函??交??餅頨怨嚗?霅瑁澈?犖???賢??具?,
-    meeting_day      = '?勗',
-    meeting_time     = '13:00-16:00',
-    meeting_location = '摮貊?瘣餃?銝剖? S201 ?交??恕',
+-- 急救康輔社（100）
+UPDATE clubs SET
+    description      = '急救康輔社提供 CPR、AED 操作、緊急包紮等急救技能認證課程，同時結合康輔知識推廣心理健康教育。每年服務逾 500 位同學取得急救證照，是校園安全教育的重要力量。',
+    meeting_day      = '週二',
+    meeting_time     = '18:00-20:30',
+    meeting_location = '衛生保健組 急救訓練教室',
     contact_email    = 'firstaid.club@univ.edu',
-    contact_phone    = '0912345014',
-    club_fee         = 0,
-    activity_badge   = 'normal_active',
-    last_activity_date = DATE_SUB(NOW(), INTERVAL 12 DAY),
+    contact_phone    = '0912-345-015',
+    club_fee         = 100,
+    activity_badge   = 'high_active',
+    last_activity_date = DATE_SUB(NOW(), INTERVAL 1 DAY),
     last_updated     = NOW()
 WHERE club_code = '100';
 
--- ??嚗??瞈??冗
+-- 同舟共濟服務社（097）
 UPDATE clubs SET
-    description      = '蝯????望?蝎曄?嚗?摮豢?瘛勗??摮豢??隤脫平頛??隡湔???撖阡???撌亥????寥??飛?冗?痊隞餅???撘勗?黎??????,
-    meeting_day      = '?勗',
+    description      = '同舟共濟服務社以社區服務、弱勢關懷為核心，定期前往偏鄉國小課輔、陪伴獨居老人等志工活動。強調服務學習精神，讓每位社員在付出中成長，累積有意義的社會實踐經歷。',
+    meeting_day      = '週六',
     meeting_time     = '09:00-12:00',
-    meeting_location = '摮貊?瘣餃?銝剖? S301 敹極摰?,
-    contact_email    = 'volunteer.club@univ.edu',
-    contact_phone    = '0912345015',
+    meeting_location = '學生事務處 志工服務中心',
+    contact_email    = 'service.club@univ.edu',
+    contact_phone    = '0912-345-016',
     club_fee         = 0,
     activity_badge   = 'normal_active',
-    last_activity_date = DATE_SUB(NOW(), INTERVAL 20 DAY),
+    last_activity_date = DATE_SUB(NOW(), INTERVAL 7 DAY),
     last_updated     = NOW()
 WHERE club_code = '097';
 
--- ??嚗?瞈?撟渡冗
+-- 慈濟青年社（126）
 UPDATE clubs SET
-    description      = '隞交?瞈犖?移蟡?靽?????嚗撖衣蝳?蝳?敹萸?颲衣靽?皞??嗚犖??冗???瘣餃?嚗???蝔桀??冽?葉??ㄞ??,
-    meeting_day      = '?望',
-    meeting_time     = '09:00-12:00',
-    meeting_location = '摮貊?瘣餃?銝剖? S101',
-    contact_email    = 'tzuchi.club@univ.edu',
-    contact_phone    = '0912345016',
+    description      = '慈濟青年社秉持慈悲喜捨精神，推廣環保、素食與人文教育。定期參與慈善義賣、路邊環保回收及社區關懷活動，以行動落實人文理念，培養大學生的社會責任感與感恩心。',
+    meeting_day      = '週日',
+    meeting_time     = '10:00-12:00',
+    meeting_location = '慈濟人文志業 校園辦公室',
+    contact_email    = 'tzu.chi@univ.edu',
+    contact_phone    = '0912-345-017',
     club_fee         = 0,
-    activity_badge   = 'no_recent_activity',
-    last_activity_date = DATE_SUB(NOW(), INTERVAL 45 DAY),
+    activity_badge   = 'normal_active',
+    last_activity_date = DATE_SUB(NOW(), INTERVAL 14 DAY),
     last_updated     = NOW()
 WHERE club_code = '126';
 
--- 隡?嚗?銝??脩冗
+-- 桌上遊戲社（168）
 UPDATE clubs SET
-    description      = '?典誨獢????嚗??梯?颲行???嚗???血雀??摰日???捏蝑甈暹???蝷曉??隢??亙??瘣曉??????質?曉敹??????脣丰隡湛?',
-    meeting_day      = '?曹?',
-    meeting_time     = '19:00-22:00',
-    meeting_location = '摮貊?瘣餃?銝剖? 1F 獢?摰?,
+    description      = '桌上遊戲社擁有超過 300 款桌遊，涵蓋策略、推理、派對等多種類型。社費含無限次遊玩，每週活動歡迎攜友入場。定期舉辦主題桌遊馬拉松、新遊體驗日，打造輕鬆多元的交流空間。',
+    meeting_day      = '週六',
+    meeting_time     = '13:00-18:00',
+    meeting_location = '社團活動中心 桌遊室',
     contact_email    = 'boardgame.club@univ.edu',
-    contact_phone    = '0912345017',
-    club_fee         = 150,
+    contact_phone    = '0912-345-018',
+    club_fee         = 200,
     activity_badge   = 'high_active',
     last_activity_date = DATE_SUB(NOW(), INTERVAL 2 DAY),
     last_updated     = NOW()
 WHERE club_code = '168';
 
--- 隡?嚗摮奎?蝷?UPDATE clubs SET
-    description      = '?典誨?餃?蝡嗆???嚗項??FPS?OBA????亦?憭車?憿???颲行?折?隢魚??鞈賣晷撠?蝛扔蝯????⊿??餌奎?航魚嚗????撘瑟??',
-    meeting_day      = '?勗?',
+-- 電子競技社（184）
+UPDATE clubs SET
+    description      = '電子競技社整合 FPS、MOBA、格鬥等主流電競項目，提供高規格訓練環境與教練指導。定期舉辦校內邀請賽，並組隊出征大學電競聯賽。不論玩家等級，歡迎熱愛電競的同學一起競技交流。',
+    meeting_day      = '週三、週五',
     meeting_time     = '19:00-22:00',
-    meeting_location = '鞈極擗?2F ?餌奎銝剖?',
+    meeting_location = '資訊館 電競訓練室',
     contact_email    = 'esports.club@univ.edu',
-    contact_phone    = '0912345018',
-    club_fee         = 200,
+    contact_phone    = '0912-345-019',
+    club_fee         = 300,
     activity_badge   = 'high_active',
     last_activity_date = DATE_SUB(NOW(), INTERVAL 1 DAY),
     last_updated     = NOW()
 WHERE club_code = '184';
 
--- 隡?嚗ㄡ?矽鋆賜冗
+-- 飲料調製社（083）
 UPDATE clubs SET
-    description      = '?Ｙ揣??隤輸ㄡ?銵?敺??扒?嗅?菜??寡矽嚗?園ㄡ璆剖葦????憌脰ˊ雿?閮??摮豢??齒?ㄡ蝡嗉魚嚗??飛?典飛蝧???鈭怠?蝢嚗??寥??芯????祕???賬?,
-    meeting_day      = '?曹?',
-    meeting_time     = '19:00-21:00',
-    meeting_location = '?暑擗?2F 憌脫??恕',
-    contact_email    = 'drinks.club@univ.edu',
-    contact_phone    = '0912345019',
+    description      = '飲料調製社教授手搖飲、義式咖啡、無酒精調飲等多種飲料製作技巧。每次社課皆有實作練習，並分享各地飲料文化。不定期舉辦飲品競賽，培養對飲料調製有熱情的未來職人。',
+    meeting_day      = '週四',
+    meeting_time     = '17:00-19:30',
+    meeting_location = '生活科學館 餐飲實習室',
+    contact_email    = 'beverage.club@univ.edu',
+    contact_phone    = '0912-345-020',
     club_fee         = 300,
     activity_badge   = 'normal_active',
-    last_activity_date = DATE_SUB(NOW(), INTERVAL 7 DAY),
+    last_activity_date = DATE_SUB(NOW(), INTERVAL 5 DAY),
     last_updated     = NOW()
 WHERE club_code = '083';
 
--- 蝔?蝷橘?鋆?瘣餉?摨佗?
-UPDATE clubs SET
-    description      = '摮貊?蝔?閮剛???蝞???擃??潘?摰??齒撌乩???撠?蝡嗉魚?? Python ?仿??啣祕??獢??潘????璆剔?鞈?嚗撠?撌仿????閎?飛???貊冗??,
-    activity_badge   = 'high_active',
-    last_activity_date = NOW(),
-    last_updated     = NOW()
-WHERE club_code = 'CSC001';
-
 -- =============================================================
--- 2. Demo 撖拇撣唾?嚗???E2E cleanup 皜嚗?潭?靘??對?
+-- Section 2. Demo 評論者帳號（5 個）
 -- =============================================================
 
-INSERT INTO users (email, password, student_id, name, role, is_active)
-SELECT 'demo_reviewer1@demo.edu', 'Test123456', 'D000001', '?喳???, 'student', TRUE
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'demo_reviewer1@demo.edu');
-
-INSERT INTO users (email, password, student_id, name, role, is_active)
-SELECT 'demo_reviewer2@demo.edu', 'Test123456', 'D000002', '??憍?, 'student', TRUE
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'demo_reviewer2@demo.edu');
-
-INSERT INTO users (email, password, student_id, name, role, is_active)
-SELECT 'demo_reviewer3@demo.edu', 'Test123456', 'D000003', '撘萄?鞊?, 'student', TRUE
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'demo_reviewer3@demo.edu');
-
-INSERT INTO users (email, password, student_id, name, role, is_active)
-SELECT 'demo_reviewer4@demo.edu', 'Test123456', 'D000004', '?蔔??, 'student', TRUE
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'demo_reviewer4@demo.edu');
-
-INSERT INTO users (email, password, student_id, name, role, is_active)
-SELECT 'demo_reviewer5@demo.edu', 'Test123456', 'D000005', '暺遣摰?, 'student', TRUE
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'demo_reviewer5@demo.edu');
+INSERT IGNORE INTO users (username, email, password_hash, full_name, role, is_email_verified, created_at)
+VALUES
+    ('demo_reviewer1', 'demo_reviewer1@demo.edu', '$2y$10$demoHashXXXXXXXXXXXXXXdemoHashXXXXXXXXXXXXXXdemoHashXX', '李小明', 'student', 1, DATE_SUB(NOW(), INTERVAL 30 DAY)),
+    ('demo_reviewer2', 'demo_reviewer2@demo.edu', '$2y$10$demoHashXXXXXXXXXXXXXXdemoHashXXXXXXXXXXXXXXdemoHashXX', '陳美華', 'student', 1, DATE_SUB(NOW(), INTERVAL 29 DAY)),
+    ('demo_reviewer3', 'demo_reviewer3@demo.edu', '$2y$10$demoHashXXXXXXXXXXXXXXdemoHashXXXXXXXXXXXXXXdemoHashXX', '王大偉', 'student', 1, DATE_SUB(NOW(), INTERVAL 28 DAY)),
+    ('demo_reviewer4', 'demo_reviewer4@demo.edu', '$2y$10$demoHashXXXXXXXXXXXXXXdemoHashXXXXXXXXXXXXXXdemoHashXX', '張雅婷', 'student', 1, DATE_SUB(NOW(), INTERVAL 27 DAY)),
+    ('demo_reviewer5', 'demo_reviewer5@demo.edu', '$2y$10$demoHashXXXXXXXXXXXXXXdemoHashXXXXXXXXXXXXXXdemoHashXX', '林志豪', 'student', 1, DATE_SUB(NOW(), INTERVAL 26 DAY));
 
 -- =============================================================
--- 3. ?啣? 12 ??蝷箸暑??WHERE NOT EXISTS ?脤?銴銵????嚗?-- =============================================================
-
--- 瘣餃? 1嚗?冗?亙迤??祆?嚗之??3 撘菜絲?梧?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    '?梯?蝷暹摮???怠瞍?,
-    '?梯?蝷曆?撟港?摨衣??亙迤??撅?嚗??冗?批???蝎曉蔗瞍嚗項???-POP?憯怨?蝑?蝔桅◢?潦??雿????啗”瞍?蝎曉蔗蝯恬?蟡典?祥?亙嚗漣雿?????勗???,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 21 DAY), '%Y-%m-%d'), ' 19:00:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 21 DAY), '%Y-%m-%d'), ' 21:00:00'),
-    '憭批飛憭抒旨??, 300, 0,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 18 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '067'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '?梯?蝷暹摮???怠瞍? AND e.club_id = c.club_id);
-
--- 瘣餃? 2嚗?冗?啁???隤芣???銝剖?嚗? 撘菜絲?梧?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    '?梯?蝷暹???牧??',
-    '甇∟?撠?頩??閎?????冗??隤芣????曉撠?蝎曉蔗蝷箇?銵冽??冗隤脖?蝝孵???????箇?銋???嚗??迭餈????頩?雿?',
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 7 DAY), '%Y-%m-%d'), ' 18:30:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 7 DAY), '%Y-%m-%d'), ' 20:00:00'),
-    '摮貊?瘣餃?銝剖? 1F 憭批輒', 80, 0,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 6 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '067'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '?梯?蝷暹???牧??' AND e.club_id = c.club_id);
-
--- 瘣餃? 3嚗?敶梁冗?亙迤?嗅?憭?嚗葉??2 撘菜絲?梧?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    '?蔣蝷暹摮?憭??暑??,
-    '?砍飛???暺?啣?璊??隞乓??抵??蔣?銝駁?嚗蝷曉?蔣?犖撣園?撖血???撌扳?撠暑????撠?颲虫???鈭急?嚗迭餈?璈??????祥?典??靘輻銝隞賬?,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 14 DAY), '%Y-%m-%d'), ' 09:00:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 14 DAY), '%Y-%m-%d'), ' 17:00:00'),
-    '?啣?璊?????潭迤????', 20, 200,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 11 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '066'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '?蔣蝷暹摮?憭??暑?? AND e.club_id = c.club_id);
-
--- 瘣餃? 4嚗?敶梁冗暺?蔣?臬?嚗之??3 撘菜絲?梧?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    '2026 暺?蔣?臬?',
-    '?蔣蝷曉僑摨虫???閬踝??砍?銝駁??箝?????閰晞?撅蝷曉蝎曉??????賣?敶曹????Ｙ揣??敶梁?璆菔銋???閬賢?鞎餃?湛?甇∟??冽撣怎??甈??嚗?,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 30 DAY), '%Y-%m-%d'), ' 10:00:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 33 DAY), '%Y-%m-%d'), ' 18:00:00'),
-    '??擗?1F 撅汗撱?, 100, 0,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 27 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '066'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '2026 暺?蔣?臬?' AND e.club_id = c.club_id);
-
--- 瘣餃? 5嚗?璅冗?臬??單???憭批?嚗? 撘菜絲?梧?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    '2026 ?亙迤???臬??單???,
-    '??蝷曇?憪此?∟??颲衣?撟游漲?單??嚗?憟?格項??蟡魚擐研?蝬???嚗誑?隞??璅蝺其??巨?孵?園???嚗?憿????祈???勗???,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 45 DAY), '%Y-%m-%d'), ' 14:00:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 45 DAY), '%Y-%m-%d'), ' 17:00:00'),
-    '?單?撱喳之瞍?撱?, 200, 100,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 40 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '061'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '2026 ?亙迤???臬??單??? AND e.club_id = c.club_id);
-
--- 瘣餃? 6嚗撅梁冗?亙迤?控?亥?嚗葉??2 撘菜絲?梧?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    '?餃控蝷暹摮??撅勗銵?鞊∪控銝?仿?',
-    '?祆活?亥?頝舐??箏?情撅望郊???函?蝝?2.5 ?祇?嚗摨阡銝哨??拙??餃控?飛?窒?ˊ閬賢???憯舫??航嚗??撜啣?撠?颲血???擗暑?祥?典靽鞎餌嚗?????鋆??餃控??,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 10 DAY), '%Y-%m-%d'), ' 07:00:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 10 DAY), '%Y-%m-%d'), ' 13:00:00'),
-    '鞊∪控?琿?蝡?1 ??????嚗?, 30, 300,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 7 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '075'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '?餃控蝷暹摮??撅勗銵?鞊∪控銝?仿?' AND e.club_id = c.club_id);
-
--- 瘣餃? 7嚗?銵冗?擃??伐?撠?嚗? 撘菜絲?梧?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    '??蝷暹??圈?撽',
-    '撠葉?舀郎銵??閎??甇∟??勗???蝷暹??圈?撽嚗憭拙?擃??箇???云璆菜?仿??璇啣?蝷綽??梯?瘛梁冗?∟扛?芸葆??霈???甇西?????箇?甇∟?嚗?蝛輯?撖祇?????,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 5 DAY), '%Y-%m-%d'), ' 14:00:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 5 DAY), '%Y-%m-%d'), ' 17:00:00'),
-    '甇西?擗?M101', 40, 0,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 4 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '084'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '??蝷暹??圈?撽' AND e.club_id = c.club_id);
-
--- 瘣餃? 8嚗閮蝷暹?撣剜?雓魚嚗之??3 撘菜絲????隤踵?箏???1 撘蛛?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    '2026 ?⊿??喳葉瞍??隢魚',
-    '?亥?蝷曉僑摨阡??剜嚗?隢?啣?憭折?∩誨銵券???嚗憿???皞?嚗?瞍????典???賢??”??撌扼?鞈賢??魚??鞈賬捱鞈賭?頛迎?甇∟??冽撣怎??閫鞈賢?瘝對?',
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 28 DAY), '%Y-%m-%d'), ' 09:00:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 28 DAY), '%Y-%m-%d'), ' 17:00:00'),
-    '鈭箸?擗?H101 憭扳?雓輒', 150, 0,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 21 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '049'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '2026 ?⊿??喳葉瞍??隢魚' AND e.club_id = c.club_id);
-
--- 瘣餃? 9嚗交?摨瑁?蝷?CPR ?交?閮毀嚗???1 撘菜絲?梧?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    'CPR ?交???質?霅?蝺渲玨蝔?,
-    '?祈玨蝔????箏儔?西?嚗PR嚗?皞?雿?蝔? AED ?芸?擃?敹??餅??駁‵?其蝙?冽瘜??勗?怎???冗?⊿脰?撖虫???????蝺渲???蝯平霅?撥?遣霅啣?∪葦????蝧????踝?',
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 12 DAY), '%Y-%m-%d'), ' 13:00:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 12 DAY), '%Y-%m-%d'), ' 17:00:00'),
-    '摮貊?瘣餃?銝剖? S201 ?交??恕', 30, 0,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 9 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '100'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = 'CPR ?交???質?霅?蝺渲玨蝔? AND e.club_id = c.club_id);
-
--- 瘣餃? 10嚗?銝??脩冗?亙迤獢?擐祆??橘?銝剖?嚗? 撘菜絲?梧?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    '?亙迤獢?擐祆???12 撠?銝???,
-    '銝撟港?摨衣?獢?擐祆??暹暑??敺葉??啣?憭??? 200+ 甈暹??憚瘚岫?抬???∪撜嗚?摰日???銝?蝑犖瘞???脯祥?典擗??ㄡ??甇∟?蝯??鈭箏??',
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 8 DAY), '%Y-%m-%d'), ' 12:00:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 9 DAY), '%Y-%m-%d'), ' 00:00:00'),
-    '摮貊?瘣餃?銝剖? 1F 獢?摰歹??典?嚗?, 60, 150,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 5 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '168'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '?亙迤獢?擐祆???12 撠?銝??? AND e.club_id = c.club_id);
-
--- 瘣餃? 11嚗摮奎?蝷?FPS ?∪?隢魚嚗葉??2 撘菜絲?梧?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    'FPS ?餌奎?∪?隢魚嚗S2嚗?,
-    '?餃?蝡嗆?蝷曆蜓颲行??CS2嚗ounter-Strike 2嚗?隢魚嚗 5v5 ???園脰?嚗????鞈賬???餌奎?券?蝳桀?蝯迭餈?頝舫???鞈踝?銋迭餈?摮詨?曉?粹?隡?瘝孵???',
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 16 DAY), '%Y-%m-%d'), ' 14:00:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 16 DAY), '%Y-%m-%d'), ' 22:00:00'),
-    '鞈極擗?2F ?餌奎銝剖?', 32, 0,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 12 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '184'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = 'FPS ?餌奎?∪?隢魚嚗S2嚗? AND e.club_id = c.club_id);
-
--- 瘣餃? 12嚗?啣璆剔冗 Startup Weekend嚗之??3 撘菜絲????銝剖? 2 撘蛛?
-INSERT INTO events (club_id, event_name, description, event_date, event_end_date, location, capacity, fee,
-    registration_deadline, registration_start, event_status, is_registration_open, published_at)
-SELECT c.club_id,
-    'Startup Weekend ?菜平?撌乩???,
-    '擃撥摨血璆剖極雿?嚗??平璅∪??潭???湧?霅 MVP ???函??勗璆剖?撣怨?撠?蝯?璆剔?閰祟 Pitch嚗??隡??脣?璆剖葦銝撠?頛?鞈?璆剖??鈭箔??臬???曉??嚗?,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 25 DAY), '%Y-%m-%d'), ' 09:00:00'),
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 27 DAY), '%Y-%m-%d'), ' 18:00:00'),
-    '?菜?脫?銝剖? Innovation Lab', 50, 500,
-    CONCAT(DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 20 DAY), '%Y-%m-%d'), ' 23:30:00'),
-    CONCAT(DATE_FORMAT(CURDATE(), '%Y-%m-%d'), ' 00:00:00'),
-    'published', 1, NOW()
-FROM clubs c
-WHERE c.club_code = '192'
-  AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = 'Startup Weekend ?菜平?撌乩??? AND e.club_id = c.club_id);
-
--- =============================================================
--- 4. 瘣餃?瘚瑕嚗??雿輻?????曉 frontend/assets/uploads/嚗?--    頝臬??澆?嚗ssets/uploads/{瑼?}嚗??怠?蝵格?蝺???upload.php 銝?湛?
+-- Section 3. 展示活動（12 個）
 -- =============================================================
 
--- ?梯?蝷暹摮???怠瞍?3 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_dance_show_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '?梯?蝷暹摮???怠瞍? AND c.club_code = '067'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_dance_show_1.jpg');
+-- 活動 1：熱舞社春季期末公演
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    '熱舞社春季期末公演',
+    '一年一度的熱舞社期末大公演！本次公演匯集 K-POP、HipHop、Breaking 等多種舞風，超過 60 位社員傾力演出。歡迎闔家蒞臨，入場免費，名額有限請盡早報名！',
+    DATE_ADD(NOW(), INTERVAL 21 DAY),
+    DATE_ADD(NOW(), INTERVAL 21 DAY) + INTERVAL 3 HOUR,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '輔仁大學 野聲樓 大禮堂',
+    'assets/uploads/events/demo_event1.jpg',
+    200, 0,
+    DATE_ADD(NOW(), INTERVAL 20 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '067'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '熱舞社春季期末公演' AND e.club_id = c.club_id);
 
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_dance_show_2.jpg', 2
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '?梯?蝷暹摮???怠瞍? AND c.club_code = '067'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_dance_show_2.jpg');
+-- 活動 2：熱舞社新生招募說明會
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    '熱舞社新生招募說明會',
+    '想跳舞卻不知從哪裡開始？歡迎來熱舞社說明會！現場有學長姐示範、社團介紹及免費體驗課，報名即可參加抽獎。不分基礎，只要有熱情就來！',
+    DATE_ADD(NOW(), INTERVAL 7 DAY),
+    DATE_ADD(NOW(), INTERVAL 7 DAY) + INTERVAL 2 HOUR,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '人文館 A305 舞蹈排練室',
+    'assets/uploads/events/demo_event2.jpg',
+    50, 0,
+    DATE_ADD(NOW(), INTERVAL 6 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '067'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '熱舞社新生招募說明會' AND e.club_id = c.club_id);
 
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_dance_show_3.jpg', 3
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '?梯?蝷暹摮???怠瞍? AND c.club_code = '067'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_dance_show_3.jpg');
+-- 活動 3：攝影社春季戶外外拍活動
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    '攝影社春季戶外外拍活動',
+    '春季最適合外拍！本次活動主題為「城市光影」，前往板橋 435 藝文特區取景。備有攝影老師帶隊指導，手機相機皆可參加，費用含交通及下午茶。',
+    DATE_ADD(NOW(), INTERVAL 14 DAY),
+    DATE_ADD(NOW(), INTERVAL 14 DAY) + INTERVAL 5 HOUR,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '板橋 435 藝文特區',
+    'assets/uploads/events/demo_event3.jpg',
+    20, 200,
+    DATE_ADD(NOW(), INTERVAL 13 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '066'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '攝影社春季戶外外拍活動' AND e.club_id = c.club_id);
 
--- ?梯?蝷暹??啗牧??嚗? 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_dance_recruit_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '?梯?蝷暹???牧??' AND c.club_code = '067'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_dance_recruit_1.jpg');
+-- 活動 4：2026 黑白攝影聯展
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    '2026 黑白攝影聯展',
+    '攝影社年度聯展正式展出！本次主題「黑白之間」，展示 30 位社員精心拍攝的黑白影像作品，呈現都市、自然、人文等多元視角。歡迎自由入場欣賞，展期兩週。',
+    DATE_ADD(NOW(), INTERVAL 30 DAY),
+    DATE_ADD(NOW(), INTERVAL 44 DAY),
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '視聽館 1F 藝廊',
+    'assets/uploads/events/demo_event4.jpg',
+    100, 0,
+    DATE_ADD(NOW(), INTERVAL 29 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '066'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '2026 黑白攝影聯展' AND e.club_id = c.club_id);
 
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_dance_recruit_2.jpg', 2
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '?梯?蝷暹???牧??' AND c.club_code = '067'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_dance_recruit_2.jpg');
+-- 活動 5：2026 春季國樂聯合音樂會
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    '2026 春季國樂聯合音樂會',
+    '本校國樂社聯合鄰近大學共同舉辦春季音樂會，演出曲目涵蓋傳統民謠、現代國樂改編及合奏協奏等多元形式。演出票價含精緻節目冊，歡迎喜愛國樂的朋友共襄盛舉。',
+    DATE_ADD(NOW(), INTERVAL 45 DAY),
+    DATE_ADD(NOW(), INTERVAL 45 DAY) + INTERVAL 2 HOUR,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '野聲樓 大禮堂',
+    'assets/uploads/events/demo_event5.jpg',
+    150, 100,
+    DATE_ADD(NOW(), INTERVAL 44 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '061'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '2026 春季國樂聯合音樂會' AND e.club_id = c.club_id);
 
--- ?蔣蝷暹摮????2 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_photo_outing_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '?蔣蝷暹摮?憭??暑?? AND c.club_code = '066'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_photo_outing_1.jpg');
+-- 活動 6：登山社春季郊山健行：象山一日遊
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    '登山社春季郊山健行：象山一日遊',
+    '象山步道全長約 1.8 公里，海拔 183 公尺，適合初學者入門。清晨出發，沿途欣賞台北市景，俯瞰信義區 101。費用含保險、補給品及導覽服務，請穿著運動服裝及防滑鞋。',
+    DATE_ADD(NOW(), INTERVAL 10 DAY),
+    DATE_ADD(NOW(), INTERVAL 10 DAY) + INTERVAL 8 HOUR,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '台北象山步道（六巨石登山口）',
+    'assets/uploads/events/demo_event6.jpg',
+    30, 300,
+    DATE_ADD(NOW(), INTERVAL 9 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '075'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '登山社春季郊山健行：象山一日遊' AND e.club_id = c.club_id);
 
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_photo_outing_2.jpg', 2
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '?蔣蝷暹摮?憭??暑?? AND c.club_code = '066'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_photo_outing_2.jpg');
+-- 活動 7：國術社招新體驗日
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    '國術社招新體驗日',
+    '對武術好奇嗎？來國術社體驗日！現場有太極拳、長拳示範，以及免費入門體驗課。學長姐將帶你認識中華武術之美，解答一切入社問題。無需任何基礎，報名即可免費參加！',
+    DATE_ADD(NOW(), INTERVAL 5 DAY),
+    DATE_ADD(NOW(), INTERVAL 5 DAY) + INTERVAL 3 HOUR,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '綜合體育館 武術練習室',
+    'assets/uploads/events/demo_event7.jpg',
+    40, 0,
+    DATE_ADD(NOW(), INTERVAL 4 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '084'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '國術社招新體驗日' AND e.club_id = c.club_id);
 
--- ?蔣蝷暸??賣?敶梯撅?3 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_photo_exhibition_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '2026 暺?蔣?臬?' AND c.club_code = '066'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_photo_exhibition_1.jpg');
+-- 活動 8：2026 校際即席演講邀請賽
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    '2026 校際即席演講邀請賽',
+    '本校健言社主辦年度校際即席演講邀請賽，邀集全台 15 所大學參賽。選手在現場抽題後限時準備 3 分鐘，進行 5 分鐘演說。歡迎所有同學入場觀摩，現場備有評審點評，是學習演講技巧的絕佳機會。',
+    DATE_ADD(NOW(), INTERVAL 28 DAY),
+    DATE_ADD(NOW(), INTERVAL 28 DAY) + INTERVAL 6 HOUR,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '人文館 H101 演講廳',
+    'assets/uploads/events/demo_event8.jpg',
+    80, 0,
+    DATE_ADD(NOW(), INTERVAL 27 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '049'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '2026 校際即席演講邀請賽' AND e.club_id = c.club_id);
 
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_photo_exhibition_2.jpg', 2
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '2026 暺?蔣?臬?' AND c.club_code = '066'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_photo_exhibition_2.jpg');
+-- 活動 9：CPR 急救技能認證訓練課程
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    'CPR 急救技能認證訓練課程',
+    '本課程由急救康輔社與衛生保健組合辦，通過者可取得美國心臟協會（AHA）CPR+AED 認證證書（附費）。課程內容含成人 CPR、AED 操作、哈姆立克急救法，全程約 4 小時，名額有限，請盡早報名。',
+    DATE_ADD(NOW(), INTERVAL 12 DAY),
+    DATE_ADD(NOW(), INTERVAL 12 DAY) + INTERVAL 4 HOUR,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '衛生保健組 急救訓練教室',
+    'assets/uploads/events/demo_event9.jpg',
+    30, 0,
+    DATE_ADD(NOW(), INTERVAL 11 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '100'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = 'CPR 急救技能認證訓練課程' AND e.club_id = c.club_id);
 
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_photo_exhibition_3.jpg', 3
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '2026 暺?蔣?臬?' AND c.club_code = '066'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_photo_exhibition_3.jpg');
+-- 活動 10：春季桌遊馬拉松 12 小時不間斷
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    '春季桌遊馬拉松 12 小時不間斷',
+    '一年一度的桌遊馬拉松來了！300+ 款遊戲任你玩，從輕鬆派對遊戲到燒腦策略大作應有盡有。費用含全程遊玩、點心飲料及精美小禮。組隊或單人皆可報名，歡迎桌遊新手與老手一同挑戰！',
+    DATE_ADD(NOW(), INTERVAL 8 DAY),
+    DATE_ADD(NOW(), INTERVAL 8 DAY) + INTERVAL 12 HOUR,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '社團活動中心 桌遊室',
+    'assets/uploads/events/demo_event10.jpg',
+    60, 150,
+    DATE_ADD(NOW(), INTERVAL 7 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '168'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = '春季桌遊馬拉松 12 小時不間斷' AND e.club_id = c.club_id);
 
--- ??蝷曇?璅?嚗? 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_music_concert_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '2026 ?亙迤???臬??單??? AND c.club_code = '061'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_music_concert_1.jpg');
+-- 活動 11：FPS 電競校內邀請賽（CS2）
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    'FPS 電競校內邀請賽（CS2）',
+    '電競社舉辦 CS2 校內邀請賽，採 5v5 制，共 8 隊參賽。冠軍隊伍將獲得獎金及周邊大禮包，並取得代表本校出戰區域聯賽資格。現正開放組隊報名，每隊 5 人，名額有限！',
+    DATE_ADD(NOW(), INTERVAL 16 DAY),
+    DATE_ADD(NOW(), INTERVAL 16 DAY) + INTERVAL 8 HOUR,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '資訊館 電競訓練室',
+    'assets/uploads/events/demo_event11.jpg',
+    40, 0,
+    DATE_ADD(NOW(), INTERVAL 15 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '184'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = 'FPS 電競校內邀請賽（CS2）' AND e.club_id = c.club_id);
 
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_music_concert_2.jpg', 2
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '2026 ?亙迤???臬??單??? AND c.club_code = '061'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_music_concert_2.jpg');
-
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_music_concert_3.jpg', 3
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '2026 ?亙迤???臬??單??? AND c.club_code = '061'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_music_concert_3.jpg');
-
--- ?餃控蝷曇情撅勗銵?2 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_hiking_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '?餃控蝷暹摮??撅勗銵?鞊∪控銝?仿?' AND c.club_code = '075'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_hiking_1.jpg');
-
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_hiking_2.jpg', 2
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '?餃控蝷暹摮??撅勗銵?鞊∪控銝?仿?' AND c.club_code = '075'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_hiking_2.jpg');
-
--- ??蝷暹??圈?撽嚗? 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_martial_arts_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '??蝷暹??圈?撽' AND c.club_code = '084'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_martial_arts_1.jpg');
-
--- ?⊿??喳葉瞍?鞈踝?1 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_speech_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '2026 ?⊿??喳葉瞍??隢魚' AND c.club_code = '049'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_speech_1.jpg');
-
--- CPR ?交?閮毀嚗? 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_firstaid_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = 'CPR ?交???質?霅?蝺渲玨蝔? AND c.club_code = '100'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_firstaid_1.jpg');
-
--- 獢?擐祆??橘?2 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_boardgame_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '?亙迤獢?擐祆???12 撠?銝??? AND c.club_code = '168'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_boardgame_1.jpg');
-
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_boardgame_2.jpg', 2
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = '?亙迤獢?擐祆???12 撠?銝??? AND c.club_code = '168'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_boardgame_2.jpg');
-
--- FPS ?餌奎?隢魚嚗? 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_esports_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = 'FPS ?餌奎?∪?隢魚嚗S2嚗? AND c.club_code = '184'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_esports_1.jpg');
-
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_esports_2.jpg', 2
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = 'FPS ?餌奎?∪?隢魚嚗S2嚗? AND c.club_code = '184'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_esports_2.jpg');
-
--- Startup Weekend嚗? 撘蛛?
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_startup_1.jpg', 1
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = 'Startup Weekend ?菜平?撌乩??? AND c.club_code = '192'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_startup_1.jpg');
-
-INSERT INTO event_posters (event_id, image_path, sort_order)
-SELECT e.event_id, 'assets/uploads/events/demo_startup_2.jpg', 2
-FROM events e JOIN clubs c ON e.club_id = c.club_id
-WHERE e.event_name = 'Startup Weekend ?菜平?撌乩??? AND c.club_code = '192'
-  AND NOT EXISTS (SELECT 1 FROM event_posters ep WHERE ep.event_id = e.event_id AND ep.image_path = 'assets/uploads/events/demo_startup_2.jpg');
+-- 活動 12：Startup Weekend 創業挑戰工作坊
+INSERT INTO events (club_id, event_name, description, event_date, event_end_date, registration_start,
+    location, poster_path, capacity, fee, registration_deadline,
+    event_status, is_registration_open, published_at)
+SELECT c.club_id,
+    'Startup Weekend 創業挑戰工作坊',
+    '54 小時密集創業挑戰！從組隊、發想商業模式、製作 MVP 到最終 pitch，全程由業師輔導。費用含三日餐點及場地。不限科系，歡迎對創業有熱情的同學報名參加，共同打造你的第一個創業提案。',
+    DATE_ADD(NOW(), INTERVAL 25 DAY),
+    DATE_ADD(NOW(), INTERVAL 27 DAY),
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    '創新育成中心 多功能廳',
+    'assets/uploads/events/demo_event12.jpg',
+    50, 500,
+    DATE_ADD(NOW(), INTERVAL 24 DAY),
+    'published', 1, NOW()
+FROM clubs c WHERE c.club_code = '192'
+AND NOT EXISTS (SELECT 1 FROM events e WHERE e.event_name = 'Startup Weekend 創業挑戰工作坊' AND e.club_id = c.club_id);
 
 -- =============================================================
--- 5. 蝟餌絞?砍?嚗?方? E2E 皜祈岫?砍?嚗??亙?蝷箇?砍?嚗?-- =============================================================
+-- Section 4. 系統公告（4 條）
+-- =============================================================
 
-DELETE FROM system_announcements WHERE title IN ('蝷曉??汗???, '撟喳蝬剛風?');
+DELETE FROM system_announcements WHERE title IN (
+    '🎪 2026 春季社團博覽會盛大登場！',
+    '⚠️ 系統維護公告',
+    '📬 私訊功能正式上線',
+    '📋 學期社費繳納期限提醒'
+);
 
 INSERT INTO system_announcements (title, content, announcement_type, is_pinned, display_priority, created_by, start_date, end_date)
-SELECT '? 2026 ?亙迤蝷曉??汗??憭抒?湛?',
-    '銝撟港?摨衣?蝷曉??汗???潔??勗摮貊?瘣餃?撱??之??嚗????80 憭冗????箸嚗?游?蝷曆澈?曈交???暑????銝? 9:00 ?喃???5:00嚗迭餈?∪葦?葩頨???撠撅祆雿?蝷曉?嚗?,
-    'event', TRUE, 100, u.user_id, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)
+SELECT
+    '🎪 2026 春季社團博覽會盛大登場！',
+    '2026 春季社團博覽會將於 6 月 5 日（五）至 6 月 6 日（六）在本校廣場盛大舉行！超過 80 個社團同時設攤展示，現場備有精彩表演、互動體驗及入社優惠。歡迎同學踴躍蒞臨，探索屬於自己的社團圈。',
+    'event', 1, 100, u.user_id,
+    DATE_SUB(NOW(), INTERVAL 1 DAY),
+    DATE_ADD(NOW(), INTERVAL 60 DAY)
 FROM users u WHERE u.email = 'admin@univ.edu' LIMIT 1;
 
 INSERT INTO system_announcements (title, content, announcement_type, is_pinned, display_priority, created_by, start_date, end_date)
-SELECT '?? 蝟餌絞蝬剛風?砍?',
-    '撟喳撠?祆? 30 ?伐??勗嚗???02:00??4:00 ?脰?靘?蝟餌絞蝬剛風??嚗??像?唳????怠?雿輻?雁霅瑕???撠憓暑???銝像鞎颯??賬?銝噶嚗隢?隢?,
-    'maintenance', TRUE, 90, u.user_id, NOW(), DATE_ADD(NOW(), INTERVAL 10 DAY)
+SELECT
+    '📋 學期社費繳納期限提醒',
+    '2026 春季學期社費繳納期限為 5 月 31 日（週日）。請各社團社員確認繳費狀態，逾期未繳者將暫停社團系統相關功能。如有問題請洽學生事務處課外活動組。',
+    'important', 0, 80, u.user_id,
+    DATE_SUB(NOW(), INTERVAL 3 DAY),
+    DATE_ADD(NOW(), INTERVAL 30 DAY)
 FROM users u WHERE u.email = 'admin@univ.edu' LIMIT 1;
 
 INSERT INTO system_announcements (title, content, announcement_type, is_pinned, display_priority, created_by, start_date, end_date)
-SELECT '? 蝘??甇??銝?',
-    '撟喳?冽?典??閮??踝??飛?曉?臭誑?湔?冗?凳?函?閮???閰Ｗ??亦冗鞈??暑?敦蝭蝑?憿???渲??舀?moji ????閮??賬迭餈???臭葉敹?撽?唳??撘?',
-    'update', FALSE, 60, u.user_id, NOW(), DATE_ADD(NOW(), INTERVAL 60 DAY)
+SELECT
+    '📬 私訊功能正式上線',
+    '社團資訊系統全新私訊功能正式開放！同學現在可以直接透過平台私訊社團管理員或同學，並使用平台機器人的社團適配測驗找到最適合自己的社團。歡迎體驗並回饋使用心得。',
+    'update', 0, 60, u.user_id,
+    DATE_SUB(NOW(), INTERVAL 7 DAY),
+    DATE_ADD(NOW(), INTERVAL 90 DAY)
 FROM users u WHERE u.email = 'admin@univ.edu' LIMIT 1;
 
 INSERT INTO system_announcements (title, content, announcement_type, is_pinned, display_priority, created_by, start_date, end_date)
-SELECT '?? 摮豢?蝷曇祥蝜喟?????',
-    '?冗?飛?冗鞎餌像蝝甇Ｘ??祆?摨?隢??芰像蝝??飛???像鞎餅?蝥?喳飛??????撟喳???冗???Ｘ閰Ｘ?蝜唾祥?冽?蝝啜暹??芰像???怠?蝷曉鞈嚗隢釣??',
-    'important', FALSE, 80, u.user_id, NOW(), DATE_ADD(NOW(), INTERVAL 20 DAY)
+SELECT
+    '⚠️ 系統維護公告',
+    '平台將於 2026 年 5 月 30 日（六）凌晨 02:00～04:00 進行例行系統維護，期間服務將暫停。請同學提前完成報名、繳費等相關操作。維護完成後系統將自動恢復，造成不便敬請見諒。',
+    'maintenance', 1, 90, u.user_id,
+    DATE_SUB(NOW(), INTERVAL 2 DAY),
+    DATE_ADD(NOW(), INTERVAL 5 DAY)
 FROM users u WHERE u.email = 'admin@univ.edu' LIMIT 1;
 
 -- =============================================================
--- 6. 蝷曉?閰嚗eview_status 敹?閮剔 'approved' ???典??圈＊蝷綽?
---    雿輻 demo 撖拇撣唾?嚗NIQUE(club_id, user_id) ? INSERT IGNORE
+-- Section 5. 社團評價（10 筆）
 -- =============================================================
 
--- CSC001 蝔?蝷曇??對?5 蝑?
-INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, display_name, verified_participant, review_status)
-SELECT c.club_id, u.user_id, 5, '頞???撘冗嚗撥???,
-    '?蝔?蝷暹憭批飛?甇?Ⅱ?捱摰?摮賊憪敺敹?敺蝷?瘜撖阡?撠???賣?撣塚?撌乩???鞈芯?敺????梁冗隤脰??隤脫平銋???蝎暸脩?撘??踝??Ｘ平敺撌乩?銋??憭?,
-    '?喳???, TRUE, 'approved'
-FROM clubs c, users u WHERE c.club_code = 'CSC001' AND u.email = 'demo_reviewer1@demo.edu';
+-- 程式社（CSC001）× 5 筆
+INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, is_anonymous, display_name, verified_participant, review_status, helpful_count, created_at)
+SELECT c.club_id, u.user_id,
+    5, '社課內容豐富，學到很多實用技術',
+    '加入程式社後收穫滿滿！從 Python 基礎到演算法競賽都有系統性的課程，學長姐也很熱心。每週的 LeetCode 讀書會讓我刷題能力大幅提升，強力推薦給想精進程式能力的同學。',
+    0, '李小明', 1, 'approved', 8,
+    DATE_SUB(NOW(), INTERVAL 20 DAY)
+FROM clubs c, users u
+WHERE c.club_code = 'CSC001' AND u.email = 'demo_reviewer1@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.club_id = c.club_id AND r.user_id = u.user_id);
 
-INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, display_name, verified_participant, review_status)
-SELECT c.club_id, u.user_id, 4, '摮貊?瘞?敺末嚗暑??撖?,
-    '蝷曇玨?批捆蝝桀祕嚗? Python ??Web ??賣?瘨菔??銝撠撩暺???暑??唳?暺?嚗??誑敺?憭抒??恕?擃?隤芣???澆???飛銵冗??',
-    '??憍?, FALSE, 'approved'
-FROM clubs c, users u WHERE c.club_code = 'CSC001' AND u.email = 'demo_reviewer2@demo.edu';
+INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, is_anonymous, display_name, verified_participant, review_status, helpful_count, created_at)
+SELECT c.club_id, u.user_id,
+    4, '適合想轉換跑道的同學',
+    '我是非資訊系的學生，加入程式社讓我從零開始學習程式設計。老師和幹部都很有耐心，課程進度也很適中。唯一建議是可以多辦一些業界分享，讓大家了解未來求職方向。',
+    0, '陳美華', 1, 'approved', 5,
+    DATE_SUB(NOW(), INTERVAL 15 DAY)
+FROM clubs c, users u
+WHERE c.club_code = 'CSC001' AND u.email = 'demo_reviewer2@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.club_id = c.club_id AND r.user_id = u.user_id);
 
-INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, display_name, verified_participant, review_status)
-SELECT c.club_id, u.user_id, 5, '撟寥?典??冗隤脣?鞈芷?',
-    '蝔?蝷曄?撟寥?虜?典?皞?瘥梁冗隤莎?敺??圈脤??賣????飛?飛???憿銵其?霈?摮豢?璈?撅內??嚗?撠望?敺???撣豢?衣策?喳飛蝔????',
-    '撘萄?鞊?, TRUE, 'approved'
-FROM clubs c, users u WHERE c.club_code = 'CSC001' AND u.email = 'demo_reviewer3@demo.edu';
+INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, is_anonymous, display_name, verified_participant, review_status, helpful_count, created_at)
+SELECT c.club_id, u.user_id,
+    5, '參加 hackathon 拿到佳作，太感謝了',
+    '在程式社的訓練下，我和隊友一起參加了校際黑客松，最終獲得佳作！社團提供的資源和學長姐的技術指導非常關鍵。這是我大學最有成就感的經歷之一。',
+    0, '王大偉', 1, 'approved', 12,
+    DATE_SUB(NOW(), INTERVAL 10 DAY)
+FROM clubs c, users u
+WHERE c.club_code = 'CSC001' AND u.email = 'demo_reviewer3@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.club_id = c.club_id AND r.user_id = u.user_id);
 
-INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, display_name, verified_participant, review_status)
-SELECT c.club_id, u.user_id, 4, '?批捆鞊?嚗P ?澆?擃?,
-    '蝷曇祥?嗉祥??嚗?摮詨?镼輯??潘?瞍?瘜極雿?霈????鈭嗾甈⊿閰佗?????蝷曉?憬??鈭怒?衣策撠?撌仿????閎??摮詻?,
-    '?蔔??, FALSE, 'approved'
-FROM clubs c, users u WHERE c.club_code = 'CSC001' AND u.email = 'demo_reviewer4@demo.edu';
+INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, is_anonymous, display_name, verified_participant, review_status, helpful_count, created_at)
+SELECT c.club_id, u.user_id,
+    4, '社群氛圍很好，學習動力大',
+    '程式社的 Discord 群很活躍，大家會互相分享學習資源和求職心得。雖然有時課程內容偏難，但只要積極發問都會得到解答。整體來說是個很棒的學習社群。',
+    1, '匿名社員', 0, 'approved', 3,
+    DATE_SUB(NOW(), INTERVAL 8 DAY)
+FROM clubs c, users u
+WHERE c.club_code = 'CSC001' AND u.email = 'demo_reviewer4@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.club_id = c.club_id AND r.user_id = u.user_id);
 
-INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, display_name, verified_participant, review_status)
-SELECT c.club_id, u.user_id, 5, '憭批飛蝷曉?擐嚗?雿??脣璆剔?',
-    '蝔?蝷暸??鈭迂憭平?犖憯思??澈蝬?嚗??憭找?撠勗??芯??瘨舀?皜???冗?找??拇???憟踝????憭批振?賣?銝韏瑁?隢圾瘙綽??死撠勗?銝?????澆???',
-    '暺遣摰?, TRUE, 'approved'
-FROM clubs c, users u WHERE c.club_code = 'CSC001' AND u.email = 'demo_reviewer5@demo.edu';
+INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, is_anonymous, display_name, verified_participant, review_status, helpful_count, created_at)
+SELECT c.club_id, u.user_id,
+    5, '最值得加入的技術社團',
+    '加入程式社是我大學最正確的決定！不只學到技術，還認識了很多同樣有熱情的朋友，也因此找到了實習機會。社長和幹部都很認真負責，每次活動都辦得很有質感。',
+    0, '林志豪', 1, 'approved', 7,
+    DATE_SUB(NOW(), INTERVAL 5 DAY)
+FROM clubs c, users u
+WHERE c.club_code = 'CSC001' AND u.email = 'demo_reviewer5@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.club_id = c.club_id AND r.user_id = u.user_id);
 
--- ?梯?蝷曇??對?5 蝑?
-INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, display_name, verified_participant, review_status)
-SELECT c.club_id, u.user_id, 5, '??祆?霈????啣',
-    '???梯?蝷曉撟港?嚗?甈⊥??怠瞍?舀??????颯??嗅蝷?賢??典之蝳桀?銝瞍嚗???虜?????撽?撠葦?飛?瑕??質???嚗撥??佗?',
-    '??憍?, TRUE, 'approved'
-FROM clubs c, users u WHERE c.club_code = '067' AND u.email = 'demo_reviewer2@demo.edu';
+-- 熱舞社（067）× 5 筆
+INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, is_anonymous, display_name, verified_participant, review_status, helpful_count, created_at)
+SELECT c.club_id, u.user_id,
+    5, '零基礎加入也能跳得很好！',
+    '我完全沒有舞蹈基礎，一開始很擔心跟不上。但熱舞社的學長姐非常有耐心，從基本動作教起，三個月後我已經能上台表演了！期末公演是我大學最難忘的回憶之一。',
+    0, '李小明', 1, 'approved', 15,
+    DATE_SUB(NOW(), INTERVAL 18 DAY)
+FROM clubs c, users u
+WHERE c.club_code = '067' AND u.email = 'demo_reviewer1@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.club_id = c.club_id AND r.user_id = u.user_id);
 
-INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, display_name, verified_participant, review_status)
-SELECT c.club_id, u.user_id, 5, '?∪???暑??蝷曉?嚗?,
-    '?梯?蝷曄?蝺渲?瘞???頞?嚗冗?∩?????憟賬-POP 蝯?摮詨?頞???????撠梯頝?蝷曇玨?脣漲鈭?甈∠毀????憭批振?賣?銝韏瑕?ㄞ嚗???飛撅祆??冗??,
-    '?喳???, FALSE, 'approved'
-FROM clubs c, users u WHERE c.club_code = '067' AND u.email = 'demo_reviewer1@demo.edu';
+INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, is_anonymous, display_name, verified_participant, review_status, helpful_count, created_at)
+SELECT c.club_id, u.user_id,
+    4, '舞種多元，找到自己的風格',
+    '熱舞社涵蓋的舞種很多，讓我有機會嘗試不同風格。最後我選擇專攻 Locking，也在期末公演獨立編排了一段舞蹈。課程安排合理，不會佔用太多課業時間。',
+    0, '陳美華', 1, 'approved', 9,
+    DATE_SUB(NOW(), INTERVAL 12 DAY)
+FROM clubs c, users u
+WHERE c.club_code = '067' AND u.email = 'demo_reviewer2@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.club_id = c.club_id AND r.user_id = u.user_id);
 
-INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, display_name, verified_participant, review_status)
-SELECT c.club_id, u.user_id, 4, '銵冽?璈?憭??敺翰',
-    '??梯?蝷曉?憭?敺?銵冽?璈?嚗??⊥???啣??祆?嚗?甈∟”瞍霈??湔??芯縑?擃?隤芣??鈭箸??瑞?憟賜冗??',
-    '?蔔??, TRUE, 'approved'
-FROM clubs c, users u WHERE c.club_code = '067' AND u.email = 'demo_reviewer4@demo.edu';
+INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, is_anonymous, display_name, verified_participant, review_status, helpful_count, created_at)
+SELECT c.club_id, u.user_id,
+    5, '公演超級感動，值得全力投入',
+    '參加了兩年熱舞社，今年第一次當公演主要舞者。雖然密集練習很累，但站上舞台的那一刻什麼都值了！社團氣氛很棒，大家彼此支持鼓勵。',
+    0, '王大偉', 1, 'approved', 20,
+    DATE_SUB(NOW(), INTERVAL 6 DAY)
+FROM clubs c, users u
+WHERE c.club_code = '067' AND u.email = 'demo_reviewer3@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.club_id = c.club_id AND r.user_id = u.user_id);
 
-INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, display_name, verified_participant, review_status)
-SELECT c.club_id, u.user_id, 5, '銝摮貉?嚗摮詨鈭??移蟡?,
-    '?函?冗摮詨???芣???撌改??湔?????痊隞餅??????唬???隤??閬擃冗?∠??芸?嚗車??????Ｘ平敺??嗆敹萎?撌脯?,
-    '暺遣摰?, FALSE, 'approved'
-FROM clubs c, users u WHERE c.club_code = '067' AND u.email = 'demo_reviewer5@demo.edu';
+INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, is_anonymous, display_name, verified_participant, review_status, helpful_count, created_at)
+SELECT c.club_id, u.user_id,
+    4, '體能訓練讓整個人更有活力',
+    '每週的舞蹈訓練讓我體能和協調性都變好了，連平時走路姿態都改善很多。社費合理，師資也很專業。唯一就是練習室有時候人太多，空間稍嫌擁擠。',
+    1, '匿名社員', 0, 'approved', 4,
+    DATE_SUB(NOW(), INTERVAL 4 DAY)
+FROM clubs c, users u
+WHERE c.club_code = '067' AND u.email = 'demo_reviewer4@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.club_id = c.club_id AND r.user_id = u.user_id);
 
-INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, display_name, verified_participant, review_status)
-SELECT c.club_id, u.user_id, 4, '憭車?◢?豢?嚗?啗撌梁?憸冽',
-    '?梯?蝷曉?鈭末撟曉??伐??銵??-POP?憯怎?嚗隞交?撌勗?憟賡?冗隤脫????改??葉??銋??拍隤踵蝺渲?撘瑕漲嚗凳?典?擃?蝷曉?玨璆剖???,
-    '撘萄?鞊?, TRUE, 'approved'
-FROM clubs c, users u WHERE c.club_code = '067' AND u.email = 'demo_reviewer3@demo.edu';
+INSERT IGNORE INTO reviews (club_id, user_id, rating, review_title, review_content, is_anonymous, display_name, verified_participant, review_status, helpful_count, created_at)
+SELECT c.club_id, u.user_id,
+    5, '不只學跳舞，還交到一輩子的朋友',
+    '熱舞社最棒的不只是舞蹈本身，而是這裡的人。大家在練習之外也會一起出去玩、慶生，建立起深厚的友誼。這裡是我大學生活最重要的歸屬感來源。',
+    0, '林志豪', 1, 'approved', 11,
+    DATE_SUB(NOW(), INTERVAL 2 DAY)
+FROM clubs c, users u
+WHERE c.club_code = '067' AND u.email = 'demo_reviewer5@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.club_id = c.club_id AND r.user_id = u.user_id);
 
--- ============================================================
+-- =============================================================
+-- Section 6. Logo 路徑更新
+-- =============================================================
+
+UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_067.jpg' WHERE club_code = '067' AND (logo_path IS NULL OR logo_path = '');
+UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_066.jpg' WHERE club_code = '066' AND (logo_path IS NULL OR logo_path = '');
+UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_061.jpg' WHERE club_code = '061' AND (logo_path IS NULL OR logo_path = '');
+UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_064.jpg' WHERE club_code = '064' AND (logo_path IS NULL OR logo_path = '');
+UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_075.jpg' WHERE club_code = '075' AND (logo_path IS NULL OR logo_path = '');
+UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_084.jpg' WHERE club_code = '084' AND (logo_path IS NULL OR logo_path = '');
+UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_100.jpg' WHERE club_code = '100' AND (logo_path IS NULL OR logo_path = '');
+UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_168.jpg' WHERE club_code = '168' AND (logo_path IS NULL OR logo_path = '');
+UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_184.jpg' WHERE club_code = '184' AND (logo_path IS NULL OR logo_path = '');
+UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_192.jpg' WHERE club_code = '192' AND (logo_path IS NULL OR logo_path = '');
+
+
 -- Section 7: Demo Q&A 提問、回覆、標籤、有幫助票
 -- status='closed' → 前端顯示「已解決」
 -- status='open'   → 前端顯示「待解決」
