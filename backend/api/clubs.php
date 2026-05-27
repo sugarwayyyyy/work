@@ -753,7 +753,7 @@ class ClubAPI {
             if (Auth::isLoggedIn()) {
                 $currentUserId = Auth::getCurrentUserId();
                 $membership = Database::getInstance()->fetchOne(
-                    'SELECT fee_type FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role = "member"',
+                    'SELECT fee_type, role FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1',
                     [$club_id, $currentUserId]
                 );
                 if ($membership) {

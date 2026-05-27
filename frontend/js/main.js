@@ -1434,6 +1434,11 @@ function isNotificationsPage() {
     return path.endsWith('/frontend/pages/notifications.html') || path.endsWith('/pages/notifications.html');
 }
 
+function isMessagesPage() {
+    const path = window.location.pathname || '';
+    return path.endsWith('/frontend/pages/messages.html') || path.endsWith('/pages/messages.html');
+}
+
 function userCanManageClubs(user) {
     if (!user) return false;
     if (user.role === 'platform_admin') return true;
@@ -1896,7 +1901,7 @@ function updateNavigation() {
 
         const navLinks = document.querySelector('.nav-links');
         if (navLinks) {
-            const isPlatformAdminAuxPage = user.role === 'platform_admin' && (isUserProfilePage() || isNotificationsPage());
+            const isPlatformAdminAuxPage = user.role === 'platform_admin' && (isUserProfilePage() || isNotificationsPage() || isMessagesPage());
             if (isAdminSubPage() || isAdminDashboardPage() || isAdminOverviewPage() || isPlatformAdminAuxPage) {
                 navLinks.innerHTML = `
                     <li><a href="${getPageLink('admin-overview.html')}">系統總覽</a></li>
@@ -1905,6 +1910,7 @@ function updateNavigation() {
                     <li><a href="${getPageLink('admin-reports.html')}">報告管理</a></li>
                     <li><a href="${getPageLink('admin-announcements.html')}">系統公告</a></li>
                     <li><a href="${getPageLink('admin-transfers.html')}">帳戶轉讓</a></li>
+                    <li><a href="${getPageLink('messages.html')}">私訊</a></li>
                 `;
             }
 
