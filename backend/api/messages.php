@@ -517,15 +517,8 @@ class MessagesAPI {
         if (!in_array($category, $validCats, true)) {
             Helper::error('無效的社團類別', 400);
         }
-        // Map frontend display names to actual DB category_name values
-        $catMap = [
-            '體育性' => '運動',
-            '學術性' => '學術',
-            '藝文性' => '藝文',
-            '服務性' => '服務',
-            '休閒性' => '休閒',
-        ];
-        $dbCategory = $catMap[$category] ?? $category;
+        // DB category_name 與前端傳入值一致（均為「體育性」「學術性」…）
+        $dbCategory = $category;
 
         if (!in_array($budget, ['0', '500', 'any'], true)) $budget = 'any';
         if (!in_array($intensity, ['light', 'active', 'any'], true)) $intensity = 'any';
