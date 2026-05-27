@@ -40,6 +40,17 @@ $demoReviewerEmails = [
     'demo_reviewer5@demo.edu',
 ];
 
+$demoQaTitles = [
+    'Python 入門後該如何繼續進階學習？',
+    '期末專題要怎麼找到合適的隊友？',
+    '完全沒舞蹈基礎可以加入嗎？',
+    '每週需要練習幾次？對課業影響大嗎？',
+    '入社需要自備相機嗎？手機可以嗎？',
+    '新生需要什麼體能程度才能參加行程？',
+    '社員有機會參加校外演講或辯論比賽嗎？',
+    '社費包含哪些費用？需要自備桌遊嗎？',
+];
+
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function fetchIds(mysqli $conn, string $table, string $col, array $values): array
@@ -169,13 +180,40 @@ try {
         $totals['system_announcements'] = deleteWhereIn($db, 'system_announcements', 'announcement_id', $annIds);
     }
 
-    // 3. Demo 評論者帳號的評價 ──────────────────────────────────────────────────
+    // 3. Demo Q&A 資料 ──────────────────────────────────────────────────────────
+    $qaIds = fetchIdsByValues($db, 'q_and_a', 'question_title', 'qa_id', $demoQaTitles);
+    $qaIds = array_map('intval', $qaIds);
+    if (!empty($qaIds)) {
+        // 先取得所有相關的 reply_id
+        $ph3 = implode(',', array_fill(0, count($qaIds), '?'));
+        $rStmt = $db->prepare("SELECT reply_id FROM qa_replies WHERE qa_id IN ({$ph3})");
+        if ($rStmt === false) {
+            throw new RuntimeException($db->error);
+        }
+        $rStmt->bind_param(str_repeat('i', count($qaIds)), ...$qaIds);
+        $rStmt->execute();
+        $rResult = $rStmt->get_result();
+        $replyIds = [];
+        while ($rRow = $rResult->fetch_assoc()) {
+            $replyIds[] = (int)$rRow['reply_id'];
+        }
+        $rStmt->close();
+
+        if (!empty($replyIds)) {
+            $totals['qa_reply_helpful'] = deleteWhereIn($db, 'qa_reply_helpful', 'reply_id', $replyIds);
+        }
+        $totals['qa_tag_relations'] = deleteWhereIn($db, 'qa_tag_relations', 'qa_id', $qaIds);
+        $totals['qa_replies']        = deleteWhereIn($db, 'qa_replies', 'qa_id', $qaIds);
+        $totals['q_and_a']           = deleteWhereIn($db, 'q_and_a', 'qa_id', $qaIds);
+    }
+
+    // 4. Demo 評論者帳號的評價 ──────────────────────────────────────────────────
     $reviewerIds = fetchIdsByValues($db, 'users', 'email', 'user_id', $demoReviewerEmails);
     if (!empty($reviewerIds)) {
         $intIds = array_map('intval', $reviewerIds);
         $totals['reviews'] = deleteWhereIn($db, 'reviews', 'user_id', $intIds);
 
-        // 4. Demo 評論者帳號本身 ────────────────────────────────────────────────
+        // 5. Demo 評論者帳號本身 ────────────────────────────────────────────────
         $totals['users'] = deleteWhereIn($db, 'users', 'user_id', $intIds);
     }
 
@@ -192,6 +230,10 @@ try {
         'notifications'       => '通知',
         'system_announcements'=> '系統公告',
         'reviews'             => '社團評價',
+        'qa_reply_helpful'    => 'Q&A 有幫助票',
+        'qa_tag_relations'    => 'Q&A 標籤',
+        'qa_replies'          => 'Q&A 回覆',
+        'q_and_a'             => 'Q&A 提問',
         'users'               => 'Demo 帳號',
     ];
     foreach ($labels as $key => $label) {
