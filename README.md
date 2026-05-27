@@ -147,7 +147,7 @@
 - 活動建立、更新與海報上傳（含多張輪播海報；每活動最多 10 張、每張 10MB、僅支援 JPG／PNG／GIF／WebP）
 - 社團預覽與內容管理
 - 活動清單與管理介面
-- 加入申請審核（`club-admin-members.html`）：審核待審核的成員加入申請；批准後系統自動以 Bot 訊息傳送 6 碼驗證碼給申請者；拒絕則發送通知
+- 加入申請審核（`club-admin-applications.html`）：獨立頁面；審核待審核的成員加入申請；批准後系統自動以 Bot 訊息傳送 6 碼驗證碼給申請者；拒絕則發送通知；所有幹部後台 navbar 常駐顯示待審件數紅色 badge，切換社團後即時更新
 - 成員管理（`club-admin-members.html`）：社長可指派副社長、公關、總務、幹事，或將幹部降為一般成員；非社長幹部僅能查看清單
 - 帳號轉讓申請流程
 
@@ -368,6 +368,17 @@ npx playwright test
 - 全站版面採全寬設計（`layout.css` container / nav 均不限寬），各頁面一致。
 - 登入表單已加入送出防抖保護，避免短時間內重複觸發。
 - 私訊系統（`messages.html`）已上線，支援多對話管理、搜尋用戶、歷史紀錄、響應式排版（行動版全螢幕切換、平板雙欄壓縮、桌面可折疊側欄）。
+
+### 最近更新（2026-05-28）
+
+| 項目 | 說明 |
+|------|------|
+| 待審核申請獨立頁面 | 新建 `club-admin-applications.html`；申請審核從 `club-admin-members.html` 移出，具備姓名／費用類型前端篩選功能 |
+| 幹部後台 navbar 重構 | 所有幹部頁面補回完整導覽連結（返回首頁、社團管理、活動列表、成員管理、待審核申請、帳戶轉讓）；`main.js` `isClubAdminSubPage()` 加入新頁面；`navLinks.innerHTML` 補上「待審核申請」含紅色 badge |
+| 申請件數 badge 即時更新 | 切換社團後立即呼叫 `updateNavApplicationsBadge(clubId)`，不再需要手動刷新頁面 |
+| demo_enrichment.sql 修正 | 修復 CP950 / Big5 環境造成的 2708 個 `?` 亂碼；20 社團描述、12 活動、10 評價、4 公告、8 Q&A 全部重寫為正確 UTF-8 |
+| cleanup-demo-data.php | 補入 Q&A 清理邏輯（依 FK 順序刪除 `qa_reply_helpful` → `qa_tag_relations` → `qa_replies` → `q_and_a`） |
+| Dark mode 修正 | quiz 卡片、入社 modal 改用 CSS token（`var(--color-bg-surface)` 等）取代硬編 hex；深色模式統一使用中性系統配色，移除所有紫色殘留 |
 
 ### 最近更新（2026-05-24 / 2026-05-23）
 

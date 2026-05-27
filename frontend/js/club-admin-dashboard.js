@@ -1688,6 +1688,9 @@
                     if (statName) statName.textContent = clubName;
                     document.querySelectorAll('.stat-club-only').forEach(el => el.classList.remove('is-loaded'));
                     loadClubAdminStats(clubId);
+                    if (!document.getElementById('applications-section')) {
+                        updateNavApplicationsBadge(clubId);
+                    }
 
                     closeClubSwitchPopup();
                     document.dispatchEvent(new CustomEvent('clubadmin:switch', { detail: { clubId, clubName } }));
@@ -2076,8 +2079,28 @@
                 closeEventModal();
             });
         })();
+        // -- club-admin-applications.html --
+        (function () {
+            if (!document.getElementById('applications-section')) return;
 
-        // ── club-admin-transfer.html ─────────────────────────────────────────
+            document.addEventListener('clubadmin:switch', async e => {
+                const clubId = Number(e.detail?.clubId || currentClubId || sessionStorage.getItem('clubAdmin_clubId') || 0);
+                if (!clubId) return;
+
+                const wrap = document.getElementById('applications-list-wrap');
+                if (wrap) wrap.innerHTML = '<p class="widget-empty">載入中...</p>';
+
+                await loadJoinApplications(clubId);
+                if (typeof filterApplications === 'function') {
+                    filterApplications();
+                }
+                const renderedCount = document.querySelectorAll('#applications-list-wrap tr[id^="app-row-"]').length;
+                const navBadge = document.getElementById('nav-app-badge');
+                if (navBadge) navBadge.textContent = renderedCount > 0 ? String(renderedCount) : '';
+            });
+        })();
+
+        // -- club-admin-transfer.html --
         (function () {
             const form = document.getElementById('transfer-request-form');
             if (!form) return;
@@ -2490,6 +2513,15 @@
                 PageUtils.showAlert('操作失敗：' + e.message, 'error');
                 btns.forEach(b => b.disabled = false);
             }
+        }
+
+        async function updateNavApplicationsBadge(clubId) {
+            try {
+                const res = await APIClient.get(`club-admin.php?action=join_applications&id=${clubId}`);
+                const count = (res?.data?.applications?.length) || 0;
+                const badge = document.getElementById('nav-app-badge');
+                if (badge) badge.textContent = count > 0 ? String(count) : '';
+            } catch (_) {}
         }
 
         loadUnreadNotificationDot();

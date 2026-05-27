@@ -1420,7 +1420,7 @@ function isAdminSubPage() {
 
 function isClubAdminSubPage() {
     const path = window.location.pathname || '';
-    const pages = ['club-admin-club-manage.html', 'club-admin-create-event.html', 'club-admin-events-list.html', 'club-admin-transfer.html', 'club-admin-members.html'];
+    const pages = ['club-admin-club-manage.html', 'club-admin-create-event.html', 'club-admin-events-list.html', 'club-admin-transfer.html', 'club-admin-members.html', 'club-admin-applications.html'];
     return pages.some(p => path.endsWith('/frontend/pages/' + p) || path.endsWith('/pages/' + p));
 }
 
@@ -1920,6 +1920,7 @@ function updateNavigation() {
                     <li><a href="${getPageLink('club-admin-club-manage.html')}">社團管理</a></li>
                     <li><a href="${getPageLink('club-admin-events-list.html')}">活動列表</a></li>
                     <li><a href="${getPageLink('club-admin-members.html')}">成員管理</a></li>
+                    <li><a href="${getPageLink('club-admin-applications.html')}" id="nav-link-applications">待審核申請<span id="nav-app-badge" class="nav-link-badge"></span></a></li>
                     <li><a href="${getPageLink('club-admin-transfer.html')}">帳戶轉讓</a></li>
                 `;
             } else if (!isAdminSubPage() && !isAdminDashboardPage() && !isAdminOverviewPage()) {

@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>成員管理 — 幹部後台</title>
+    <title>待審核申請 — 幹部後台</title>
     <link rel="stylesheet" href="../css/styles.css?v=20260502k" />
     <link rel="stylesheet" href="../css/admin.css?v=20260502k" />
     <link rel="stylesheet" href="../css/club-admin-dashboard.css?v=20260502k" />
@@ -19,8 +19,8 @@
                 <li><a href="../index.html">返回首頁</a></li>
                 <li><a href="club-admin-club-manage.html">社團管理</a></li>
                 <li><a href="club-admin-events-list.html">活動列表</a></li>
-                <li><a href="club-admin-members.html" class="active">成員管理</a></li>
-                <li><a href="club-admin-applications.html" id="nav-link-applications">待審核申請<span id="nav-app-badge" class="nav-link-badge"></span></a></li>
+                <li><a href="club-admin-members.html">成員管理</a></li>
+                <li><a href="club-admin-applications.html" id="nav-link-applications" class="active" aria-current="page">待審核申請<span id="nav-app-badge" class="nav-link-badge"></span></a></li>
                 <li><a href="club-admin-transfer.html">帳戶轉讓</a></li>
             </ul>
             <div class="nav-right">
@@ -55,33 +55,33 @@
             <button type="button" class="btn btn-secondary btn-sm" onclick="openClubSwitchPopup()">切換社團</button>
         </div>
 
-        <section class="portal-section portal-section--dynamic reveal-up" id="members-section">
+        <section class="portal-section portal-section--dynamic reveal-up" id="applications-section">
             <div class="portal-section-head">
                 <div>
-                    <h2 class="portal-section-title">成員管理</h2>
-                    <p class="portal-section-desc" id="members-subtitle">檢視社團成員；社長可指派或變更幹部職稱。</p>
+                    <h2 class="portal-section-title">
+                        待審核申請<span id="applications-count" class="portal-section-count"></span>
+                    </h2>
+                    <p class="portal-section-desc">審核成員加入申請，批准後系統將自動傳送驗證碼給申請者。</p>
                 </div>
+                <a href="club-admin-members.html" class="btn btn-secondary btn-sm">← 成員管理</a>
             </div>
             <div class="club-events-toolbar">
                 <div class="filter-field">
-                    <label for="member-search">搜尋成員</label>
-                    <input type="text" id="member-search" placeholder="姓名或學號…">
+                    <label for="app-search">搜尋申請人</label>
+                    <input type="text" id="app-search" placeholder="姓名或學號…">
                 </div>
                 <div class="filter-field">
-                    <label for="member-role-filter">職稱篩選</label>
-                    <select id="member-role-filter">
+                    <label for="app-fee-filter">費用類型</label>
+                    <select id="app-fee-filter">
                         <option value="">全部</option>
-                        <option value="社長">社長</option>
-                        <option value="副社長">副社長</option>
-                        <option value="公關">公關</option>
-                        <option value="財務">財務</option>
-                        <option value="幹部">幹部</option>
-                        <option value="一般社員">一般社員</option>
-                        <option value="指導老師">指導老師</option>
+                        <option value="none">免費</option>
+                        <option value="onetime">一次付清</option>
+                        <option value="semester">學期費</option>
+                        <option value="session">單堂費</option>
                     </select>
                 </div>
             </div>
-            <div id="members-list-wrap">
+            <div id="applications-list-wrap" class="admin-list">
                 <p class="widget-empty">載入中…</p>
             </div>
         </section>
@@ -91,35 +91,38 @@
     <script src="../js/main.js?v=20260510"></script>
     <script src="../js/club-admin-dashboard.js"></script>
     <script>
-        // ── 成員列表前端篩選 ──────────────────────────────────────────
-        function filterMembers() {
-            const search     = (document.getElementById('member-search')?.value || '').trim().toLowerCase();
-            const roleFilter = document.getElementById('member-role-filter')?.value || '';
+        // ── 申請列表前端篩選 ──────────────────────────────────────────
+        const FEE_VALUE_TO_LABEL = { none: '免費', onetime: '一次付清', semester: '學期費', session: '單堂費' };
 
-            const rows = document.querySelectorAll('#members-list-wrap tbody tr');
+        function filterApplications() {
+            const search    = (document.getElementById('app-search')?.value || '').trim().toLowerCase();
+            const feeVal    = document.getElementById('app-fee-filter')?.value || '';
+            const feeLabel  = feeVal ? (FEE_VALUE_TO_LABEL[feeVal] || '') : '';
+
+            const rows = document.querySelectorAll('#applications-list-wrap tr[id^="app-row-"]');
             let visible = 0;
             rows.forEach(tr => {
-                const cells  = tr.querySelectorAll('td');
-                const name   = (cells[0]?.textContent || '').toLowerCase();
-                const stuId  = (cells[1]?.textContent || '').toLowerCase();
-                const role   = (cells[2]?.textContent || '').trim();
+                const cells     = tr.querySelectorAll('td');
+                const name      = (cells[0]?.textContent || '').toLowerCase();
+                const studentId = (cells[1]?.textContent || '').toLowerCase();
+                const feeTd     = (cells[2]?.textContent || '').trim();
 
-                const matchSearch = !search     || name.includes(search) || stuId.includes(search);
-                const matchRole   = !roleFilter || role.startsWith(roleFilter);
+                const matchSearch = !search   || name.includes(search) || studentId.includes(search);
+                const matchFee    = !feeLabel || feeTd === feeLabel;
 
-                tr.style.display = (matchSearch && matchRole) ? '' : 'none';
-                if (matchSearch && matchRole) visible++;
+                tr.style.display = (matchSearch && matchFee) ? '' : 'none';
+                if (matchSearch && matchFee) visible++;
             });
 
             // 無結果提示
-            const table = document.querySelector('#members-list-wrap table');
-            const existing = document.getElementById('member-filter-empty');
+            const table = document.querySelector('#applications-list-wrap table');
+            const existing = document.getElementById('app-filter-empty');
             if (table && visible === 0 && rows.length > 0) {
                 if (!existing) {
                     const msg = document.createElement('p');
-                    msg.id = 'member-filter-empty';
+                    msg.id = 'app-filter-empty';
                     msg.className = 'widget-empty';
-                    msg.textContent = '沒有符合條件的成員';
+                    msg.textContent = '沒有符合條件的申請';
                     table.after(msg);
                 }
             } else if (existing) {
@@ -127,8 +130,8 @@
             }
         }
 
-        document.getElementById('member-search')?.addEventListener('input', filterMembers);
-        document.getElementById('member-role-filter')?.addEventListener('change', filterMembers);
+        document.getElementById('app-search')?.addEventListener('input', filterApplications);
+        document.getElementById('app-fee-filter')?.addEventListener('change', filterApplications);
 
         // ── 頁面初始化 ────────────────────────────────────────────────
         (async function () {
@@ -164,12 +167,18 @@
             const bannerName = document.getElementById('selected-club-name');
             if (bannerName) bannerName.textContent = clubName || '-';
             if (banner) banner.style.display = '';
-            const subtitle = document.getElementById('members-subtitle');
-            if (subtitle && clubName) subtitle.textContent = clubName + ' 的社團成員';
 
             loadClubAdminStats(clubId);
-            loadClubMembers(clubId);
-            updateNavApplicationsBadge(clubId);
+            await loadJoinApplications(clubId);
+
+            // badge：直接從已渲染 DOM 計數，不重打 API
+            const renderedCount = document.querySelectorAll('#applications-list-wrap tr[id^="app-row-"]').length;
+            const navBadge = document.getElementById('nav-app-badge');
+            if (navBadge) navBadge.textContent = renderedCount > 0 ? String(renderedCount) : '';
+
+            // 等渲染後掛上篩選
+            document.getElementById('app-search')?.addEventListener('input', filterApplications);
+            document.getElementById('app-fee-filter')?.addEventListener('change', filterApplications);
         })();
     </script>
 </body>

@@ -282,7 +282,7 @@
     padding: 1rem;
 }
 
-.club-admin-page #club-events-section .portal-section-head {
+.club-admin-page .portal-section .portal-section-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -290,10 +290,23 @@
     margin-bottom: 0.85rem;
 }
 
-.club-admin-page #club-events-section .portal-section-title,
-.club-admin-page #club-events-section .portal-section-head h2 {
+.club-admin-page .portal-section .portal-section-title,
+.club-admin-page .portal-section .portal-section-head h2 {
     margin: 0;
     font-size: 1.05rem;
+}
+
+.portal-section-desc {
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #6b7280);
+    margin: 0.15rem 0 0;
+}
+
+.portal-section-count {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--color-text-muted, #6b7280);
+    margin-left: 6px;
 }
 
 .club-admin-events-list {
@@ -433,6 +446,21 @@
     }
 }
 
+
+/* ── 幹部後台 navbar 申請 badge ── */
+.nav-link-badge {
+    display: inline-block;
+    margin-left: 5px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+    line-height: 1.4;
+    vertical-align: middle;
+}
+.nav-link-badge:empty { display: none; }
 
 .admin-selected-club-banner {
     display: flex;
