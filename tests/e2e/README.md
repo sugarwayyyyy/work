@@ -9,6 +9,7 @@
 - [執行測試](#執行測試)
 - [測試結構](#測試結構)
 - [測試帳號](#測試帳號)
+- [Demo 環境準備（教授展示用）](#demo-環境準備教授展示用)
 - [撰寫新測試](#撰寫新測試)
 - [常見問題](#常見問題)
 - [相關文件](#相關文件)
@@ -123,6 +124,63 @@ tests/e2e/
 - **郵箱**：admin@univ.edu
 - **密碼**：Test123456
 - **角色**：platform_admin
+
+## Demo 環境準備（教授展示用）
+
+> 以下步驟在本機展示前執行一次即可；完成後可直接開啟瀏覽器給教授看。
+
+### 執行順序
+
+```bash
+# 1. 初始化資料庫（只需執行一次）
+php run_migration.php
+
+# 2. 建立 E2E 測試帳號與核心社團
+php scripts/seed-e2e-test-data.php
+
+# 3. 填充展示用豐富資料
+php scripts/seed-demo-data.php
+```
+
+### 展示資料包含
+
+| 項目 | 內容 |
+|------|------|
+| 社團資料 | 20 個社團完整描述、開會時間、地點、聯絡資訊 |
+| 活動 | 12 個跨社團活動，均已發布並開放報名 |
+| 系統公告 | 4 則（含置頂公告） |
+| 社團評價 | 10 筆已核准評價（CSC001 程式社、067 熱舞社各 5 筆） |
+
+### 活動海報圖片
+
+需自行準備 24 張海報圖片，存放於 `frontend/assets/uploads/`（規格：800×450 px，JPG）：
+
+```
+demo_dance_show_1.jpg / _2.jpg / _3.jpg      ← 春季期末公演
+demo_dance_recruit_1.jpg / _2.jpg            ← 招新說明會
+demo_photo_outing_1.jpg / _2.jpg             ← 春季戶外外拍
+demo_photo_exhibition_1.jpg / _2.jpg / _3.jpg ← 黑白攝影聯展
+demo_music_concert_1.jpg / _2.jpg / _3.jpg   ← 春季國樂音樂會
+demo_hiking_1.jpg / _2.jpg                  ← 春季郊山健行
+demo_martial_arts_1.jpg                     ← 國術社招新體驗日
+demo_speech_1.jpg                           ← 校際即席演講賽
+demo_firstaid_1.jpg                         ← CPR 急救訓練
+demo_boardgame_1.jpg / _2.jpg               ← 春季桌遊馬拉松
+demo_esports_1.jpg / _2.jpg                 ← FPS 電競邀請賽
+demo_startup_1.jpg / _2.jpg                 ← Startup Weekend
+```
+
+建議用 ChatGPT/Gemini 生成各場景的宣傳海報圖片。
+
+### 展示後清理
+
+```bash
+php scripts/cleanup-demo-data.php
+```
+
+清除活動、公告、評價與 Demo 帳號；**不刪除社團本體**。
+
+---
 
 ## 運作原理
 

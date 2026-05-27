@@ -496,9 +496,6 @@
                 const authorRaw = question.author_name || question.user_name || question.display_name || '匿名用戶';
                 const author = PageUtils.escapeHtml(authorRaw);
                 const qaUserId = Number(question.user_id || 0);
-                const qaIdTagHtml = qaUserId > 0
-                    ? ` <a href="messages.html?user_id=${qaUserId}&name=${encodeURIComponent(authorRaw)}" onclick="event.stopPropagation()" style="font-size:0.73rem;color:var(--text-muted,#6b7280);font-family:monospace;text-decoration:none;" title="傳送私訊">#${qaUserId}</a>`
-                    : '';
                 const urgencyLabel = question.urgency_label || '一般';
                 const safeQuestionTitle = PageUtils.escapeHtml(question.question_title || '未命名提問');
                 const safeQuestionContent = PageUtils.escapeHtml(question.question_content || '');
@@ -512,13 +509,14 @@
 
                 const card = document.createElement('article');
                 card.className = 'feed-item-card';
+                // 注意：不在 innerHTML 內嵌 <a> 連結，避免 <a> 巢狀導致瀏覽器截斷外層連結
                 card.innerHTML = `
                     <a href="qa-detail.html?id=${safeQaId}" class="feed-item-link">
                         <div class="feed-item-head">
                             <h3 class="feed-item-title">${safeQuestionTitle}</h3>
                             <span class="feed-item-badge ${isSolved ? 'feed-item-badge--neutral' : ''}">${isSolved ? '已解決' : '待解決'}</span>
                         </div>
-                        <div class="feed-item-subtitle">${safeClubName} • ${author}${qaIdTagHtml} • ${PageUtils.timeAgo(question.created_at)}</div>
+                        <div class="feed-item-subtitle">${safeClubName} • ${author}<span class="qa-user-id-placeholder"></span> • ${PageUtils.timeAgo(question.created_at)}</div>
                         <p class="feed-item-body">${safeQuestionContent}</p>
                         <div class="feed-item-meta">
                             <span>👁️ ${question.views_count} 次瀏覽</span>
@@ -527,6 +525,22 @@
                         </div>
                     </a>
                 `;
+                // 用 DOM 插入私訊連結，避免 innerHTML 巢狀 <a> 問題
+                if (qaUserId > 0) {
+                    const placeholder = card.querySelector('.qa-user-id-placeholder');
+                    if (placeholder) {
+                        const idLink = document.createElement('a');
+                        idLink.href = `messages.html?user_id=${qaUserId}&name=${encodeURIComponent(authorRaw)}`;
+                        idLink.style.cssText = 'margin-left:4px;font-size:0.73rem;color:var(--text-muted,#6b7280);font-family:monospace;text-decoration:none;';
+                        idLink.title = '傳送私訊';
+                        idLink.textContent = `#${qaUserId}`;
+                        idLink.addEventListener('click', e => e.stopPropagation());
+                        placeholder.replaceWith(idLink);
+                    }
+                } else {
+                    const placeholder = card.querySelector('.qa-user-id-placeholder');
+                    if (placeholder) { placeholder.remove(); }
+                }
                 container.appendChild(card);
             });
         }
