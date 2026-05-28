@@ -208,7 +208,8 @@
 │   └── manual/
 ├── scripts/
 │   ├── check_tables.php          ← 列出本機 DB 所有資料表與欄位，驗證 migration 完整性
-│   ├── seed-e2e-test-data.php
+│   ├── seed-e2e-test-data.php    ← E2E 自動化測試用最小 scaffold
+│   ├── seed-demo-data.php        ← 教授展示用豐富示範資料（20 社團、12 活動、10 評價、8 Q&A）
 │   └── cleanup-e2e-test-data.php
 ├── logs/
 └── README.md
@@ -226,11 +227,12 @@
 避免文件重複維護，完整步驟集中於 [QUICKSTART.md](QUICKSTART.md)。
 
 快速摘要：
-1. 匯入 `database/schema.sql` 與 `database/migrations/*`。
+1. 匯入 `database/schema.sql` 與 `database/migrations/*`（或執行 `php run_migration.php`）。
 2. 匯入 seed：`database/seeds/2026_04_02_school_clubs_seed.sql`、`database/seeds/test_accounts_and_story_data.sql`。
 3. 建立 `backend/config.local.php` 設定本機資料庫連線（此檔案不進 git）。
 4. 確認 `frontend/assets/uploads`、`logs` 可寫入。
 5. 安裝 e2e 測試依賴：`npm install`。
+6. （選用）填充展示用豐富資料：`php scripts/seed-demo-data.php`（需先完成步驟 1-2）。
 
 ## 執行方式
 
@@ -262,6 +264,50 @@ php -S localhost:8000
 | `admin@univ.edu` | 平台管理員 |
 | `clubadmin@univ.edu` | 社團幹部（程式社社長、羽球社幹部） |
 | `student@univ.edu` | 一般學生 |
+
+### 展示用豐富資料（選用）
+
+執行 `php scripts/seed-demo-data.php` 後額外填入：
+
+| 項目 | 說明 |
+|------|------|
+| 20 個社團完整資料 | 描述、開會時間、聯絡資訊、活動活躍度 |
+| 12 個展示活動 | 含完整描述與海報圖片路徑 |
+| 4 則系統公告 | 涵蓋博覽會、維護、社費提醒、私訊上線 |
+| 10 筆社團評價 | 程式社與熱舞社各 5 筆（已核准） |
+| 8 則 Q&A 提問 | 跨 5 個社團，含官方回覆與 helpful 票 |
+| 5 個 demo 評論者帳號 | `demo_reviewer1-5@demo.edu`，密碼 `Test123456` |
+
+> 此資料為冪等操作，可重複執行。
+
+#### 活動海報圖片
+
+需自行準備 24 張圖片，存放於 `frontend/assets/uploads/`（建議 800×450 px，JPG）：
+
+```
+demo_dance_show_1.jpg / _2.jpg / _3.jpg        ← 春季期末公演
+demo_dance_recruit_1.jpg / _2.jpg              ← 招新說明會
+demo_photo_outing_1.jpg / _2.jpg               ← 春季戶外外拍
+demo_photo_exhibition_1.jpg / _2.jpg / _3.jpg  ← 黑白攝影聯展
+demo_music_concert_1.jpg / _2.jpg / _3.jpg     ← 春季國樂音樂會
+demo_hiking_1.jpg / _2.jpg                     ← 春季郊山健行
+demo_martial_arts_1.jpg                        ← 國術社招新體驗日
+demo_speech_1.jpg                              ← 校際即席演講賽
+demo_firstaid_1.jpg                            ← CPR 急救訓練
+demo_boardgame_1.jpg / _2.jpg                  ← 春季桌遊馬拉松
+demo_esports_1.jpg / _2.jpg                    ← FPS 電競邀請賽
+demo_startup_1.jpg / _2.jpg                    ← Startup Weekend
+```
+
+建議用 ChatGPT/Gemini 依場景生成宣傳海報圖片。
+
+#### 展示後清理
+
+```bash
+php scripts/cleanup-demo-data.php
+```
+
+清除活動、公告、評價與 demo 帳號；**不刪除社團本體**。
 
 ## 測試與驗收
 
