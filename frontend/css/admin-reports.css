@@ -139,14 +139,24 @@
     font-size: 0.83rem;
 }
 .report-ctx-bubble--parent {
-    background: var(--color-bg-default, #f3f4f6);
-    border: 1px solid var(--color-border-light, #e5e7eb);
-    color: var(--color-text-muted, #6b7280);
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
 }
 .report-ctx-bubble--flagged {
     background: #fff7ed;
     border: 1px solid #fed7aa;
-    color: var(--color-text, #374151);
+    color: var(--text-default);
+}
+[data-theme="dark"] .report-ctx-bubble--flagged {
+    background: rgba(254, 215, 170, 0.07);
+    border: 1px solid rgba(254, 215, 170, 0.18);
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .report-ctx-bubble--flagged {
+        background: rgba(254, 215, 170, 0.07);
+        border: 1px solid rgba(254, 215, 170, 0.18);
+    }
 }
 .report-ctx-bubble__label {
     font-size: 0.71rem;

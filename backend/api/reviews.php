@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * 評論和評價 API 端點
  */
@@ -7,115 +7,9 @@ require_once '../auth.php';
 require_once '../content_filter.php';
 
 // Handle CORS preflight requests
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    Helper::applyCorsHeaders();
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
-    header('Access-Control-Allow-Credentials: true');
-    exit(0);
-}
+Helper::handleCorsPreFlight();
 
 class ReviewAPI {
-    private static function toLower($text) {
-        $value = (string)$text;
-        if (function_exists('mb_strtolower')) {
-            return mb_strtolower($value, 'UTF-8');
-        }
-        return strtolower($value);
-    }
-
-    private static function containsText($haystack, $needle) {
-        if ($needle === '') {
-            return false;
-        }
-
-        if (function_exists('mb_strpos')) {
-            return mb_strpos($haystack, $needle, 0, 'UTF-8') !== false;
-        }
-
-        return strpos($haystack, $needle) !== false;
-    }
-
-    private static function getFilterRules() {
-        static $rules = null;
-        if ($rules === null) {
-            $rules = require __DIR__ . '/../review_filter_rules.php';
-        }
-        return $rules;
-    }
-
-    private static function normalizeForFilter($text) {
-        $normalized = self::toLower((string)$text);
-        // 去掉空白/符號，減少簡單插字規避
-        $result = preg_replace('/[\s\p{P}\p{S}]+/u', '', $normalized);
-        return $result === null ? $normalized : $result;
-    }
-
-    private static function isWhitelistedContext($normalizedText) {
-        $rules = self::getFilterRules();
-        $whitelist = $rules['whitelist'] ?? [];
-
-        foreach ($whitelist as $term) {
-            if (self::containsText($normalizedText, $term)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // 第一層：粗俗/腥羶色（類似 profanity filter）
-    private static function containsProfanity($normalizedText) {
-        $rules = self::getFilterRules();
-        $patterns = $rules['profanity_patterns'] ?? [];
-
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $normalizedText) === 1) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // 第二層：補充 bad words list zh（可依需求持續擴充）
-    private static function containsExtraBadWords($normalizedText) {
-        $rules = self::getFilterRules();
-        $badWords = $rules['extra_bad_words'] ?? [];
-
-        foreach ($badWords as $word) {
-            if (self::containsText($normalizedText, $word)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // 第三層：反垃圾文本規則（廣告/導流/聯絡方式轟炸）
-    private static function containsSpamPattern($rawText, $normalizedText) {
-        $raw = (string)$rawText;
-        $rules = self::getFilterRules();
-        $spamPatterns = $rules['spam_patterns'] ?? [];
-
-        foreach ($spamPatterns as $pattern) {
-            if (preg_match($pattern, $raw) === 1 || preg_match($pattern, $normalizedText) === 1) {
-                return true;
-            }
-        }
-
-        // 同字連續灌水（例如：讚讚讚讚讚...）
-        if (preg_match('/(.)\1{8,}/u', $normalizedText) === 1) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private static function containsRestrictedLanguage($text) {
-        return ContentFilter::containsRestrictedLanguage($text);
-    }
-    
     /**
      * 取得社團評價列表
      * GET /api/reviews.php?club_id=1&page=1
@@ -204,18 +98,31 @@ class ReviewAPI {
         }
 
         try {
+            $uid = Auth::getCurrentUserId();
+
+            // 已結束的活動且有報名成功或簽到紀錄
             $events = Database::getInstance()->fetchAll(
                 'SELECT DISTINCT e.event_id, e.event_name, e.event_date
                  FROM events e
                  LEFT JOIN event_registrations er ON er.event_id = e.event_id AND er.user_id = ? AND er.status = "approved"
                  LEFT JOIN event_attendance ea ON ea.event_id = e.event_id AND ea.user_id = ?
                  WHERE e.club_id = ?
+                   AND e.event_date < NOW()
                    AND (er.registration_id IS NOT NULL OR ea.attendance_id IS NOT NULL)
                  ORDER BY e.event_date DESC',
-                [Auth::getCurrentUserId(), Auth::getCurrentUserId(), $club_id]
+                [$uid, $uid, $club_id]
             );
 
-            Helper::success('取得可評價活動成功', ['events' => $events]);
+            // 曾加入此社團（包含已退出）
+            $memberRow = Database::getInstance()->fetchOne(
+                'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? LIMIT 1',
+                [$club_id, $uid]
+            );
+
+            Helper::success('取得可評價資格成功', [
+                'events'              => $events,
+                'can_review_as_member' => !empty($memberRow),
+            ]);
         } catch (Exception $e) {
             Helper::error('取得可評價活動失敗: ' . $e->getMessage(), 500);
         }
@@ -229,78 +136,93 @@ class ReviewAPI {
         if (!Auth::isLoggedIn()) {
             Helper::error('請先登入', 401);
         }
-        
+
         try {
-            $errors = Helper::validateRequired($data, ['club_id', 'rating', 'review_content', 'event_attended_id']);
+            $errors = Helper::validateRequired($data, ['club_id', 'rating', 'review_content']);
             if (!empty($errors)) {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
-            
+
             if ($data['rating'] < 1 || $data['rating'] > 5) {
                 Helper::error('評分必須在1-5之間', 400);
             }
 
+            $uid     = Auth::getCurrentUserId();
             $club_id = (int)$data['club_id'];
-            $event_id = (int)$data['event_attended_id'];
-
-            if ($event_id <= 0) {
-                Helper::error('請選擇要評價的活動', 400);
-            }
-
-            $event = Database::getInstance()->fetchOne(
-                'SELECT event_id, club_id FROM events WHERE event_id = ?',
-                [$event_id]
-            );
-            if (!$event || (int)$event['club_id'] !== $club_id) {
-                Helper::error('活動不存在或不屬於此社團', 400);
-            }
+            $event_id_raw = $data['event_attended_id'] ?? null;
+            $event_id = ($event_id_raw !== null && $event_id_raw !== '' && (int)$event_id_raw > 0)
+                ? (int)$event_id_raw
+                : null;
 
             $existingReview = Database::getInstance()->fetchOne(
                 'SELECT review_id FROM reviews WHERE club_id = ? AND user_id = ? LIMIT 1',
-                [$club_id, Auth::getCurrentUserId()]
+                [$club_id, $uid]
             );
             if (!empty($existingReview)) {
                 Helper::error('您已評價過此社團，每位使用者僅能評價一次', 409);
             }
 
             $reviewText = trim(($data['review_title'] ?? '') . ' ' . ($data['review_content'] ?? ''));
-            if (self::containsRestrictedLanguage($reviewText)) {
+            if (ContentFilter::containsRestrictedLanguage($reviewText)) {
                 Helper::error('評價內容包含不適當字眼，請修改後再送出', 400);
             }
-            
-            // 必須有報名成功或簽到紀錄才能評價。
-            $registration = Database::getInstance()->fetchOne(
-                'SELECT registration_id FROM event_registrations WHERE event_id = ? AND user_id = ? AND status = "approved" LIMIT 1',
-                [$event_id, Auth::getCurrentUserId()]
-            );
-            $attendance = Database::getInstance()->fetchOne(
-                'SELECT attendance_id FROM event_attendance WHERE event_id = ? AND user_id = ? LIMIT 1',
-                [$event_id, Auth::getCurrentUserId()]
-            );
-            $verified = !empty($registration) || !empty($attendance);
-            if (!$verified) {
-                Helper::error('僅限有報名成功或簽到紀錄的學生可評價此活動', 403);
+
+            $verified = false;
+
+            if ($event_id !== null) {
+                // ── 活動路徑：驗證活動屬於此社團、已結束、有報名/簽到紀錄 ──
+                $event = Database::getInstance()->fetchOne(
+                    'SELECT event_id, club_id, event_date FROM events WHERE event_id = ?',
+                    [$event_id]
+                );
+                if (!$event || (int)$event['club_id'] !== $club_id) {
+                    Helper::error('活動不存在或不屬於此社團', 400);
+                }
+                if (strtotime($event['event_date']) >= time()) {
+                    Helper::error('活動尚未結束，無法評價', 400);
+                }
+                $registration = Database::getInstance()->fetchOne(
+                    'SELECT registration_id FROM event_registrations WHERE event_id = ? AND user_id = ? AND status = "approved" LIMIT 1',
+                    [$event_id, $uid]
+                );
+                $attendance = Database::getInstance()->fetchOne(
+                    'SELECT attendance_id FROM event_attendance WHERE event_id = ? AND user_id = ? LIMIT 1',
+                    [$event_id, $uid]
+                );
+                $verified = !empty($registration) || !empty($attendance);
+                if (!$verified) {
+                    Helper::error('僅限有報名成功或簽到紀錄的學生可評價此活動', 403);
+                }
+            } else {
+                // ── 社員路徑：曾加入此社團（含已退出）即可評價 ──
+                $memberRow = Database::getInstance()->fetchOne(
+                    'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? LIMIT 1',
+                    [$club_id, $uid]
+                );
+                if (empty($memberRow)) {
+                    Helper::error('需曾加入此社團或參加過已結束的活動才能評價', 403);
+                }
             }
-            
+
             $review_id = dbInsert('reviews', [
-                'club_id' => $club_id,
-                'user_id' => Auth::getCurrentUserId(),
-                'rating' => $data['rating'],
-                'review_title' => $data['review_title'] ?? '',
-                'review_content' => $data['review_content'],
-                'is_anonymous' => $data['is_anonymous'] ?? false,
-                'display_name' => $data['display_name'] ?? '',
+                'club_id'            => $club_id,
+                'user_id'            => $uid,
+                'rating'             => $data['rating'],
+                'review_title'       => $data['review_title'] ?? '',
+                'review_content'     => $data['review_content'],
+                'is_anonymous'       => $data['is_anonymous'] ?? false,
+                'display_name'       => $data['display_name'] ?? '',
                 'verified_participant' => $verified,
-                'event_attended_id' => $event_id,
-                'review_status' => 'approved'
+                'event_attended_id'  => $event_id,
+                'review_status'      => 'approved',
             ]);
-            
+
             if (!$review_id) {
                 Helper::error('評價發布失敗', 500);
             }
-            
+
             Helper::success('評價已發布', ['review_id' => $review_id]);
-            
+
         } catch (Exception $e) {
             Helper::error('發布評價失敗: ' . $e->getMessage(), 500);
         }

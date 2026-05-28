@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * 社團幹部 API
  */
@@ -7,30 +7,9 @@ require_once '../auth.php';
 require_once '../content_filter.php';
 
 // Handle CORS preflight requests
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    Helper::applyCorsHeaders();
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
-    header('Access-Control-Allow-Credentials: true');
-    exit(0);
-}
+Helper::handleCorsPreFlight();
 
 class ClubAdminAPI {
-    private static function validateEventLocationIfProvided($location) {
-        $value = trim((string)$location);
-        if ($value === '') {
-            return;
-        }
-
-        if (preg_match('/https?:\/\/|www\./i', $value) && !ContentFilter::isGoogleMapsUrl($value)) {
-            Helper::error('活動地點若為連結，僅接受 Google 地圖分享網址', 400);
-        }
-
-        if (ContentFilter::containsRestrictedLanguageAllowingUrls($value)) {
-            Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
-        }
-    }
-
     public static function requireClubAdmin() {
         if (!Auth::isClubAdmin()) {
             Helper::error('您無權限執行此操作', 403);
@@ -116,7 +95,7 @@ class ClubAdminAPI {
         if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description'])) {
             Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
         }
-        self::validateEventLocationIfProvided($data['location'] ?? '');
+        ContentFilter::validateLocationOrError($data['location'] ?? '');
 
         $club_id = (int)$data['club_id'];
         $isMember = Database::getInstance()->fetchOne(
@@ -460,7 +439,7 @@ class ClubAdminAPI {
 
         Database::getInstance()->update(
             'club_members',
-            ['fee_type' => $feeType, 'fee_paid' => 0],
+            ['fee_type' => $feeType, 'fee_paid' => ($feeType !== 'none') ? 1 : 0],
             'member_id = ?',
             [$target['member_id']]
         );
@@ -624,7 +603,7 @@ class ClubAdminAPI {
             "SELECT a.*, c.club_name
              FROM club_join_applications a
              JOIN clubs c ON c.club_id = a.club_id
-             WHERE a.application_id = ? AND a.status = 'pending'",
+             WHERE a.application_id = ? AND a.status IN ('pending','approved') AND a.code_used = 0",
             [$appId]
         );
         if (!$app) Helper::error('申請不存在或已處理', 404);
@@ -657,7 +636,26 @@ class ClubAdminAPI {
             return;
         }
 
-        // approve: generate verification code
+        // 冪等處理：已批准但使用者尚未驗證 → 補發同一個驗證碼，不重新生成
+        if ($app['status'] === 'approved') {
+            $existingCode = $app['verification_code'];
+            dbInsert('bot_messages', [
+                'user_id'      => (int)$app['user_id'],
+                'message_type' => 'join_verification',
+                'title'        => '社團加入申請通過！（驗證碼補發）',
+                'content'      => '您申請加入「' . $app['club_name'] . '」的驗證碼如下（補發，請使用此碼完成加入）：',
+                'meta'         => json_encode([
+                    'club_id'           => (int)$app['club_id'],
+                    'club_name'         => $app['club_name'],
+                    'verification_code' => $existingCode,
+                    'application_id'    => $appId,
+                ]),
+            ]);
+            Helper::success('驗證碼已重新傳送給用戶');
+            return;
+        }
+
+        // 第一次批准：生成新驗證碼
         $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
         dbUpdate('club_join_applications',
             ['status' => 'approved', 'verification_code' => $code, 'reviewed_by' => $callerId, 'reviewed_at' => $now],

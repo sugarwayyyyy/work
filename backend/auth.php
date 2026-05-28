@@ -94,7 +94,26 @@ class Helper {
         }
         return $errors;
     }
-    
+
+    // 驗證必填欄位，若有錯誤直接回傳 400
+    public static function validateRequiredOrError($data, $required_fields) {
+        $errors = self::validateRequired($data, $required_fields);
+        if (!empty($errors)) {
+            self::error('驗證失敗: ' . implode(', ', $errors), 400);
+        }
+    }
+
+    // 處理 CORS preflight，符合條件直接 exit
+    public static function handleCorsPreFlight() {
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            self::applyCorsHeaders();
+            header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+            header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
+            header('Access-Control-Allow-Credentials: true');
+            exit(0);
+        }
+    }
+
     // 驗證郵件格式
     public static function validateEmail($email) {
         return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;

@@ -2460,6 +2460,18 @@
             }
         }
 
+        // ── 成員管理 clubadmin:switch ─────────────────────────────────────────
+        (function () {
+            if (!document.getElementById('members-section')) return;
+            document.addEventListener('clubadmin:switch', e => {
+                const clubId = Number(e.detail?.clubId || 0);
+                if (!clubId) return;
+                const subtitle = document.getElementById('members-subtitle');
+                if (subtitle) subtitle.textContent = (e.detail.clubName || '') + ' 的社團成員';
+                loadClubMembers(clubId);
+            });
+        })();
+
         async function loadJoinApplications(clubId) {
             const wrap = document.getElementById('applications-list-wrap');
             const countEl = document.getElementById('applications-count');
@@ -2503,7 +2515,7 @@
             try {
                 const res = await APIClient.post('club-admin.php?action=review_application', { application_id: appId, action });
                 if (res && res.success) {
-                    PageUtils.showAlert(action === 'approve' ? '已批准，驗證碼已傳送給申請者' : '已拒絕申請', 'success');
+                    PageUtils.showAlert(action === 'approve' ? (res.message || '已批准，驗證碼已傳送給申請者') : '已拒絕申請', 'success');
                     loadJoinApplications(clubId);
                 } else {
                     PageUtils.showAlert(res?.message || '操作失敗', 'error');

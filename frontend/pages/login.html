@@ -9,102 +9,10 @@
     <meta http-equiv="Expires" content="0">
     <title>登入 - 社團平台</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/auth-pages.css">
     <style>
-        html, body { height: 100%; overflow: hidden; }
-        .auth-layout {
-            display: flex;
-            height: calc(100vh - 64px);
-            overflow: hidden;
-            background: var(--page-bg);
-        }
-        .auth-carousel {
-            flex: 0 0 60%;
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            gap: 1rem;
-            padding: 1.5rem 1.25rem;
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-        }
-        .auth-carousel__fade {
-            position: absolute;
-            inset: 0;
-            z-index: 2;
-            pointer-events: none;
-            background: linear-gradient(to bottom,
-                var(--surface) 0%, transparent 14%,
-                transparent 86%, var(--surface) 100%);
-        }
-        .auth-form-side {
-            flex: 1;
-            display: flex;
-            align-items: safe center;
-            justify-content: center;
-            padding: 1rem 2rem;
-            overflow-y: auto;
-            scrollbar-width: none;
-        }
-        .auth-form-side::-webkit-scrollbar { display: none; }
-        .auth-form-side .card {
-            width: 100%;
-            max-width: 380px;
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            border-radius: 0;
-            padding: 0;
-            margin-bottom: 0;
-        }
-        .auth-form-side .card:hover { transform: none; box-shadow: none; border-color: transparent; }
+        .auth-form-side .card { max-width: 380px; }
         .auth-form-side .form-group { margin-bottom: 0.9rem; }
-        @media (max-width: 768px) {
-            .auth-form-side .card {
-                background: var(--surface);
-                border: 1px solid var(--color-border-light);
-                box-shadow: 0 1px 4px rgba(26,23,20,.06);
-                border-radius: 1rem;
-                padding: 1.5rem;
-            }
-        }
-        .logo-col {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 0.85rem;
-            animation-timing-function: linear;
-            animation-iteration-count: infinite;
-        }
-        .logo-col--down { animation-name: ac-down; animation-duration: 30s; }
-        .logo-col--up   { animation-name: ac-up;   animation-duration: 36s; }
-        @keyframes ac-down {
-            from { transform: translateY(0); }
-            to   { transform: translateY(-50%); }
-        }
-        @keyframes ac-up {
-            from { transform: translateY(-50%); }
-            to   { transform: translateY(0); }
-        }
-        .logo-item {
-            width: 100%;
-            aspect-ratio: 1;
-            border-radius: 0.875rem;
-            background: var(--surface-subtle);
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            font-weight: 700;
-            font-size: 1.5rem;
-            color: var(--brand);
-            flex-shrink: 0;
-        }
-        .logo-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        @media (max-width: 768px) {
-            .auth-carousel { display: none; }
-            .auth-form-side { flex: 1; }
-        }
     </style>
 </head>
 
@@ -173,50 +81,19 @@
     </div>
 
     <script src="../js/main.js?v=20260510"></script>
+    <script src="../js/auth-pages.js?v=20260528"></script>
     <script>
         FormUtils.bindPasswordToggles();
-
-        async function initLogoCarousel() {
-            try {
-                const res = await APIClient.get('clubs.php');
-                const clubs = (res.success && res.data && res.data.clubs) ? res.data.clubs : [];
-                if (!clubs.length) return;
-
-                for (let i = clubs.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [clubs[i], clubs[j]] = [clubs[j], clubs[i]];
-                }
-
-                const cols = [
-                    document.getElementById('logo-col-1'),
-                    document.getElementById('logo-col-2')
-                ];
-
-                cols.forEach((col, ci) => {
-                    const pool = clubs.filter((_, i) => i % 2 === ci);
-                    const fill = pool.length < 6
-                        ? Array.from({ length: Math.ceil(6 / pool.length) }, () => pool).flat()
-                        : pool;
-                    const double = [...fill, ...fill];
-                    col.innerHTML = double.map(club => {
-                        const initial = PageUtils.escapeHtml((club.club_name || '社').charAt(0));
-                        if (club.logo_path) {
-                            const url = PageUtils.escapeAttribute(PageUtils.resolveMediaUrl(club.logo_path));
-                            const name = PageUtils.escapeAttribute(club.club_name || '');
-                            return `<div class="logo-item" data-initial="${initial}"><img src="${url}" alt="${name}" loading="lazy"></div>`;
-                        }
-                        return `<div class="logo-item">${initial}</div>`;
-                    }).join('');
-                    col.querySelectorAll('.logo-item img').forEach(img => {
-                        img.addEventListener('error', function () {
-                            this.closest('.logo-item').textContent = this.closest('.logo-item').dataset.initial || '社';
-                        });
-                    });
-                });
-            } catch (e) { /* carousel is decorative — fail silently */ }
-        }
-
         initLogoCarousel();
+        initGoogleOAuth({
+            formSelector: '#login-form',
+            loadingText: '登入中…',
+            failText: '登入',
+            onSuccess: (data) => {
+                if (data.role === 'platform_admin') window.location.href = 'admin-users.html?_reload=1';
+                else window.location.href = '../index.html?_reload=1';
+            }
+        });
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -241,24 +118,14 @@
             submitBtn.textContent = '登入中…';
 
             try {
-                const response = await APIClient.post('auth.php?action=login', {
-                    email,
-                    password
-                });
+                const response = await APIClient.post('auth.php?action=login', { email, password });
 
                 if (response.success) {
                     StorageUtils.setUser(response.data);
                     PageUtils.showAlert('登入成功，正在重定向...', 'success');
                     setTimeout(() => {
-                        const role = response.data.role;
-                        const canManageClubs = Boolean(response.data.can_manage_clubs);
-                        if (role === 'platform_admin') {
-                            window.location.href = 'admin-users.html?_reload=1';
-                        } else if (canManageClubs) {
-                            window.location.href = '../index.html?_reload=1';
-                        } else {
-                            window.location.href = '../index.html?_reload=1';
-                        }
+                        if (response.data.role === 'platform_admin') window.location.href = 'admin-users.html?_reload=1';
+                        else window.location.href = '../index.html?_reload=1';
                     }, 1000);
                 } else {
                     PageUtils.showAlert(response.message, 'error');
@@ -272,99 +139,6 @@
                 submitBtn.textContent = '登入';
             }
         });
-    </script>
-    <script>
-    (function () {
-        'use strict';
-
-        async function initGoogleSignIn() {
-            let clientId;
-            try {
-                const res = await APIClient.get('oauth.php?action=google_client_id');
-                if (!res || !res.success || !res.data || !res.data.client_id) {
-                    document.getElementById('google-signin-section').style.display = 'none';
-                    return;
-                }
-                clientId = res.data.client_id;
-            } catch (e) {
-                document.getElementById('google-signin-section').style.display = 'none';
-                return;
-            }
-
-            await new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://accounts.google.com/gsi/client';
-                script.async = true;
-                script.defer = true;
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-
-            google.accounts.id.initialize({
-                client_id: clientId,
-                callback: handleGoogleCallback,
-                ux_mode: 'popup',
-                cancel_on_tap_outside: true,
-            });
-
-            document.getElementById('google-signin-btn').addEventListener('click', function () {
-                google.accounts.id.prompt();
-            });
-
-            // section already visible — no action needed
-        }
-
-        async function handleGoogleCallback(googleResponse) {
-            const credential = googleResponse.credential;
-            if (!credential) {
-                PageUtils.showAlert('Google 登入失敗，請重試', 'error');
-                return;
-            }
-
-            const passwordSubmitBtn = document.querySelector('#login-form button[type="submit"]');
-            if (passwordSubmitBtn) {
-                passwordSubmitBtn.disabled = true;
-                passwordSubmitBtn.textContent = '登入中…';
-            }
-
-            try {
-                const response = await APIClient.post('oauth.php?action=google_verify', { credential });
-
-                if (response && response.success) {
-                    StorageUtils.setUser(response.data);
-                    PageUtils.showAlert('登入成功，正在重定向...', 'success');
-                    setTimeout(() => {
-                        const role = response.data.role;
-                        const canManageClubs = Boolean(response.data.can_manage_clubs);
-                        if (role === 'platform_admin') {
-                            window.location.href = 'admin-users.html?_reload=1';
-                        } else if (canManageClubs) {
-                            window.location.href = '../index.html?_reload=1';
-                        } else {
-                            window.location.href = '../index.html?_reload=1';
-                        }
-                    }, 1000);
-                } else {
-                    const msg = (response && response.message) ? response.message : 'Google 登入失敗，請重試';
-                    PageUtils.showAlert(msg, 'error');
-                    if (passwordSubmitBtn) {
-                        passwordSubmitBtn.disabled = false;
-                        passwordSubmitBtn.textContent = '登入';
-                    }
-                }
-            } catch (err) {
-                console.error('Google OAuth error:', err);
-                PageUtils.showAlert('Google 登入失敗，請稍後重試', 'error');
-                if (passwordSubmitBtn) {
-                    passwordSubmitBtn.disabled = false;
-                    passwordSubmitBtn.textContent = '登入';
-                }
-            }
-        }
-
-        initGoogleSignIn().catch(() => {});
-    }());
     </script>
 </body>
 

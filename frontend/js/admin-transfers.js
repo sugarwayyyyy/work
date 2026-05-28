@@ -1,0 +1,184 @@
+        function escapeHtml(v) {
+            return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+        function formatDateTime(v) {
+            if (!v) return '-';
+            if (window.PageUtils && typeof PageUtils.formatDate === 'function') return PageUtils.formatDate(v);
+            return new Intl.DateTimeFormat('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }).format(new Date(v));
+        }
+        function renderEmptyState(container, title, desc) {
+            container.innerHTML = `<div class="empty-state"><div class="empty-state-illustration"></div><h4>${escapeHtml(title)}</h4><p>${escapeHtml(desc)}</p></div>`;
+        }
+        function statusLabel(s) {
+            return ({ pending:'待審核', approved:'已核准', rejected:'已退回', cancelled:'已取消' })[s] || s || '-';
+        }
+        function statusBadgeClass(s) {
+            return s === 'pending' ? 'feed-item-badge feed-item-badge--accent'
+                 : s === 'approved' ? 'feed-item-badge'
+                 : 'feed-item-badge feed-item-badge--neutral';
+        }
+
+        function buildTransferRow(item, { showActions } = {}) {
+            const isPending = item.request_status === 'pending';
+            const id = Number(item.request_id) || 0;
+
+            const article = document.createElement('article');
+            article.className = 'feed-item-card';
+
+            const handoverHtml = item.handover_note
+                ? `<div class="transfer-detail-full"><span class="transfer-detail-label">補充說明</span>${escapeHtml(item.handover_note)}</div>` : '';
+            const reviewNoteHtml = item.review_note
+                ? `<div class="transfer-detail-full"><span class="transfer-detail-label">審核意見</span>${escapeHtml(item.review_note)}</div>` : '';
+            const reviewerHtml = !isPending
+                ? `<div><span class="transfer-detail-label">審核者</span>${escapeHtml(item.reviewed_by_name || '-')}</div>
+                   <div><span class="transfer-detail-label">審核時間</span>${escapeHtml(formatDateTime(item.reviewed_at))}</div>` : '';
+            const actionsHtml = (showActions && isPending)
+                ? `<div class="transfer-row-actions">
+                       <button class="btn btn-primary btn-sm" data-transfer-approve="${id}">核准</button>
+                       <button class="btn btn-secondary btn-sm" data-transfer-reject="${id}">退回</button>
+                   </div>` : '';
+
+            article.innerHTML = `
+                <button type="button" class="feed-item-link feed-item-link--announcement" data-expand-transfer="${id}">
+                    <div class="feed-item-head">
+                        <h3 class="feed-item-title">${escapeHtml(item.club_name || '-')}${item.club_code ? `<span style="font-weight:400;color:var(--text-muted);font-size:0.82em;margin-left:0.35em;">（${escapeHtml(item.club_code)}）</span>` : ''}</h3>
+                        <span class="${statusBadgeClass(item.request_status)}">${escapeHtml(statusLabel(item.request_status))}</span>
+                    </div>
+                    <p class="feed-item-subtitle">${escapeHtml(item.requester_name || '-')}（${escapeHtml(item.requester_student_id || '-')}）→ ${escapeHtml(item.target_name || '-')}（${escapeHtml(item.target_student_id || '-')}）</p>
+                    <p class="feed-item-time">送出：${escapeHtml(formatDateTime(item.requested_at))}</p>
+                </button>
+                <div class="transfer-row-detail">
+                    <div class="transfer-detail-grid">
+                        <div class="transfer-detail-full"><span class="transfer-detail-label">原因</span>${escapeHtml(item.reason || '-')}</div>
+                        ${handoverHtml}
+                        ${reviewNoteHtml}
+                        ${reviewerHtml}
+                    </div>
+                    ${actionsHtml}
+                </div>
+            `;
+
+            article.querySelector('[data-expand-transfer]').addEventListener('click', () => {
+                article.classList.toggle('is-expanded');
+            });
+
+            if (showActions && isPending) {
+                const approveBtn = article.querySelector('[data-transfer-approve]');
+                const rejectBtn  = article.querySelector('[data-transfer-reject]');
+                if (approveBtn) approveBtn.addEventListener('click', async () => {
+                    if (!confirm('確認核准此帳戶轉讓申請？核准後會立即生效。')) return;
+                    await reviewTransferRequest(id, 'approved', '');
+                });
+                if (rejectBtn) rejectBtn.addEventListener('click', async () => {
+                    const note = prompt('請輸入退回原因（必填）');
+                    if (!note || !note.trim()) return;
+                    await reviewTransferRequest(id, 'rejected', note.trim());
+                });
+            }
+
+            return article;
+        }
+
+        async function loadTransferRequests() {
+            const response = await APIClient.get('admin.php?action=transfer_requests');
+            if (!response.success) return console.error(response.message);
+            const rows = response.data.requests || [];
+
+            const pendingContainer  = document.getElementById('transfer-panel-pending');
+            const reviewedContainer = document.getElementById('transfer-panel-reviewed');
+            pendingContainer.innerHTML  = '';
+            reviewedContainer.innerHTML = '';
+
+            const pending  = rows.filter(r => r.request_status === 'pending');
+            const reviewed = rows.filter(r => r.request_status !== 'pending');
+
+            const countEl = document.getElementById('tab-pending-count');
+            if (countEl) countEl.textContent = pending.length > 0 ? String(pending.length) : '';
+
+            if (pending.length === 0) {
+                renderEmptyState(pendingContainer, '目前沒有待審核申請', '社團幹部送出申請後，會顯示在這裡。');
+            } else {
+                const list = document.createElement('div');
+                list.className = 'feed-stream-list';
+                pending.forEach(item => list.appendChild(buildTransferRow(item, { showActions: true })));
+                pendingContainer.appendChild(list);
+            }
+
+            if (reviewed.length === 0) {
+                renderEmptyState(reviewedContainer, '尚無已審核記錄', '');
+            } else {
+                const list = document.createElement('div');
+                list.className = 'feed-stream-list';
+                reviewed.forEach(item => list.appendChild(buildTransferRow(item, { showActions: false })));
+                reviewedContainer.appendChild(list);
+            }
+        }
+
+        async function loadTransferHistory() {
+            const response = await APIClient.get('admin.php?action=transfer_history');
+            if (!response.success) return console.error(response.message);
+            const rows = response.data.transfers || [];
+            const container = document.getElementById('transfer-panel-history');
+            container.innerHTML = '';
+            if (rows.length === 0) { renderEmptyState(container, '目前沒有轉讓紀錄', '當有帳戶交接時，紀錄會顯示在這裡。'); return; }
+
+            const list = document.createElement('div');
+            list.className = 'feed-stream-list';
+            rows.forEach(transfer => {
+                const article = document.createElement('article');
+                article.className = 'feed-item-card';
+                article.innerHTML = `
+                    <button type="button" class="feed-item-link feed-item-link--announcement" data-expand-history>
+                        <div class="feed-item-head">
+                            <h3 class="feed-item-title">${escapeHtml(transfer.club_name || '-')}${transfer.club_code ? `<span style="font-weight:400;color:var(--text-muted);font-size:0.82em;margin-left:0.35em;">（${escapeHtml(transfer.club_code)}）</span>` : ''}</h3>
+                            <span class="feed-item-badge">已完成</span>
+                        </div>
+                        <p class="feed-item-subtitle">${escapeHtml(transfer.from_user_name || '-')} → ${escapeHtml(transfer.to_user_name || '-')}</p>
+                        <p class="feed-item-time">完成：${escapeHtml(formatDateTime(transfer.transferred_at))}</p>
+                    </button>
+                    <div class="transfer-row-detail">
+                        <div class="transfer-detail-grid">
+                            <div class="transfer-detail-full"><span class="transfer-detail-label">原因</span>${escapeHtml(transfer.reason || '未填寫原因')}</div>
+                            <div><span class="transfer-detail-label">操作者</span>${escapeHtml(transfer.admin_name || '-')}</div>
+                        </div>
+                    </div>
+                `;
+                article.querySelector('[data-expand-history]').addEventListener('click', () => article.classList.toggle('is-expanded'));
+                list.appendChild(article);
+            });
+            container.appendChild(list);
+        }
+
+        async function reviewTransferRequest(requestId, decision, reviewNote) {
+            const response = await APIClient.post('admin.php?action=review_transfer_request', { request_id: requestId, decision, review_note: reviewNote });
+            if (response.success) {
+                PageUtils.showAlert(decision === 'approved' ? '已核准轉讓申請' : '已退回轉讓申請', 'success');
+                loadTransferRequests();
+                loadTransferHistory();
+            } else {
+                PageUtils.showAlert('審核失敗：' + response.message, 'error');
+            }
+        }
+
+        const tabsLoaded = { pending: false, reviewed: false, history: false };
+
+        function switchTab(key) {
+            document.querySelectorAll('.feed-tab').forEach(t => { t.classList.remove('is-active'); t.setAttribute('aria-selected', 'false'); });
+            document.querySelectorAll('.feed-panel').forEach(p => p.classList.remove('is-active'));
+            const btn   = document.querySelector(`.feed-tab[data-panel="${key}"]`);
+            const panel = document.getElementById('transfer-panel-' + key);
+            if (btn)   { btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true'); }
+            if (panel) panel.classList.add('is-active');
+            if (!tabsLoaded[key]) {
+                tabsLoaded[key] = true;
+                if (key === 'history') loadTransferHistory();
+            }
+        }
+
+        document.querySelectorAll('.feed-tab').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.panel));
+        });
+
+        tabsLoaded.pending  = true;
+        tabsLoaded.reviewed = true;
+        loadTransferRequests();

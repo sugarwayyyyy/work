@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * 社團 API 端點
  */
@@ -7,13 +7,7 @@ require_once '../auth.php';
 require_once '../content_filter.php';
 
 // Handle CORS preflight requests
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    Helper::applyCorsHeaders();
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
-    header('Access-Control-Allow-Credentials: true');
-    exit(0);
-}
+Helper::handleCorsPreFlight();
 
 class ClubAPI {
     private static function splitSearchTokens($search) {
@@ -210,6 +204,26 @@ class ClubAPI {
         }
     }
 
+    private static function resolveLogoPath(?string $logoPath): ?string {
+        if (!$logoPath) return null;
+        $normalized = ltrim(str_replace('\\', '/', $logoPath), './');
+        // 移除舊版路徑前綴（PHP 7.4 相容）
+        foreach (['社團活動資訊統整平台/', 'frontend/'] as $prefix) {
+            if (strpos($normalized, $prefix) === 0) {
+                $normalized = substr($normalized, strlen($prefix));
+            }
+        }
+        $diskPath = PROJECT_ROOT . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR
+            . str_replace('/', DIRECTORY_SEPARATOR, $normalized);
+        if (!file_exists($diskPath)) {
+            try {
+                dbUpdate('clubs', ['logo_path' => null], 'logo_path = ?', [$logoPath]);
+            } catch (Exception $_) {}
+            return null;
+        }
+        return $logoPath;
+    }
+
     private static function calculateActivityBadge($clubId, $clubCreatedAt = null) {
         $eventRow = Database::getInstance()->fetchOne(
             'SELECT SUM(CASE WHEN COALESCE(e.published_at, e.created_at) >= DATE_SUB(NOW(), INTERVAL 90 DAY) THEN 1 ELSE 0 END) AS recent_cnt,
@@ -245,7 +259,14 @@ class ClubAPI {
         ]);
         $lastActivityAt = $times ? max($times) : null;
 
-        $badge = ($recentEvents + $recentPosts) >= 1 ? 'high_active' : 'no_recent_activity';
+        $total = $recentEvents + $recentPosts;
+        if ($total >= 3) {
+            $badge = 'high_active';
+        } elseif ($total >= 1) {
+            $badge = 'normal_active';
+        } else {
+            $badge = 'no_recent_activity';
+        }
 
         return ['badge' => $badge, 'last_activity_at' => $lastActivityAt];
     }
@@ -447,10 +468,12 @@ class ClubAPI {
                 $row['activity_badge']   = $activityInfo['badge'];
                 $row['last_activity_at'] = $activityInfo['last_activity_at'];
 
+                $row['logo_path'] = self::resolveLogoPath($row['logo_path'] ?? null);
+
                 if ($useSearchRanking) {
                     $row['_search_score'] = self::scoreClubSearchResult($row, $tags_result, $search);
                 }
-                
+
                 $clubs[] = $row;
             }
 
@@ -612,7 +635,9 @@ class ClubAPI {
             if (!Auth::isAdmin() && !empty($club['deleted_at'])) {
                 Helper::error('社團不存在', 404);
             }
-            
+
+            $club['logo_path'] = self::resolveLogoPath($club['logo_path'] ?? null);
+
             // 取得標籤
             $tags = Database::getInstance()->fetchAll(
                 'SELECT t.* FROM club_tags t 
@@ -976,6 +1001,7 @@ class ClubAPI {
                 $activityInfo = self::calculateActivityBadge((int)$club['club_id'], $club['created_at'] ?? null);
                 $club['activity_badge']   = $activityInfo['badge'];
                 $club['last_activity_at'] = $activityInfo['last_activity_at'];
+                $club['logo_path']        = self::resolveLogoPath($club['logo_path'] ?? null);
             }
             unset($club);
 
@@ -1133,6 +1159,7 @@ class ClubAPI {
             foreach ($clubs as &$club) {
                 $activityInfo = self::calculateActivityBadge((int)$club['club_id'], null);
                 $club['activity_badge'] = $activityInfo['badge'];
+                $club['logo_path']      = self::resolveLogoPath($club['logo_path'] ?? null);
             }
             unset($club);
             Helper::success('取得已加入社團成功', ['clubs' => $clubs]);
@@ -1159,7 +1186,7 @@ class ClubAPI {
 
             $data = Helper::getRequestInput() ?: [];
             $allowedFeeTypes = ['none', 'onetime', 'semester', 'session'];
-            $fee_type = in_array($data['fee_type'] ?? '', $allowedFeeTypes, true) ? $data['fee_type'] : 'semester';
+            $fee_type = in_array($data['fee_type'] ?? '', $allowedFeeTypes, true) ? $data['fee_type'] : 'none';
 
             $userId = Auth::getCurrentUserId();
 

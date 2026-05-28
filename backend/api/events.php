@@ -7,35 +7,13 @@ require_once '../auth.php';
 require_once '../content_filter.php';
 
 Helper::applyCorsHeaders();
-header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Expose-Headers: Content-Disposition');
 
-// Handle CORS preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    Helper::applyCorsHeaders();
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
-    header('Access-Control-Allow-Credentials: true');
-    header('Access-Control-Expose-Headers: Content-Disposition');
     exit(0);
 }
 
 class EventAPI {
-    private static function validateEventLocationIfProvided($location) {
-        $value = trim((string)$location);
-        if ($value === '') {
-            return;
-        }
-
-        if (preg_match('/https?:\/\/|www\./i', $value) && !ContentFilter::isGoogleMapsUrl($value)) {
-            Helper::error('活動地點若為連結，僅接受 Google 地圖分享網址', 400);
-        }
-
-        if (ContentFilter::containsRestrictedLanguageAllowingUrls($value)) {
-            Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
-        }
-    }
-
     private static function splitSearchTokens($search) {
         $text = trim((string)$search);
         if ($text === '') {
@@ -853,7 +831,7 @@ class EventAPI {
             if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description'])) {
                 Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
             }
-            self::validateEventLocationIfProvided($data['location'] ?? '');
+            ContentFilter::validateLocationOrError($data['location'] ?? '');
             
             self::validateHalfHourField($data['event_date'] ?? '', '舉辦日期與時間只能選整點或半點', true);
             self::validateHalfHourField($data['event_end_date'] ?? '', '活動結束時間只能選整點或半點', false);
@@ -955,7 +933,7 @@ class EventAPI {
                 Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
             }
             if (isset($data['location'])) {
-                self::validateEventLocationIfProvided($data['location']);
+                ContentFilter::validateLocationOrError($data['location']);
             }
 
             if (isset($data['event_date'])) {

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * 提問留言板 API 端點
  */
@@ -7,13 +7,7 @@ require_once '../auth.php';
 require_once '../content_filter.php';
 
 // Handle CORS preflight requests
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    Helper::applyCorsHeaders();
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
-    header('Access-Control-Allow-Credentials: true');
-    exit(0);
-}
+Helper::handleCorsPreFlight();
 
 class QandAAPI {
     private static $replyParentColumnExists = null;
@@ -129,101 +123,6 @@ class QandAAPI {
         }
 
         return $reply_id;
-    }
-
-    private static function toLower($text) {
-        $value = (string)$text;
-        if (function_exists('mb_strtolower')) {
-            return mb_strtolower($value, 'UTF-8');
-        }
-        return strtolower($value);
-    }
-
-    private static function containsText($haystack, $needle) {
-        if ($needle === '') {
-            return false;
-        }
-
-        if (function_exists('mb_strpos')) {
-            return mb_strpos($haystack, $needle, 0, 'UTF-8') !== false;
-        }
-
-        return strpos($haystack, $needle) !== false;
-    }
-
-    private static function getFilterRules() {
-        static $rules = null;
-        if ($rules === null) {
-            $rules = require __DIR__ . '/../review_filter_rules.php';
-        }
-        return $rules;
-    }
-
-    private static function normalizeForFilter($text) {
-        $normalized = self::toLower((string)$text);
-        $result = preg_replace('/[\s\p{P}\p{S}]+/u', '', $normalized);
-        return $result === null ? $normalized : $result;
-    }
-
-    private static function isWhitelistedContext($normalizedText) {
-        $rules = self::getFilterRules();
-        $whitelist = $rules['whitelist'] ?? [];
-
-        foreach ($whitelist as $term) {
-            if (self::containsText($normalizedText, $term)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static function containsProfanity($normalizedText) {
-        $rules = self::getFilterRules();
-        $patterns = $rules['profanity_patterns'] ?? [];
-
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $normalizedText) === 1) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static function containsExtraBadWords($normalizedText) {
-        $rules = self::getFilterRules();
-        $badWords = $rules['extra_bad_words'] ?? [];
-
-        foreach ($badWords as $word) {
-            if (self::containsText($normalizedText, $word)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static function containsSpamPattern($rawText, $normalizedText) {
-        $raw = (string)$rawText;
-        $rules = self::getFilterRules();
-        $spamPatterns = $rules['spam_patterns'] ?? [];
-
-        foreach ($spamPatterns as $pattern) {
-            if (preg_match($pattern, $raw) === 1 || preg_match($pattern, $normalizedText) === 1) {
-                return true;
-            }
-        }
-
-        if (preg_match('/(.)\1{8,}/u', $normalizedText) === 1) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private static function containsRestrictedLanguage($text) {
-        return ContentFilter::containsRestrictedLanguage($text);
     }
 
     private static function hasReplyParentColumn() {
@@ -532,7 +431,7 @@ class QandAAPI {
             }
 
             $questionText = trim(($data['question_title'] ?? '') . ' ' . ($data['question_content'] ?? ''));
-            if (self::containsRestrictedLanguage($questionText)) {
+            if (ContentFilter::containsRestrictedLanguage($questionText)) {
                 Helper::error('提問內容包含不適當字眼，請修改後再送出', 400);
             }
             
@@ -620,7 +519,7 @@ class QandAAPI {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
 
-            if (self::containsRestrictedLanguage($data['content'] ?? '')) {
+            if (ContentFilter::containsRestrictedLanguage($data['content'] ?? '')) {
                 Helper::error('回覆內容包含不適當字眼，請修改後再送出', 400);
             }
             
@@ -741,7 +640,7 @@ class QandAAPI {
                 Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
             }
 
-            if (self::containsRestrictedLanguage($data['content'] ?? '')) {
+            if (ContentFilter::containsRestrictedLanguage($data['content'] ?? '')) {
                 Helper::error('回覆內容包含不適當字眼，請修改後再送出', 400);
             }
 

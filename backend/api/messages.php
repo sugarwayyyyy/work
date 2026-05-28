@@ -6,13 +6,7 @@
 require_once '../auth.php';
 require_once '../content_filter.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    Helper::applyCorsHeaders();
-    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
-    header('Access-Control-Allow-Credentials: true');
-    exit(0);
-}
+Helper::handleCorsPreFlight();
 
 class MessagesAPI {
 
@@ -412,13 +406,21 @@ class MessagesAPI {
             Helper::error('無權限', 403);
         }
 
+        // 每人對同一則訊息只允許一個 reaction
         $existing = Database::getInstance()->fetchOne(
-            'SELECT reaction_id FROM message_reactions WHERE message_id = ? AND user_id = ? AND emoji = ?',
-            [$msgId, $uid, $emoji]
+            'SELECT reaction_id, emoji FROM message_reactions WHERE message_id = ? AND user_id = ?',
+            [$msgId, $uid]
         );
         if ($existing) {
             dbDelete('message_reactions', 'reaction_id = ?', [(int)$existing['reaction_id']]);
-            Helper::success('已移除');
+            if ($existing['emoji'] !== $emoji) {
+                // 不同 emoji → 換成新的
+                dbInsert('message_reactions', ['message_id' => $msgId, 'user_id' => $uid, 'emoji' => $emoji]);
+                Helper::success('已切換');
+            } else {
+                // 同一個 emoji → toggle 取消
+                Helper::success('已移除');
+            }
         } else {
             dbInsert('message_reactions', ['message_id' => $msgId, 'user_id' => $uid, 'emoji' => $emoji]);
             Helper::success('已新增');
@@ -454,9 +456,11 @@ class MessagesAPI {
                 'SELECT member_id, is_active FROM club_members WHERE club_id = ? AND user_id = ?',
                 [$clubId, $uid]
             );
+            $feePaidDefault = ($feeType !== 'none') ? 1 : 0;
+
             if ($existing) {
                 Database::getInstance()->update('club_members',
-                    ['is_active' => 1, 'fee_type' => $feeType, 'join_date' => date('Y-m-d H:i:s')],
+                    ['is_active' => 1, 'fee_type' => $feeType, 'fee_paid' => $feePaidDefault, 'join_date' => date('Y-m-d H:i:s')],
                     'member_id = ?', [(int)$existing['member_id']]
                 );
             } else {
@@ -466,6 +470,7 @@ class MessagesAPI {
                     'role'      => 'member',
                     'is_active' => 1,
                     'fee_type'  => $feeType,
+                    'fee_paid'  => $feePaidDefault,
                     'join_date' => date('Y-m-d H:i:s'),
                 ]);
             }

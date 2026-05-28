@@ -1,0 +1,605 @@
+        let currentEvent = null;
+        let currentRating = 0;
+        let eventHasEnded = false;
+        let userRegisteredForEvent = false;
+
+        // ── IG-style poster carousel ──────────────────────────────────────────
+        let _pIdx = 0, _pTotal = 0;
+
+        function _updateCarousel() {
+            const track   = document.getElementById('event-poster-track');
+            const dotsEl  = document.getElementById('poster-dots');
+            const counter = document.getElementById('poster-counter');
+            if (track)   track.style.transform = `translateX(-${_pIdx * 100}%)`;
+            if (dotsEl)  dotsEl.querySelectorAll('.ig-carousel__dot').forEach((d, i) => d.classList.toggle('is-active', i === _pIdx));
+            if (counter) counter.textContent = `${_pIdx + 1} / ${_pTotal}`;
+        }
+
+        function buildPosterCarousel(posters) {
+            const section  = document.getElementById('event-poster-section');
+            const track    = document.getElementById('event-poster-track');
+            const dotsEl   = document.getElementById('poster-dots');
+            const carousel = document.getElementById('event-poster-carousel');
+            const prevBtn  = document.getElementById('poster-prev');
+            const nextBtn  = document.getElementById('poster-next');
+            if (!section || !track) return;
+
+            if (!posters || posters.length === 0) { section.style.display = 'none'; return; }
+
+            _pIdx = 0;
+            _pTotal = posters.length;
+
+            track.innerHTML = posters.map((p, i) => {
+                const url = PageUtils.escapeAttribute(PageUtils.resolveMediaUrl(p.image_path));
+                return `<img src="${url}" alt="活動海報 ${i + 1}" draggable="false">`;
+            }).join('');
+
+            if (dotsEl) dotsEl.innerHTML = posters.map((_, i) =>
+                `<span class="ig-carousel__dot${i === 0 ? ' is-active' : ''}"></span>`
+            ).join('');
+
+            carousel.classList.toggle('ig-carousel--single', posters.length === 1);
+
+            _updateCarousel();
+            section.style.display = 'block';
+
+            prevBtn.onclick = () => { _pIdx = (_pIdx - 1 + _pTotal) % _pTotal; _updateCarousel(); };
+            nextBtn.onclick = () => { _pIdx = (_pIdx + 1) % _pTotal; _updateCarousel(); };
+            if (dotsEl) dotsEl.querySelectorAll('.ig-carousel__dot').forEach((dot, i) => {
+                dot.onclick = () => { _pIdx = i; _updateCarousel(); };
+            });
+
+            // swipe support
+            let _tx = 0;
+            carousel.addEventListener('touchstart', e => { _tx = e.touches[0].clientX; }, { passive: true });
+            carousel.addEventListener('touchend', e => {
+                const dx = e.changedTouches[0].clientX - _tx;
+                if (Math.abs(dx) > 40) { _pIdx = dx < 0 ? (_pIdx + 1) % _pTotal : (_pIdx - 1 + _pTotal) % _pTotal; _updateCarousel(); }
+            });
+        }
+
+        function renderCommentFormAccess() {
+            const user = StorageUtils.getUser();
+            const form = document.getElementById('comment-form');
+            const hint = document.getElementById('comment-form-hint');
+            if (!form || !hint) return;
+
+            if (!user) {
+                form.style.display = 'none';
+                hint.style.display = 'block';
+                hint.textContent = '請先登入；活動結束後，參與者可留下評論。';
+                return;
+            }
+
+            if (!eventHasEnded) {
+                form.style.display = 'none';
+                hint.style.display = 'block';
+                hint.textContent = '活動尚未結束，需參與完成後才能評論。';
+                return;
+            }
+
+            if (!userRegisteredForEvent) {
+                form.style.display = 'none';
+                hint.style.display = 'block';
+                hint.textContent = '僅限已參與此活動的使用者可評論。';
+                return;
+            }
+
+            hint.style.display = 'none';
+            form.style.display = 'block';
+        }
+
+        // 獲取URL參數
+        function getEventId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // 載入活動詳情
+        async function loadEventDetail() {
+            const eventId = getEventId();
+            if (!eventId) {
+                PageUtils.showAlert('無效的活動ID', 'error');
+                return;
+            }
+
+            try {
+                const response = await APIClient.get(`events.php?action=detail&id=${eventId}`);
+                if (response.success) {
+                    currentEvent = response.data;
+                    displayEventDetail(currentEvent);
+                    loadParticipants(eventId);
+                    loadComments(eventId);
+                    loadClubInfo(currentEvent.club?.club_id || currentEvent.club_id, Array.isArray(currentEvent.co_host_clubs) ? currentEvent.co_host_clubs : []);
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('載入活動詳情失敗', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('event-detail').style.display = 'block';
+            }
+        }
+
+        // 顯示活動詳情
+        function displayEventDetail(event) {
+            const formatDateTime = (dateString) => {
+                if (!dateString) return '-';
+                const d = new Date(String(dateString).replace(' ', 'T'));
+                if (Number.isNaN(d.getTime())) return '-';
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hh = String(d.getHours()).padStart(2, '0');
+                const mm = String(d.getMinutes()).padStart(2, '0');
+                return `${y}-${m}-${day} ${hh}:${mm}`;
+            };
+
+            const MAPS_URL_RE = /https?:\/\/(?:www\.)?(?:(?:[a-z0-9-]+\.)?google\.[^\/\s]+\/maps(?:[/?#][^\s]*)?|maps\.app\.goo\.gl\/\S+|goo\.gl\/maps\/\S+)/i;
+            const extractMapsUrl = (v) => { const m = String(v || '').match(MAPS_URL_RE); return m ? m[0] : null; };
+            const locationLabel  = (v) => String(v || '').replace(MAPS_URL_RE, '').trim();
+
+            const formatEventLocation = (locationValue) => {
+                const rawValue = String(locationValue || '').trim();
+                if (!rawValue) return '-';
+                const label = locationLabel(rawValue);
+                if (label) return label;
+                if (extractMapsUrl(rawValue)) return '主辦社團提供的 Google 地圖連結';
+                return rawValue;
+            };
+
+            const renderEventLocationActions = (locationValue) => {
+                const actions = document.getElementById('event-location-actions');
+                if (!actions) return;
+                const mapsUrl = extractMapsUrl(locationValue);
+                if (!mapsUrl) { actions.innerHTML = ''; return; }
+                const link = document.createElement('a');
+                link.className = 'btn btn-primary btn-sm';
+                link.href = mapsUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = '在 Google Maps 導航';
+                actions.innerHTML = '';
+                actions.appendChild(link);
+            };
+
+            const resolveAndUpdateLocation = async (locationValue) => {
+                const mapsUrl = extractMapsUrl(locationValue);
+                if (!mapsUrl) return;
+                if (locationLabel(locationValue)) return; // 已有文字地名，不需解析
+                try {
+                    const res = await APIClient.get(`location-preview.php?url=${encodeURIComponent(mapsUrl)}`);
+                    if (res && res.success && res.place_name) {
+                        const name = res.place_name;
+                        const elHeader = document.getElementById('event-location');
+                        const elDetail = document.getElementById('event-location-detail');
+                        if (elHeader) elHeader.textContent = name;
+                        if (elDetail) elDetail.textContent = name;
+                    }
+                } catch (e) {}
+            };
+
+            const _coHosts = Array.isArray(event.co_host_clubs) ? event.co_host_clubs : [];
+            const _mainClub = { club_id: event.club?.club_id || event.club_id, club_name: event.club?.club_name || '' };
+            const _allClubs = [_mainClub, ..._coHosts];
+
+            document.getElementById('event-title').textContent = event.event_name;
+            document.getElementById('event-club').textContent = _allClubs.map(c => c.club_name).filter(Boolean).join('、');
+            document.getElementById('event-date').textContent = PageUtils.formatDate(event.event_date);
+            document.getElementById('event-location').textContent = formatEventLocation(event.location);
+            const latestEventTime = event.updated_at || event.published_at || event.created_at || null;
+            document.getElementById('event-last-updated').textContent = `最新上傳時間：${formatDateTime(latestEventTime)}`;
+            document.getElementById('event-description').textContent = event.description;
+            const posters = event.posters || (event.poster_path ? [{ poster_id: null, image_path: event.poster_path }] : []);
+            buildPosterCarousel(posters);
+            document.getElementById('registered-count').textContent = event.registered_count;
+            const capacity = Number(event.capacity ?? event.max_participants ?? 0);
+            document.getElementById('max-participants').textContent = Number.isFinite(capacity) && capacity > 0
+                ? String(capacity)
+                : '無上限';
+            document.getElementById('event-datetime-detail').textContent = PageUtils.formatDate(event.event_date);
+            document.getElementById('event-location-detail').textContent = formatEventLocation(event.location);
+            renderEventLocationActions(event.location);
+            resolveAndUpdateLocation(event.location);
+            document.getElementById('event-fee').textContent = event.fee ? `NT$ ${event.fee}` : '免費';
+            const clubPhone = event.club ? (event.club.president_phone || event.club.contact_phone || '') : '';
+            document.getElementById('event-contact').textContent = event.contact_info || clubPhone || '請聯繫社團幹部';
+
+            // 設定活動狀態
+            const eventDate = new Date(event.event_date);
+            const now = new Date();
+            let status = '進行中';
+            if (eventDate < now) {
+                status = '已結束';
+            }
+            eventHasEnded = eventDate < now;
+            document.getElementById('event-status').textContent = status;
+            renderCommentFormAccess();
+
+            // 檢查用戶是否已報名
+            checkRegistrationStatus(event.event_id);
+        }
+
+        // 檢查報名狀態
+        async function checkRegistrationStatus(eventId) {
+            const user = StorageUtils.getUser();
+            const registerBtn = document.getElementById('register-btn');
+            const unregisterBtn = document.getElementById('unregister-btn');
+            const messageEl = document.getElementById('registration-message');
+
+            // 每次刷新狀態先重置按鈕，避免殘留上一次顯示狀態。
+            registerBtn.style.display = 'none';
+            unregisterBtn.style.display = 'none';
+
+            if (!user) {
+                messageEl.textContent = eventHasEnded
+                    ? '活動已結束，無法報名'
+                    : '請先登入以報名活動';
+                userRegisteredForEvent = false;
+                renderCommentFormAccess();
+                return;
+            }
+
+            try {
+                const response = await APIClient.get(`events.php?action=check_registration&event_id=${eventId}`);
+                if (response.success) {
+                    userRegisteredForEvent = !!response.data.registered;
+                    if (eventHasEnded) {
+                        messageEl.textContent = response.data.registered
+                            ? '活動已結束，您的報名已鎖定，無法取消或重新報名'
+                            : '活動已結束，無法報名';
+                    } else if (response.data.registered) {
+                        unregisterBtn.style.display = 'inline-block';
+                        messageEl.textContent = '您已報名此活動';
+                    } else {
+                        registerBtn.style.display = 'inline-block';
+                        messageEl.textContent = '';
+                    }
+                    renderCommentFormAccess();
+                }
+            } catch (error) {
+                console.error('Error checking registration:', error);
+                userRegisteredForEvent = false;
+                messageEl.textContent = '目前無法取得報名狀態，請稍後再試';
+                renderCommentFormAccess();
+            }
+        }
+
+        // 載入參與者列表
+        async function loadParticipants(eventId) {
+            const user = StorageUtils.getUser();
+            const participantsCard = document.getElementById('participants-card');
+
+            // 只有社團幹部（club_admin）和平台管理員（platform_admin）才能看到參與者列表
+            if (!user || (user.role !== 'club_admin' && user.role !== 'platform_admin')) {
+                if (participantsCard) {
+                    participantsCard.style.display = 'none';
+                }
+                return;
+            }
+
+            try {
+                const response = await APIClient.get(`events.php?action=participants&event_id=${eventId}`);
+
+                if (!response.success) {
+                    // 無權限（403）或其他錯誤：不顯示卡片
+                    if (participantsCard) participantsCard.style.display = 'none';
+                    return;
+                }
+
+                if (participantsCard) participantsCard.style.display = 'block';
+
+                const participants = response.data.participants || [];
+                const container = document.getElementById('participants-list');
+
+                if (participants.length === 0) {
+                    container.innerHTML = '<p class="text-muted">尚未有人參加此活動。</p>';
+                    return;
+                }
+
+                let html = `<p class="participants-count">共 ${participants.length} 人</p><ul class="participants-list">`;
+                participants.forEach(participant => {
+                    const safeName = PageUtils.escapeHtml(participant.name || '匿名參與者');
+                    const safeStudentId = PageUtils.escapeHtml(participant.student_id || '—');
+                    html += `<li class="participants-item"><span class="participants-name">${safeName}</span><span class="participants-id">${safeStudentId}</span></li>`;
+                });
+                html += '</ul>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading participants:', error);
+                if (participantsCard) participantsCard.style.display = 'none';
+            }
+        }
+
+        // 載入評論
+        async function loadComments(eventId) {
+            try {
+                const response = await APIClient.get(`events.php?action=comments&event_id=${eventId}`);
+                if (response.success) {
+                    const comments = response.data.comments;
+                    const container = document.getElementById('comments-list');
+                    const summary = document.getElementById('comments-rating-summary');
+
+                    const ratings = comments
+                        .map(comment => Number(comment.rating))
+                        .filter(rating => Number.isFinite(rating) && rating > 0);
+                    const ratingCount = ratings.length;
+                    const averageRating = ratingCount > 0
+                        ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratingCount)
+                        : 0;
+
+                    if (summary) {
+                        summary.textContent = `⭐ ${averageRating.toFixed(1)}（${ratingCount} 人評分）`;
+                    }
+
+                    if (comments.length === 0) {
+                        container.innerHTML = '<p>尚無評論</p>';
+                        return;
+                    }
+
+                    let html = '';
+                    comments.forEach(comment => {
+                        const ratingHtml = PageUtils.renderStars(comment.rating);
+                        const author = PageUtils.escapeHtml(comment.author_name || comment.user_name || '匿名用戶');
+                        const safeComment = PageUtils.escapeHtml(comment.comment || '');
+                        const commentUserId = Number(comment.user_id || 0);
+                        const commentAuthorRaw = comment.author_name || comment.user_name || '';
+                        const idTagHtml = commentUserId > 0
+                            ? `<a href="messages.html?user_id=${commentUserId}&name=${encodeURIComponent(commentAuthorRaw)}" style="margin-left:5px;font-size:0.73rem;color:var(--text-muted,#6b7280);font-family:monospace;text-decoration:none;" title="傳送私訊">#${commentUserId}</a>`
+                            : '';
+                        html += `
+                            <div class="comment-item">
+                                <div class="comment-item__header">
+                                    <div>
+                                        <div class="comment-item__author">${author}${idTagHtml}</div>
+                                        <div class="comment-item__time">${PageUtils.timeAgo(comment.created_at)}</div>
+                                    </div>
+                                    <div>${ratingHtml}</div>
+                                </div>
+                                <p class="comment-item__body">${safeComment}</p>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading comments:', error);
+                document.getElementById('comments-list').innerHTML = '<p>載入失敗</p>';
+            }
+        }
+
+        // 載入社團資訊
+        async function loadClubInfo(clubId, coHosts = []) {
+            const container = document.getElementById('club-info');
+            try {
+                const response = await APIClient.get(`clubs.php?action=detail&id=${clubId}`);
+                if (response.success) {
+                    const club = response.data;
+                    const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
+                    const safeDescription = PageUtils.escapeHtml(club.description || '');
+                    const safeClubId = Number(club.club_id) || 0;
+
+                    const coHostHtml = coHosts.length > 0
+                        ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                               <strong>協辦社團</strong>
+                               <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                   ${coHosts.map(c => `<a href="club-detail.html?id=${Number(c.club_id)}" class="btn btn-secondary btn-sm">${PageUtils.escapeHtml(c.club_name || '-')}</a>`).join('')}
+                               </div>
+                           </div>`
+                        : '';
+
+                    container.innerHTML = `
+                        <h5>${safeClubName}</h5>
+                        <p>${safeDescription}</p>
+                        <div style="margin-top: 1rem;">
+                            <a href="club-detail.html?id=${safeClubId}" class="btn btn-primary btn-sm">查看社團詳情</a>
+                        </div>
+                        ${coHostHtml}
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading club info:', error);
+                container.innerHTML = '<p>載入失敗</p>';
+            }
+        }
+
+        // 處理報名
+        async function registerForEvent() {
+            const eventId = getEventId();
+            try {
+                const response = await APIClient.post('events.php?action=register', { event_id: eventId });
+                if (response.success) {
+                    PageUtils.showAlert('報名成功', 'success');
+                    loadEventDetail(); // 重新載入頁面
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('報名失敗', 'error');
+            }
+        }
+
+        // 處理取消報名
+        async function unregisterFromEvent() {
+            const eventId = getEventId();
+            try {
+                const response = await APIClient.post('events.php?action=unregister', { event_id: eventId });
+                if (response.success) {
+                    PageUtils.showAlert('取消報名成功', 'success');
+                    loadEventDetail(); // 重新載入頁面
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('取消報名失敗', 'error');
+            }
+        }
+
+        // 處理評分選擇
+        function handleRatingClick(e) {
+            if (e.target.classList.contains('rating-star')) {
+                const rating = parseInt(e.target.dataset.rating);
+                currentRating = rating;
+
+                // 更新星星顯示
+                const stars = document.querySelectorAll('.rating-star');
+                stars.forEach((star, index) => {
+                    if (index < rating) {
+                        star.classList.add('selected');
+                    } else {
+                        star.classList.remove('selected');
+                    }
+                });
+            }
+        }
+
+        // 處理評論提交
+        async function handleCommentSubmit(e) {
+            e.preventDefault();
+
+            if (currentRating === 0) {
+                PageUtils.showAlert('請選擇評分', 'error');
+                return;
+            }
+
+            const content = document.getElementById('comment-content').value.trim();
+            if (!content) {
+                PageUtils.showAlert('請輸入評論內容', 'error');
+                return;
+            }
+
+            const eventId = getEventId();
+            try {
+                const response = await APIClient.post('events.php?action=add_comment', {
+                    event_id: eventId,
+                    rating: currentRating,
+                    comment: content
+                });
+
+                if (response.success) {
+                    PageUtils.showAlert('評論提交成功', 'success');
+                    document.getElementById('add-comment-form').reset();
+                    currentRating = 0;
+                    document.querySelectorAll('.rating-star').forEach(star => star.classList.remove('selected'));
+                    loadComments(eventId);
+                } else {
+                    PageUtils.showAlert(response.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                PageUtils.showAlert('提交評論失敗', 'error');
+            }
+        }
+
+        // 頁面載入時初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            loadEventDetail();
+
+            document.getElementById('register-btn').addEventListener('click', registerForEvent);
+            document.getElementById('unregister-btn').addEventListener('click', unregisterFromEvent);
+            document.getElementById('rating-stars').addEventListener('click', handleRatingClick);
+            document.getElementById('add-comment-form').addEventListener('submit', handleCommentSubmit);
+            renderCommentFormAccess();
+        });
+
+        function toCalendarDate(value) {
+            if (!value) return null;
+            const normalized = String(value).replace(' ', 'T');
+            const date = new Date(normalized);
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        function formatCalendarDate(date) {
+            return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+        }
+
+        function buildCalendarEvent() {
+            if (!currentEvent) return null;
+
+            const start = toCalendarDate(currentEvent.event_date);
+            if (!start) return null;
+
+            const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+            return {
+                title: currentEvent.event_name || currentEvent.title || '社團活動',
+                description: currentEvent.description || '',
+                location: currentEvent.location || '',
+                start,
+                end,
+                uid: `event-${currentEvent.event_id || Date.now()}@club-platform`
+            };
+        }
+
+        function escapeICS(text) {
+            return String(text || '')
+                .replace(/\\/g, '\\\\')
+                .replace(/\n/g, '\\n')
+                .replace(/,/g, '\\,')
+                .replace(/;/g, '\\;');
+        }
+
+        function downloadICSFile(eventData) {
+            const lines = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Club Platform//TW//EN',
+                'CALSCALE:GREGORIAN',
+                'BEGIN:VEVENT',
+                `UID:${eventData.uid}`,
+                `DTSTAMP:${formatCalendarDate(new Date())}`,
+                `DTSTART:${formatCalendarDate(eventData.start)}`,
+                `DTEND:${formatCalendarDate(eventData.end)}`,
+                `SUMMARY:${escapeICS(eventData.title)}`,
+                `DESCRIPTION:${escapeICS(eventData.description)}`,
+                `LOCATION:${escapeICS(eventData.location)}`,
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ];
+
+            const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${eventData.title}.ics`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function addToGoogleCalendar() {
+            const eventData = buildCalendarEvent();
+            if (!eventData) {
+                PageUtils.showAlert('活動日期格式錯誤，無法加入日曆', 'error');
+                return;
+            }
+
+            const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventData.title)}&dates=${formatCalendarDate(eventData.start)}/${formatCalendarDate(eventData.end)}&details=${encodeURIComponent(eventData.description)}&location=${encodeURIComponent(eventData.location)}`;
+
+            window.open(googleUrl, '_blank');
+        }
+
+        function addToAppleCalendar() {
+            const eventData = buildCalendarEvent();
+            if (!eventData) {
+                PageUtils.showAlert('活動日期格式錯誤，無法加入日曆', 'error');
+                return;
+            }
+
+            downloadICSFile(eventData);
+        }
+
+        function addToOutlookCalendar() {
+            const eventData = buildCalendarEvent();
+            if (!eventData) {
+                PageUtils.showAlert('活動日期格式錯誤，無法加入日曆', 'error');
+                return;
+            }
+
+            downloadICSFile(eventData);
+            PageUtils.showAlert('已下載 .ics 檔，請以 Outlook 開啟或匯入', 'success');
+        }

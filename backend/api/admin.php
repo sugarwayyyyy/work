@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * 管理員專用 API
  */
@@ -7,13 +7,7 @@ require_once '../auth.php';
 require_once '../content_filter.php';
 
 // Handle CORS preflight requests
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    Helper::applyCorsHeaders();
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
-    header('Access-Control-Allow-Credentials: true');
-    exit(0);
-}
+Helper::handleCorsPreFlight();
 
 class AdminAPI {
 

@@ -242,4 +242,17 @@ class ContentFilter {
 
         return false;
     }
+
+    public static function validateLocationOrError($location) {
+        $value = trim((string)$location);
+        if ($value === '') return;
+
+        if (preg_match('/https?:\/\/|www\./i', $value) && !self::isGoogleMapsUrl($value)) {
+            Helper::error('地點若為連結，僅接受 Google 地圖分享網址', 400);
+        }
+
+        if (self::containsRestrictedLanguageAllowingUrls($value)) {
+            Helper::error('地點欄位包含不適當字眼，請修改後再送出', 400);
+        }
+    }
 }

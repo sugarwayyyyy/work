@@ -1,0 +1,505 @@
+        let currentPage = 1;
+        let selectedTagIds = [];
+        let categoryData = [];
+        let popularTags = [];
+        let allTags = [];
+        const POPULAR_TAG_LIMIT = 10;
+        const HIDDEN_CATEGORY_NAMES = new Set(['綜合性', '宗教性']);
+
+        function getClubUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                search: params.get('search') || '',
+                categoryId: params.get('category_id') || '',
+                clubId: params.get('club_id') || '',
+                minFee: params.get('min_fee') || '',
+                maxFee: params.get('max_fee') || '',
+                tags: params.get('tags') || ''
+            };
+        }
+
+        async function loadCategories() {
+            try {
+                const response = await APIClient.get('clubs.php?action=categories');
+                if (!response.success) return;
+
+                categoryData = (response.data.categories || []).filter(cat => {
+                    const name = String(cat.category_name || '').trim();
+                    return !HIDDEN_CATEGORY_NAMES.has(name);
+                });
+                const select = document.getElementById('category-filter');
+                categoryData.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.category_id;
+                    option.textContent = cat.category_name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadClubsByCategory(categoryId) {
+            const clubSelect = document.getElementById('club-filter');
+            clubSelect.innerHTML = '';
+
+            if (!categoryId) {
+                clubSelect.disabled = true;
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = '請先選擇類別';
+                clubSelect.appendChild(placeholder);
+                return;
+            }
+
+            try {
+                const response = await APIClient.get(`clubs.php?action=by_category&category_id=${encodeURIComponent(categoryId)}`);
+                if (!response.success) return;
+
+                const clubs = response.data.clubs || [];
+                const allOption = document.createElement('option');
+                allOption.value = '';
+                allOption.textContent = '全部社團';
+                clubSelect.appendChild(allOption);
+
+                clubs.forEach(club => {
+                    const option = document.createElement('option');
+                    option.value = club.club_id;
+                    option.textContent = club.club_name;
+                    clubSelect.appendChild(option);
+                });
+
+                clubSelect.disabled = false;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadPopularTags() {
+            try {
+                const response = await APIClient.get('clubs.php?action=popular_tags');
+                if (!response.success) return;
+
+                popularTags = Array.isArray(response.data.tags) ? response.data.tags : [];
+                renderPopularTags();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadAllTags() {
+            try {
+                const response = await APIClient.get('clubs.php?action=get_all_tags');
+                if (!response.success) return;
+                allTags = Array.isArray(response.data) ? response.data : [];
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function createTagButton(tag, withUsage = false) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'tag tag-primary';
+            btn.style.cursor = 'pointer';
+            btn.dataset.tagId = tag.tag_id;
+            const safeTagName = String(tag.tag_name || '');
+            btn.textContent = withUsage
+                ? `#${safeTagName} (${tag.usage_count || 0})`
+                : `#${safeTagName}`;
+
+            const id = Number(tag.tag_id);
+            const selected = selectedTagIds.includes(id);
+            if (selected) {
+                btn.style.backgroundColor = 'var(--primary-color)';
+                btn.style.color = '#fff';
+                btn.style.borderColor = 'var(--primary-color)';
+                btn.classList.add('is-selected');
+            }
+
+            btn.addEventListener('click', () => {
+                if (selectedTagIds.includes(id)) {
+                    selectedTagIds = selectedTagIds.filter(t => t !== id);
+                } else {
+                    selectedTagIds.push(id);
+                }
+                currentPage = 1;
+                renderPopularTags();
+                renderTagSearchResults();
+                loadClubs();
+            });
+
+            return btn;
+        }
+
+        function renderPopularTags() {
+            const container = document.getElementById('popular-tags');
+            const helper = document.getElementById('popular-tags-helper');
+            if (!container) return;
+
+            container.innerHTML = '';
+            const visible = popularTags.slice(0, POPULAR_TAG_LIMIT);
+            visible.forEach(tag => container.appendChild(createTagButton(tag, true)));
+
+            if (helper) {
+                helper.textContent = `多選標籤採 OR 排序。熱門標籤顯示前 ${POPULAR_TAG_LIMIT} 個，可用下方副查詢找其他標籤。`;
+            }
+        }
+
+        function renderTagSearchResults() {
+            const container = document.getElementById('tag-search-results');
+            const input = document.getElementById('tag-search-input');
+            if (!container || !input) return;
+
+            const keyword = input.value.trim().toLowerCase();
+            container.innerHTML = '';
+
+            if (!keyword) {
+                container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.82rem;">可搜尋熱門區以外的標籤</span>';
+                return;
+            }
+
+            const matched = allTags
+                .filter(tag => String(tag.tag_name || '').toLowerCase().includes(keyword))
+                .slice(0, 12);
+
+            if (matched.length === 0) {
+                container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.82rem;">找不到符合的標籤</span>';
+                return;
+            }
+
+            matched.forEach(tag => container.appendChild(createTagButton(tag, false)));
+        }
+
+        async function loadClubs() {
+            const container = document.getElementById('clubs-container');
+            container.innerHTML = `<div class="club-state"><div class="loading"><div class="spinner"></div></div></div>`;
+
+            const countEl = document.getElementById('result-count');
+            if (countEl) countEl.textContent = '搜尋中...';
+
+            try {
+                currentPage = Math.max(1, currentPage || 1);
+                const categoryId = document.getElementById('category-filter').value;
+                const clubId = document.getElementById('club-filter').value;
+                const search = document.getElementById('club-search').value.trim();
+                const feeRange = document.getElementById('club-fee-range').value;
+
+                let url = `clubs.php?page=${currentPage}`;
+                if (categoryId) url += `&category_id=${categoryId}`;
+                if (clubId) url += `&club_id=${clubId}`;
+                if (search) url += `&search=${encodeURIComponent(search)}`;
+                if (feeRange === '0-500') {
+                    url += '&max_fee=500';
+                } else if (feeRange === '500-1000') {
+                    url += '&min_fee=500&max_fee=1000';
+                } else if (feeRange === '1000+') {
+                    url += '&min_fee=1000';
+                }
+                if (selectedTagIds.length > 0) url += `&tags=${selectedTagIds.join(',')}`;
+                if (selectedTagIds.length > 0) url += '&tag_match_mode=or';
+
+                const response = await APIClient.get(url);
+                if (response.success) {
+                    const pagination = response.data.pagination || {};
+                    const total = pagination.total ?? response.data.clubs.length;
+                    if (countEl) countEl.textContent = `共 ${total} 個社團`;
+                    const metaEl = document.getElementById('result-count-meta');
+                    if (metaEl) metaEl.textContent = `共 ${total} 個社團`;
+                    renderClubs(response.data.clubs);
+                    renderPagination(pagination);
+                } else {
+                    container.innerHTML = `<div class="club-state"><p class="club-state__desc">載入失敗，請稍後再試</p></div>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('clubs-container').innerHTML = `<div class="club-state"><p class="club-state__desc">發生錯誤，請重新整理</p></div>`;
+            }
+        }
+
+        function renderClubRatingStars(rating) {
+            const filled = Math.round(Number(rating) || 0);
+            return Array.from({ length: 5 }, (_, i) =>
+                `<span class="club-rating-star${i < filled ? ' is-filled' : ''}">★</span>`
+            ).join('');
+        }
+
+        function renderClubs(clubs) {
+            const container = document.getElementById('clubs-container');
+            container.innerHTML = '';
+
+            if (!clubs || clubs.length === 0) {
+                container.innerHTML = `
+                    <div class="club-state">
+                        <p class="club-state__title">找不到符合的社團</p>
+                        <p class="club-state__desc">請嘗試調整篩選條件或關鍵字</p>
+                    </div>`;
+                return;
+            }
+
+            clubs.forEach(club => {
+                const tagText = (club.tags || []).slice(0, 3)
+                    .map(t => `#${PageUtils.escapeHtml(t.tag_name || '')}`)
+                    .join('  ');
+
+                const badgeClass = club.activity_badge === 'high_active'
+                    ? 'feed-item-badge--accent'
+                    : (club.activity_badge === 'no_recent_activity'
+                        ? 'feed-item-badge--neutral'
+                        : '');
+                const statusLabel = club.activity_badge === 'high_active'
+                    ? '高活躍'
+                    : (club.activity_badge === 'no_recent_activity' ? '近期無活動' : '活躍中');
+
+                const rating = Number(club.average_rating) || 0;
+                const safeClubName = PageUtils.escapeHtml(club.club_name || '-');
+                const safeDescription = PageUtils.escapeHtml(club.description || '');
+                const safeClubId = Number(club.club_id) || 0;
+
+                const avatarHtml = PageUtils.renderClubAvatar(club, 44);
+
+                const card = document.createElement('article');
+                card.className = 'feed-item-card';
+                card.innerHTML = `
+                    <a href="club-detail.html?id=${safeClubId}" class="feed-item-link">
+                        <div class="feed-item-avatar">${avatarHtml}</div>
+                        <div class="feed-item-text">
+                            <div class="feed-item-head">
+                                <h3 class="feed-item-title">${safeClubName}</h3>
+                                <span class="feed-item-badge ${badgeClass}">${statusLabel}</span>
+                            </div>
+                            ${tagText ? `<div class="feed-item-subtitle">${tagText}</div>` : ''}
+                            <p class="feed-item-body">${safeDescription}</p>
+                            <div class="feed-item-meta">
+                                <span>${club.member_count || 0} 成員</span>
+                                <span>評分 ${rating.toFixed(1)}（${club.reviews_count || 0}）</span>
+                            </div>
+                        </div>
+                    </a>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderPagination(pagination) {
+            const container = document.getElementById('pagination-container');
+            container.innerHTML = '';
+
+            const totalPages = Number(pagination.total_pages) || 0;
+            const currentPageNum = Number(pagination.current_page) || 1;
+
+            const pageInfoEl = document.getElementById('results-page-info');
+            if (pageInfoEl) {
+                pageInfoEl.textContent = totalPages > 1 ? `第 ${currentPageNum} / ${totalPages} 頁` : '';
+            }
+
+            if (totalPages <= 1) return;
+
+            let html = '<div class="pagination">';
+
+            if (currentPageNum > 1) {
+                html += `<button type="button" class="page-btn" onclick="changePage(${currentPageNum - 1})">←</button>`;
+            }
+
+            if (totalPages <= 10) {
+                for (let i = 1; i <= totalPages; i++) {
+                    html += i === currentPageNum
+                        ? `<span class="page-btn is-active">${i}</span>`
+                        : `<button type="button" class="page-btn" onclick="changePage(${i})">${i}</button>`;
+                }
+            } else {
+                const pages = new Set([1, totalPages, currentPageNum - 1, currentPageNum, currentPageNum + 1]);
+                const validPages = Array.from(pages)
+                    .filter(p => p >= 1 && p <= totalPages)
+                    .sort((a, b) => a - b);
+
+                let prevPage = 0;
+                validPages.forEach(page => {
+                    if (prevPage && page - prevPage > 1) {
+                        html += `<span class="page-gap">…</span>`;
+                    }
+                    html += page === currentPageNum
+                        ? `<span class="page-btn is-active">${page}</span>`
+                        : `<button type="button" class="page-btn" onclick="changePage(${page})">${page}</button>`;
+                    prevPage = page;
+                });
+            }
+
+            if (currentPageNum < totalPages) {
+                html += `<button type="button" class="page-btn" onclick="changePage(${currentPageNum + 1})">→</button>`;
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            loadClubs();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function openAdvancedFilters() {
+            const panel = document.getElementById('club-advanced-filters');
+            const btn = document.getElementById('club-advanced-toggle-btn');
+            if (!panel || !btn) return;
+            panel.classList.add('is-open');
+            panel.setAttribute('aria-hidden', 'false');
+            btn.classList.add('is-active');
+            btn.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeAdvancedFilters() {
+            const panel = document.getElementById('club-advanced-filters');
+            const btn = document.getElementById('club-advanced-toggle-btn');
+            if (!panel || !btn) return;
+            panel.classList.remove('is-open');
+            panel.setAttribute('aria-hidden', 'true');
+            btn.classList.remove('is-active');
+            btn.setAttribute('aria-expanded', 'false');
+        }
+
+        function hasAdvancedFilters() {
+            const categoryId = document.getElementById('category-filter').value;
+            const clubId = document.getElementById('club-filter').value;
+            const feeRange = document.getElementById('club-fee-range').value;
+            return Boolean(categoryId || clubId || feeRange || selectedTagIds.length > 0);
+        }
+
+        function resetFilters() {
+            document.getElementById('category-filter').value = '';
+            const clubSelect = document.getElementById('club-filter');
+            clubSelect.disabled = true;
+            clubSelect.innerHTML = '<option value="">請先選擇類別</option>';
+            document.getElementById('club-search').value = '';
+            document.getElementById('club-fee-range').value = '';
+            selectedTagIds = [];
+            const tagInput = document.getElementById('tag-search-input');
+            if (tagInput) tagInput.value = '';
+            renderPopularTags();
+            renderTagSearchResults();
+            currentPage = 1;
+            loadClubs();
+        }
+
+        document.getElementById('category-filter').addEventListener('change', async () => {
+            currentPage = 1;
+            await loadClubsByCategory(document.getElementById('category-filter').value);
+            loadClubs();
+        });
+
+        document.getElementById('club-filter').addEventListener('change', () => {
+            currentPage = 1;
+            loadClubs();
+        });
+
+        document.getElementById('tag-search-input').addEventListener('input', () => {
+            renderTagSearchResults();
+        });
+
+        document.getElementById('club-search').addEventListener('input', () => {
+            currentPage = 1;
+            loadClubs();
+        });
+
+        document.getElementById('club-fee-range').addEventListener('change', () => {
+            currentPage = 1;
+            loadClubs();
+        });
+
+        async function applyClubFiltersFromUrl() {
+            const params = getClubUrlParams();
+
+            document.getElementById('club-search').value = params.search;
+            document.getElementById('club-fee-range').value = params.minFee === '1000'
+                ? '1000+'
+                : (params.minFee === '500' && params.maxFee === '1000'
+                    ? '500-1000'
+                    : (params.maxFee === '500' ? '0-500' : ''));
+
+            selectedTagIds = params.tags
+                ? params.tags.split(',').map(id => Number(id)).filter(id => Number.isInteger(id) && id > 0)
+                : [];
+
+            const categorySelect = document.getElementById('category-filter');
+            if (params.categoryId) {
+                categorySelect.value = params.categoryId;
+                await loadClubsByCategory(params.categoryId);
+                const clubSelect = document.getElementById('club-filter');
+                if (params.clubId) {
+                    clubSelect.value = params.clubId;
+                }
+            }
+
+            renderPopularTags();
+            renderTagSearchResults();
+
+            if (params.categoryId || params.clubId || params.minFee || params.maxFee || selectedTagIds.length > 0) {
+                openAdvancedFilters();
+            } else {
+                closeAdvancedFilters();
+            }
+        }
+
+        function initLayoutToggle() {
+            const layout = document.querySelector('.club-explorer-layout');
+            const btn = document.getElementById('layout-toggle-btn');
+            if (!layout || !btn) return;
+
+            const PREF_KEY = 'club_filter_layout_v1';
+
+            const iconSidebar = '<svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="4" height="14" rx="1" fill="currentColor" opacity="0.85"/><rect x="6.5" y="0.5" width="8" height="14" rx="1" fill="currentColor" opacity="0.4"/></svg>';
+            const iconTop = '<svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><rect x="0.5" y="0.5" width="14" height="4" rx="1" fill="currentColor" opacity="0.85"/><rect x="0.5" y="6.5" width="14" height="8" rx="1" fill="currentColor" opacity="0.4"/></svg>';
+
+            function applyLayout(mode) {
+                if (mode === 'sidebar') {
+                    layout.classList.add('club-explorer-layout--sidebar');
+                    btn.innerHTML = iconTop + '<span>上方篩選</span>';
+                    btn.title = '切換至上方篩選';
+                } else {
+                    layout.classList.remove('club-explorer-layout--sidebar');
+                    btn.innerHTML = iconSidebar + '<span>左側篩選</span>';
+                    btn.title = '切換至左側篩選';
+                }
+                try { localStorage.setItem(PREF_KEY, mode); } catch (e) {}
+            }
+
+            btn.addEventListener('click', () => {
+                applyLayout(layout.classList.contains('club-explorer-layout--sidebar') ? 'top' : 'sidebar');
+            });
+
+            let saved = 'top';
+            try { saved = localStorage.getItem(PREF_KEY) || 'top'; } catch (e) {}
+            applyLayout(saved);
+        }
+
+        window.addEventListener('DOMContentLoaded', async function () {
+            initLayoutToggle();
+
+            const advancedToggleBtn = document.getElementById('club-advanced-toggle-btn');
+            if (advancedToggleBtn) {
+                advancedToggleBtn.addEventListener('click', () => {
+                    const panel = document.getElementById('club-advanced-filters');
+                    if (!panel) return;
+                    if (panel.classList.contains('is-open')) {
+                        closeAdvancedFilters();
+                    } else {
+                        openAdvancedFilters();
+                    }
+                });
+            }
+
+            await loadCategories();
+            await loadPopularTags();
+            await loadAllTags();
+            await applyClubFiltersFromUrl();
+            const isSidebar = document.querySelector('.club-explorer-layout--sidebar');
+            const urlParams = getClubUrlParams();
+            const hasUrlFilters = Boolean(urlParams.tags || urlParams.categoryId || urlParams.clubId || urlParams.minFee || urlParams.maxFee);
+            if ((window.matchMedia('(min-width: 981px)').matches && isSidebar) || hasUrlFilters || hasAdvancedFilters()) {
+                openAdvancedFilters();
+            } else {
+                closeAdvancedFilters();
+            }
+            loadClubs();
+        });

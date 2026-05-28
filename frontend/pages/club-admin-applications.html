@@ -176,9 +176,6 @@
             const navBadge = document.getElementById('nav-app-badge');
             if (navBadge) navBadge.textContent = renderedCount > 0 ? String(renderedCount) : '';
 
-            // 等渲染後掛上篩選
-            document.getElementById('app-search')?.addEventListener('input', filterApplications);
-            document.getElementById('app-fee-filter')?.addEventListener('change', filterApplications);
         })();
     </script>
 </body>

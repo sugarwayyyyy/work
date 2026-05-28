@@ -1754,6 +1754,18 @@ function closeNavDropdown() {
 
 function updateNavigation() {
     const user = StorageUtils.getUser();
+
+    if (user && user.role === 'platform_admin') {
+        const path = window.location.pathname || '';
+        const isAllowedPage = isAdminSubPage() || isAdminDashboardPage() || isAdminOverviewPage()
+            || isUserProfilePage() || isNotificationsPage() || isMessagesPage()
+            || path.endsWith('/login.html') || path.endsWith('/register.html');
+        if (!isAllowedPage) {
+            window.location.replace(getPageLink('admin-users.html'));
+            return;
+        }
+    }
+
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const userDropdown = document.getElementById('user-dropdown');
