@@ -1,0 +1,103 @@
+
+>     public static function createEvent($data) {
+          if (!Auth::isLoggedIn()) {
+              Helper::error('請先登入', 401);
+          }
+          
+          try {
+              $errors = Helper::validateRequired($data, ['club_id', 'event_name', 'description', 'event_date', 'location']);
+              if (!empty($errors)) {
+                  Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+              }
+  
+              if (ContentFilter::hasRestrictedInFields($data, ['event_name', 'description'])) {
+                  Helper::error('活動內容包含不適當字眼，請修改後再送出', 400);
+              }
+              self::validateEventLocationIfProvided($data['location'] ?? '');
+              
+              self::validateHalfHourField($data['event_date'] ?? '', '舉辦日期與時間只能選整點或半點', true);
+              self::validateHalfHourField($data['event_end_date'] ?? '', '活動結束時間只能選整點或半點', false);
+              self::validateHalfHourField($data['registration_start'] ?? '', '報名開始時間只能選整點或半點', false);
+              self::validateHalfHourField($data['registration_deadline'] ?? '', '報名截止只能選整點或半點', false);
+              // 檢查用戶權限
+              $member = Database::getInstance()->fetchOne(
+                  'SELECT * FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "director", "public_relations", "treasurer")',
+                  [$data['club_id'], Auth::getCurrentUserId()]
+              );
+              
+              if (!$member) {
+                  Helper::error('您無權限發布活動', 403);
+              }
+              
+              $event_id = dbInsert('events', [
+                  'club_id' => $data['club_id'],
+                  'event_name' => $data['event_name'],
+                  'description' => $data['description'],
+                  'event_date' => $data['event_date'],
+                  'event_end_date' => !empty($data['event_end_date']) ? $data['event_end_date'] : null,
+                  'registration_start' => !empty($data['registration_start']) ? $data['registration_start'] : null,
+                  'location' => $data['location'],
+                  'capacity' => !empty($data['capacity']) ? (int)$data['capacity'] : null,
+                  'fee' => !empty($data['fee']) ? (int)$data['fee'] : 0,
+                  'registration_deadline' => !empty($data['registration_deadline']) ? $data['registration_deadline'] : null,
+                  'event_status' => 'published',
+                  'is_registration_open' => !empty($data['is_registration_open']) ? 1 : 0,
+                  'published_at' => date('Y-m-d H:i:s')
+              ]);
+              
+              if (!$event_id) {
+                  Helper::error('建立活動失敗', 500);
+              }
+  
+              // 保存活動標籤
+              $tag_ids = isset($data['tag_ids']) ? array_filter(array_map('intval', (array)$data['tag_ids'])) : [];
+              foreach ($tag_ids as $tag_id) {
+                  dbInsert('event_tag_relations', [
+                      'event_id' => $event_id,
+                      'tag_id' => $tag_id
+                  ]);
+              }
+  
+              self::replaceCollaborativeClubs(
+                  (int)$event_id,
+                  (int)$data['club_id'],
+                  $data['collaborative_club_ids'] ?? []
+              );
+              
+              // 紀錄活動日誌
+              dbInsert('activity_logs', [
+                  'club_id' => $data['club_id'],
+                  'activity_type' => 'post_event',
+                  'triggered_by' => Auth::getCurrentUserId(),
+                  'description' => '發布了新活動: ' . $data['event_name']
+              ]);
+  
+              dbUpdate('clubs', [
+                  'last_updated' => date('Y-m-d H:i:s'),
+                  'last_activity_date' => date('Y-m-d H:i:s')
+              ], 'club_id = ?', [$data['club_id']]);
+  
+              self::notifyFollowersForNewEvent($event_id, (int)$data['club_id'], $data['event_name']);
+              
+              Helper::success('活動建立成功', ['event_id' => $event_id]);
+              
+          } catch (Exception $e) {
+              self::handleInternalError('建立活動失敗', $e);
+          }
+      }
+  
+      /**
+       * 更新活動
+       * PUT /api/events.php?action=update&id=1
+       */
+      public static function updateEvent($event_id, $data) {
+          if (!Auth::isLoggedIn()) {
+              Helper::error('請先登入', 401);
+          }
+  
+          try {
+              // 檢查權限
+              $event = Database::getInstance()->fetchOne('SELECT * FROM events WHERE event_id = ?', [$event_id]);
+              if (!$event) {
+                  Helper::error('活動不存在', 404);
+

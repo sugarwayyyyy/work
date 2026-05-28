@@ -291,13 +291,13 @@ WHERE club_code = '083';
 -- Section 2. Demo 評論者帳號（5 個）
 -- =============================================================
 
-INSERT IGNORE INTO users (username, email, password_hash, full_name, role, is_email_verified, created_at)
+INSERT IGNORE INTO users (email, password, name, role, is_active, created_at)
 VALUES
-    ('demo_reviewer1', 'demo_reviewer1@demo.edu', '$2y$10$demoHashXXXXXXXXXXXXXXdemoHashXXXXXXXXXXXXXXdemoHashXX', '李小明', 'student', 1, DATE_SUB(NOW(), INTERVAL 30 DAY)),
-    ('demo_reviewer2', 'demo_reviewer2@demo.edu', '$2y$10$demoHashXXXXXXXXXXXXXXdemoHashXXXXXXXXXXXXXXdemoHashXX', '陳美華', 'student', 1, DATE_SUB(NOW(), INTERVAL 29 DAY)),
-    ('demo_reviewer3', 'demo_reviewer3@demo.edu', '$2y$10$demoHashXXXXXXXXXXXXXXdemoHashXXXXXXXXXXXXXXdemoHashXX', '王大偉', 'student', 1, DATE_SUB(NOW(), INTERVAL 28 DAY)),
-    ('demo_reviewer4', 'demo_reviewer4@demo.edu', '$2y$10$demoHashXXXXXXXXXXXXXXdemoHashXXXXXXXXXXXXXXdemoHashXX', '張雅婷', 'student', 1, DATE_SUB(NOW(), INTERVAL 27 DAY)),
-    ('demo_reviewer5', 'demo_reviewer5@demo.edu', '$2y$10$demoHashXXXXXXXXXXXXXXdemoHashXXXXXXXXXXXXXXdemoHashXX', '林志豪', 'student', 1, DATE_SUB(NOW(), INTERVAL 26 DAY));
+    ('demo_reviewer1@demo.edu', '$2y$10$T0JLeVGdmN6OiTGGoTbs4uDn0UJ4UjDgi2YpZ7VtDnO8Ti66ugBDK', '李小明', 'student', 1, DATE_SUB(NOW(), INTERVAL 30 DAY)),
+    ('demo_reviewer2@demo.edu', '$2y$10$T0JLeVGdmN6OiTGGoTbs4uDn0UJ4UjDgi2YpZ7VtDnO8Ti66ugBDK', '陳美華', 'student', 1, DATE_SUB(NOW(), INTERVAL 29 DAY)),
+    ('demo_reviewer3@demo.edu', '$2y$10$T0JLeVGdmN6OiTGGoTbs4uDn0UJ4UjDgi2YpZ7VtDnO8Ti66ugBDK', '王大偉', 'student', 1, DATE_SUB(NOW(), INTERVAL 28 DAY)),
+    ('demo_reviewer4@demo.edu', '$2y$10$T0JLeVGdmN6OiTGGoTbs4uDn0UJ4UjDgi2YpZ7VtDnO8Ti66ugBDK', '張雅婷', 'student', 1, DATE_SUB(NOW(), INTERVAL 27 DAY)),
+    ('demo_reviewer5@demo.edu', '$2y$10$T0JLeVGdmN6OiTGGoTbs4uDn0UJ4UjDgi2YpZ7VtDnO8Ti66ugBDK', '林志豪', 'student', 1, DATE_SUB(NOW(), INTERVAL 26 DAY));
 
 -- =============================================================
 -- Section 3. 展示活動（12 個）
