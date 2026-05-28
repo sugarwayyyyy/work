@@ -1034,6 +1034,10 @@ window.addEventListener('DOMContentLoaded', async function () {
     await loadConversations();
     loadBotUnreadStatus();
 
+    // 進入私訊頁後，清除導覽列私訊紅點（使用者已在頁面內，視覺上已看到未讀）
+    const navMsgBadge = document.getElementById('nav-msg-badge');
+    if (navMsgBadge) navMsgBadge.textContent = '';
+
     // Check if opening a specific conversation from URL param
     const params = new URLSearchParams(window.location.search);
     const targetUserId = Number(params.get('user_id') || 0);

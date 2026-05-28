@@ -256,8 +256,8 @@
                         <div class="feed-item-subtitle">${safeClubName} • ${author}<span class="qa-user-id-placeholder"></span> • ${PageUtils.timeAgo(question.created_at)}</div>
                         <p class="feed-item-body">${safeQuestionContent}</p>
                         <div class="feed-item-meta">
-                            <span>👁️ ${question.views_count} 次瀏覽</span>
-                            <span>💬 ${question.replies_count} 個回覆</span>
+                            <span data-qa-views="${safeQaId}">👁️ ${question.views_count} 次瀏覽</span>
+                            <span data-qa-replies="${safeQaId}">💬 ${question.replies_count} 個回覆</span>
                             ${question.urgency_level !== 'normal' ? `<span class="feed-item-badge ${urgencyBadgeClass}">${safeUrgencyLabel}</span>` : ''}
                         </div>
                     </a>
@@ -421,6 +421,22 @@
                 console.error('Error:', error);
                 PageUtils.showAlert('發布失敗', 'error');
             }
+        });
+
+        // bfcache 還原時把 qa-detail 記下的瀏覽數 / 回覆數同步到列表 DOM
+        window.addEventListener('pageshow', function () {
+            try {
+                const vUpd = JSON.parse(sessionStorage.getItem('qa-views-updates') || '{}');
+                Object.entries(vUpd).forEach(([id, count]) => {
+                    const el = document.querySelector(`[data-qa-views="${id}"]`);
+                    if (el) el.textContent = `👁️ ${count} 次瀏覽`;
+                });
+                const rUpd = JSON.parse(sessionStorage.getItem('qa-replies-updates') || '{}');
+                Object.entries(rUpd).forEach(([id, count]) => {
+                    const el = document.querySelector(`[data-qa-replies="${id}"]`);
+                    if (el) el.textContent = `💬 ${count} 個回覆`;
+                });
+            } catch (_) {}
         });
 
         window.addEventListener('DOMContentLoaded', async function() {

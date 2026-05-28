@@ -161,13 +161,16 @@ class Database {
         );
         $types = $this->inferParamTypes($values);
         $stmt->bind_param($types, ...$values);
-        
+
         $result = $stmt->execute();
+        if (!$result) {
+            error_log("Update 錯誤: " . $stmt->error . " | SQL: " . $sql);
+        }
         $stmt->close();
-        
+
         return $result;
     }
-    
+
     public function delete($table, $where, $where_params = []) {
         $sql = "DELETE FROM $table WHERE $where";
         

@@ -360,8 +360,19 @@ class QandAAPI {
                 : ($question['user_name'] ?: '匿名用戶');
 
             if ($track_view === 1) {
-                dbUpdate('q_and_a', ['views_count' => $question['views_count'] + 1], 'qa_id = ?', [$qa_id]);
-                $question['views_count'] = (int)$question['views_count'] + 1;
+                $db = Database::getInstance();
+                $upd = $db->prepare('UPDATE q_and_a SET views_count = views_count + 1 WHERE qa_id = ?');
+                if ($upd) {
+                    $upd->bind_param('i', $qa_id);
+                    if ($upd->execute()) {
+                        $question['views_count'] = (int)$question['views_count'] + 1;
+                    } else {
+                        error_log('views_count update failed for qa_id=' . $qa_id . ': ' . $upd->error);
+                    }
+                    $upd->close();
+                } else {
+                    error_log('views_count prepare failed for qa_id=' . $qa_id . ': ' . $db->getError());
+                }
             }
             
             // 取得標籤

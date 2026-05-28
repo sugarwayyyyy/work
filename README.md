@@ -279,9 +279,9 @@ npx playwright test
 - [手動驗收清單](tests/manual/user_story_acceptance_checklist.md)
 
 ### 測試文件
-- [測試報告](TESTING_REPORT.md)
-- [測試分工表](TESTING_TEAM.md)
-- [測試者名單](TESTERS_ASSIGNMENT.md)
+- [E2E 測試說明](tests/e2e/README.md)
+- [E2E 執行指南](tests/e2e/RUNNING_TESTS.md)
+- [手動驗收清單](tests/manual/user_story_acceptance_checklist.md)
 
 ## API 概覽
 
@@ -342,7 +342,8 @@ npx playwright test
 
 ## 版本與發布紀錄
 
-- [Release Notes 2026-04-04](RELEASE_NOTES_2026-04-04.md)
+- 2026-05-29：補強檢舉通知導頁與管理端資料完整性（commit: 709b601）
+- 2026-05-29：個人頁腳本模組化，移除頁內 inline script，並清理過期文件（commit: 056b665）
 - 2026-05-24：新增活動多圖海報 `event_posters` 資料表與對應 migration。
 - 2026-05-23：私訊系統、Bot 占位元、用戶 ID 全站顯示、通知刪除功能、紅點修正（見下方最近更新）
 - 2026-05-22：成員職稱管理、踢出成員、加入/退出社團、已加入社團 tab、排他性職稱驗證、啟動腳本修正
@@ -350,15 +351,11 @@ npx playwright test
 
 ## 文件索引
 
-- [正式文件首頁索引](DOCS_INDEX.md)
 - [快速開始](QUICKSTART.md)
-- [專案進度](PROJECT_STATUS.md)
-- [完成總結](COMPLETION_REPORT.md)
-- [測試報告](TESTING_REPORT.md)
-- [測試分工表](TESTING_TEAM.md)
-- [測試者名單](TESTERS_ASSIGNMENT.md)
+- [E2E 測試說明](tests/e2e/README.md)
+- [E2E 執行指南](tests/e2e/RUNNING_TESTS.md)
 - [手動驗收清單](tests/manual/user_story_acceptance_checklist.md)
-- [版本發布紀錄](RELEASE_NOTES_2026-04-04.md)
+- [Git 自動化操作](docs/GIT_AUTOMATION.md)
 
 ## 目前狀態
 

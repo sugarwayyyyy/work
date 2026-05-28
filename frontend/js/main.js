@@ -1588,6 +1588,18 @@ function injectClubNavDropdown() {
     li.appendChild(ul);
 }
 
+async function refreshNavMsgBadge() {
+    const badge = document.getElementById('nav-msg-badge');
+    if (!badge) return;
+    try {
+        const res = await APIClient.get('messages.php?action=unread_count');
+        const count = (res && res.success && res.data) ? Number(res.data.count) : 0;
+        badge.textContent = count > 0 ? (count > 99 ? '99+' : String(count)) : '';
+    } catch (_) {
+        badge.textContent = '';
+    }
+}
+
 function injectMessagesNavLink() {
     const navLinks = document.querySelector('.nav-links');
     if (!navLinks) return;
@@ -1595,13 +1607,22 @@ function injectMessagesNavLink() {
 
     const qaLink = navLinks.querySelector('a[href*="qa.html"]');
     const li = document.createElement('li');
-    li.innerHTML = `<a href="${getPageLink('messages.html')}">私訊</a>`;
+    li.innerHTML = `<a href="${getPageLink('messages.html')}" id="nav-link-messages">私訊<span id="nav-msg-badge" class="nav-msg-badge"></span></a>`;
     if (qaLink) {
         qaLink.closest('li').after(li);
     } else {
         navLinks.appendChild(li);
     }
+
+    refreshNavMsgBadge();
 }
+
+// bfcache 還原時重新查詢未讀數，避免顯示舊 badge
+window.addEventListener('pageshow', function (e) {
+    if (e.persisted) {
+        refreshNavMsgBadge();
+    }
+});
 
 function getFrontendAssetPath(assetPath) {
     if (!assetPath) return '';
@@ -1737,7 +1758,10 @@ function ensureNavDropdownStyles() {
         + '.ndp-theme-toggle:hover{background:#f3f4f6;color:#111827}'
         + '[data-theme="dark"] .ndp-theme-toggle{color:#9ca3af}'
         + '[data-theme="dark"] .ndp-theme-toggle:hover{background:var(--color-bg-muted);color:#f5f0e8}'
-        + '@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .ndp-theme-toggle{color:#9ca3af}:root:not([data-theme="light"]) .ndp-theme-toggle:hover{background:var(--color-bg-muted);color:#f5f0e8}}';
+        + '@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .ndp-theme-toggle{color:#9ca3af}:root:not([data-theme="light"]) .ndp-theme-toggle:hover{background:var(--color-bg-muted);color:#f5f0e8}}'
+        // 私訊 nav badge
+        + '.nav-msg-badge{display:inline-block;margin-left:5px;background:#ef4444;color:#fff;font-size:0.7rem;font-weight:700;line-height:1.4;padding:0 5px;border-radius:999px;vertical-align:middle}'
+        + '.nav-msg-badge:empty{display:none}';
     document.head.appendChild(st);
 }
 

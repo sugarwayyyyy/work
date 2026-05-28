@@ -773,3 +773,10 @@ window.addEventListener('DOMContentLoaded', function() {
     document.getElementById('report-cancel-btn').addEventListener('click', closeReportModal);
     loadClubDetail();
 });
+
+// bfcache 還原時重新載入社團資料，確保加入申請狀態（pending/rejected/approved）即時正確
+window.addEventListener('pageshow', function (e) {
+    if (e.persisted && clubId) {
+        loadClubDetail();
+    }
+});

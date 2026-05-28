@@ -9,16 +9,11 @@
         function shouldTrackView(questionId) {
             if (!questionId) return false;
 
+            // 同一 session（分頁）只計一次；重新開分頁或重啟瀏覽器後重新計算
             const key = `qa-viewed-${questionId}`;
-            const now = Date.now();
-            const cooldownMs = 30 * 60 * 1000;
+            if (sessionStorage.getItem(key)) return false;
 
-            const lastViewedAt = Number(localStorage.getItem(key) || 0);
-            if (Number.isFinite(lastViewedAt) && lastViewedAt > 0 && (now - lastViewedAt) < cooldownMs) {
-                return false;
-            }
-
-            localStorage.setItem(key, String(now));
+            sessionStorage.setItem(key, '1');
             return true;
         }
 
@@ -36,6 +31,20 @@
                     currentQuestion = response.data;
                     displayQuestionDetail(currentQuestion);
                     loadReplies(questionId);
+                    // 把最新瀏覽數 / 回覆數寫入 sessionStorage，讓 qa.html 返回時能同步更新
+                    try {
+                        const d = response.data;
+                        if (shouldCount && d.views_count != null) {
+                            const vUpd = JSON.parse(sessionStorage.getItem('qa-views-updates') || '{}');
+                            vUpd[questionId] = Number(d.views_count);
+                            sessionStorage.setItem('qa-views-updates', JSON.stringify(vUpd));
+                        }
+                        if (d.replies_count != null) {
+                            const rUpd = JSON.parse(sessionStorage.getItem('qa-replies-updates') || '{}');
+                            rUpd[questionId] = Number(d.replies_count);
+                            sessionStorage.setItem('qa-replies-updates', JSON.stringify(rUpd));
+                        }
+                    } catch (_) {}
                 } else {
                     PageUtils.showAlert(response.message, 'error');
                 }
