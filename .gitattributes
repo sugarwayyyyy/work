@@ -1,0 +1,6 @@
+# Git LFS — 大型二進位檔案（demo 示範圖片）
+# 這些圖片透過 LFS 儲存，clone 後執行 `git lfs pull` 即可下載
+database/seeds/demo-images/*.jpg  filter=lfs diff=lfs merge=lfs -text
+database/seeds/demo-images/*.jpeg filter=lfs diff=lfs merge=lfs -text
+database/seeds/demo-images/*.png  filter=lfs diff=lfs merge=lfs -text
+database/seeds/demo-images/*.webp filter=lfs diff=lfs merge=lfs -text

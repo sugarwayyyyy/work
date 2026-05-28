@@ -35,6 +35,28 @@ define('FROM_EMAIL', '');
 
 defined('GOOGLE_CLIENT_ID') or define('GOOGLE_CLIENT_ID', getenv('GOOGLE_CLIENT_ID') ?: '');
 
+// 自動偵測 Windows AppServ / XAMPP 常見 cacert.pem 位置（解決 curl error 60）
+// 可在 config.local.php 用 define('GOOGLE_CA_BUNDLE', 'path') 覆蓋
+if (!defined('GOOGLE_CA_BUNDLE')) {
+    $certCandidates = [
+        'D:/app/appserv/php7/cacert.pem',
+        'D:/app/appserv/php8/cacert.pem',
+        'C:/app/appserv/php7/cacert.pem',
+        'C:/app/appserv/php8/cacert.pem',
+        'C:/AppServ/php7/cacert.pem',
+        'C:/AppServ/php8/cacert.pem',
+        'C:/xampp/php/extras/ssl/cacert.pem',
+        'C:/xampp/php/cacert.pem',
+        __DIR__ . '/cacert.pem',
+    ];
+    foreach ($certCandidates as $cert) {
+        if (is_readable($cert)) {
+            define('GOOGLE_CA_BUNDLE', $cert);
+            break;
+        }
+    }
+}
+
 date_default_timezone_set('Asia/Taipei');
 ini_set('default_charset', 'UTF-8');
 if (function_exists('mb_internal_encoding')) {

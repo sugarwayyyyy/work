@@ -1,0 +1,41 @@
+#!/bin/bash
+# pre-commit hook: warn when backend/ changes lack a corresponding migration
+#
+# Setup: git config core.hooksPath .githooks
+#        (or run: powershell -File scripts/setup-git-hooks.ps1)
+
+changed_backend=$(git diff --cached --name-only | grep -E '^backend/')
+changed_schema=$(git diff --cached --name-only | grep -E '^database/schema\.sql$')
+new_migration=$(git diff --cached --name-only | grep -E '^database/migrations/')
+
+if [ -n "$changed_backend" ] || [ -n "$changed_schema" ]; then
+    if [ -z "$new_migration" ]; then
+        echo ""
+        echo "============================================================"
+        echo "  [Migration Check] backend/ 有修改，但沒有新增 migration"
+        echo "============================================================"
+        echo ""
+        if [ -n "$changed_backend" ]; then
+            echo "  已修改的 backend 檔案："
+            echo "$changed_backend" | while IFS= read -r f; do
+                [ -n "$f" ] && echo "    - $f"
+            done
+        fi
+        [ -n "$changed_schema" ] && echo "    - database/schema.sql"
+        echo ""
+        echo "  請確認："
+        echo "  1. 是否需要在 database/migrations/ 建立新的 migration 檔案？"
+        echo "  2. 若有新 migration，是否已更新 QUICKSTART.md 的 migration 清單？"
+        echo "  3. 若確認不需要 migration（例如只改邏輯、非 schema 變更），忽略此提醒即可"
+        echo ""
+        echo "  若確認不需要 migration，使用以下指令略過此檢查："
+        echo "    git commit --no-verify"
+        echo ""
+        echo "============================================================"
+        echo ""
+        # Warning only — exit 0 so commit is NOT blocked
+        exit 0
+    fi
+fi
+
+exit 0

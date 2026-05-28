@@ -24,6 +24,34 @@
 
 ## 安裝步驟
 
+### 0. Clone 後的一次性設定
+
+#### 0-a. 下載 Demo 示範圖片（Git LFS）
+
+```bash
+git lfs pull
+```
+
+> 若尚未安裝 Git LFS：先執行 `git lfs install`，再執行 `git lfs pull`。
+> Demo 圖片（24 張，共約 80MB）會下載至 `database/seeds/demo-images/`。
+> 未下載也不影響資料庫部署，`seed-demo-data.php` 會自動生成 placeholder。
+
+#### 0-b. 設定本機環境（DB 密碼 + Google OAuth + SSL 憑證）
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup-google-oauth.ps1
+```
+
+此腳本會自動下載 `cacert.pem` 並建立 `backend/config.local.php`，一次解決 DB 連線與 Google 登入設定。
+
+#### 0-c. 設定 Git Hooks
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup-git-hooks.ps1
+```
+
+此 hook 會在 `git commit` 時，偵測 `backend/` 有修改但缺少對應 migration 時自動提醒。
+
 ### 1. 匯入資料庫
 
 ```bash
@@ -81,33 +109,48 @@ php scripts/check_tables.php
 
 ### 2. 設定本機連線
 
+#### 2-a. 快速設定（建議，含 Google OAuth）
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup-google-oauth.ps1
+```
+
+此腳本會自動完成：
+- 偵測 PHP 目錄並下載 `cacert.pem`（解決 AppServ Windows SSL 錯誤）
+- 建立 `backend/config.local.php`（填入 DB 密碼與 Google Client ID）
+
+#### 2-b. 手動建立（若自動腳本無法執行）
+
 建立 `backend/config.local.php`（此檔案已加入 `.gitignore`，不會進 git）：
 
 ```php
 <?php
-// 依照本機環境填寫，AppServ 預設密碼通常為 12345678，XAMPP 預設為空字串
-define('DB_PASSWORD', '12345678');  // AppServ
-// define('DB_PASSWORD', '');       // XAMPP
+define('DB_PASSWORD', '12345678');  // AppServ 預設；XAMPP 請改為 ''
 
-// （選填）Google OAuth — 填入後登入 / 註冊頁面會出現「以 Google 帳號登入」按鈕
-// 未填則按鈕自動隱藏，不影響 email / password 登入
-// define('GOOGLE_CLIENT_ID', 'YOUR_CLIENT_ID.apps.googleusercontent.com');
+// Google OAuth（團隊共用同一組 Client ID，無需自行建立 Google 專案）
+define('GOOGLE_CLIENT_ID', '718377517460-kotdm5ch47ib6ije5o65tidkvukshmsb.apps.googleusercontent.com');
 
-// （選填）AppServ / Windows 本機若出現 Google tokeninfo curl error 60（SSL 憑證錯誤）：
-// 1. 從 https://curl.se/ca/cacert.pem 下載 cacert.pem
-// 2. 存至 PHP 目錄（例如 D:/app/appserv/php7/cacert.pem）
-// 3. 取消下方注解並填入正確路徑
+// Windows AppServ/XAMPP 必填（解決 curl error 60 SSL 憑證錯誤）
+// 先從 https://curl.se/ca/cacert.pem 下載，存至 PHP 目錄後填入路徑：
 // define('GOOGLE_CA_BUNDLE', 'D:/app/appserv/php7/cacert.pem');
 ```
 
-> `backend/config.php` 的預設值為 AppServ（密碼 `12345678`）。若使用 XAMPP（無密碼），只需建立上述檔案並取消 XAMPP 那行的注解即可。
+> `config.php` 會自動偵測常見的 cacert.pem 位置（AppServ D:/C: 磁碟機、XAMPP），
+> 若 `setup-google-oauth.ps1` 已下載至標準位置，通常不需要手動設定 `GOOGLE_CA_BUNDLE`。
 
-#### 啟用 Google OAuth（選填）
+#### Google OAuth 授權來源（repo 維護者負責管理）
 
-1. 前往 [Google Cloud Console](https://console.cloud.google.com/) → OAuth 2.0 用戶端 → 建立 **Web application** 用戶端。
-2. 在「已授權的 JavaScript 來源」加入本機開發網址，例如 `http://localhost:8000`。
-3. 將產生的 Client ID 填入 `config.local.php` 的 `GOOGLE_CLIENT_ID`。
-4. 設定完成後，登入與註冊頁面會自動顯示 Google 按鈕；未設定則按鈕不出現。
+所有人共用同一個 Google Cloud 專案，**不需要各自建立**。
+若 Google 登入失敗（`origin not allowed`），請通知 repo 維護者將你的本機 URL 加入：
+
+> [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials
+> → OAuth 2.0 Client IDs → 已授權的 JavaScript 來源
+
+目前已授權的來源：
+- `http://localhost`
+- `http://localhost:8000`
+- `http://localhost:8080`
+- `http://127.0.0.1`
 
 ### 3. 檢查資料夾權限
 確認以下資料夾存在且可寫入：

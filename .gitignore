@@ -4,6 +4,7 @@ backend/config.local.php
 # IDE and tool settings (machine-specific)
 .claude/
 .vscode/settings.json
+.codex/skills/ui-ux-pro-max
 
 # Runtime uploads (do not commit generated files)
 frontend/assets/uploads/*
