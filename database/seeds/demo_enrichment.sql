@@ -673,19 +673,12 @@ WHERE c.club_code = '067' AND u.email = 'demo_reviewer5@demo.edu'
 AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.club_id = c.club_id AND r.user_id = u.user_id);
 
 -- =============================================================
--- Section 6. Logo 路徑更新
+-- Section 6. Logo 路徑清除（活動照片誤植移除）
 -- =============================================================
 
-UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_067.jpg' WHERE club_code = '067' AND (logo_path IS NULL OR logo_path = '');
-UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_066.jpg' WHERE club_code = '066' AND (logo_path IS NULL OR logo_path = '');
-UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_061.jpg' WHERE club_code = '061' AND (logo_path IS NULL OR logo_path = '');
-UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_064.jpg' WHERE club_code = '064' AND (logo_path IS NULL OR logo_path = '');
-UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_075.jpg' WHERE club_code = '075' AND (logo_path IS NULL OR logo_path = '');
-UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_084.jpg' WHERE club_code = '084' AND (logo_path IS NULL OR logo_path = '');
-UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_100.jpg' WHERE club_code = '100' AND (logo_path IS NULL OR logo_path = '');
-UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_168.jpg' WHERE club_code = '168' AND (logo_path IS NULL OR logo_path = '');
-UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_184.jpg' WHERE club_code = '184' AND (logo_path IS NULL OR logo_path = '');
-UPDATE clubs SET logo_path = 'assets/uploads/clubs/logo_192.jpg' WHERE club_code = '192' AND (logo_path IS NULL OR logo_path = '');
+-- 清除誤植的活動照片路徑，社團 logo 待正式圖示上傳後再設定
+UPDATE clubs SET logo_path = NULL WHERE club_code IN ('067','066','061','064','075','084','100','168','184','192')
+  AND logo_path LIKE 'assets/uploads/clubs/logo_%';
 
 
 -- Section 7: Demo Q&A 提問、回覆、標籤、有幫助票
@@ -936,4 +929,80 @@ INSERT IGNORE INTO qa_tag_relations (qa_id, qa_tag_id)
 SELECT q.qa_id, t.qa_tag_id FROM q_and_a q JOIN clubs c ON c.club_id = q.club_id
 JOIN qa_tags t ON t.tag_name = '器材費用'
 WHERE c.club_code = '168' AND q.question_title = '社費包含哪些費用？需要自備桌遊嗎？';
+
+-- =============================================================
+-- Section 8. 活動照片（更新主海報 + 插入 event_posters）
+-- =============================================================
+
+-- 更新各活動的主海報路徑為主題照片
+UPDATE events SET poster_path = 'assets/uploads/demo_dance_show_1.jpg'
+WHERE event_name = '熱舞社春季期末公演';
+
+UPDATE events SET poster_path = 'assets/uploads/demo_dance_recruit_1.jpg'
+WHERE event_name = '熱舞社新生招募說明會';
+
+UPDATE events SET poster_path = 'assets/uploads/demo_photo_outing_1.jpg'
+WHERE event_name = '攝影社春季戶外外拍活動';
+
+UPDATE events SET poster_path = 'assets/uploads/demo_photo_exhibition_1.jpg'
+WHERE event_name = '2026 黑白攝影聯展';
+
+UPDATE events SET poster_path = 'assets/uploads/demo_music_concert_1.jpg'
+WHERE event_name = '2026 春季國樂聯合音樂會';
+
+UPDATE events SET poster_path = 'assets/uploads/demo_hiking_1.jpg'
+WHERE event_name = '登山社春季郊山健行：象山一日遊';
+
+UPDATE events SET poster_path = 'assets/uploads/demo_martial_arts_1.jpg'
+WHERE event_name = '國術社招新體驗日';
+
+UPDATE events SET poster_path = 'assets/uploads/demo_speech_1.jpg'
+WHERE event_name = '2026 校際即席演講邀請賽';
+
+UPDATE events SET poster_path = 'assets/uploads/demo_firstaid_1.jpg'
+WHERE event_name = 'CPR 急救技能認證訓練課程';
+
+UPDATE events SET poster_path = 'assets/uploads/demo_boardgame_1.jpg'
+WHERE event_name = '春季桌遊馬拉松 12 小時不間斷';
+
+UPDATE events SET poster_path = 'assets/uploads/demo_esports_1.jpg'
+WHERE event_name = 'FPS 電競校內邀請賽（CS2）';
+
+UPDATE events SET poster_path = 'assets/uploads/demo_startup_1.jpg'
+WHERE event_name = 'Startup Weekend 創業挑戰工作坊';
+
+-- 插入 event_posters 多張照片（冪等：依 event_id + image_path 避免重複）
+INSERT INTO event_posters (event_id, image_path, sort_order)
+SELECT e.event_id, p.image_path, p.sort_order
+FROM events e
+JOIN (
+    SELECT '熱舞社春季期末公演' AS event_name, 'assets/uploads/demo_dance_show_1.jpg' AS image_path, 1 AS sort_order UNION ALL
+    SELECT '熱舞社春季期末公演',               'assets/uploads/demo_dance_show_2.jpg', 2 UNION ALL
+    SELECT '熱舞社春季期末公演',               'assets/uploads/demo_dance_show_3.jpg', 3 UNION ALL
+    SELECT '熱舞社新生招募說明會',             'assets/uploads/demo_dance_recruit_1.jpg', 1 UNION ALL
+    SELECT '熱舞社新生招募說明會',             'assets/uploads/demo_dance_recruit_2.jpg', 2 UNION ALL
+    SELECT '攝影社春季戶外外拍活動',           'assets/uploads/demo_photo_outing_1.jpg',  1 UNION ALL
+    SELECT '攝影社春季戶外外拍活動',           'assets/uploads/demo_photo_outing_2.jpg',  2 UNION ALL
+    SELECT '2026 黑白攝影聯展',               'assets/uploads/demo_photo_exhibition_1.jpg', 1 UNION ALL
+    SELECT '2026 黑白攝影聯展',               'assets/uploads/demo_photo_exhibition_2.jpg', 2 UNION ALL
+    SELECT '2026 黑白攝影聯展',               'assets/uploads/demo_photo_exhibition_3.jpg', 3 UNION ALL
+    SELECT '2026 春季國樂聯合音樂會',          'assets/uploads/demo_music_concert_1.jpg', 1 UNION ALL
+    SELECT '2026 春季國樂聯合音樂會',          'assets/uploads/demo_music_concert_2.jpg', 2 UNION ALL
+    SELECT '2026 春季國樂聯合音樂會',          'assets/uploads/demo_music_concert_3.jpg', 3 UNION ALL
+    SELECT '登山社春季郊山健行：象山一日遊',   'assets/uploads/demo_hiking_1.jpg', 1 UNION ALL
+    SELECT '登山社春季郊山健行：象山一日遊',   'assets/uploads/demo_hiking_2.jpg', 2 UNION ALL
+    SELECT '國術社招新體驗日',                 'assets/uploads/demo_martial_arts_1.jpg', 1 UNION ALL
+    SELECT '2026 校際即席演講邀請賽',          'assets/uploads/demo_speech_1.jpg', 1 UNION ALL
+    SELECT 'CPR 急救技能認證訓練課程',         'assets/uploads/demo_firstaid_1.jpg', 1 UNION ALL
+    SELECT '春季桌遊馬拉松 12 小時不間斷',    'assets/uploads/demo_boardgame_1.jpg', 1 UNION ALL
+    SELECT '春季桌遊馬拉松 12 小時不間斷',    'assets/uploads/demo_boardgame_2.jpg', 2 UNION ALL
+    SELECT 'FPS 電競校內邀請賽（CS2）',       'assets/uploads/demo_esports_1.jpg', 1 UNION ALL
+    SELECT 'FPS 電競校內邀請賽（CS2）',       'assets/uploads/demo_esports_2.jpg', 2 UNION ALL
+    SELECT 'Startup Weekend 創業挑戰工作坊',  'assets/uploads/demo_startup_1.jpg', 1 UNION ALL
+    SELECT 'Startup Weekend 創業挑戰工作坊',  'assets/uploads/demo_startup_2.jpg', 2
+) p ON p.event_name = e.event_name
+WHERE NOT EXISTS (
+    SELECT 1 FROM event_posters ep
+    WHERE ep.event_id = e.event_id AND ep.image_path = p.image_path
+);
 

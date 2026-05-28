@@ -192,8 +192,15 @@
             const notificationType = String(notification.notification_type || '').toLowerCase();
             const relatedType = String(notification.related_type || '').toLowerCase();
             const relatedId = Number(notification.related_id) || 0;
-            if (!relatedId) return '';
 
+            // report notifications — handle both new (related_type='report') and old (title fallback)
+            if (relatedType === 'report' || String(notification.title || '').includes('檢舉')) {
+                return relatedId > 0
+                    ? `admin-reports.html?report_id=${relatedId}`
+                    : `admin-reports.html?tab=cases`;
+            }
+
+            if (!relatedId) return '';
             if (relatedType === 'event') return `event-detail.html?id=${relatedId}`;
             if (notificationType === 'qa_reply') {
                 const qaId = Number(notification.qa_id_from_reply) || 0;

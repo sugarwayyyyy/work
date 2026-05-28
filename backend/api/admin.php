@@ -486,15 +486,78 @@ class AdminAPI {
         }
 
         $reports = Database::getInstance()->fetchAll(
-            'SELECT r.*, u.name AS reported_by_name, u.student_id AS reported_by_student_id
+            'SELECT r.*,
+                u.name AS reported_by_name,
+                u.student_id AS reported_by_student_id,
+                CASE r.reported_content_type
+                    WHEN \'qa_question\' THEN q.question_title
+                    WHEN \'review\'      THEN rv.review_title
+                    WHEN \'event\'       THEN e.event_name
+                    WHEN \'club\'        THEN c.club_name
+                    ELSE NULL
+                END AS content_title,
+                CASE r.reported_content_type
+                    WHEN \'qa_question\' THEN q.question_content
+                    WHEN \'qa_reply\'    THEN qr.reply_content
+                    WHEN \'review\'      THEN rv.review_content
+                    WHEN \'event\'       THEN e.description
+                    WHEN \'club\'        THEN c.description
+                    ELSE NULL
+                END AS content_body,
+                CASE r.reported_content_type
+                    WHEN \'qa_question\' THEN qa_u.name
+                    WHEN \'qa_reply\'    THEN qr_u.name
+                    WHEN \'review\'      THEN rv_u.name
+                    ELSE NULL
+                END AS content_author,
+                CASE r.reported_content_type
+                    WHEN \'qa_question\' THEN q.is_anonymous
+                    WHEN \'qa_reply\'    THEN qr.is_anonymous
+                    WHEN \'review\'      THEN rv.is_anonymous
+                    ELSE 0
+                END AS content_is_anonymous,
+                qr.qa_id AS reply_parent_qa_id,
+                qr_q.question_title AS reply_parent_question_title,
+                qr_q.question_content AS reply_parent_question_content,
+                rv.club_id AS review_club_id,
+                rv.rating AS review_rating,
+                rv_club.club_name AS review_club_name,
+                CASE r.reported_content_type
+                    WHEN \'qa_question\' THEN q_club.club_name
+                    WHEN \'qa_reply\'    THEN qr_q_club.club_name
+                    ELSE NULL
+                END AS content_club_name
              FROM reports r
              JOIN users u ON u.user_id = r.reported_by_user_id
+             LEFT JOIN q_and_a q         ON r.reported_content_type = \'qa_question\' AND q.qa_id = r.reported_content_id
+             LEFT JOIN users qa_u        ON q.user_id = qa_u.user_id
+             LEFT JOIN clubs q_club      ON q.club_id = q_club.club_id
+             LEFT JOIN qa_replies qr     ON r.reported_content_type = \'qa_reply\' AND qr.reply_id = r.reported_content_id
+             LEFT JOIN users qr_u        ON qr.user_id = qr_u.user_id
+             LEFT JOIN q_and_a qr_q      ON qr.qa_id = qr_q.qa_id
+             LEFT JOIN clubs qr_q_club   ON qr_q.club_id = qr_q_club.club_id
+             LEFT JOIN reviews rv        ON r.reported_content_type = \'review\' AND rv.review_id = r.reported_content_id
+             LEFT JOIN users rv_u        ON rv.user_id = rv_u.user_id
+             LEFT JOIN clubs rv_club     ON rv.club_id = rv_club.club_id
+             LEFT JOIN events e          ON r.reported_content_type = \'event\' AND e.event_id = r.reported_content_id
+             LEFT JOIN clubs c           ON r.reported_content_type = \'club\' AND c.club_id = r.reported_content_id
              ' . $where . '
              ORDER BY (r.status = "pending") DESC, r.created_at DESC',
             $params
         );
 
-        Helper::success('取得檢舉列表成功', ['reports' => $reports]);
+        // Always include per-status counts regardless of filter
+        $countRows = Database::getInstance()->fetchAll(
+            'SELECT status, COUNT(*) AS cnt FROM reports GROUP BY status'
+        );
+        $counts = ['all' => 0, 'pending' => 0, 'reviewing' => 0, 'resolved' => 0, 'dismissed' => 0];
+        foreach ($countRows as $row) {
+            $s = $row['status'];
+            if (isset($counts[$s])) $counts[$s] = (int)$row['cnt'];
+            $counts['all'] += (int)$row['cnt'];
+        }
+
+        Helper::success('取得檢舉列表成功', ['reports' => $reports, 'counts' => $counts]);
     }
 
     public static function reviewReport($data) {
@@ -507,8 +570,8 @@ class AdminAPI {
         $adminNotes = trim((string)($data['admin_notes'] ?? ''));
         $forceHide = isset($data['force_hide']) && (int)$data['force_hide'] === 1;
 
-        if (!in_array($decision, ['resolved', 'dismissed', 'reviewing'], true)) {
-            Helper::error('decision 必須為 resolved、dismissed 或 reviewing', 400);
+        if (!in_array($decision, ['resolved', 'dismissed'], true)) {
+            Helper::error('decision 必須為 resolved 或 dismissed', 400);
         }
 
         $report = Database::getInstance()->fetchOne(

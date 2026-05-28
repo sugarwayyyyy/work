@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/styles.css" />
     <link rel="stylesheet" href="../css/admin.css" />
     <link rel="stylesheet" href="../css/home.css" />
+    <link rel="stylesheet" href="../css/admin-reports.css?v=20260528" />
 </head>
 <body class="admin-page admin-reports-page">
     <header>
@@ -51,158 +52,22 @@
         </section>
     </div>
 
+
+    <!-- 檢舉處理 Modal -->
+    <div id="report-action-modal" role="dialog" aria-modal="true">
+        <div class="report-modal-box">
+            <p class="report-modal-title" id="report-modal-title">處理工單</p>
+            <p class="report-modal-sub" id="report-modal-sub"></p>
+            <textarea class="report-modal-textarea" id="report-modal-note" placeholder="輸入備註…"></textarea>
+            <div class="report-modal-actions">
+                <button class="btn btn-secondary btn-sm" onclick="closeReportModal()">取消</button>
+                <button class="btn btn-primary btn-sm" id="report-modal-confirm">確認</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/main.js?v=20260507"></script>
-    <script>
-        const CLUB_STATUS_LABELS = { active: '啟用', inactive: '停用', suspended: '暫停', pending: '待審核' };
-
-        function escapeHtml(value) {
-            return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-        function formatDateTime(value) {
-            if (!value) return '-';
-            if (window.PageUtils && typeof PageUtils.formatDate === 'function') return PageUtils.formatDate(value);
-            return new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
-        }
-        function renderEmptyState(container, title, description) {
-            container.innerHTML = `<div class="empty-state"><div class="empty-state-illustration"></div><h4>${escapeHtml(title || '')}</h4><p>${escapeHtml(description || '')}</p></div>`;
-        }
-
-        function reportStatusLabel(status) {
-            return ({ pending: '待處理', reviewing: '審核中', resolved: '已處理', dismissed: '已駁回' })[status] || status || '-';
-        }
-        function reportTypeLabel(type) {
-            return ({ qa_question: '提問', qa_reply: '提問回覆', review: '社團評價', event: '活動', club: '社團資料' })[type] || type || '-';
-        }
-
-        async function loadEventReports() {
-            const response = await APIClient.get('admin.php?action=event_reports');
-            if (!response.success) return console.error(response.message);
-            const container = document.getElementById('reports-panel-events');
-            container.innerHTML = '';
-            const reports = response.data.reports || [];
-            if (reports.length === 0) { renderEmptyState(container, '目前沒有活動報告', '等有活動成果資料後，這裡會顯示統計內容。'); return; }
-            const list = document.createElement('div');
-            list.className = 'feed-stream-list';
-            reports.forEach(report => {
-                const safeEventName = escapeHtml(report.event_name || '-');
-                const safeStatus = escapeHtml(CLUB_STATUS_LABELS[report.event_status] || report.event_status || '-');
-                const article = document.createElement('article');
-                article.className = 'feed-item-card';
-                article.innerHTML = `
-                    <div class="feed-item-head">
-                        <h3 class="feed-item-title">${safeEventName}</h3>
-                        <span class="feed-item-badge feed-item-badge--neutral">${safeStatus}</span>
-                    </div>
-                    <p class="feed-item-meta"><span>參與人數：${report.participants_count ?? 0}</span><span>平均評分：${report.average_rating ?? '無'}</span></p>
-                `;
-                list.appendChild(article);
-            });
-            container.appendChild(list);
-        }
-
-        async function loadUserFeedback() {
-            const response = await APIClient.get('admin.php?action=user_feedback');
-            if (!response.success) return console.error(response.message);
-            const container = document.getElementById('reports-panel-feedback');
-            container.innerHTML = '';
-            const feedback = response.data.feedback || [];
-            if (feedback.length === 0) { renderEmptyState(container, '目前沒有用戶回饋', '等有回饋資料後，這裡會顯示留言與評語。'); return; }
-            const list = document.createElement('div');
-            list.className = 'feed-stream-list';
-            feedback.forEach(item => {
-                const safeSubject = escapeHtml(item.subject || '用戶回饋');
-                const safeCreatedAt = formatDateTime(item.created_at);
-                const safeMessage = escapeHtml(item.message || item.content || '-');
-                const article = document.createElement('article');
-                article.className = 'feed-item-card';
-                article.innerHTML = `
-                    <div class="feed-item-head">
-                        <h3 class="feed-item-title">${safeSubject}</h3>
-                        <span class="feed-item-time">${safeCreatedAt}</span>
-                    </div>
-                    <p class="feed-item-body">${safeMessage}</p>
-                `;
-                list.appendChild(article);
-            });
-            container.appendChild(list);
-        }
-
-        async function loadReportCases() {
-            const response = await APIClient.get('admin.php?action=reports&status=pending');
-            if (!response.success) { PageUtils.showAlert('載入檢舉工單失敗：' + response.message, 'error'); return; }
-            const container = document.getElementById('reports-panel-cases');
-            container.innerHTML = '';
-            const reports = response.data.reports || [];
-            if (reports.length === 0) { renderEmptyState(container, '目前沒有待處理檢舉', '有新檢舉時會顯示在這裡。'); return; }
-            const list = document.createElement('div');
-            list.className = 'feed-stream-list';
-            reports.forEach(report => {
-                const safeType = escapeHtml(reportTypeLabel(report.reported_content_type));
-                const safeReason = escapeHtml(report.reason || '-');
-                const safeDescription = escapeHtml(report.description || '');
-                const safeReporter = escapeHtml(report.reported_by_name || '-');
-                const safeCreated = formatDateTime(report.created_at);
-                const reportId = Number(report.report_id) || 0;
-                const article = document.createElement('article');
-                article.className = 'feed-item-card';
-                article.innerHTML = `
-                    <button type="button" class="feed-item-link feed-item-link--announcement" data-expand-report>
-                        <div class="feed-item-head">
-                            <h3 class="feed-item-title">${safeType} #${Number(report.reported_content_id) || 0}</h3>
-                            <span class="feed-item-badge feed-item-badge--accent">待處理</span>
-                        </div>
-                        <p class="feed-item-subtitle">檢舉人：${safeReporter}</p>
-                        <p class="feed-item-time">${safeCreated}</p>
-                    </button>
-                    <div class="transfer-row-detail">
-                        <p style="margin:0 0 0.3rem;font-size:0.83rem;"><span class="transfer-detail-label">事由</span>${safeReason}</p>
-                        ${safeDescription ? `<p style="margin:0 0 0.5rem;font-size:0.83rem;"><span class="transfer-detail-label">補充</span>${safeDescription}</p>` : ''}
-                        <div class="transfer-row-actions">
-                            <button class="btn btn-primary btn-sm" data-report-resolve="${reportId}">處理並下架</button>
-                            <button class="btn btn-secondary btn-sm" data-report-dismiss="${reportId}">駁回</button>
-                        </div>
-                    </div>
-                `;
-                article.querySelector('[data-expand-report]').addEventListener('click', () => article.classList.toggle('is-expanded'));
-                article.querySelector('[data-report-resolve]').addEventListener('click', async () => {
-                    const note = prompt('可選填處理備註（例如：違反社群規範）') || '';
-                    await reviewReportCase(reportId, 'resolved', note, true);
-                });
-                article.querySelector('[data-report-dismiss]').addEventListener('click', async () => {
-                    const note = prompt('請輸入駁回原因（必填）');
-                    if (!note || !note.trim()) return;
-                    await reviewReportCase(reportId, 'dismissed', note.trim(), false);
-                });
-                list.appendChild(article);
-            });
-            container.appendChild(list);
-        }
-
-        async function reviewReportCase(reportId, decision, adminNotes, forceHide) {
-            const response = await APIClient.post('admin.php?action=review_report', { report_id: Number(reportId), decision, admin_notes: adminNotes, force_hide: forceHide ? 1 : 0 });
-            if (response.success) { PageUtils.showAlert('檢舉工單已更新', 'success'); loadReportCases(); }
-            else PageUtils.showAlert('更新失敗：' + response.message, 'error');
-        }
-
-        const reportsLoaded = { events: false, feedback: false, cases: false };
-        const reportsLoaders = { events: loadEventReports, feedback: loadUserFeedback, cases: loadReportCases };
-
-        function switchReportsSubTab(key) {
-            document.querySelectorAll('.feed-tab[data-sub-tab]').forEach(t => { t.classList.remove('is-active'); t.setAttribute('aria-selected', 'false'); });
-            document.querySelectorAll('.feed-panel').forEach(p => p.classList.remove('is-active'));
-            const btn = document.querySelector(`.feed-tab[data-sub-tab="${key}"]`);
-            const panel = document.getElementById('reports-panel-' + key);
-            if (btn) { btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true'); }
-            if (panel) panel.classList.add('is-active');
-            if (!reportsLoaded[key]) { reportsLoaded[key] = true; reportsLoaders[key](); }
-        }
-
-        document.querySelectorAll('.feed-tab[data-sub-tab]').forEach(btn => {
-            btn.addEventListener('click', () => switchReportsSubTab(btn.dataset.subTab));
-        });
-
-        switchReportsSubTab('events');
-    </script>
+    <script src="../js/admin-reports.js?v=20260528"></script>
     <footer>
         <p>© 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>

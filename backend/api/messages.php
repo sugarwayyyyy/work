@@ -577,6 +577,121 @@ class MessagesAPI {
             Helper::error('推薦失敗：' . $e->getMessage(), 500);
         }
     }
+
+    /**
+     * GET ?action=fju_forms
+     * 從輔大課指組網站即時抓取表單列表，快取 12 小時
+     */
+    public static function getFjuForms() {
+        self::requireLogin();
+
+        $cacheFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'fju_forms_v1.json';
+        $ttl = 43200; // 12 hours
+
+        if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < $ttl) {
+            $cached = json_decode(file_get_contents($cacheFile), true);
+            if (is_array($cached) && count($cached) > 0) {
+                Helper::success('ok', ['forms' => $cached, 'from_cache' => true]);
+                return;
+            }
+        }
+
+        $ch = curl_init('https://activity.fju.edu.tw/resource.jsp?labelID=21');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 12,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; ClubPlatform/1.0)',
+        ]);
+        $html = curl_exec($ch);
+        curl_close($ch);
+
+        if (!$html) {
+            if (file_exists($cacheFile)) {
+                $cached = json_decode(file_get_contents($cacheFile), true);
+                if (is_array($cached) && count($cached) > 0) {
+                    Helper::success('ok', ['forms' => $cached, 'from_cache' => true]);
+                    return;
+                }
+            }
+            Helper::error('無法取得課指組表單列表', 503);
+            return;
+        }
+
+        $forms = self::parseFjuForms($html);
+        @file_put_contents($cacheFile, json_encode($forms, JSON_UNESCAPED_UNICODE));
+        Helper::success('ok', ['forms' => $forms, 'from_cache' => false]);
+    }
+
+    private static function parseFjuForms(string $html): array {
+        $sections = [];
+
+        // External entry prepended (Canva link not on FJU site)
+        $sections[] = [
+            'category' => '行政課程講義',
+            'icon'     => '📖',
+            'items'    => [
+                ['name' => '114行政課程', 'url' => 'https://www.canva.com/design/DAGxsZXQGJk/MjhmQWrs3VwpEml60hVVOQ/view', 'external' => true],
+            ],
+        ];
+
+        // Split HTML on <h3> boundaries
+        if (preg_match_all('/<h3>(.*?)<\/h3>(.*?)(?=<h3>|$)/si', $html, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $cat = trim(html_entity_decode(strip_tags($match[1]), ENT_QUOTES, 'UTF-8'));
+                if (!$cat) continue;
+
+                $items = [];
+                if (preg_match_all(
+                    '/<li[^>]*title="([^"]+)"[^>]*>.*?href="(DownloadSubLabelFileServlet[^"]+)"/si',
+                    $match[2], $lms, PREG_SET_ORDER
+                )) {
+                    foreach ($lms as $lm) {
+                        $name = trim(html_entity_decode($lm[1], ENT_QUOTES, 'UTF-8'));
+                        $url  = 'https://activity.fju.edu.tw/' . htmlspecialchars_decode($lm[2]);
+                        if ($name && $url) {
+                            $items[] = ['name' => $name, 'url' => $url, 'external' => false];
+                        }
+                    }
+                }
+
+                if ($items) {
+                    $sections[] = [
+                        'category' => $cat,
+                        'icon'     => self::fjuFormIcon($cat),
+                        'items'    => $items,
+                    ];
+                }
+            }
+        }
+
+        // External entry appended (Google Forms / reurl.cc not on FJU site)
+        $sections[] = [
+            'category' => '電子交接資料',
+            'icon'     => '💻',
+            'items'    => [
+                ['name' => '電子交接資料填寫網址',             'url' => 'https://forms.gle/s8jb4kwS1JyPBhLd6', 'external' => true],
+                ['name' => '電子交接資料上傳檔案之格式連結', 'url' => 'https://reurl.cc/Z423EW',                'external' => true],
+            ],
+        ];
+
+        return $sections;
+    }
+
+    private static function fjuFormIcon(string $cat): string {
+        $map = [
+            '行政課程' => '📖', '活動申請' => '📝', '酒精'    => '🍺',
+            '攤位'    => '🏪', '場地'    => '🏟️', '核銷'    => '💰',
+            '成果'    => '📊', '範例'    => '📄', '負責人'  => '🪪',
+            '用火'    => '🔥', '娛樂稅'  => '🧾', '紙本交接' => '📦',
+            '電子交接' => '💻',
+        ];
+        foreach ($map as $kw => $icon) {
+            if (mb_strpos($cat, $kw, 0, 'UTF-8') !== false) return $icon;
+        }
+        return '📄';
+    }
 }
 
 $method = Helper::getRequestMethod();
@@ -591,6 +706,7 @@ if ($method === 'GET') {
     elseif ($action === 'note')           { MessagesAPI::getNote(); }
     elseif ($action === 'note_messages')  { MessagesAPI::getNoteMessages(); }
     elseif ($action === 'quiz_recommend') { MessagesAPI::quizRecommend(); }
+    elseif ($action === 'fju_forms')      { MessagesAPI::getFjuForms(); }
     else                                  { MessagesAPI::getConversations(); }
 }
 

@@ -352,7 +352,7 @@ CREATE TABLE notifications (
     title VARCHAR(200) NOT NULL,
     message TEXT NOT NULL,
     notification_type ENUM('event', 'announcement', 'qa_reply', 'system') DEFAULT 'system',
-    related_type ENUM('event', 'announcement', 'club', 'qa') DEFAULT NULL,
+    related_type ENUM('event', 'announcement', 'club', 'qa', 'report') DEFAULT NULL,
     related_id INT DEFAULT NULL,
     is_read BOOLEAN DEFAULT FALSE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

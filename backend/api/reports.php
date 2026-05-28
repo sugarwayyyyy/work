@@ -184,12 +184,22 @@ class ReportAPI {
         $admins = Database::getInstance()->fetchAll(
             "SELECT user_id FROM users WHERE role = 'platform_admin' AND is_active = 1"
         );
+        $typeLabels = [
+            'qa_question' => 'Q&A 提問',
+            'qa_reply'    => 'Q&A 回覆',
+            'review'      => '社團評價',
+            'event'       => '活動',
+            'club'        => '社團資料',
+        ];
+        $typeLabel = $typeLabels[$type] ?? $type;
         foreach ($admins as $admin) {
             dbInsert('notifications', [
                 'user_id'           => $admin['user_id'],
                 'title'             => '新檢舉待審核',
-                'message'           => '有新的內容檢舉待審核，請前往管理員後台處理。',
+                'message'           => "有一筆【{$typeLabel}】被檢舉，請前往管理後台審核。",
                 'notification_type' => 'system',
+                'related_type'      => 'report',
+                'related_id'        => $reportId,
                 'is_read'           => 0,
                 'created_at'        => date('Y-m-d H:i:s')
             ]);
