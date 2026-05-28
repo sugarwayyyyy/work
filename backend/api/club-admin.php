@@ -536,6 +536,14 @@ class ClubAdminAPI {
             [$target['member_id']]
         );
 
+        // 取消該使用者在此社團的 pending/approved 申請，避免被踢後仍顯示「前往驗證」
+        Database::getInstance()->update(
+            'club_join_applications',
+            ['status' => 'cancelled'],
+            'club_id = ? AND user_id = ? AND status IN ("pending","approved")',
+            [$club_id, $targetUserId]
+        );
+
         // 同步全域 role
         $officerRoles = '"president","vice_president","public_relations","treasurer","director"';
         $stillOfficer = Database::getInstance()->fetchOne(

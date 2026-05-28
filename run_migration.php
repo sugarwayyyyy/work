@@ -45,6 +45,7 @@ try {
         __DIR__ . '/database/migrations/2026_05_23_private_messages.sql',
         __DIR__ . '/database/migrations/2026_05_24_event_posters.sql',
         __DIR__ . '/database/migrations/2026_05_29_fix_join_application_fee_type.sql',
+        __DIR__ . '/database/migrations/2026_05_29_cancel_kicked_member_applications.sql',
     ];
 
     foreach ($files as $file) {
