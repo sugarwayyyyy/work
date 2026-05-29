@@ -588,6 +588,25 @@
             document.getElementById('deactivate-modal').addEventListener('click', function (e) {
                 if (e.target === this) closeDeactivateModal();
             });
+
+            // 學號、電話：只允許輸入數字，非數字鍵直接攔截
+            function blockNonDigit(e) {
+                if (e.key.length === 1 && !/[0-9]/.test(e.key)) e.preventDefault();
+            }
+            document.getElementById('edit-student-id').addEventListener('keydown', blockNonDigit);
+            document.getElementById('edit-phone').addEventListener('keydown', blockNonDigit);
+            // 處理貼上（paste）時濾除非數字字元
+            function filterPasteDigits(e) {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text');
+                const digits = text.replace(/\D/g, '');
+                const input = e.target;
+                const max = parseInt(input.maxLength, 10) || 999;
+                const newVal = (input.value.slice(0, input.selectionStart) + digits + input.value.slice(input.selectionEnd)).slice(0, max);
+                input.value = newVal;
+            }
+            document.getElementById('edit-student-id').addEventListener('paste', filterPasteDigits);
+            document.getElementById('edit-phone').addEventListener('paste', filterPasteDigits);
         });
 
         /* ── Google 帳號綁定 ─────────────────────────────────────────────── */

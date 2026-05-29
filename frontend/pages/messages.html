@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>私訊 - 社團平台</title>
     <link rel="stylesheet" href="../css/styles.css?v=20260502k">
-    <link rel="stylesheet" href="../css/messages.css?v=20260528">
+    <link rel="stylesheet" href="../css/messages.css?v=20260530">
 </head>
 <body>
     <header>
@@ -34,10 +34,37 @@
             <button class="msg-modal-close" onclick="closeSearchModal()">✕</button>
             <div class="msg-modal-title">新增對話</div>
             <div class="msg-search-row">
-                <input class="msg-search-input" id="search-input" type="text" placeholder="輸入用戶 ID 或姓名..." autocomplete="off">
+                <input class="msg-search-input" id="search-input" type="text" placeholder="輸入用戶 ID 或 Gmail…" autocomplete="off">
                 <button class="btn btn-primary btn-sm" onclick="doSearch()">搜尋</button>
             </div>
             <div class="msg-search-results" id="search-results"></div>
+        </div>
+    </div>
+
+    <!-- my QR code modal -->
+    <div class="msg-modal-overlay" id="qr-modal" hidden>
+        <div class="msg-modal" style="width:300px;text-align:center;">
+            <button class="msg-modal-close" onclick="closeQrModal()">✕</button>
+            <div class="msg-modal-title">我的 QR 碼</div>
+            <div id="qr-display" style="display:flex;justify-content:center;margin:16px 0;min-height:220px;align-items:center;"></div>
+            <p style="font-size:0.85rem;color:var(--color-text-muted,#6b7280);margin:0;">掃描此 QR 碼即可傳送私訊給我</p>
+        </div>
+    </div>
+
+    <!-- scan QR code modal -->
+    <div class="msg-modal-overlay" id="scan-modal" hidden>
+        <div class="msg-modal" style="width:340px;">
+            <button class="msg-modal-close" onclick="closeScanModal()">✕</button>
+            <div class="msg-modal-title">掃描 QR 碼</div>
+            <div style="position:relative;width:100%;aspect-ratio:1/1;background:#000;border-radius:10px;overflow:hidden;margin-top:12px;">
+                <video id="qr-video" style="width:100%;height:100%;object-fit:cover;" playsinline muted></video>
+                <canvas id="qr-canvas" style="display:none;"></canvas>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                    <div style="width:58%;height:58%;border:2.5px solid rgba(255,255,255,0.85);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,0.45);"></div>
+                </div>
+            </div>
+            <p id="scan-status" style="text-align:center;color:var(--color-text-muted,#6b7280);font-size:0.85rem;margin:10px 0 8px;">對準 QR 碼進行掃描</p>
+            <input type="file" id="qr-file-input" accept="image/*" style="display:none;">
         </div>
     </div>
 
@@ -47,11 +74,31 @@
             <div class="msg-sidebar-inner">
                 <div class="msg-sidebar-head">
                     <span class="msg-sidebar-title">私訊</span>
-                    <button class="msg-new-btn" title="新增對話" onclick="openSearchModal()">
-                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-                            <line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/>
-                        </svg>
-                    </button>
+                    <div style="display:flex;gap:2px;align-items:center;">
+                        <button class="msg-new-btn" title="意見回饋" onclick="openFeedbackModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </button>
+                        <button class="msg-new-btn" title="掃描 QR 碼加好友" onclick="openScanModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                                <rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/>
+                                <line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="14" y1="17" x2="14" y2="21"/><line x1="17" y1="17" x2="21" y2="21"/><line x1="21" y1="17" x2="21" y2="17"/>
+                            </svg>
+                        </button>
+                        <button class="msg-new-btn" title="我的 QR 碼" onclick="openQrModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9V6a3 3 0 0 1 3-3h3M15 3h3a3 3 0 0 1 3 3v3M21 15v3a3 3 0 0 1-3 3h-3M9 21H6a3 3 0 0 1-3-3v-3"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                        <button class="msg-new-btn" title="新增對話" onclick="openSearchModal()">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                                <line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <!-- Bot is always at the top, hardcoded -->
                 <div class="msg-bot-item" id="bot-item" onclick="openBotConversation()">
@@ -127,7 +174,9 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
     <script src="../js/main.js?v=20260510"></script>
-    <script src="../js/messages.js?v=20260528"></script>
+    <script src="../js/messages.js?v=20260530"></script>
 </body>
 </html>

@@ -265,15 +265,15 @@
                                 <form id="edit-profile-form" class="profile-form">
                                     <div class="form-group">
                                         <label for="edit-name">姓名</label>
-                                        <input type="text" id="edit-name" name="name" required>
+                                        <input type="text" id="edit-name" name="name" required maxlength="25">
                                     </div>
                                     <div class="form-group">
                                         <label for="edit-student-id">學號</label>
-                                        <input type="text" id="edit-student-id" name="student_id" placeholder="例如：A123456789">
+                                        <input type="text" id="edit-student-id" name="student_id" placeholder="例如：A123456789" maxlength="9" inputmode="numeric" pattern="[0-9]*">
                                     </div>
                                     <div class="form-group">
                                         <label for="edit-phone">電話</label>
-                                        <input type="tel" id="edit-phone" name="phone">
+                                        <input type="tel" id="edit-phone" name="phone" maxlength="10" inputmode="numeric" pattern="[0-9]*">
                                     </div>
                                     <div class="form-group">
                                         <label for="avatar-upload">更換頭像</label>

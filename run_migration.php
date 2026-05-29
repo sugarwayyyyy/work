@@ -43,9 +43,21 @@ try {
         __DIR__ . '/database/migrations/2026_05_22_club_member_fee_paid.sql',
         __DIR__ . '/database/migrations/2026_05_22_club_member_join.sql',
         __DIR__ . '/database/migrations/2026_05_23_private_messages.sql',
+        __DIR__ . '/database/migrations/2026_05_23_bot_messages.sql',
+        __DIR__ . '/database/migrations/2026_05_23_club_join_applications.sql',
+        __DIR__ . '/database/migrations/2026_05_23_user_notes.sql',
         __DIR__ . '/database/migrations/2026_05_24_event_posters.sql',
+        __DIR__ . '/database/migrations/2026_05_24_message_reactions.sql',
+        __DIR__ . '/database/migrations/2026_05_24_note_messages.sql',
+        __DIR__ . '/database/migrations/2026_05_24_note_messages_recall.sql',
+        __DIR__ . '/database/migrations/2026_05_24_private_message_recall.sql',
+        __DIR__ . '/database/migrations/2026_05_24_private_message_reply.sql',
+        __DIR__ . '/database/migrations/2026_05_26_clubs_enrich_data.sql',
+        __DIR__ . '/database/migrations/2026_05_26_login_rate_limiting.sql',
         __DIR__ . '/database/migrations/2026_05_29_fix_join_application_fee_type.sql',
         __DIR__ . '/database/migrations/2026_05_29_cancel_kicked_member_applications.sql',
+        __DIR__ . '/database/migrations/2026_05_29_join_code_expiry.sql',
+        __DIR__ . '/database/migrations/2026_05_30_feedback.sql',
     ];
 
     foreach ($files as $file) {

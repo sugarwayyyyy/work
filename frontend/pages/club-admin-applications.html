@@ -89,7 +89,7 @@
     </div>
 
     <script src="../js/main.js?v=20260510"></script>
-    <script src="../js/club-admin-dashboard.js"></script>
+    <script src="../js/club-admin-dashboard.js?v=20260530"></script>
     <script>
         // ── 申請列表前端篩選 ──────────────────────────────────────────
         const FEE_VALUE_TO_LABEL = { none: '免費', onetime: '一次付清', semester: '學期費', session: '單堂費' };
@@ -169,12 +169,7 @@
             if (banner) banner.style.display = '';
 
             loadClubAdminStats(clubId);
-            await loadJoinApplications(clubId);
-
-            // badge：直接從已渲染 DOM 計數，不重打 API
-            const renderedCount = document.querySelectorAll('#applications-list-wrap tr[id^="app-row-"]').length;
-            const navBadge = document.getElementById('nav-app-badge');
-            if (navBadge) navBadge.textContent = renderedCount > 0 ? String(renderedCount) : '';
+            await loadJoinApplications(clubId); // 內部統一更新 nav-app-badge（含 99+ 邏輯）
 
         })();
     </script>

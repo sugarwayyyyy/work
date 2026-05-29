@@ -748,20 +748,46 @@ async function confirmJoin() {
     }
 }
 
-async function leaveClub() {
-    if (!confirm('確定要退出此社團嗎？')) return;
-    try {
-        const res = await APIClient.post(`clubs.php?action=leave_club&id=${clubId}`, {});
-        if (res && res.success) {
-            PageUtils.showAlert('已退出社團', 'success');
-            _membershipJustLeft = true;
-            syncJoinBtn(false, null, null);
-        } else {
-            PageUtils.showAlert(res?.message || '退出失敗', 'error');
-        }
-    } catch (err) {
-        PageUtils.showAlert('退出失敗：' + err.message, 'error');
+function leaveClub() {
+    let modal = document.getElementById('leave-confirm-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'leave-confirm-modal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);';
+        document.body.appendChild(modal);
     }
+    modal.innerHTML = `
+        <div class="join-modal-box" style="max-width:360px;">
+            <h3 class="join-modal-title" style="color:#dc2626;">退出社團</h3>
+            <p style="margin:0.5rem 0 1.5rem;color:var(--text-muted);">確定要退出此社團嗎？退出後您的申請紀錄也將一併取消，需重新申請才能再次加入。</p>
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                <button id="leave-cancel-btn" class="btn btn-secondary btn-sm">取消</button>
+                <button id="leave-confirm-btn" class="btn btn-sm" style="background:#dc2626;color:#fff;border-color:#dc2626;">確認退出</button>
+            </div>
+        </div>`;
+    modal.style.display = 'flex';
+
+    document.getElementById('leave-cancel-btn').onclick = () => { modal.style.display = 'none'; };
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; }, { once: false });
+
+    document.getElementById('leave-confirm-btn').onclick = async () => {
+        const confirmBtn = document.getElementById('leave-confirm-btn');
+        if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = '處理中…'; }
+        try {
+            const res = await APIClient.post(`clubs.php?action=leave_club&id=${clubId}`, {});
+            modal.style.display = 'none';
+            if (res && res.success) {
+                PageUtils.showAlert('已退出社團', 'success');
+                _membershipJustLeft = true;
+                syncJoinBtn(false, null, null);
+            } else {
+                PageUtils.showAlert(res?.message || '退出失敗', 'error');
+            }
+        } catch (err) {
+            modal.style.display = 'none';
+            PageUtils.showAlert('退出失敗：' + err.message, 'error');
+        }
+    };
 }
 
 window.addEventListener('DOMContentLoaded', function() {

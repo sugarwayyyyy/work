@@ -788,6 +788,7 @@ class ClubAPI {
                     $app = Database::getInstance()->fetchOne(
                         "SELECT application_id, status, fee_type FROM club_join_applications
                          WHERE club_id = ? AND user_id = ?
+                           AND (status = 'pending' OR (status = 'approved' AND code_used = 0))
                          ORDER BY created_at DESC LIMIT 1",
                         [$club_id, $currentUserId]
                     );
@@ -1129,6 +1130,14 @@ class ClubAPI {
                 ['is_active' => 0],
                 'member_id = ?',
                 [$membership['member_id']]
+            );
+
+            // 同步取消殘留的 pending/approved 申請，避免重整後顯示「前往驗證」
+            Database::getInstance()->update(
+                'club_join_applications',
+                ['status' => 'cancelled'],
+                'club_id = ? AND user_id = ? AND status IN ("pending","approved")',
+                [$club_id, $userId]
             );
 
             Helper::success('已退出社團', ['is_member' => false]);

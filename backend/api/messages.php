@@ -212,7 +212,7 @@ class MessagesAPI {
 
     /**
      * GET ?action=search_user&q=X
-     * 以 user_id（精確）、student_id（精確）或姓名（模糊）搜尋用戶
+     * 以 user_id（精確）、student_id（精確）、email（模糊）或姓名（模糊）搜尋用戶
      */
     public static function searchUser() {
         $uid = self::requireLogin();
@@ -224,26 +224,25 @@ class MessagesAPI {
         }
 
         try {
-            $results = [];
+            $qLike = '%' . $q . '%';
 
             if (is_numeric($q)) {
-                $byId = Database::getInstance()->fetchAll(
+                $results = Database::getInstance()->fetchAll(
                     'SELECT user_id, name, avatar_path, student_id FROM users
-                     WHERE (user_id = ? OR student_id = ?) AND user_id != ?
+                     WHERE (user_id = ? OR student_id = ? OR name LIKE ? OR email LIKE ?)
+                       AND user_id != ?
+                     ORDER BY (user_id = ? OR student_id = ?) DESC
                      LIMIT 10',
-                    [(int)$q, $q, $uid]
+                    [(int)$q, $q, $qLike, $qLike, $uid, (int)$q, $q]
                 );
-                $results = $byId;
-            }
-
-            if (empty($results)) {
-                $byName = Database::getInstance()->fetchAll(
+            } else {
+                $results = Database::getInstance()->fetchAll(
                     'SELECT user_id, name, avatar_path, student_id FROM users
-                     WHERE name LIKE ? AND user_id != ?
+                     WHERE (name LIKE ? OR email LIKE ?)
+                       AND user_id != ?
                      LIMIT 10',
-                    ['%' . $q . '%', $uid]
+                    [$qLike, $qLike, $uid]
                 );
-                $results = $byName;
             }
 
             Helper::success('搜尋成功', ['users' => array_values($results)]);
@@ -432,28 +431,45 @@ class MessagesAPI {
      * Body: { club_id, code }
      */
     public static function verifyJoinCode($data) {
-        $uid = self::requireLogin();
-        $code   = strtoupper(trim((string)($data['code'] ?? '')));
+        $uid   = self::requireLogin();
+        $code  = strtoupper(trim((string)($data['code'] ?? '')));
+        $appId = (int)($data['application_id'] ?? 0);
         $clubId = (int)($data['club_id'] ?? 0);
-        if (!$code || !$clubId) Helper::error('請填寫驗證碼', 400);
+        if (!$code) Helper::error('請填寫驗證碼', 400);
 
         try {
-            $app = Database::getInstance()->fetchOne(
-                "SELECT a.*, c.club_name FROM club_join_applications a
-                 JOIN clubs c ON c.club_id = a.club_id
-                 WHERE a.club_id = ? AND a.user_id = ? AND a.status = 'approved' AND a.code_used = 0",
-                [$clubId, $uid]
-            );
-            if (!$app) Helper::error('找不到有效申請，請確認社團或重新申請', 404);
+            // 優先用 application_id 精準定位，fallback 到 club_id + user_id
+            if ($appId > 0) {
+                $app = Database::getInstance()->fetchOne(
+                    "SELECT a.*, c.club_name FROM club_join_applications a
+                     JOIN clubs c ON c.club_id = a.club_id
+                     WHERE a.application_id = ? AND a.user_id = ?",
+                    [$appId, $uid]
+                );
+            } else {
+                if (!$clubId) Helper::error('請填寫驗證碼', 400);
+                $app = Database::getInstance()->fetchOne(
+                    "SELECT a.*, c.club_name FROM club_join_applications a
+                     JOIN clubs c ON c.club_id = a.club_id
+                     WHERE a.club_id = ? AND a.user_id = ? AND a.status = 'approved' AND a.code_used = 0
+                     ORDER BY a.application_id DESC LIMIT 1",
+                    [$clubId, $uid]
+                );
+            }
+
+            if (!$app) Helper::error('找不到申請紀錄，請確認社團或聯繫幹部', 404);
+            $clubId = (int)$app['club_id']; // 以 DB 取得的 club_id 為準，避免前端傳 0
+            if ((int)$app['code_used'] === 1) Helper::error('此驗證碼已使用，您已是此社團成員', 409);
+            if ($app['status'] !== 'approved') Helper::error('申請尚未獲批准，請等待幹部審核', 403);
             if (!empty($app['code_expires_at']) && strtotime($app['code_expires_at']) < time()) {
                 Helper::error('驗證碼已過期（有效期 30 分鐘），請聯繫社團幹部重新取得', 400);
             }
-            if ($app['verification_code'] !== $code) Helper::error('驗證碼錯誤', 400);
+            if ($app['verification_code'] !== $code) Helper::error('驗證碼錯誤，請確認您輸入的是最新一則訊息中的驗證碼', 400);
 
             dbUpdate('club_join_applications', ['code_used' => 1], 'application_id = ?', [(int)$app['application_id']]);
 
             $allowedFeeTypes = ['none', 'onetime', 'semester', 'session'];
-            $feeType = in_array($app['fee_type'], $allowedFeeTypes, true) ? $app['fee_type'] : 'semester';
+            $feeType = in_array($app['fee_type'], $allowedFeeTypes, true) ? $app['fee_type'] : 'none';
 
             $existing = Database::getInstance()->fetchOne(
                 'SELECT member_id, is_active FROM club_members WHERE club_id = ? AND user_id = ?',
@@ -513,8 +529,8 @@ class MessagesAPI {
     }
 
     /**
-     * GET ?action=quiz_recommend&category=體育性&intensity=light|active|any&budget=0|500|any
-     * 社團匹配測驗推薦端點：依類別、強度、預算找最多 3 個適合的社團，並存入 bot_messages
+     * GET ?action=quiz_recommend&category=體育性&intensity=light|active|any&budget=0|500|any&style=high_active|normal_active|any
+     * 社團匹配測驗推薦端點：依類別、強度、預算、氛圍偏好找最多 3 個適合的社團，並存入 bot_messages
      */
     public static function quizRecommend() {
         $uid = self::requireLogin();
@@ -523,18 +539,19 @@ class MessagesAPI {
         $category  = trim($_GET['category']  ?? '');
         $budget    = trim($_GET['budget']    ?? 'any');
         $intensity = trim($_GET['intensity'] ?? 'any');
+        $style     = trim($_GET['style']     ?? 'any');
 
         $validCats = ['體育性', '學術性', '藝文性', '服務性', '休閒性'];
         if (!in_array($category, $validCats, true)) {
             Helper::error('無效的社團類別', 400);
         }
-        // DB category_name 與前端傳入值一致（均為「體育性」「學術性」…）
         $dbCategory = $category;
 
-        if (!in_array($budget, ['0', '500', 'any'], true)) $budget = 'any';
-        if (!in_array($intensity, ['light', 'active', 'any'], true)) $intensity = 'any';
+        if (!in_array($budget,    ['0', '500', 'any'], true))                    $budget    = 'any';
+        if (!in_array($intensity, ['light', 'active', 'any'], true))             $intensity = 'any';
+        if (!in_array($style,     ['high_active', 'normal_active', 'any'], true)) $style    = 'any';
 
-        // 動態子句由白名單驗證過的固定字串組成，不含使用者輸入
+        // 動態子句均來自白名單，不含使用者原始輸入
         $budgetSql = '';
         if ($budget === '0') {
             $budgetSql = 'AND (c.club_fee_semester IS NULL OR c.club_fee_semester = 0)';
@@ -545,6 +562,16 @@ class MessagesAPI {
         $intensitySql = '';
         if ($intensity === 'active') {
             $intensitySql = "AND c.activity_badge IN ('high_active','normal_active')";
+        }
+
+        // style 影響 activity_badge 排序優先順序
+        if ($style === 'high_active') {
+            $badgeOrder = "CASE c.activity_badge WHEN 'high_active' THEN 1 WHEN 'normal_active' THEN 2 ELSE 3 END";
+        } elseif ($style === 'normal_active') {
+            $badgeOrder = "CASE c.activity_badge WHEN 'normal_active' THEN 1 WHEN 'high_active' THEN 2 ELSE 3 END";
+        } else {
+            // casual / any → 不強制 badge 優先，badge 順序中立
+            $badgeOrder = "CASE c.activity_badge WHEN 'normal_active' THEN 1 WHEN 'high_active' THEN 2 ELSE 1 END";
         }
 
         try {
@@ -565,22 +592,20 @@ class MessagesAPI {
                    )
                    $budgetSql $intensitySql
                  ORDER BY
-                   CASE c.activity_badge
-                     WHEN 'high_active'   THEN 1
-                     WHEN 'normal_active' THEN 2
-                     ELSE 3
-                   END,
+                   $badgeOrder,
                    member_count DESC
                  LIMIT 3",
                 [$dbCategory, $uid]
             );
 
+            // is_read=1：結果當下就看到了，不應觸發未讀紅點
             dbInsert('bot_messages', [
                 'user_id'      => $uid,
                 'message_type' => 'club_match_result',
                 'title'        => '社團匹配結果 🎯',
                 'content'      => '根據你的測驗結果，為你推薦以下社團：',
                 'meta'         => json_encode(['clubs' => $clubs, 'category' => $category]),
+                'is_read'      => 1,
             ]);
 
             Helper::success('已取得推薦社團', ['clubs' => $clubs]);

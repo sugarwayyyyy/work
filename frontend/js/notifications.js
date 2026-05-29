@@ -1,6 +1,14 @@
+        let _pendingAppsCount = 0;
+        let _pendingAppsClubs = []; // [{club_id, club_name, cnt}, ...]
+
         async function loadNotifications() {
             try {
-                const response = await APIClient.get('notifications.php');
+                const [response, appRes] = await Promise.all([
+                    APIClient.get('notifications.php'),
+                    APIClient.get('club-admin.php?action=pending_app_count').catch(() => null)
+                ]);
+                _pendingAppsCount = (appRes?.data?.count) || 0;
+                _pendingAppsClubs = (appRes?.data?.clubs) || [];
                 if (response.success) {
                     displayNotifications(response.data.notifications);
                 } else {
@@ -10,6 +18,14 @@
                 console.error('Error:', error);
                 PageUtils.showAlert('載入通知失敗', 'error');
             }
+        }
+
+        function goToClubApplications(clubIndex) {
+            const club = _pendingAppsClubs[clubIndex];
+            if (!club) return;
+            sessionStorage.setItem('clubAdmin_clubId', String(club.club_id));
+            sessionStorage.setItem('clubAdmin_clubName', club.club_name || '');
+            window.location.href = 'club-admin-applications.html';
         }
 
         function syncBellDot(unreadCount) {
@@ -28,26 +44,45 @@
             const container = document.getElementById('notifications-list');
             const unreadCountEl = document.getElementById('notif-unread-count');
 
-            if (notifications.length === 0) {
+            const unreadCount = notifications.filter(n => !n.is_read).length;
+            // 鈴鐺：有未讀通知 OR 幹部有待審核申請都要亮
+            syncBellDot(unreadCount + (_pendingAppsCount > 0 ? 1 : 0));
+
+            if (notifications.length === 0 && _pendingAppsCount === 0) {
                 container.innerHTML = '<div class="feed-item-card" style="text-align:center;padding:2.5rem 0;color:var(--text-muted);">目前沒有通知</div>';
                 if (unreadCountEl) unreadCountEl.textContent = '';
                 const markAllBtn = document.getElementById('mark-all-read-btn');
                 if (markAllBtn) { markAllBtn.style.display = 'none'; }
-                syncBellDot(0);
                 return;
             }
 
-            const unreadCount = notifications.filter(n => !n.is_read).length;
-            syncBellDot(unreadCount);
             if (unreadCountEl) unreadCountEl.textContent = unreadCount > 0 ? `${unreadCount} 則未讀` : '';
             const markAllBtn = document.getElementById('mark-all-read-btn');
             if (markAllBtn) {
-                markAllBtn.style.display = '';
+                markAllBtn.style.display = notifications.length > 0 ? '' : 'none';
                 markAllBtn.disabled = unreadCount === 0;
                 markAllBtn.textContent = '全部標為已讀';
             }
 
             let html = '';
+
+            // 虛擬通知：每個有待審核申請的社團各顯示一張卡片（置頂，無刪除按鈕）
+            // onclick 傳陣列索引避免字串引號衝突
+            _pendingAppsClubs.forEach((club, idx) => {
+                const safeDisplayName = PageUtils.escapeHtml(club.club_name || '');
+                html += `
+                <div class="feed-item-card">
+                    <button class="feed-item-link feed-item-link--announcement"
+                        onclick="goToClubApplications(${idx})">
+                        <div class="feed-item-head">
+                            <h3 class="feed-item-title">社團待審核申請</h3>
+                            <span class="feed-item-badge">新</span>
+                        </div>
+                        <p class="feed-item-body">您管理的<strong>${safeDisplayName}</strong>有待審核的入社申請，請前往審核。</p>
+                    </button>
+                </div>`;
+            });
+
             notifications.forEach(notification => {
                 const notificationId = Number(notification.notification_id) || 0;
                 const title = PageUtils.escapeHtml(notification.title || '通知');
@@ -143,8 +178,7 @@
             try {
                 const response = await APIClient.post('notifications.php?action=mark_all_read', {});
                 if (response.success) {
-                    syncBellDot(0);
-                    await loadNotifications();
+                    await loadNotifications(); // loadNotifications 內部會正確更新 syncBellDot
                 } else {
                     PageUtils.showAlert(response.message || '操作失敗', 'error');
                     if (btn) { btn.disabled = false; btn.textContent = '全部標為已讀'; }

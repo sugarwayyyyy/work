@@ -320,15 +320,22 @@ async function loadUserFeedback() {
     if (feedback.length === 0) { renderEmptyState(container, '目前沒有用戶回饋', '等有回饋資料後，這裡會顯示留言與評語。'); return; }
     const list = document.createElement('div');
     list.className = 'feed-stream-list';
+    const TYPE_LABEL = { suggestion: '💡 功能建議', bug: '🐛 問題回報', other: '💬 其他意見' };
     feedback.forEach(item => {
+        const typeLabel = TYPE_LABEL[item.feedback_type] || '💬 其他意見';
         const article = document.createElement('article');
         article.className = 'feed-item-card';
         article.innerHTML = `
             <div class="feed-item-head">
-                <h3 class="feed-item-title">${escapeHtml(item.subject||'用戶回饋')}</h3>
+                <h3 class="feed-item-title">${escapeHtml(item.user_name || '匿名')}
+                    <span style="margin-left:6px;font-size:0.75rem;font-weight:400;color:var(--text-muted,#6b7280);">${escapeHtml(item.user_email || '')}</span>
+                </h3>
                 <span class="feed-item-time">${formatDateTime(item.created_at)}</span>
             </div>
-            <p class="feed-item-body">${escapeHtml(item.message||item.content||'-')}</p>`;
+            <div style="margin-bottom:6px;">
+                <span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;background:#f3f4f6;color:#374151;">${typeLabel}</span>
+            </div>
+            <p class="feed-item-body">${escapeHtml(item.content || '-')}</p>`;
         list.appendChild(article);
     });
     container.appendChild(list);

@@ -464,6 +464,24 @@ class AdminAPI {
         Helper::success('取得活動報告成功', ['reports' => $reports]);
     }
 
+    public static function submitFeedback($data) {
+        if (!Auth::isLoggedIn()) Helper::error('請先登入', 401);
+        if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+        $uid     = Auth::getCurrentUserId();
+        $type    = trim($data['feedback_type'] ?? 'other');
+        $content = trim($data['content'] ?? '');
+        $validTypes = ['suggestion', 'bug', 'other'];
+        if (!in_array($type, $validTypes, true)) $type = 'other';
+        if ($content === '') Helper::error('請填寫回饋內容', 400);
+        if (mb_strlen($content) > 1000) Helper::error('內容不得超過 1000 字', 400);
+        dbInsert('feedback', [
+            'user_id'       => $uid,
+            'feedback_type' => $type,
+            'content'       => $content,
+        ]);
+        Helper::success('感謝您的回饋！');
+    }
+
     public static function getUserFeedback() {
         self::requireAdmin();
         $feedback = Database::getInstance()->fetchAll('
@@ -1014,6 +1032,8 @@ if ($method === 'POST') {
         AdminAPI::reviewTransferRequest($data);
     } elseif ($action === 'review_report') {
         AdminAPI::reviewReport($data);
+    } elseif ($action === 'submit_feedback') {
+        AdminAPI::submitFeedback($data);
     }
 }
 

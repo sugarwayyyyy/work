@@ -2090,13 +2090,10 @@
                 const wrap = document.getElementById('applications-list-wrap');
                 if (wrap) wrap.innerHTML = '<p class="widget-empty">載入中...</p>';
 
-                await loadJoinApplications(clubId);
+                await loadJoinApplications(clubId); // 內部已更新 nav-app-badge
                 if (typeof filterApplications === 'function') {
                     filterApplications();
                 }
-                const renderedCount = document.querySelectorAll('#applications-list-wrap tr[id^="app-row-"]').length;
-                const navBadge = document.getElementById('nav-app-badge');
-                if (navBadge) navBadge.textContent = renderedCount > 0 ? String(renderedCount) : '';
             });
         })();
 
@@ -2481,7 +2478,10 @@
                 const res = await APIClient.get(`club-admin.php?action=join_applications&id=${clubId}`);
                 if (!res || !res.success) { wrap.innerHTML = '<p class="widget-empty">載入失敗</p>'; return; }
                 const apps = res.data.applications || [];
-                if (countEl) countEl.textContent = apps.length > 0 ? `（${apps.length} 筆）` : '';
+                const displayCount = apps.length > 99 ? '99+' : String(apps.length);
+                if (countEl) countEl.textContent = apps.length > 0 ? `（${displayCount} 筆）` : '';
+                const navBadge = document.getElementById('nav-app-badge');
+                if (navBadge) navBadge.textContent = apps.length > 0 ? displayCount : '';
                 if (apps.length === 0) {
                     wrap.innerHTML = '<p class="widget-empty">目前沒有待審核申請</p>';
                     return;
@@ -2534,7 +2534,7 @@
                 const res = await APIClient.get(`club-admin.php?action=join_applications&id=${clubId}`);
                 const count = (res?.data?.applications?.length) || 0;
                 const badge = document.getElementById('nav-app-badge');
-                if (badge) badge.textContent = count > 0 ? String(count) : '';
+                if (badge) badge.textContent = count === 0 ? '' : (count > 99 ? '99+' : String(count));
             } catch (_) {}
         }
 

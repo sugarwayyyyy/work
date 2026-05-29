@@ -177,11 +177,26 @@ class NotificationAPI {
         }
 
         try {
+            $uid = Auth::getCurrentUserId();
             $row = Database::getInstance()->fetchOne(
                 'SELECT COUNT(*) AS cnt FROM notifications WHERE user_id = ? AND is_read = 0',
-                [Auth::getCurrentUserId()]
+                [$uid]
             );
-            Helper::success('', ['count' => (int)($row['cnt'] ?? 0)]);
+            $notifCount = (int)($row['cnt'] ?? 0);
+
+            // 幹部有待審核申請時也讓鈴鐺亮起（加 1 表示「有」，通知中心以虛擬卡片顯示）
+            $appRow = Database::getInstance()->fetchOne(
+                "SELECT COUNT(*) AS cnt
+                 FROM club_join_applications cja
+                 JOIN club_members cm ON cm.club_id = cja.club_id
+                     AND cm.user_id = ? AND cm.is_active = 1
+                     AND cm.role IN ('president','vice_president','public_relations','treasurer','director')
+                 WHERE cja.status = 'pending'",
+                [$uid]
+            );
+            $hasPendingApps = ((int)($appRow['cnt'] ?? 0)) > 0 ? 1 : 0;
+
+            Helper::success('', ['count' => $notifCount + $hasPendingApps]);
         } catch (Exception $e) {
             Helper::success('', ['count' => 0]);
         }

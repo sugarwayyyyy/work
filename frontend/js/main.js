@@ -1737,6 +1737,9 @@ function ensureNavDropdownStyles() {
         + '.ndp-menu a,.ndp-logout-btn{display:flex;align-items:center;gap:9px;padding:10px 12px;color:#111827;text-decoration:none;font-size:14px;border:none;background:#fff;width:100%;cursor:pointer}'
         + '.ndp-menu a:hover,.ndp-logout-btn:hover{background:#f8fafc}'
         + '.ndp-menu-icon{width:16px;height:16px;flex-shrink:0;display:block;opacity:.86}'
+        + '.ndp-divider{height:1px;background:#f1f5f9;margin:2px 0}'
+        + '.ndp-menu button{display:flex;align-items:center;gap:9px;padding:10px 12px;color:#111827;text-decoration:none;font-size:14px;border:none;background:#fff;width:100%;cursor:pointer;text-align:left}'
+        + '.ndp-menu button:hover{background:#f8fafc}'
         + '.ndp-logout-wrap{border-top:1px solid #f1f5f9}'
         + '@media(max-width:767px){.nav-dd-panel{position:fixed;top:auto;right:auto}}'
         // dark mode overrides for the JS-injected panel
@@ -1747,12 +1750,15 @@ function ensureNavDropdownStyles() {
         + '[data-theme="dark"] .ndp-mail{color:var(--color-text-muted)}'
         + '[data-theme="dark"] .ndp-menu a,[data-theme="dark"] .ndp-logout-btn{background:var(--color-bg-surface);color:var(--color-text-default)}'
         + '[data-theme="dark"] .ndp-menu a:hover,[data-theme="dark"] .ndp-logout-btn:hover{background:var(--color-bg-subtle)}'
+        + '[data-theme="dark"] .ndp-divider{background:var(--color-border-light)}'
+        + '[data-theme="dark"] .ndp-menu button{background:var(--color-bg-surface);color:var(--color-text-default)}'
+        + '[data-theme="dark"] .ndp-menu button:hover{background:var(--color-bg-subtle)}'
         + '[data-theme="dark"] .ndp-logout-wrap{border-top-color:var(--color-border-light)}'
         + '[data-theme="dark"] .nav-bell-btn:hover,[data-theme="dark"] .nav-avatar-trigger:hover{background:var(--color-bg-subtle)}'
         + '[data-theme="dark"] .nav-avatar-fallback,[data-theme="dark"] .nav-avatar-img{border-color:var(--color-border-default)}'
         + '[data-theme="dark"] .nav-bell-icon,[data-theme="dark"] .nav-dd-caret,[data-theme="dark"] .ndp-menu-icon{filter:invert(1)}'
         // media-query auto-detect mirrors
-        + '@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav-dd-panel{background:var(--color-bg-surface);border-color:var(--color-border-default)}:root:not([data-theme="light"]) .ndp-head{background:var(--color-bg-subtle);border-bottom-color:var(--color-border-light)}:root:not([data-theme="light"]) .ndp-name{color:var(--color-text-strong)}:root:not([data-theme="light"]) .ndp-mail{color:var(--color-text-muted)}:root:not([data-theme="light"]) .ndp-menu a,:root:not([data-theme="light"]) .ndp-logout-btn{background:var(--color-bg-surface);color:var(--color-text-default)}:root:not([data-theme="light"]) .ndp-menu a:hover,:root:not([data-theme="light"]) .ndp-logout-btn:hover{background:var(--color-bg-subtle)}:root:not([data-theme="light"]) .ndp-logout-wrap{border-top-color:var(--color-border-light)}:root:not([data-theme="light"]) .nav-bell-btn:hover,:root:not([data-theme="light"]) .nav-avatar-trigger:hover{background:var(--color-bg-subtle)}:root:not([data-theme="light"]) .nav-bell-icon,:root:not([data-theme="light"]) .nav-dd-caret,:root:not([data-theme="light"]) .ndp-menu-icon{filter:invert(1)}}'
+        + '@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav-dd-panel{background:var(--color-bg-surface);border-color:var(--color-border-default)}:root:not([data-theme="light"]) .ndp-head{background:var(--color-bg-subtle);border-bottom-color:var(--color-border-light)}:root:not([data-theme="light"]) .ndp-name{color:var(--color-text-strong)}:root:not([data-theme="light"]) .ndp-mail{color:var(--color-text-muted)}:root:not([data-theme="light"]) .ndp-menu a,:root:not([data-theme="light"]) .ndp-logout-btn{background:var(--color-bg-surface);color:var(--color-text-default)}:root:not([data-theme="light"]) .ndp-menu a:hover,:root:not([data-theme="light"]) .ndp-logout-btn:hover{background:var(--color-bg-subtle)}:root:not([data-theme="light"]) .ndp-divider{background:var(--color-border-light)}:root:not([data-theme="light"]) .ndp-menu button{background:var(--color-bg-surface);color:var(--color-text-default)}:root:not([data-theme="light"]) .ndp-menu button:hover{background:var(--color-bg-subtle)}:root:not([data-theme="light"]) .ndp-logout-wrap{border-top-color:var(--color-border-light)}:root:not([data-theme="light"]) .nav-bell-btn:hover,:root:not([data-theme="light"]) .nav-avatar-trigger:hover{background:var(--color-bg-subtle)}:root:not([data-theme="light"]) .nav-bell-icon,:root:not([data-theme="light"]) .nav-dd-caret,:root:not([data-theme="light"]) .ndp-menu-icon{filter:invert(1)}}'
         // theme toggle button
         + '.ndp-theme-toggle{position:absolute;top:8px;right:8px;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:none;background:transparent;color:#6b7280;cursor:pointer;transition:background 0.15s,color 0.15s;flex-shrink:0}'
         + '.ndp-theme-toggle:hover{background:#f3f4f6;color:#111827}'
@@ -1812,7 +1818,8 @@ function updateNavigation() {
             const personIcon = PageUtils.escapeAttribute(getNavIconPath('person.svg'));
             const dashboardIcon = PageUtils.escapeAttribute(getNavIconPath('dashboard.svg'));
             const logoutIcon = PageUtils.escapeAttribute(getNavIconPath('logout.svg'));
-            const homeIcon = PageUtils.escapeAttribute(getNavIconPath('home.svg'));
+            const homeIcon     = PageUtils.escapeAttribute(getNavIconPath('home.svg'));
+            const feedbackIcon = PageUtils.escapeAttribute(getNavIconPath('feedback.svg'));
 
             const profileAvatar = relativeAvatarUrl
                 ? `<img src="${safeAvatarUrl}" alt="">`
@@ -1844,6 +1851,8 @@ function updateNavigation() {
                 + (user.role !== 'platform_admin' ? `<a href="${FRONTEND_HOME_URL}"><img class="ndp-menu-icon" src="${homeIcon}" alt="">返回首頁</a>` : '')
                 + `<a href="${getPageLink('user-profile.html')}"><img class="ndp-menu-icon" src="${personIcon}" alt="">個人資料</a>`
                 + roleLink
+                + '<div class="ndp-divider"></div>'
+                + `<button type="button" onclick="openFeedbackModal();closeNavDropdown();"><img class="ndp-menu-icon" src="${feedbackIcon}" alt="">意見回饋</button>`
                 + '</div>'
                 + '<div class="ndp-logout-wrap">'
                 + `<button type="button" class="ndp-logout-btn" id="ndp-logout-btn"><img class="ndp-menu-icon" src="${logoutIcon}" alt="">登出</button>`
@@ -2072,6 +2081,65 @@ window.refreshGlobalFollowSidebar = renderGlobalFollowSidebar;
     sync();
 })();
 
+// ── 意見回饋 Modal ────────────────────────────────────────────────────────────
 
+function openFeedbackModal() {
+    if (!StorageUtils.isLoggedIn()) {
+        PageUtils.showAlert('請先登入後再送出回饋', 'warning');
+        return;
+    }
+    let modal = document.getElementById('feedback-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'feedback-modal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);';
+        modal.innerHTML = `
+            <div style="background:var(--color-bg-surface,#fff);border-radius:14px;padding:24px;width:min(440px,90vw);box-shadow:0 20px 60px rgba(0,0,0,.25);">
+                <h3 style="margin:0 0 4px;font-size:1.05rem;color:var(--color-text-strong,#111827);">💬 意見回饋</h3>
+                <p style="margin:0 0 16px;font-size:0.83rem;color:var(--color-text-muted,#6b7280);">您的意見將由平台管理員查閱，感謝您的協助！</p>
+                <select id="feedback-type" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-default,#d1d5db);border-radius:8px;font-size:0.9rem;margin-bottom:10px;background:var(--color-bg-surface,#fff);color:var(--color-text-default,#374151);">
+                    <option value="suggestion">💡 功能建議</option>
+                    <option value="bug">🐛 問題回報</option>
+                    <option value="other">💬 其他意見</option>
+                </select>
+                <textarea id="feedback-content" placeholder="請描述您的意見或問題（最多 1000 字）…" maxlength="1000"
+                    style="width:100%;padding:8px 10px;border:1px solid var(--color-border-default,#d1d5db);border-radius:8px;font-size:0.9rem;resize:vertical;min-height:120px;box-sizing:border-box;background:var(--color-bg-surface,#fff);color:var(--color-text-default,#374151);"></textarea>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+                    <button onclick="closeFeedbackModal()" style="padding:7px 18px;border:1px solid var(--color-border-default,#d1d5db);border-radius:8px;background:transparent;cursor:pointer;font-size:0.9rem;color:var(--color-text-default,#374151);">取消</button>
+                    <button onclick="submitFeedback()" id="feedback-submit-btn" style="padding:7px 18px;border:none;border-radius:8px;background:#7c3aed;color:#fff;cursor:pointer;font-size:0.9rem;font-weight:600;">送出</button>
+                </div>
+            </div>`;
+        modal.addEventListener('click', e => { if (e.target === modal) closeFeedbackModal(); });
+        document.body.appendChild(modal);
+    }
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('feedback-content')?.focus(), 50);
+}
 
+function closeFeedbackModal() {
+    const modal = document.getElementById('feedback-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function submitFeedback() {
+    const type    = document.getElementById('feedback-type')?.value || 'other';
+    const content = (document.getElementById('feedback-content')?.value || '').trim();
+    if (!content) { PageUtils.showAlert('請填寫回饋內容', 'warning'); return; }
+    const btn = document.getElementById('feedback-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '送出中…'; }
+    try {
+        const res = await APIClient.post('admin.php?action=submit_feedback', { feedback_type: type, content });
+        closeFeedbackModal();
+        if (res && res.success) {
+            PageUtils.showAlert('感謝您的回饋！', 'success');
+            document.getElementById('feedback-content') && (document.getElementById('feedback-content').value = '');
+        } else {
+            PageUtils.showAlert(res?.message || '送出失敗', 'error');
+        }
+    } catch (e) {
+        PageUtils.showAlert('送出失敗：' + e.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '送出'; }
+    }
+}
 

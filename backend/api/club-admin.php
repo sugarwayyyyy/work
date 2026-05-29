@@ -561,6 +561,33 @@ class ClubAdminAPI {
     }
 
     /**
+     * 取得當前幹部跨所有管理社團的待審核申請（按社團分組，供通知中心使用）
+     * GET /api/club-admin.php?action=pending_app_count
+     */
+    public static function getPendingAppCount() {
+        if (!Auth::isLoggedIn()) {
+            Helper::success('', ['count' => 0, 'clubs' => []]);
+            return;
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) { session_write_close(); }
+        $uid = Auth::getCurrentUserId();
+        $clubs = Database::getInstance()->fetchAll(
+            "SELECT cja.club_id, c.club_name, COUNT(*) AS cnt
+             FROM club_join_applications cja
+             JOIN clubs c ON c.club_id = cja.club_id
+             JOIN club_members cm ON cm.club_id = cja.club_id
+                 AND cm.user_id = ? AND cm.is_active = 1
+                 AND cm.role IN ('president','vice_president','public_relations','treasurer','director')
+             WHERE cja.status = 'pending'
+             GROUP BY cja.club_id, c.club_name
+             ORDER BY c.club_name",
+            [$uid]
+        );
+        $total = (int)array_sum(array_column($clubs, 'cnt'));
+        Helper::success('', ['count' => $total, 'clubs' => $clubs]);
+    }
+
+    /**
      * 取得社團待審核加入申請
      * GET /api/club-admin.php?action=join_applications&id={club_id}
      */
@@ -770,6 +797,8 @@ if ($method === 'GET') {
         ClubAdminAPI::getClubMembers($club_id);
     } elseif ($action === 'join_applications' && $club_id) {
         ClubAdminAPI::getJoinApplications($club_id);
+    } elseif ($action === 'pending_app_count') {
+        ClubAdminAPI::getPendingAppCount();
     }
 }
 

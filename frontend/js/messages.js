@@ -15,22 +15,73 @@ const QUIZ_QUESTIONS = [
         { value: '服務性', label: '🤝 服務公益' },
         { value: '休閒性', label: '🎮 休閒娛樂' },
     ]},
-    { id: 'q2', text: '你期望從社團得到什麼？', options: [
-        { value: 'sport',    label: '💪 強身健體、運動樂趣' },
-        { value: 'academic', label: '📚 技能提升、知識學習' },
-        { value: 'arts',     label: '🎵 創意表達、藝術欣賞' },
-        { value: 'social',   label: '🌍 服務社會、廣交朋友' },
+    { id: 'q2', text: '以下哪個描述最像你？', options: [
+        { value: 'competitive', label: '🏆 喜歡競技挑戰，追求突破' },
+        { value: 'learning',    label: '📚 喜歡學習新知，追求成長' },
+        { value: 'creative',    label: '🎨 享受創作表達，重視感受' },
+        { value: 'helpful',     label: '🤝 熱愛助人，有公益精神' },
+        { value: 'social',      label: '😄 喜歡輕鬆交友，享受當下' },
     ]},
-    { id: 'q3', text: '希望的參與強度？', options: [
-        { value: 'light',  label: '🍃 輕鬆型，偶爾參加就好' },
-        { value: 'active', label: '🔥 積極型，定期出席投入' },
+    { id: 'q3', text: '你能接受的社團參與頻率是？', options: [
+        { value: 'active', label: '🔥 每週固定出席，積極投入' },
+        { value: 'light',  label: '🍃 偶爾參加就好，彈性為主' },
     ]},
     { id: 'q4', text: '社費預算大約是？', options: [
         { value: '0',   label: '🆓 越便宜越好' },
         { value: '500', label: '💰 一學期 500 元以內可以' },
         { value: 'any', label: '💳 不在意費用，以興趣優先' },
     ]},
+    { id: 'q5', text: '你偏好什麼樣的社團氛圍？', options: [
+        { value: 'high_active', label: '🎪 積極活躍，常辦比賽或演出' },
+        { value: 'normal',      label: '📅 穩定練習，重視技能精進' },
+        { value: 'casual',      label: '🌿 輕鬆自由，沒有壓力' },
+    ]},
+    { id: 'q6', text: '每週你願意花多少時間在社團上？', options: [
+        { value: 'active', label: '⏰ 3 小時以上，全心投入' },
+        { value: 'mid',    label: '🕐 1–2 小時，適度參與' },
+        { value: 'light',  label: '🌙 1 小時以內，點到為止' },
+    ]},
+    { id: 'q7', text: '你更偏好哪種活動方式？', options: [
+        { value: '體育性', label: '💪 動態挑戰，肢體活動' },
+        { value: '學術性', label: '🧪 探索知識，動腦思考' },
+        { value: '藝文性', label: '🎭 創意展現，欣賞藝術' },
+        { value: '服務性', label: '🌍 實地行動，助人為樂' },
+        { value: '休閒性', label: '🎲 輕鬆遊戲，愉快交流' },
+    ]},
 ];
+
+// 從 7 題答案計算最終推薦參數
+function computeQuizParams(answers) {
+    // ── Category：Q1(×2) + Q2_mapped(×1) + Q7(×1) 加權投票 ──
+    const q2CatMap = {
+        competitive: '體育性', learning: '學術性',
+        creative: '藝文性', helpful: '服務性', social: '休閒性',
+    };
+    const catVotes = {};
+    const addVote = (cat, w) => { if (cat) catVotes[cat] = (catVotes[cat] || 0) + w; };
+    addVote(answers.q1, 2);
+    addVote(q2CatMap[answers.q2], 1);
+    addVote(answers.q7, 1);
+    const category = Object.entries(catVotes).sort((a, b) => b[1] - a[1])[0]?.[0] || answers.q1 || '休閒性';
+
+    // ── Intensity：Q3(×2) + Q5_hint(×1) + Q6(×1) 多數決 ──
+    let activeV = 0, lightV = 0;
+    if (answers.q3 === 'active') activeV += 2; else lightV += 2;
+    if (answers.q5 === 'high_active') activeV += 1;
+    else if (answers.q5 === 'casual') lightV += 1;
+    if (answers.q6 === 'active') activeV += 1;
+    else if (answers.q6 === 'light') lightV += 1;
+    const intensity = activeV > lightV ? 'active' : lightV > activeV ? 'light' : 'any';
+
+    // ── Budget：Q4 直接對應 ──
+    const budget = answers.q4 || 'any';
+
+    // ── Style：Q5 決定 activity_badge 排序偏好 ──
+    const styleMap = { high_active: 'high_active', normal: 'normal_active', casual: 'any' };
+    const style = styleMap[answers.q5] || 'any';
+
+    return { category, intensity, budget, style };
+}
 
 function isMobileView() { return window.innerWidth <= 640; }
 
@@ -262,7 +313,7 @@ function _renderQuizInvitation() {
         <div class="quiz-icon-wrap">🎯</div>
         <div style="flex:1;min-width:0;">
             <div class="quiz-title">社團適配測驗</div>
-            <div class="quiz-subtitle">回答 4 題，找到最適合你的社團</div>
+            <div class="quiz-subtitle">回答 7 題，找到最適合你的社團</div>
         </div>
         <button onclick="startClubQuiz()" style="flex-shrink:0;background:#7c3aed;color:#fff;border:none;padding:6px 16px;border-radius:20px;cursor:pointer;font-size:0.8rem;font-weight:600;letter-spacing:.02em;">開始</button>
     </div>`;
@@ -316,15 +367,12 @@ function advanceQuiz(value) {
 async function submitQuiz() {
     const card = document.getElementById('bot-quiz-card');
     if (card) card.outerHTML = _renderQuizLoading();
-    const category  = _quizAnswers.q1 || '';
-    const intensity = _quizAnswers.q3 || 'any';
-    const budget    = _quizAnswers.q4 || 'any';
+    const { category, intensity, budget, style } = computeQuizParams(_quizAnswers);
     try {
         const res = await APIClient.get(
-            `messages.php?action=quiz_recommend&category=${encodeURIComponent(category)}&intensity=${encodeURIComponent(intensity)}&budget=${encodeURIComponent(budget)}`
+            `messages.php?action=quiz_recommend&category=${encodeURIComponent(category)}&intensity=${encodeURIComponent(intensity)}&budget=${encodeURIComponent(budget)}&style=${encodeURIComponent(style)}`
         );
         if (res && res.success) {
-            // 恢復常駐卡，結果顯示在訊息串流中
             const qCard = document.getElementById('bot-quiz-card');
             if (qCard) qCard.outerHTML = _renderQuizInvitation();
             await _reloadBotMessageFeed();
@@ -417,7 +465,7 @@ function renderBotCard(msg) {
                 <input id="verify-input-${msg.message_id}" type="text" placeholder="輸入驗證碼" maxlength="8"
                     class="bot-verify-input"
                     oninput="this.value=this.value.toUpperCase()">
-                <button class="btn btn-primary btn-sm" onclick="submitVerifyCode(${msg.message_id},${meta.club_id || 0})">驗證並加入</button>
+                <button class="btn btn-primary btn-sm" onclick="submitVerifyCode(${msg.message_id},${meta.club_id || 0},${meta.application_id || 0})">驗證並加入</button>
             </div>`
             }`;
     } else if (isRejected) {
@@ -453,7 +501,7 @@ function buildSuccessCard(clubName) {
     </div>`;
 }
 
-async function submitVerifyCode(msgId, clubId) {
+async function submitVerifyCode(msgId, clubId, applicationId) {
     const input = document.getElementById(`verify-input-${msgId}`);
     const code = input ? input.value.trim().toUpperCase() : '';
     if (!code) { PageUtils.showAlert('請輸入驗證碼', 'warning'); return; }
@@ -461,7 +509,11 @@ async function submitVerifyCode(msgId, clubId) {
     const btn = areaEl ? areaEl.querySelector('button') : null;
     if (btn) btn.disabled = true;
     try {
-        const res = await APIClient.post('messages.php?action=verify_join_code', { club_id: clubId, code });
+        const res = await APIClient.post('messages.php?action=verify_join_code', {
+            club_id: clubId,
+            application_id: applicationId || 0,
+            code
+        });
         if (res && res.success) {
             // Remove the input area
             if (areaEl) areaEl.remove();
@@ -963,9 +1015,7 @@ function closeSearchModal() {
     document.getElementById('search-results').innerHTML = '';
 }
 
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeSearchModal();
-});
+// Escape 鍵關閉所有 modal（由 QR 功能區統一處理）
 
 async function doSearch() {
     const q = document.getElementById('search-input').value.trim();
@@ -1049,3 +1099,114 @@ window.addEventListener('DOMContentLoaded', async function () {
 });
 
 window.addEventListener('beforeunload', () => clearInterval(pollTimer));
+
+// ── QR Code 功能 ─────────────────────────────────────────────────────────────
+
+let _scanStream   = null;
+let _scanInterval = null;
+
+function openQrModal() {
+    const user = StorageUtils.getUser();
+    if (!user) { PageUtils.showAlert('請先登入', 'warning'); return; }
+
+    const modal = document.getElementById('qr-modal');
+    modal.removeAttribute('hidden');
+
+    // 標題顯示使用者姓名
+    const titleEl = modal.querySelector('.msg-modal-title');
+    if (titleEl) titleEl.textContent = `${user.name || '我'}的 QR 碼`;
+
+    const displayEl = document.getElementById('qr-display');
+    displayEl.innerHTML = '';
+
+    // qrcodejs 生成（需 CDN 載入）
+    if (typeof QRCode === 'undefined') {
+        displayEl.innerHTML = '<span style="color:var(--color-text-muted);">QR 碼元件載入中，請稍後再試</span>';
+        return;
+    }
+    new QRCode(displayEl, {
+        text: `fjcu-chat:${user.user_id}`,
+        width: 220,
+        height: 220,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+    });
+}
+
+function closeQrModal() {
+    document.getElementById('qr-modal').setAttribute('hidden', '');
+}
+
+async function openScanModal() {
+    const modal = document.getElementById('scan-modal');
+    modal.removeAttribute('hidden');
+    document.getElementById('scan-status').textContent = '對準 QR 碼進行掃描';
+
+    const video    = document.getElementById('qr-video');
+    const canvas   = document.getElementById('qr-canvas');
+    const ctx      = canvas.getContext('2d');
+    const statusEl = document.getElementById('scan-status');
+
+    try {
+        _scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = _scanStream;
+        await video.play();
+
+        _scanInterval = setInterval(() => {
+            if (video.readyState < video.HAVE_ENOUGH_DATA) return;
+            canvas.width  = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            if (typeof jsQR === 'undefined') return;
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            if (code) handleQrResult(code.data);
+        }, 250);
+    } catch (_) {
+        statusEl.textContent = '無法存取相機，請確認已授予相機權限';
+    }
+}
+
+function closeScanModal() {
+    document.getElementById('scan-modal').setAttribute('hidden', '');
+    if (_scanInterval) { clearInterval(_scanInterval); _scanInterval = null; }
+    if (_scanStream)   { _scanStream.getTracks().forEach(t => t.stop()); _scanStream = null; }
+    document.getElementById('qr-video').srcObject = null;
+    document.getElementById('qr-file-input').value = '';
+}
+
+
+async function handleQrResult(data) {
+    const PREFIX = 'fjcu-chat:';
+    if (!data.startsWith(PREFIX)) {
+        document.getElementById('scan-status').textContent = '此 QR 碼不屬於本系統';
+        return;
+    }
+    const targetUserId = parseInt(data.slice(PREFIX.length), 10);
+    if (!targetUserId) {
+        document.getElementById('scan-status').textContent = 'QR 碼格式錯誤';
+        return;
+    }
+    const me = StorageUtils.getUser();
+    if (me && targetUserId === Number(me.user_id)) {
+        document.getElementById('scan-status').textContent = '這是你自己的 QR 碼！';
+        return;
+    }
+
+    closeScanModal();
+
+    try {
+        const res    = await APIClient.get(`messages.php?action=search_user&q=${targetUserId}`);
+        const users  = res?.data?.users || [];
+        const target = users.find(u => Number(u.user_id) === targetUserId);
+        startConversation(targetUserId, target?.name || '', target?.avatar_path || '');
+    } catch (_) {
+        openConversation(targetUserId, '', '');
+        loadConversations();
+    }
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeSearchModal(); closeQrModal(); closeScanModal(); }
+});
