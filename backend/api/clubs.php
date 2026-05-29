@@ -1199,15 +1199,25 @@ class ClubAPI {
                 Helper::error('您已是此社團成員', 409);
             }
 
-            // Already a pending or approved application
-            $pending = Database::getInstance()->fetchOne(
-                "SELECT application_id, status FROM club_join_applications
-                 WHERE club_id = ? AND user_id = ? AND status IN ('pending','approved') AND code_used = 0",
-                [$club_id, $userId]
+            // 一次只能有一個有效申請（跨所有社團）
+            $activeApp = Database::getInstance()->fetchOne(
+                "SELECT a.application_id, a.status, c.club_name
+                 FROM club_join_applications a
+                 JOIN clubs c ON c.club_id = a.club_id
+                 WHERE a.user_id = ?
+                   AND (
+                     a.status = 'pending'
+                     OR (a.status = 'approved' AND a.code_used = 0
+                         AND (a.code_expires_at IS NULL OR a.code_expires_at > NOW()))
+                   )",
+                [$userId]
             );
-            if ($pending) {
-                $msg = $pending['status'] === 'approved' ? '您已取得驗證碼，請前往私訊完成驗證' : '您已有待審核的申請';
-                Helper::error($msg, 409);
+            if ($activeApp) {
+                if ($activeApp['status'] === 'approved') {
+                    Helper::error('您已取得「' . $activeApp['club_name'] . '」的驗證碼，請先完成驗證（或等待驗證碼過期後再申請）', 409);
+                } else {
+                    Helper::error('您已有「' . $activeApp['club_name'] . '」的待審核申請，請等待審核結果', 409);
+                }
             }
 
             dbInsert('club_join_applications', [

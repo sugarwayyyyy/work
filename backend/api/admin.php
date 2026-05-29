@@ -181,6 +181,19 @@ class AdminAPI {
                 ];
                 Helper::error('此社團已有人擔任「' . ($roleNames[$role] ?? $role) . '」，請先移除或變更該成員的職稱', 409);
             }
+
+            // 社長額外限制：一人只能擔任一個社團的社長
+            if ($role === 'president') {
+                $otherPresident = Database::getInstance()->fetchOne(
+                    'SELECT cm.club_id, c.club_name FROM club_members cm
+                     JOIN clubs c ON c.club_id = cm.club_id
+                     WHERE cm.user_id = ? AND cm.role = "president" AND cm.is_active = 1 AND cm.club_id != ?',
+                    [(int)$user['user_id'], $club_id]
+                );
+                if ($otherPresident) {
+                    Helper::error('此帳號已是「' . $otherPresident['club_name'] . '」的社長，一人只能擔任一個社團的社長', 409);
+                }
+            }
         }
 
         $memberData = [

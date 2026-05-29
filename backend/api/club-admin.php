@@ -644,18 +644,24 @@ class ClubAdminAPI {
             return;
         }
 
-        // 冪等處理：已批准但使用者尚未驗證 → 補發同一個驗證碼，不重新生成
+        // 冪等處理：已批准 → 重新生成驗證碼（無論舊碼是否已用），刷新 30 分鐘有效期
         if ($app['status'] === 'approved') {
-            $existingCode = $app['verification_code'];
+            $newCode = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+            $expires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+            Database::getInstance()->update(
+                'club_join_applications',
+                ['verification_code' => $newCode, 'code_used' => 0, 'code_expires_at' => $expires],
+                'application_id = ?', [$appId]
+            );
             dbInsert('bot_messages', [
                 'user_id'      => (int)$app['user_id'],
                 'message_type' => 'join_verification',
                 'title'        => '社團加入申請通過！（驗證碼補發）',
-                'content'      => '您申請加入「' . $app['club_name'] . '」的驗證碼如下（補發，請使用此碼完成加入）：',
+                'content'      => '您申請加入「' . $app['club_name'] . '」的驗證碼如下（有效期 30 分鐘）：',
                 'meta'         => json_encode([
                     'club_id'           => (int)$app['club_id'],
                     'club_name'         => $app['club_name'],
-                    'verification_code' => $existingCode,
+                    'verification_code' => $newCode,
                     'application_id'    => $appId,
                 ]),
             ]);
@@ -666,11 +672,12 @@ class ClubAdminAPI {
         // 第一次批准：原子更新（WHERE 加 status='pending' 防止並發競爭）
         // 若兩個請求同時讀到 pending，只有第一個 UPDATE 的 affected_rows=1；
         // 第二個 affected_rows=0，改走補發現有驗證碼的路徑，確保學生收到的碼與 DB 一致。
-        $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
-        $db   = Database::getInstance();
+        $code    = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+        $expires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+        $db      = Database::getInstance();
         $db->update(
             'club_join_applications',
-            ['status' => 'approved', 'verification_code' => $code, 'reviewed_by' => $callerId, 'reviewed_at' => $now],
+            ['status' => 'approved', 'verification_code' => $code, 'code_expires_at' => $expires, 'reviewed_by' => $callerId, 'reviewed_at' => $now],
             'application_id = ? AND status = ?',
             [$appId, 'pending']
         );

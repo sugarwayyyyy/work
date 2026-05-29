@@ -445,6 +445,9 @@ class MessagesAPI {
                 [$clubId, $uid]
             );
             if (!$app) Helper::error('找不到有效申請，請確認社團或重新申請', 404);
+            if (!empty($app['code_expires_at']) && strtotime($app['code_expires_at']) < time()) {
+                Helper::error('驗證碼已過期（有效期 30 分鐘），請聯繫社團幹部重新取得', 400);
+            }
             if ($app['verification_code'] !== $code) Helper::error('驗證碼錯誤', 400);
 
             dbUpdate('club_join_applications', ['code_used' => 1], 'application_id = ?', [(int)$app['application_id']]);
