@@ -10,119 +10,65 @@
  *   - 已執行 php run_migration.php
  *   - 已執行 php scripts/seed-e2e-test-data.php（需要測試帳號與核心社團）
  *
- * 此腳本會自動在 frontend/assets/uploads/ 生成 placeholder 示範圖片（若尚未存在），
- * 不需手動複製圖片檔案，可直接在任何環境部署。
+ * 圖片處理：
+ *   - database/seeds/demo-images/ 有圖片 → 永遠複製到 uploads/（覆蓋舊版）
+ *   - demo-images/ 無對應檔案 → 略過（不生成 placeholder）
  */
 require_once __DIR__ . '/../backend/db.php';
 require_once __DIR__ . '/../backend/config.php';
 
 // -----------------------------------------------------------------------
-// Section A. 確保 demo 圖片存在
-//   優先順序：
-//   1. database/seeds/demo-images/ 有真實圖片 → 複製到 uploads/
-//   2. 否則用 PHP GD 生成 placeholder（確保 demo 頁面不破圖）
+// Section A. 複製 demo 圖片到 uploads/
+//   - source（demo-images/）有圖 → 永遠複製，覆蓋 uploads/ 舊版
+//   - source 沒有 → 略過（不生成 placeholder）
 // -----------------------------------------------------------------------
 
-$uploadDir   = rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR;
-$sourceDir   = __DIR__ . '/../database/seeds/demo-images/';
+$uploadDir = rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR;
+$sourceDir = __DIR__ . '/../database/seeds/demo-images/';
 
-// 每張 demo 圖片的背景色 (RGB hex) 與標題
 $demoImages = [
-    'demo_dance_show_1.jpg'        => [0x6C3483, '熱舞社期末公演 1'],
-    'demo_dance_show_2.jpg'        => [0x7D3C98, '熱舞社期末公演 2'],
-    'demo_dance_show_3.jpg'        => [0x8E44AD, '熱舞社期末公演 3'],
-    'demo_dance_recruit_1.jpg'     => [0x1A5276, '熱舞社招募 1'],
-    'demo_dance_recruit_2.jpg'     => [0x21618C, '熱舞社招募 2'],
-    'demo_photo_outing_1.jpg'      => [0x0E6655, '攝影社外拍 1'],
-    'demo_photo_outing_2.jpg'      => [0x148F77, '攝影社外拍 2'],
-    'demo_photo_exhibition_1.jpg'  => [0x1E8449, '攝影聯展 1'],
-    'demo_photo_exhibition_2.jpg'  => [0x27AE60, '攝影聯展 2'],
-    'demo_photo_exhibition_3.jpg'  => [0x2ECC71, '攝影聯展 3'],
-    'demo_music_concert_1.jpg'     => [0x7E5109, '國樂音樂會 1'],
-    'demo_music_concert_2.jpg'     => [0x9A6108, '國樂音樂會 2'],
-    'demo_music_concert_3.jpg'     => [0xB7950B, '國樂音樂會 3'],
-    'demo_hiking_1.jpg'            => [0x1A5276, '登山社郊山 1'],
-    'demo_hiking_2.jpg'            => [0x154360, '登山社郊山 2'],
-    'demo_martial_arts_1.jpg'      => [0x922B21, '國術社招新'],
-    'demo_speech_1.jpg'            => [0x784212, '即席演講邀請賽'],
-    'demo_firstaid_1.jpg'          => [0xC0392B, 'CPR 急救訓練'],
-    'demo_boardgame_1.jpg'         => [0x117A65, '桌遊馬拉松 1'],
-    'demo_boardgame_2.jpg'         => [0x0E6655, '桌遊馬拉松 2'],
-    'demo_esports_1.jpg'           => [0x1B2631, 'FPS 電競邀請賽 1'],
-    'demo_esports_2.jpg'           => [0x212F3D, 'FPS 電競邀請賽 2'],
-    'demo_startup_1.jpg'           => [0x2C3E50, '創業工作坊 1'],
-    'demo_startup_2.jpg'           => [0x1C2833, '創業工作坊 2'],
+    'demo_dance_show_1.jpg', 'demo_dance_show_2.jpg', 'demo_dance_show_3.jpg',
+    'demo_dance_recruit_1.jpg', 'demo_dance_recruit_2.jpg',
+    'demo_photo_outing_1.jpg', 'demo_photo_outing_2.jpg',
+    'demo_photo_exhibition_1.jpg', 'demo_photo_exhibition_2.jpg', 'demo_photo_exhibition_3.jpg',
+    'demo_music_concert_1.jpg', 'demo_music_concert_2.jpg', 'demo_music_concert_3.jpg',
+    'demo_hiking_1.jpg', 'demo_hiking_2.jpg',
+    'demo_martial_arts_1.jpg', 'demo_speech_1.jpg', 'demo_firstaid_1.jpg',
+    'demo_boardgame_1.jpg', 'demo_boardgame_2.jpg',
+    'demo_esports_1.jpg', 'demo_esports_2.jpg',
+    'demo_startup_1.jpg', 'demo_startup_2.jpg',
 ];
 
-$copiedCount    = 0;
-$generatedCount = 0;
-$skippedCount   = 0;
-$gdAvailable    = function_exists('imagecreatetruecolor') && function_exists('imagejpeg');
+$copiedCount  = 0;
+$skippedCount = 0;
+$failedCount  = 0;
 
-foreach ($demoImages as $filename => [$hexColor, $label]) {
-    $destPath   = $uploadDir . $filename;
+foreach ($demoImages as $filename) {
     $sourcePath = $sourceDir . $filename;
+    $destPath   = $uploadDir . $filename;
 
-    if (file_exists($destPath)) {
+    if (!file_exists($sourcePath)) {
+        // demo-images/ 沒有此檔（尚未 git lfs pull），略過
         $skippedCount++;
         continue;
     }
 
-    // 優先：從 demo-images/ 複製真實圖片
-    if (file_exists($sourcePath)) {
-        if (!copy($sourcePath, $destPath)) {
-            fwrite(STDERR, "⚠ 無法複製 {$filename}\n");
-        } else {
-            $copiedCount++;
-        }
-        continue;
-    }
-
-    // 備援：PHP GD 生成 placeholder
-    if (!$gdAvailable) {
-        continue;
-    }
-
-    {
-
-        $img = imagecreatetruecolor(800, 450);
-
-        $r  = ($hexColor >> 16) & 0xFF;
-        $g  = ($hexColor >> 8)  & 0xFF;
-        $b  = $hexColor & 0xFF;
-        $bg = imagecolorallocate($img, $r, $g, $b);
-        $fg = imagecolorallocate($img, 240, 240, 240);
-        $dim = imagecolorallocate($img, $r + 20 > 255 ? 255 : $r + 20,
-                                        $g + 20 > 255 ? 255 : $g + 20,
-                                        $b + 20 > 255 ? 255 : $b + 20);
-
-        imagefill($img, 0, 0, $bg);
-        imagefilledrectangle($img, 0, 180, 800, 270, $dim);
-
-        $asciiLabel = '[Demo Placeholder] ' . pathinfo($filename, PATHINFO_FILENAME);
-        $charWidth  = 9;
-        $x = (int)((800 - strlen($asciiLabel) * $charWidth) / 2);
-        imagestring($img, 5, $x, 205, $asciiLabel, $fg);
-
-        imagejpeg($img, $destPath, 80);
-        imagedestroy($img);
-        $generatedCount++;
+    if (copy($sourcePath, $destPath)) {
+        $copiedCount++;
+    } else {
+        fwrite(STDERR, "⚠ 無法複製 {$filename}\n");
+        $failedCount++;
     }
 }
 
 if ($copiedCount > 0) {
-    echo "✓ 已從 database/seeds/demo-images/ 複製 {$copiedCount} 張真實示範圖片\n";
-}
-if ($generatedCount > 0) {
-    $gdMsg = $gdAvailable ? '' : '（GD 未啟用，略過 placeholder 生成）';
-    echo "✓ 已生成 {$generatedCount} 張 placeholder 圖片（demo-images/ 中無對應檔案）{$gdMsg}\n";
+    echo "✓ 已複製 {$copiedCount} 張示範圖片到 uploads/\n";
 }
 if ($skippedCount > 0) {
-    echo "  （{$skippedCount} 張已存在，略過）\n";
+    echo "⚠ {$skippedCount} 張圖片在 demo-images/ 中找不到，請執行 git lfs pull 後重新執行此腳本。\n";
 }
-if (!$gdAvailable && $generatedCount === 0 && $copiedCount === 0 && $skippedCount < count($demoImages)) {
-    echo "⚠ PHP GD 未啟用且 demo-images/ 無圖片，部分活動照片將顯示破圖。\n";
-    echo "  請執行 git lfs pull 後重新執行此腳本。\n";
+if ($failedCount > 0) {
+    echo "✗ {$failedCount} 張複製失敗，請確認 uploads/ 目錄權限。\n";
 }
 
 // -----------------------------------------------------------------------
@@ -176,7 +122,7 @@ try {
     echo "  • 4 則系統公告\n";
     echo "  • 10 筆社團評價（已核准）\n";
     echo "  • 8 則 Q&A 提問（跨 5 個社團，含官方回覆與有幫助票）\n";
-    echo "  • 24 張示範活動照片（" . ($copiedCount > 0 ? "已從 demo-images/ 複製真實圖片" : ($gdAvailable ? "已生成 placeholder，執行 git lfs pull 後可取得真實圖片" : "需執行 git lfs pull")) . "）\n";
+    echo "  • 24 張示範活動照片（" . ($copiedCount > 0 ? "已從 demo-images/ 複製" : "未複製，請執行 git lfs pull 後重新執行此腳本") . "）\n";
 } catch (Exception $e) {
     fwrite(STDERR, "✗ Demo seed failed: " . $e->getMessage() . "\n");
     exit(1);

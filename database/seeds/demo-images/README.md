@@ -1,21 +1,25 @@
 # Demo 示範圖片
 
 此資料夾存放 `demo_enrichment.sql` 使用的 24 張展示活動照片。
-圖片已壓縮至約 50-100KB，直接進 git（不需要 LFS）。
+圖片已壓縮至約 50–100 KB，**直接進 git**（不需要 LFS）。
 
 ## 使用方式
 
-clone 後直接執行 seed 腳本，照片會自動複製到正確位置：
+clone 後直接執行 seed 腳本，照片會自動複製（並覆蓋舊版）到 `uploads/`：
 
 ```bash
 php scripts/seed-demo-data.php
 ```
 
+> 每次執行 seed 腳本都會將此資料夾的圖片重新複製到 `uploads/`，
+> 確保 `uploads/` 永遠與 `demo-images/` 一致。
+
 ## 新增 / 替換圖片
 
 1. 將新圖片放入此資料夾（檔名對應 `demo_enrichment.sql` Section 8 的路徑）
-2. 建議壓縮至 200KB 以下再 commit（避免 repo 膨脹）
+2. 建議壓縮至 200 KB 以下再 commit（避免 repo 膨脹）
 3. `git add database/seeds/demo-images/新圖片.jpg && git commit`
+4. 重新執行 `php scripts/seed-demo-data.php` 即完成
 
 ## 檔案清單
 
