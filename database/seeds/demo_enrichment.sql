@@ -1006,3 +1006,208 @@ WHERE NOT EXISTS (
     WHERE ep.event_id = e.event_id AND ep.image_path = p.image_path
 );
 
+-- =============================================================
+-- Section 9. Demo 評論者社交資料（追蹤、加入社團、報名活動）
+-- 讓 5 位 reviewer 帳號具備真實的社團參與歷程
+-- =============================================================
+
+-- ── reviewer1 李小明（理科/技術）────────────────────────────────
+
+INSERT INTO club_members (club_id, user_id, role, join_date, is_active, fee_type, fee_paid)
+SELECT c.club_id, u.user_id, 'member', DATE_SUB(NOW(), INTERVAL 60 DAY), 1, 'semester', 1
+FROM clubs c, users u WHERE c.club_code = 'CSC001' AND u.email = 'demo_reviewer1@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_members m WHERE m.club_id = c.club_id AND m.user_id = u.user_id);
+
+INSERT INTO club_members (club_id, user_id, role, join_date, is_active, fee_type, fee_paid)
+SELECT c.club_id, u.user_id, 'member', DATE_SUB(NOW(), INTERVAL 45 DAY), 1, 'semester', 1
+FROM clubs c, users u WHERE c.club_code = '067' AND u.email = 'demo_reviewer1@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_members m WHERE m.club_id = c.club_id AND m.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 1 FROM clubs c, users u
+WHERE c.club_code = '066' AND u.email = 'demo_reviewer1@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 1 FROM clubs c, users u
+WHERE c.club_code = '075' AND u.email = 'demo_reviewer1@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 0 FROM clubs c, users u
+WHERE c.club_code = '082' AND u.email = 'demo_reviewer1@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 0 FROM clubs c, users u
+WHERE c.club_code = '184' AND u.email = 'demo_reviewer1@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO event_registrations (event_id, user_id, registered_at, status)
+SELECT e.event_id, u.user_id, DATE_SUB(NOW(), INTERVAL 5 DAY), 'approved'
+FROM events e, users u WHERE e.event_name = '熱舞社春季期末公演' AND u.email = 'demo_reviewer1@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM event_registrations r WHERE r.event_id = e.event_id AND r.user_id = u.user_id);
+
+INSERT INTO event_registrations (event_id, user_id, registered_at, status)
+SELECT e.event_id, u.user_id, DATE_SUB(NOW(), INTERVAL 3 DAY), 'approved'
+FROM events e, users u WHERE e.event_name = '登山社春季郊山健行：象山一日遊' AND u.email = 'demo_reviewer1@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM event_registrations r WHERE r.event_id = e.event_id AND r.user_id = u.user_id);
+
+-- ── reviewer2 陳美華（藝術/文化）────────────────────────────────
+
+INSERT INTO club_members (club_id, user_id, role, join_date, is_active, fee_type, fee_paid)
+SELECT c.club_id, u.user_id, 'member', DATE_SUB(NOW(), INTERVAL 55 DAY), 1, 'semester', 1
+FROM clubs c, users u WHERE c.club_code = '066' AND u.email = 'demo_reviewer2@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_members m WHERE m.club_id = c.club_id AND m.user_id = u.user_id);
+
+INSERT INTO club_members (club_id, user_id, role, join_date, is_active, fee_type, fee_paid)
+SELECT c.club_id, u.user_id, 'member', DATE_SUB(NOW(), INTERVAL 40 DAY), 1, 'semester', 1
+FROM clubs c, users u WHERE c.club_code = '064' AND u.email = 'demo_reviewer2@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_members m WHERE m.club_id = c.club_id AND m.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 1 FROM clubs c, users u
+WHERE c.club_code = '061' AND u.email = 'demo_reviewer2@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 1 FROM clubs c, users u
+WHERE c.club_code = '067' AND u.email = 'demo_reviewer2@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 0 FROM clubs c, users u
+WHERE c.club_code = '123' AND u.email = 'demo_reviewer2@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO event_registrations (event_id, user_id, registered_at, status)
+SELECT e.event_id, u.user_id, DATE_SUB(NOW(), INTERVAL 7 DAY), 'approved'
+FROM events e, users u WHERE e.event_name = '攝影社春季戶外外拍活動' AND u.email = 'demo_reviewer2@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM event_registrations r WHERE r.event_id = e.event_id AND r.user_id = u.user_id);
+
+INSERT INTO event_registrations (event_id, user_id, registered_at, status)
+SELECT e.event_id, u.user_id, DATE_SUB(NOW(), INTERVAL 4 DAY), 'approved'
+FROM events e, users u WHERE e.event_name = '2026 黑白攝影聯展' AND u.email = 'demo_reviewer2@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM event_registrations r WHERE r.event_id = e.event_id AND r.user_id = u.user_id);
+
+-- ── reviewer3 王大偉（音樂/表演）────────────────────────────────
+
+INSERT INTO club_members (club_id, user_id, role, join_date, is_active, fee_type, fee_paid)
+SELECT c.club_id, u.user_id, 'member', DATE_SUB(NOW(), INTERVAL 70 DAY), 1, 'semester', 1
+FROM clubs c, users u WHERE c.club_code = '061' AND u.email = 'demo_reviewer3@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_members m WHERE m.club_id = c.club_id AND m.user_id = u.user_id);
+
+INSERT INTO club_members (club_id, user_id, role, join_date, is_active, fee_type, fee_paid)
+SELECT c.club_id, u.user_id, 'member', DATE_SUB(NOW(), INTERVAL 50 DAY), 1, 'semester', 1
+FROM clubs c, users u WHERE c.club_code = '049' AND u.email = 'demo_reviewer3@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_members m WHERE m.club_id = c.club_id AND m.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 1 FROM clubs c, users u
+WHERE c.club_code = '064' AND u.email = 'demo_reviewer3@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 1 FROM clubs c, users u
+WHERE c.club_code = '123' AND u.email = 'demo_reviewer3@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 0 FROM clubs c, users u
+WHERE c.club_code = '066' AND u.email = 'demo_reviewer3@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 0 FROM clubs c, users u
+WHERE c.club_code = '067' AND u.email = 'demo_reviewer3@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO event_registrations (event_id, user_id, registered_at, status)
+SELECT e.event_id, u.user_id, DATE_SUB(NOW(), INTERVAL 10 DAY), 'approved'
+FROM events e, users u WHERE e.event_name = '2026 春季國樂聯合音樂會' AND u.email = 'demo_reviewer3@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM event_registrations r WHERE r.event_id = e.event_id AND r.user_id = u.user_id);
+
+INSERT INTO event_registrations (event_id, user_id, registered_at, status)
+SELECT e.event_id, u.user_id, DATE_SUB(NOW(), INTERVAL 6 DAY), 'approved'
+FROM events e, users u WHERE e.event_name = '2026 校際即席演講邀請賽' AND u.email = 'demo_reviewer3@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM event_registrations r WHERE r.event_id = e.event_id AND r.user_id = u.user_id);
+
+-- ── reviewer4 張雅婷（運動/健康）────────────────────────────────
+
+INSERT INTO club_members (club_id, user_id, role, join_date, is_active, fee_type, fee_paid)
+SELECT c.club_id, u.user_id, 'member', DATE_SUB(NOW(), INTERVAL 65 DAY), 1, 'semester', 1
+FROM clubs c, users u WHERE c.club_code = '075' AND u.email = 'demo_reviewer4@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_members m WHERE m.club_id = c.club_id AND m.user_id = u.user_id);
+
+INSERT INTO club_members (club_id, user_id, role, join_date, is_active, fee_type, fee_paid)
+SELECT c.club_id, u.user_id, 'member', DATE_SUB(NOW(), INTERVAL 35 DAY), 1, 'semester', 1
+FROM clubs c, users u WHERE c.club_code = '092' AND u.email = 'demo_reviewer4@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_members m WHERE m.club_id = c.club_id AND m.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 1 FROM clubs c, users u
+WHERE c.club_code = '084' AND u.email = 'demo_reviewer4@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 1 FROM clubs c, users u
+WHERE c.club_code = '090' AND u.email = 'demo_reviewer4@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 0 FROM clubs c, users u
+WHERE c.club_code = '100' AND u.email = 'demo_reviewer4@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO event_registrations (event_id, user_id, registered_at, status)
+SELECT e.event_id, u.user_id, DATE_SUB(NOW(), INTERVAL 8 DAY), 'approved'
+FROM events e, users u WHERE e.event_name = '登山社春季郊山健行：象山一日遊' AND u.email = 'demo_reviewer4@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM event_registrations r WHERE r.event_id = e.event_id AND r.user_id = u.user_id);
+
+INSERT INTO event_registrations (event_id, user_id, registered_at, status)
+SELECT e.event_id, u.user_id, DATE_SUB(NOW(), INTERVAL 5 DAY), 'approved'
+FROM events e, users u WHERE e.event_name = 'CPR 急救技能認證訓練課程' AND u.email = 'demo_reviewer4@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM event_registrations r WHERE r.event_id = e.event_id AND r.user_id = u.user_id);
+
+-- ── reviewer5 林志豪（社交/遊戲）────────────────────────────────
+
+INSERT INTO club_members (club_id, user_id, role, join_date, is_active, fee_type, fee_paid)
+SELECT c.club_id, u.user_id, 'member', DATE_SUB(NOW(), INTERVAL 42 DAY), 1, 'semester', 1
+FROM clubs c, users u WHERE c.club_code = '168' AND u.email = 'demo_reviewer5@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_members m WHERE m.club_id = c.club_id AND m.user_id = u.user_id);
+
+INSERT INTO club_members (club_id, user_id, role, join_date, is_active, fee_type, fee_paid)
+SELECT c.club_id, u.user_id, 'member', DATE_SUB(NOW(), INTERVAL 30 DAY), 1, 'semester', 1
+FROM clubs c, users u WHERE c.club_code = '082' AND u.email = 'demo_reviewer5@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_members m WHERE m.club_id = c.club_id AND m.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 1 FROM clubs c, users u
+WHERE c.club_code = '067' AND u.email = 'demo_reviewer5@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 1 FROM clubs c, users u
+WHERE c.club_code = '184' AND u.email = 'demo_reviewer5@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 0 FROM clubs c, users u
+WHERE c.club_code = '092' AND u.email = 'demo_reviewer5@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO club_followers (club_id, user_id, is_subscribing_notifications)
+SELECT c.club_id, u.user_id, 0 FROM clubs c, users u
+WHERE c.club_code = '090' AND u.email = 'demo_reviewer5@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM club_followers f WHERE f.club_id = c.club_id AND f.user_id = u.user_id);
+
+INSERT INTO event_registrations (event_id, user_id, registered_at, status)
+SELECT e.event_id, u.user_id, DATE_SUB(NOW(), INTERVAL 4 DAY), 'approved'
+FROM events e, users u WHERE e.event_name = '春季桌遊馬拉松 12 小時不間斷' AND u.email = 'demo_reviewer5@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM event_registrations r WHERE r.event_id = e.event_id AND r.user_id = u.user_id);
+
+INSERT INTO event_registrations (event_id, user_id, registered_at, status)
+SELECT e.event_id, u.user_id, DATE_SUB(NOW(), INTERVAL 2 DAY), 'approved'
+FROM events e, users u WHERE e.event_name = 'FPS 電競校內邀請賽（CS2）' AND u.email = 'demo_reviewer5@demo.edu'
+AND NOT EXISTS (SELECT 1 FROM event_registrations r WHERE r.event_id = e.event_id AND r.user_id = u.user_id);
+
