@@ -2516,7 +2516,9 @@
                 const res = await APIClient.post('club-admin.php?action=review_application', { application_id: appId, action });
                 if (res && res.success) {
                     PageUtils.showAlert(action === 'approve' ? (res.message || '已批准，驗證碼已傳送給申請者') : '已拒絕申請', 'success');
-                    loadJoinApplications(clubId);
+                    // 立即移除 DOM 列，防止列表重刷前再次觸發（非 await 重刷的窗口期）
+                    if (row) row.remove();
+                    await loadJoinApplications(clubId);
                 } else {
                     PageUtils.showAlert(res?.message || '操作失敗', 'error');
                     btns.forEach(b => b.disabled = false);

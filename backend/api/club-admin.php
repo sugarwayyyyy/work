@@ -663,12 +663,46 @@ class ClubAdminAPI {
             return;
         }
 
-        // 第一次批准：生成新驗證碼
+        // 第一次批准：原子更新（WHERE 加 status='pending' 防止並發競爭）
+        // 若兩個請求同時讀到 pending，只有第一個 UPDATE 的 affected_rows=1；
+        // 第二個 affected_rows=0，改走補發現有驗證碼的路徑，確保學生收到的碼與 DB 一致。
         $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
-        dbUpdate('club_join_applications',
+        $db   = Database::getInstance();
+        $db->update(
+            'club_join_applications',
             ['status' => 'approved', 'verification_code' => $code, 'reviewed_by' => $callerId, 'reviewed_at' => $now],
-            'application_id = ?', [$appId]
+            'application_id = ? AND status = ?',
+            [$appId, 'pending']
         );
+
+        if ($db->getConnection()->affected_rows === 0) {
+            // 競爭失敗：另一個並發請求已先完成批准，補發對方寫入的驗證碼
+            $approved = $db->fetchOne(
+                "SELECT a.verification_code, a.user_id, a.club_id, c.club_name
+                 FROM club_join_applications a
+                 JOIN clubs c ON c.club_id = a.club_id
+                 WHERE a.application_id = ? AND a.status = 'approved' AND a.code_used = 0",
+                [$appId]
+            );
+            if (!$approved) {
+                Helper::error('申請已處理', 409);
+            }
+            dbInsert('bot_messages', [
+                'user_id'      => (int)$approved['user_id'],
+                'message_type' => 'join_verification',
+                'title'        => '社團加入申請通過！（驗證碼補發）',
+                'content'      => '您申請加入「' . $approved['club_name'] . '」的驗證碼如下（補發，請使用此碼完成加入）：',
+                'meta'         => json_encode([
+                    'club_id'           => (int)$approved['club_id'],
+                    'club_name'         => $approved['club_name'],
+                    'verification_code' => $approved['verification_code'],
+                    'application_id'    => $appId,
+                ]),
+            ]);
+            Helper::success('已批准申請，驗證碼已傳送給用戶');
+            return;
+        }
+
         dbInsert('bot_messages', [
             'user_id'      => (int)$app['user_id'],
             'message_type' => 'join_verification',
