@@ -341,9 +341,9 @@ test.describe.serial('入社驗證碼功能', () => {
       { fee_type: 'free' }
     );
     const alreadyApproved = !applyRes.body.success &&
-      String(applyRes.body.message || '').includes('已取得驗證碼');
+      String(applyRes.body.message || '').includes('驗證碼');
     const alreadyPending = !applyRes.body.success &&
-      String(applyRes.body.message || '').includes('已有待審核');
+      String(applyRes.body.message || '').includes('待審核');
     const alreadyMember = !applyRes.body.success &&
       String(applyRes.body.message || '').includes('已是社團成員');
     if (!alreadyApproved && !alreadyPending && !alreadyMember) {

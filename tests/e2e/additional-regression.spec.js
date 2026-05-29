@@ -866,3 +866,166 @@ test.describe('Additional Regression: Data Integrity & Safety', () => {
     }
   });
 });
+
+// ─── 登入速率限制 ────────────────────────────────────────────────────────────
+
+test.describe('Additional Regression: 登入速率限制', () => {
+  test('AR-36 連續 10 次錯誤密碼後第 11 次應觸發速率限制 (429)', async ({ request }) => {
+    // 使用不存在的 email：rate limit 在查詢 user 前就記錄失敗，非系統帳號同樣計數
+    const testEmail = `ratelimit_${Date.now()}_${Math.random().toString(36).slice(2)}@noreply.test`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+    };
+
+    for (let i = 0; i < 10; i++) {
+      const r = await request.post(`${API_BASE_URL}/auth.php?action=login`, {
+        headers,
+        data: { email: testEmail, password: 'WrongPassword123' },
+      });
+      expect(r.status()).toBe(401);
+    }
+
+    const blocked = await request.post(`${API_BASE_URL}/auth.php?action=login`, {
+      headers,
+      data: { email: testEmail, password: 'WrongPassword123' },
+    });
+    expect(blocked.status()).toBe(429);
+    const body = await blocked.json().catch(() => ({}));
+    expect(String(body.message || '')).toMatch(/嘗試次數過多|請等待/);
+  });
+});
+
+// ─── 管理員導覽列 ────────────────────────────────────────────────────────────
+
+test.describe('Additional Regression: 管理員私訊導覽', () => {
+  test('AR-37 管理員進入私訊頁應顯示管理員導覽列（含系統總覽）', async ({ page }) => {
+    await login(page, 'admin@univ.edu', 'Test123456');
+    await page.waitForLoadState('load');
+    await page.goto(`${BASE_URL}/pages/messages.html`);
+    await page.waitForLoadState('networkidle');
+
+    // 管理員導覽列含有系統總覽（一般學生導覽列沒有此連結）
+    await expect(
+      page.locator('.nav-links a[href*="admin-overview.html"]')
+    ).toBeVisible({ timeout: 10000 });
+    // 且含有私訊連結本身
+    await expect(
+      page.locator('.nav-links a[href*="messages.html"]')
+    ).toBeVisible({ timeout: 5000 });
+  });
+});
+
+// ─── 入社申請單一限制 ────────────────────────────────────────────────────────
+
+test.describe('Additional Regression: 入社申請單一限制', () => {
+  test('AR-38 已有待審核申請時申請第二個社團應回傳 409', async ({ page, browserName }) => {
+    // 每個瀏覽器使用各自的學生帳號，避免並行污染
+    const studentByBrowser = {
+      chromium: STUDENT,
+      firefox:  { email: 'student_ff@univ.edu', password: 'Test123456' },
+      webkit:   { email: 'student_wk@univ.edu', password: 'Test123456' },
+    };
+    const testStudent = studentByBrowser[browserName] ?? STUDENT;
+
+    await login(page, testStudent.email, testStudent.password);
+    await page.waitForLoadState('networkidle');
+
+    const nonMemberClubIds = await page.evaluate(async () => {
+      const resp = await window.APIClient.get('clubs.php?page=1&per_page=20');
+      return (resp?.data?.clubs || [])
+        .filter(c => !c.is_member)
+        .map(c => Number(c.club_id))
+        .filter(id => id > 0);
+    });
+
+    if (nonMemberClubIds.length < 2) {
+      test.skip(true, '可申請的社團不足 2 個');
+      return;
+    }
+
+    // 申請第一個社團（若已有待審核/驗證碼申請也算通過前置條件）
+    const firstApply = await apiPostJson(
+      page, `clubs.php?action=apply_join&id=${nonMemberClubIds[0]}`, { fee_type: 'none' }
+    );
+    const hasActiveApp =
+      firstApply.body.success ||
+      String(firstApply.body.message || '').includes('待審核') ||
+      String(firstApply.body.message || '').includes('驗證碼');
+
+    if (!hasActiveApp) {
+      test.skip(true, `無法建立初始申請狀態: ${firstApply.body.message}`);
+      return;
+    }
+
+    // 申請第二個社團 — 應被 409 擋住
+    const secondApply = await apiPostJson(
+      page, `clubs.php?action=apply_join&id=${nonMemberClubIds[1]}`, { fee_type: 'none' }
+    );
+    expect(secondApply.status).toBe(409);
+    expect(String(secondApply.body.message || '')).toMatch(/待審核|驗證碼/);
+  });
+});
+
+// ─── 社團幹部成員狀態 ────────────────────────────────────────────────────────
+
+test.describe('Additional Regression: 社團幹部成員狀態', () => {
+  test('AR-39 社團幹部查看自己管理的社團時 is_member 應為 true', async ({ page }) => {
+    await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
+    await page.waitForLoadState('networkidle');
+
+    const clubId = await fetchMyManagedClubId(page);
+    expect(clubId, '找不到管理社團').toBeTruthy();
+
+    const detail = await fetchClubDetailById(page, clubId);
+    expect(detail, '取得社團詳情失敗').toBeTruthy();
+    expect(detail.is_member, '幹部應為社團成員').toBe(true);
+  });
+});
+
+// ─── 社長唯一性 ──────────────────────────────────────────────────────────────
+
+test.describe('Additional Regression: 社長唯一性限制', () => {
+  test('AR-40 平台管理員不能將同一人指派為兩個社團的社長', async ({ page }) => {
+    await login(page, 'admin@univ.edu', 'Test123456');
+    await page.waitForLoadState('networkidle');
+
+    // 取得現有社長資料
+    const presidentInfo = await page.evaluate(async () => {
+      const resp = await window.APIClient.get('admin.php?action=club_admin_assignments');
+      const admins = resp?.data?.assignments || resp?.data?.club_admins || [];
+      const president = admins.find(a => a.role === 'president');
+      return president
+        ? { userId: Number(president.user_id), clubId: Number(president.club_id) }
+        : null;
+    });
+
+    if (!presidentInfo) {
+      test.skip(true, '找不到現有社長，跳過測試');
+      return;
+    }
+
+    // 找另一個社長不管理的社團
+    const clubIds = await page.evaluate(async () => {
+      const resp = await window.APIClient.get('admin.php?action=clubs');
+      return (resp?.data?.clubs || []).map(c => Number(c.club_id)).filter(id => id > 0);
+    });
+    const targetClubId = clubIds.find(id => id !== presidentInfo.clubId);
+
+    if (!targetClubId) {
+      test.skip(true, '找不到第二個社團，跳過測試');
+      return;
+    }
+
+    // 嘗試將已是社長的人指派到第二個社團 → 應被 409 擋住
+    const result = await apiPostJson(page, 'admin.php?action=upsert_club_admin_assignment', {
+      club_id: targetClubId,
+      user_key: String(presidentInfo.userId),
+      role: 'president',
+      is_active: 1,
+    });
+
+    expect(result.status).toBe(409);
+    expect(String(result.body.message || '')).toMatch(/一人只能|已是.*社長/);
+  });
+});
