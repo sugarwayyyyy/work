@@ -483,7 +483,7 @@ class MessagesAPI {
 
     /**
      * GET ?action=unread_count
-     * 取得未讀私訊總數（供導覽列紅點）
+     * 取得未讀私訊總數（供導覽列紅點），包含平台機器人未讀訊息
      */
     public static function getUnreadCount() {
         if (!Auth::isLoggedIn()) {
@@ -497,8 +497,11 @@ class MessagesAPI {
 
         try {
             $row = Database::getInstance()->fetchOne(
-                'SELECT COUNT(*) AS cnt FROM private_messages WHERE receiver_id = ? AND is_read = 0',
-                [$uid]
+                'SELECT
+                    (SELECT COUNT(*) FROM private_messages WHERE receiver_id = ? AND is_read = 0) +
+                    (SELECT COUNT(*) FROM bot_messages   WHERE user_id     = ? AND is_read = 0)
+                 AS cnt',
+                [$uid, $uid]
             );
             Helper::success('', ['count' => (int)($row['cnt'] ?? 0)]);
         } catch (Exception $e) {
