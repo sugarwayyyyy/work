@@ -1,14 +1,11 @@
 # Demo 示範圖片
 
-此資料夾存放 `demo_enrichment.sql` 使用的 24 張展示活動照片，透過 **Git LFS** 管理（大型二進位檔案不直接進 git objects）。
+此資料夾存放 `demo_enrichment.sql` 使用的 24 張展示活動照片。
+圖片已壓縮至約 50-100KB，直接進 git（不需要 LFS）。
 
-## 同事首次 clone 後
+## 使用方式
 
-```bash
-git lfs pull
-```
-
-下載完成後圖片即出現在此資料夾，接著執行 seed 腳本會自動複製到正確位置：
+clone 後直接執行 seed 腳本，照片會自動複製到正確位置：
 
 ```bash
 php scripts/seed-demo-data.php
@@ -17,11 +14,10 @@ php scripts/seed-demo-data.php
 ## 新增 / 替換圖片
 
 1. 將新圖片放入此資料夾（檔名對應 `demo_enrichment.sql` Section 8 的路徑）
-2. `git add database/seeds/demo-images/新圖片.jpg`
-3. `git commit -m "update: 更換 demo 示範圖片"`
-4. `git push`（LFS 會自動上傳大檔到 LFS storage）
+2. 建議壓縮至 200KB 以下再 commit（避免 repo 膨脹）
+3. `git add database/seeds/demo-images/新圖片.jpg && git commit`
 
-## 預期檔案清單
+## 檔案清單
 
 ```
 demo_dance_show_1.jpg        demo_dance_show_2.jpg        demo_dance_show_3.jpg

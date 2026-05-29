@@ -26,17 +26,7 @@
 
 ### 0. Clone 後的一次性設定
 
-#### 0-a. 下載 Demo 示範圖片（Git LFS）
-
-```bash
-git lfs pull
-```
-
-> 若尚未安裝 Git LFS：先執行 `git lfs install`，再執行 `git lfs pull`。
-> Demo 圖片（24 張，共約 80MB）會下載至 `database/seeds/demo-images/`。
-> 未下載也不影響資料庫部署，`seed-demo-data.php` 會自動生成 placeholder。
-
-#### 0-b. 設定本機環境（DB 密碼 + Google OAuth + SSL 憑證）
+#### 0-a. 設定本機環境（DB 密碼 + Google OAuth + SSL 憑證）
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup-google-oauth.ps1
