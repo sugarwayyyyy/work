@@ -406,50 +406,49 @@ function renderBotCard(msg) {
     let cardBody = '';
     if (isVerification && meta.verification_code) {
         cardBody = `
-            <p style="margin:0 0 10px;color:var(--color-text,#374151);">${PageUtils.escapeHtml(msg.content)}</p>
-            <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:12px 16px;margin-bottom:10px;">
-                <div style="font-size:0.78rem;color:#166534;margin-bottom:4px;font-weight:500;">社團：${PageUtils.escapeHtml(meta.club_name || '')}</div>
-                <div style="font-size:1.5rem;letter-spacing:0.3em;font-weight:700;color:#15803d;font-family:monospace;">${PageUtils.escapeHtml(meta.verification_code)}</div>
+            <p class="bot-card-body" style="margin:0 0 10px;">${PageUtils.escapeHtml(msg.content)}</p>
+            <div class="bot-verify-box">
+                <div class="bot-verify-club-label">社團：${PageUtils.escapeHtml(meta.club_name || '')}</div>
+                <div class="bot-verify-code">${PageUtils.escapeHtml(meta.verification_code)}</div>
             </div>
             ${meta.code_used
-                ? '<span style="color:#166534;font-size:0.88rem;font-weight:500;">✅ 已完成驗證</span>'
+                ? '<span class="bot-verify-done">✅ 已完成驗證</span>'
                 : `<div id="verify-area-${msg.message_id}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <input id="verify-input-${msg.message_id}" type="text" placeholder="輸入驗證碼" maxlength="8"
-                    style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.9rem;width:140px;font-family:monospace;text-transform:uppercase;"
+                    class="bot-verify-input"
                     oninput="this.value=this.value.toUpperCase()">
                 <button class="btn btn-primary btn-sm" onclick="submitVerifyCode(${msg.message_id},${meta.club_id || 0})">驗證並加入</button>
             </div>`
             }`;
     } else if (isRejected) {
-        cardBody = `<p style="margin:0;color:var(--color-text,#374151);">${PageUtils.escapeHtml(msg.content)}</p>`;
+        cardBody = `<p class="bot-card-body" style="margin:0;">${PageUtils.escapeHtml(msg.content)}</p>`;
     } else {
-        cardBody = `<p style="margin:0;color:var(--color-text,#374151);">${PageUtils.escapeHtml(msg.content)}</p>`;
+        cardBody = `<p class="bot-card-body" style="margin:0;">${PageUtils.escapeHtml(msg.content)}</p>`;
     }
 
-    const borderColor = isVerification ? '#86efac' : isRejected ? '#fca5a5' : '#e5e7eb';
-    const iconBg = isVerification ? '#dcfce7' : isRejected ? '#fee2e2' : '#f3f4f6';
+    const iconType = isVerification ? 'verify' : isRejected ? 'reject' : 'info';
     const icon = isVerification ? '✅' : isRejected ? '❌' : '📢';
 
-    return `<div style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f3f4f6;align-items:flex-start;">
-        <div style="width:36px;height:36px;border-radius:50%;background:${iconBg};display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">${icon}</div>
+    return `<div class="bot-card-row">
+        <div class="bot-card-icon bot-card-icon--${iconType}">${icon}</div>
         <div style="flex:1;min-width:0;">
-            <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;color:var(--color-text-strong,#111827);">
+            <div class="bot-card-title">
                 ${PageUtils.escapeHtml(msg.title)}${unreadDot}
             </div>
             ${cardBody}
-            <div style="font-size:0.75rem;color:var(--color-text-muted,#9ca3af);margin-top:8px;">${time}</div>
+            <div class="bot-card-time">${time}</div>
         </div>
     </div>`;
 }
 
 function buildSuccessCard(clubName) {
     const name = PageUtils.escapeHtml(clubName || '社團');
-    return `<div style="display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f3f4f6;align-items:flex-start;">
-        <div style="width:36px;height:36px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">✅</div>
+    return `<div class="bot-card-row">
+        <div class="bot-card-icon bot-card-icon--success">✅</div>
         <div style="flex:1;min-width:0;">
-            <div style="font-weight:600;font-size:0.88rem;margin-bottom:6px;color:var(--color-text-strong,#111827);">你已成功加入${name}！</div>
-            <p style="margin:0;color:var(--color-text,#374151);font-size:0.88rem;">歡迎成為社團成員，祝你參與愉快！</p>
-            <div style="font-size:0.75rem;color:var(--color-text-muted,#9ca3af);margin-top:8px;">剛剛</div>
+            <div class="bot-card-title">你已成功加入${name}！</div>
+            <p class="bot-card-body" style="margin:0;font-size:0.88rem;">歡迎成為社團成員，祝你參與愉快！</p>
+            <div class="bot-card-time">剛剛</div>
         </div>
     </div>`;
 }
