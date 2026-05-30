@@ -464,6 +464,7 @@ class MessagesAPI {
             if (!empty($app['code_expires_at']) && strtotime($app['code_expires_at']) < time()) {
                 Helper::error('驗證碼已過期（有效期 30 分鐘），請聯繫社團幹部重新取得', 400);
             }
+            if (empty($app['verification_code'])) Helper::error('驗證碼尚未設定，請聯繫社團幹部', 400);
             if ($app['verification_code'] !== $code) Helper::error('驗證碼錯誤，請確認您輸入的是最新一則訊息中的驗證碼', 400);
 
             dbUpdate('club_join_applications', ['code_used' => 1], 'application_id = ?', [(int)$app['application_id']]);
@@ -541,11 +542,14 @@ class MessagesAPI {
         $intensity = trim($_GET['intensity'] ?? 'any');
         $style     = trim($_GET['style']     ?? 'any');
 
-        $validCats = ['體育性', '學術性', '藝文性', '服務性', '休閒性'];
-        if (!in_array($category, $validCats, true)) {
+        $catMap = [
+            '體育性' => '運動', '學術性' => '學術',
+            '藝文性' => '藝文', '服務性' => '服務', '休閒性' => '休閒',
+        ];
+        if (!array_key_exists($category, $catMap)) {
             Helper::error('無效的社團類別', 400);
         }
-        $dbCategory = $category;
+        $dbCategory = $catMap[$category];
 
         if (!in_array($budget,    ['0', '500', 'any'], true))                    $budget    = 'any';
         if (!in_array($intensity, ['light', 'active', 'any'], true))             $intensity = 'any';
@@ -570,8 +574,8 @@ class MessagesAPI {
         } elseif ($style === 'normal_active') {
             $badgeOrder = "CASE c.activity_badge WHEN 'normal_active' THEN 1 WHEN 'high_active' THEN 2 ELSE 3 END";
         } else {
-            // casual / any → 不強制 badge 優先，badge 順序中立
-            $badgeOrder = "CASE c.activity_badge WHEN 'normal_active' THEN 1 WHEN 'high_active' THEN 2 ELSE 1 END";
+            // casual / any → 有活躍標記的優先，高低不分，無標記排後
+            $badgeOrder = "CASE WHEN c.activity_badge IN ('high_active','normal_active') THEN 1 ELSE 2 END";
         }
 
         try {
@@ -641,7 +645,7 @@ class MessagesAPI {
             CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; ClubPlatform/1.0)',
         ]);
         $html = curl_exec($ch);
-        curl_close($ch);
+        unset($ch);
 
         if (!$html) {
             if (file_exists($cacheFile)) {
@@ -758,4 +762,3 @@ if ($method === 'POST') {
 }
 
 Helper::error('無效的請求', 400);
-?>

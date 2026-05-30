@@ -2480,8 +2480,8 @@
                 const apps = res.data.applications || [];
                 const displayCount = apps.length > 99 ? '99+' : String(apps.length);
                 if (countEl) countEl.textContent = apps.length > 0 ? `（${displayCount} 筆）` : '';
-                const navBadge = document.getElementById('nav-app-badge');
-                if (navBadge) navBadge.textContent = apps.length > 0 ? displayCount : '';
+                // badge 顯示跨所有社團的總數，不覆蓋 updateNavApplicationsBadge 的結果
+                updateNavApplicationsBadge();
                 if (apps.length === 0) {
                     wrap.innerHTML = '<p class="widget-empty">目前沒有待審核申請</p>';
                     return;
@@ -2529,10 +2529,10 @@
             }
         }
 
-        async function updateNavApplicationsBadge(clubId) {
+        async function updateNavApplicationsBadge() {
             try {
-                const res = await APIClient.get(`club-admin.php?action=join_applications&id=${clubId}`);
-                const count = (res?.data?.applications?.length) || 0;
+                const res = await APIClient.get('club-admin.php?action=pending_app_count');
+                const count = (res?.data?.count) || 0;
                 const badge = document.getElementById('nav-app-badge');
                 if (badge) badge.textContent = count === 0 ? '' : (count > 99 ? '99+' : String(count));
             } catch (_) {}

@@ -959,32 +959,57 @@ async function sendMessage() {
     }
 }
 
-async function recallMessage(messageId) {
-    if (!confirm('確定要收回這則訊息嗎？')) return;
-    try {
-        const res = await APIClient.post('messages.php?action=recall_message', { message_id: messageId });
-        if (res && res.success) {
-            await loadThread(currentConvUserId, true);
-        } else {
-            PageUtils.showAlert(res?.message || '收回失敗', 'error');
-        }
-    } catch (e) {
-        PageUtils.showAlert('收回失敗', 'error');
+function showMsgConfirm(text, onConfirm) {
+    let overlay = document.getElementById('msg-confirm-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'msg-confirm-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);';
+        document.body.appendChild(overlay);
     }
+    overlay.innerHTML = `
+        <div style="background:#fff;border-radius:12px;padding:24px 28px;max-width:320px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.18);">
+            <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;line-height:1.5;">${PageUtils.escapeHtml(text)}</p>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button id="msg-confirm-cancel" class="btn btn-secondary btn-sm">取消</button>
+                <button id="msg-confirm-ok" class="btn btn-sm" style="background:#dc2626;color:#fff;border-color:#dc2626;">確認</button>
+            </div>
+        </div>`;
+    overlay.style.display = 'flex';
+    const close = () => { overlay.style.display = 'none'; };
+    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    document.getElementById('msg-confirm-cancel').onclick = close;
+    document.getElementById('msg-confirm-ok').onclick = () => { close(); onConfirm(); };
+}
+
+async function recallMessage(messageId) {
+    showMsgConfirm('確定要收回這則訊息嗎？', async () => {
+        try {
+            const res = await APIClient.post('messages.php?action=recall_message', { message_id: messageId });
+            if (res && res.success) {
+                await loadThread(currentConvUserId, true);
+            } else {
+                PageUtils.showAlert(res?.message || '收回失敗', 'error');
+            }
+        } catch (e) {
+            PageUtils.showAlert('收回失敗', 'error');
+        }
+    });
 }
 
 async function recallNoteMessage(noteId) {
-    if (!confirm('確定要刪除這則記事嗎？')) return;
-    try {
-        const res = await APIClient.post('messages.php?action=recall_note_message', { note_id: noteId });
-        if (res && res.success) {
-            await loadNoteMessages();
-        } else {
-            PageUtils.showAlert(res?.message || '刪除失敗', 'error');
+    showMsgConfirm('確定要刪除這則記事嗎？', async () => {
+        try {
+            const res = await APIClient.post('messages.php?action=recall_note_message', { note_id: noteId });
+            if (res && res.success) {
+                await loadNoteMessages();
+            } else {
+                PageUtils.showAlert(res?.message || '刪除失敗', 'error');
+            }
+        } catch (e) {
+            PageUtils.showAlert('刪除失敗', 'error');
         }
-    } catch (e) {
-        PageUtils.showAlert('刪除失敗', 'error');
-    }
+    });
 }
 
 // textarea auto-resize + Enter to send
@@ -1062,6 +1087,8 @@ window.addEventListener('DOMContentLoaded', async function () {
     if (user && user.role === 'platform_admin') {
         const logoLink = document.querySelector('a.logo');
         if (logoLink) logoLink.href = 'admin-users.html';
+        const botItem = document.getElementById('bot-item');
+        if (botItem) botItem.style.display = 'none';
     }
 
     if (window._pageInitReady) {
@@ -1173,7 +1200,6 @@ function closeScanModal() {
     if (_scanInterval) { clearInterval(_scanInterval); _scanInterval = null; }
     if (_scanStream)   { _scanStream.getTracks().forEach(t => t.stop()); _scanStream = null; }
     document.getElementById('qr-video').srcObject = null;
-    document.getElementById('qr-file-input').value = '';
 }
 
 

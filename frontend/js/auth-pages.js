@@ -50,7 +50,7 @@ async function initLogoCarousel() {
             });
 
             // col-0 向下捲（offset 0→halfH），col-1 向上捲（offset halfH→0）
-            const durationMs = ci === 0 ? 45000 : 54000;
+            const durationMs = ci === 0 ? 80000 : 96000;
             const goingDown  = ci === 0;
             _startColScroll(col, durationMs, goingDown);
         });

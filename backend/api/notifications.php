@@ -184,19 +184,7 @@ class NotificationAPI {
             );
             $notifCount = (int)($row['cnt'] ?? 0);
 
-            // 幹部有待審核申請時也讓鈴鐺亮起（加 1 表示「有」，通知中心以虛擬卡片顯示）
-            $appRow = Database::getInstance()->fetchOne(
-                "SELECT COUNT(*) AS cnt
-                 FROM club_join_applications cja
-                 JOIN club_members cm ON cm.club_id = cja.club_id
-                     AND cm.user_id = ? AND cm.is_active = 1
-                     AND cm.role IN ('president','vice_president','public_relations','treasurer','director')
-                 WHERE cja.status = 'pending'",
-                [$uid]
-            );
-            $hasPendingApps = ((int)($appRow['cnt'] ?? 0)) > 0 ? 1 : 0;
-
-            Helper::success('', ['count' => $notifCount + $hasPendingApps]);
+            Helper::success('', ['count' => $notifCount]);
         } catch (Exception $e) {
             Helper::success('', ['count' => 0]);
         }
@@ -285,4 +273,3 @@ if ($method === 'POST') {
 }
 
 Helper::error('無效的請求', 400);
-?>

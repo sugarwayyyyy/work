@@ -960,27 +960,6 @@ footer p {
     margin: 0;
 }
 
-.feedback-footer-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 5px 14px;
-    border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 20px;
-    background: transparent;
-    color: rgba(255,255,255,0.8);
-    font-size: 0.8rem;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.feedback-footer-btn:hover {
-    background: rgba(255,255,255,0.12);
-    color: #fff;
-    border-color: rgba(255,255,255,0.55);
-}
-
 /* 手機響應式 */
 @media (max-width: 768px) {
 

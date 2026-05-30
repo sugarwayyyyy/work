@@ -703,7 +703,7 @@ function openJoinModal() {
             </div>
         </div>`;
     modal.style.display = 'flex';
-    modal.addEventListener('click', function(e) { if (e.target === modal) closeJoinModal(); }, { once: true });
+    modal.onclick = (e) => { if (e.target === modal) closeJoinModal(); };
 
     const firstRadio = modal.querySelector('input[type="radio"]');
     if (firstRadio) firstRadio.checked = true;
@@ -768,7 +768,7 @@ function leaveClub() {
     modal.style.display = 'flex';
 
     document.getElementById('leave-cancel-btn').onclick = () => { modal.style.display = 'none'; };
-    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; }, { once: false });
+    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
     document.getElementById('leave-confirm-btn').onclick = async () => {
         const confirmBtn = document.getElementById('leave-confirm-btn');
