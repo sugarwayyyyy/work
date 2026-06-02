@@ -237,6 +237,146 @@ hr.ov-sep {
     border-top: 1px solid #f0edf8;
 }
 
+/* ── 統計分析 ── */
+.ov-section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1a0d3b;
+    margin: 1.6rem 0 0.75rem;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.ov-analytics-loading,
+.ov-empty {
+    padding: 0.9rem 0.4rem;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* ── 展開抽屜（drawer）── */
+.ov-expand-head { cursor: pointer; }
+.ov-expand-head:focus-visible {
+    outline: 2px solid #7c3aed;
+    outline-offset: 2px;
+    border-radius: 0.6rem;
+}
+
+.ov-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.ov-card-head .ov-card-title { margin: 0; }
+
+.ov-card-hint {
+    margin-left: auto;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: #a78bfa;
+    text-transform: uppercase;
+}
+
+.ov-expand-chevron {
+    flex-shrink: 0;
+    color: #bdb7cf;
+    transition: transform 0.22s ease, color 0.15s;
+}
+.ov-card-head .ov-expand-chevron { margin-left: 0.35rem; }
+.ov-kpi .ov-expand-chevron { position: absolute; top: 0.7rem; right: 0.7rem; }
+.ov-expand-head:hover .ov-expand-chevron { color: #7c3aed; }
+[data-expandable].is-expanded .ov-expand-chevron { transform: rotate(180deg); }
+
+.ov-chart-drawer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.28s ease;
+}
+[data-expandable].is-expanded > .ov-chart-drawer {
+    margin-top: 0.7rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid #f0edf8;
+}
+
+/* ── Sparkline ── */
+.ov-spark__svg { display: block; width: 100%; height: 64px; }
+.ov-spark__area { fill: rgba(124, 58, 237, 0.12); }
+.ov-spark__line { stroke: #7c3aed; stroke-width: 2; }
+.ov-spark__axis {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.25rem;
+    font-size: 0.62rem;
+    color: #a3a3b8;
+}
+.ov-spark__foot { margin-top: 0.4rem; font-size: 0.72rem; color: #94a3b8; }
+.ov-spark__foot b { color: #1a0d3b; font-weight: 800; }
+
+/* ── Donut ── */
+.ov-donut { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.ov-donut__chart { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
+.ov-donut__chart svg { display: block; width: 120px; height: 120px; }
+.ov-donut__empty { stroke: #ece8f7; }
+.ov-donut__center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+.ov-donut__center b {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #1a0d3b;
+    font-family: 'Space Grotesk', sans-serif;
+}
+.ov-donut__center span { margin-top: 0.1rem; font-size: 0.66rem; color: #94a3b8; }
+.ov-donut__legend { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 0.32rem; }
+.ov-donut__row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+.ov-donut__swatch { width: 0.7rem; height: 0.7rem; border-radius: 0.2rem; flex-shrink: 0; }
+.ov-donut__label { color: #4b5563; }
+.ov-donut__val { margin-left: auto; font-weight: 700; color: #1a0d3b; }
+.ov-donut__val i { margin-left: 0.3rem; font-style: normal; font-weight: 500; color: #94a3b8; }
+
+/* ── 水平長條 ── */
+.ov-hbar-list { display: flex; flex-direction: column; gap: 0.45rem; }
+.ov-donut + .ov-hbar-list { margin-top: 0.85rem; }
+.ov-hbar-row { display: flex; align-items: center; gap: 0.6rem; }
+.ov-hbar-label {
+    width: 6.5rem;
+    flex-shrink: 0;
+    font-size: 0.78rem;
+    color: #4b5563;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ov-hbar-track {
+    flex: 1;
+    height: 1.05rem;
+    background: #f1f0f8;
+    border-radius: 0.3rem;
+    overflow: hidden;
+}
+.ov-hbar-fill {
+    height: 100%;
+    border-radius: 0.3rem;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+}
+.ov-hbar-value {
+    min-width: 2.6rem;
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #1a0d3b;
+    white-space: nowrap;
+}
+
 /* ── Dark mode ── */
 [data-theme="dark"] .ov-head-title { color: #F5F5F5; }
 [data-theme="dark"] .ov-head-time  { color: #888888; }
@@ -293,6 +433,27 @@ hr.ov-sep {
 [data-theme="dark"] .ov-metric + .ov-metric-sep,
 [data-theme="dark"] hr.ov-sep { border-top-color: #2A2A2A; }
 
+[data-theme="dark"] .ov-section-title { color: #F5F5F5; }
+[data-theme="dark"] .ov-expand-chevron { color: #6b6b7b; }
+[data-theme="dark"] .ov-expand-head:hover .ov-expand-chevron { color: #a78bfa; }
+[data-theme="dark"] .ov-card-hint { color: #8b7dd8; }
+[data-theme="dark"][data-expandable].is-expanded > .ov-chart-drawer,
+[data-theme="dark"] [data-expandable].is-expanded > .ov-chart-drawer { border-top-color: #2A2A2A; }
+[data-theme="dark"] .ov-spark__area { fill: rgba(167, 139, 250, 0.18); }
+[data-theme="dark"] .ov-spark__line { stroke: #a78bfa; }
+[data-theme="dark"] .ov-spark__axis { color: #888888; }
+[data-theme="dark"] .ov-spark__foot { color: #888888; }
+[data-theme="dark"] .ov-spark__foot b { color: #F5F5F5; }
+[data-theme="dark"] .ov-donut__empty { stroke: #2A2A2A; }
+[data-theme="dark"] .ov-donut__center b { color: #F5F5F5; }
+[data-theme="dark"] .ov-donut__center span { color: #888888; }
+[data-theme="dark"] .ov-donut__label { color: #D4D4D4; }
+[data-theme="dark"] .ov-donut__val { color: #F5F5F5; }
+[data-theme="dark"] .ov-donut__val i { color: #888888; }
+[data-theme="dark"] .ov-hbar-track { background: #2A2A2A; }
+[data-theme="dark"] .ov-hbar-label { color: #D4D4D4; }
+[data-theme="dark"] .ov-hbar-value { color: #F5F5F5; }
+
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .ov-head-title { color: #F5F5F5; }
     :root:not([data-theme="light"]) .ov-head-time  { color: #888888; }
@@ -348,4 +509,24 @@ hr.ov-sep {
 
     :root:not([data-theme="light"]) .ov-metric + .ov-metric-sep,
     :root:not([data-theme="light"]) hr.ov-sep { border-top-color: #2A2A2A; }
+
+    :root:not([data-theme="light"]) .ov-section-title { color: #F5F5F5; }
+    :root:not([data-theme="light"]) .ov-expand-chevron { color: #6b6b7b; }
+    :root:not([data-theme="light"]) .ov-expand-head:hover .ov-expand-chevron { color: #a78bfa; }
+    :root:not([data-theme="light"]) .ov-card-hint { color: #8b7dd8; }
+    :root:not([data-theme="light"]) [data-expandable].is-expanded > .ov-chart-drawer { border-top-color: #2A2A2A; }
+    :root:not([data-theme="light"]) .ov-spark__area { fill: rgba(167, 139, 250, 0.18); }
+    :root:not([data-theme="light"]) .ov-spark__line { stroke: #a78bfa; }
+    :root:not([data-theme="light"]) .ov-spark__axis { color: #888888; }
+    :root:not([data-theme="light"]) .ov-spark__foot { color: #888888; }
+    :root:not([data-theme="light"]) .ov-spark__foot b { color: #F5F5F5; }
+    :root:not([data-theme="light"]) .ov-donut__empty { stroke: #2A2A2A; }
+    :root:not([data-theme="light"]) .ov-donut__center b { color: #F5F5F5; }
+    :root:not([data-theme="light"]) .ov-donut__center span { color: #888888; }
+    :root:not([data-theme="light"]) .ov-donut__label { color: #D4D4D4; }
+    :root:not([data-theme="light"]) .ov-donut__val { color: #F5F5F5; }
+    :root:not([data-theme="light"]) .ov-donut__val i { color: #888888; }
+    :root:not([data-theme="light"]) .ov-hbar-track { background: #2A2A2A; }
+    :root:not([data-theme="light"]) .ov-hbar-label { color: #D4D4D4; }
+    :root:not([data-theme="light"]) .ov-hbar-value { color: #F5F5F5; }
 }

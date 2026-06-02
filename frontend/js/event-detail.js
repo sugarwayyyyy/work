@@ -233,6 +233,14 @@
             registerBtn.style.display = 'none';
             unregisterBtn.style.display = 'none';
 
+            // 平台管理員為唯讀檢視，無法報名／取消報名
+            if (user && user.role === 'platform_admin') {
+                messageEl.textContent = '管理員為唯讀檢視，無法報名';
+                userRegisteredForEvent = false;
+                renderCommentFormAccess();
+                return;
+            }
+
             if (!user) {
                 messageEl.textContent = eventHasEnded
                     ? '活動已結束，無法報名'

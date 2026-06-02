@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store" />
     <title>報告管理 — 管理員</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../css/styles.css?v=20260530" />
-    <link rel="stylesheet" href="../css/admin.css" />
+    <link rel="stylesheet" href="../css/admin.css?v=20260603" />
     <link rel="stylesheet" href="../css/home.css" />
     <link rel="stylesheet" href="../css/admin-reports.css?v=20260528" />
 </head>
-<body class="admin-page admin-reports-page">
+<body class="admin-page admin-shell admin-reports-page">
     <header>
         <nav>
             <a href="admin-users.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
@@ -39,14 +40,12 @@
             <div class="portal-section-head">
                 <h2 class="portal-section-title">報告管理</h2>
                 <div class="feed-tabs" role="tablist" aria-label="報告分類">
-                    <button type="button" class="feed-tab is-active" data-sub-tab="events"   role="tab" aria-selected="true">活動成效</button>
-                    <button type="button" class="feed-tab"           data-sub-tab="feedback" role="tab" aria-selected="false">用戶回饋</button>
+                    <button type="button" class="feed-tab is-active" data-sub-tab="feedback" role="tab" aria-selected="true">用戶回饋</button>
                     <button type="button" class="feed-tab"           data-sub-tab="cases"    role="tab" aria-selected="false">檢舉工單</button>
                 </div>
             </div>
             <div class="feed-panels">
-                <div id="reports-panel-events"   class="feed-panel is-active"></div>
-                <div id="reports-panel-feedback" class="feed-panel"></div>
+                <div id="reports-panel-feedback" class="feed-panel is-active"></div>
                 <div id="reports-panel-cases"    class="feed-panel"></div>
             </div>
         </section>
@@ -66,8 +65,8 @@
         </div>
     </div>
 
-    <script src="../js/main.js?v=20260530"></script>
-    <script src="../js/admin-reports.js?v=20260528"></script>
+    <script src="../js/main.js?v=20260603"></script>
+    <script src="../js/admin-reports.js?v=20260603"></script>
     <footer>
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>

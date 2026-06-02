@@ -795,13 +795,33 @@ async function loadThread(userId, isPoll) {
 
 const EMOJI_LIST = ['👍','❤️','😂','😮','😢','👏'];
 
-function emojiButtons(msgId, reactions) {
-    const myEmojis = new Set(
-        (reactions || []).filter(r => r.user_ids && r.user_ids.includes(currentUserId)).map(r => r.emoji)
+// Returns the current user's reacted emoji for this message, or null.
+// Uses Number() conversion to tolerate string/number type mismatch from JSON.
+function getMyEmoji(reactions) {
+    const hit = (reactions || []).find(r =>
+        Array.isArray(r.user_ids) && r.user_ids.map(Number).includes(currentUserId)
     );
+    return hit ? hit.emoji : null;
+}
+
+// Emoji picker inside the ⋯ menu — emoji stored in data-emoji (URL-encoded), no inline onclick.
+function emojiButtons(msgId, reactions) {
+    const myEmoji = getMyEmoji(reactions);
     return EMOJI_LIST.map(e =>
-        `<button class="msg-menu-emoji-btn${myEmojis.has(e) ? ' active' : ''}" onclick="toggleReaction(${msgId},'${e}')">${e}</button>`
+        `<button class="msg-menu-emoji-btn${e === myEmoji ? ' active' : ''}" data-action="react" data-msg="${Number(msgId)}" data-emoji="${encodeURIComponent(e)}">${e}</button>`
     ).join('');
+}
+
+// Reaction pills below a bubble — same data-attribute pattern, no inline onclick.
+function renderReactionPills(msgId, reactions) {
+    if (!reactions || !reactions.length) return '';
+    const myEmoji = getMyEmoji(reactions);
+    return `<div class="msg-reactions-row">${
+        reactions.map(r => {
+            const mine = r.emoji === myEmoji;
+            return `<span class="msg-reaction-pill${mine ? ' msg-reaction-pill--mine' : ''}" data-action="react" data-msg="${Number(msgId)}" data-emoji="${encodeURIComponent(r.emoji)}">${r.emoji} ${r.count}</span>`;
+        }).join('')
+    }</div>`;
 }
 
 function toggleMsgMenu(key) {
@@ -833,11 +853,18 @@ document.addEventListener('click', (e) => {
     if (_openMenuMsgId && !e.target.closest('.msg-bubble-wrap')) closeMsgMenu();
 });
 
-async function toggleReaction(msgId, emoji) {
+// Single event-delegation handler for all emoji reactions (picker buttons + pills).
+// Emoji is stored as encodeURIComponent in data-emoji — avoids any encoding issues.
+document.getElementById('messages-area').addEventListener('click', async (e) => {
+    const el = e.target.closest('[data-action="react"]');
+    if (!el || !currentConvUserId) return;
+    const msgId = Number(el.dataset.msg);
+    const emoji = decodeURIComponent(el.dataset.emoji || '');
+    if (!msgId || !emoji) return;
     closeMsgMenu();
     const res = await APIClient.post('messages.php?action=toggle_reaction', { message_id: msgId, emoji });
     if (res && res.success) await loadThread(currentConvUserId, true);
-}
+});
 
 function startReply(msgId, content, senderName) {
     _replyTo = { msgId, content, senderName };
@@ -881,11 +908,7 @@ function renderMessages(messages, otherUser) {
             : '';
 
         const reactions = m.reactions || [];
-        const reactionsHtml = reactions.map(r => {
-            const mine = r.user_ids && r.user_ids.includes(currentUserId);
-            return `<span class="msg-reaction-pill${mine ? ' msg-reaction-pill--mine' : ''}" onclick="toggleReaction(${m.message_id},'${r.emoji}')">${r.emoji} ${r.count}</span>`;
-        }).join('');
-        const reactionsRow = reactionsHtml ? `<div class="msg-reactions-row">${reactionsHtml}</div>` : '';
+        const reactionsRow = renderReactionPills(m.message_id, reactions);
 
         const menuId = `msg-menu-${m.message_id}`;
         const replyBtn = `<button class="msg-menu-item" onclick="startReply(${m.message_id},'${PageUtils.escapeAttribute(m.content || '')}','${PageUtils.escapeAttribute(m.sender_name || '')}');closeMsgMenu()">↩ 回復</button>`;

@@ -122,7 +122,6 @@ function renderClubsTable() {
                         <option value="suspended" ${club.activity_status === 'suspended' ? 'selected' : ''}>暫停</option>
                         <option value="pending" ${club.activity_status === 'pending' ? 'selected' : ''}>待審核</option>
                     </select>
-                    <button class="btn btn-secondary btn-sm" data-club-toggle="${safeClubId}">${club.deleted_at ? '恢復' : '停用/隱藏'}</button>
                     <button class="btn btn-primary btn-sm" data-club-edit="${safeClubId}">編輯社團資料</button>
                 </div>
             </td>`;
@@ -136,20 +135,13 @@ function renderClubsTable() {
             sel.dataset.prev = sel.value;
             const response = await APIClient.post('admin.php?action=update_club_status', { club_id: clubId, activity_status: sel.value });
             if (response.success) {
-                const chip = sel.closest('tr').querySelectorAll('.status-chip')[0];
-                if (chip) chip.textContent = sel.options[sel.selectedIndex].text;
+                // 狀態與顯示狀態連動（啟用=顯示、其餘=隱藏），重新載入以同步「隱藏狀態」欄
+                loadClubs();
             } else {
                 PageUtils.showAlert('更新社團狀態失敗：' + response.message, 'error');
                 sel.value = prev;
                 sel.dataset.prev = prev;
             }
-        });
-    });
-    document.querySelectorAll('#clubs-table button[data-club-toggle]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const response = await APIClient.post('admin.php?action=soft_delete_club', { club_id: btn.dataset.clubToggle, hide: btn.textContent.includes('停用') });
-            if (response.success) loadClubs();
-            else PageUtils.showAlert('更新社團顯示狀態失敗：' + response.message, 'error');
         });
     });
     document.querySelectorAll('#clubs-table button[data-club-edit]').forEach(btn => {

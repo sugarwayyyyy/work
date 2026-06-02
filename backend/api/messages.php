@@ -405,24 +405,23 @@ class MessagesAPI {
             Helper::error('無權限', 403);
         }
 
-        // 每人對同一則訊息只允許一個 reaction
-        $existing = Database::getInstance()->fetchOne(
-            'SELECT reaction_id, emoji FROM message_reactions WHERE message_id = ? AND user_id = ?',
+        // 取出此 user 對此訊息的既有 reaction（防 race condition 所以只取 emoji 不取 id）
+        $existing  = Database::getInstance()->fetchOne(
+            'SELECT emoji FROM message_reactions WHERE message_id = ? AND user_id = ? LIMIT 1',
             [$msgId, $uid]
         );
-        if ($existing) {
-            dbDelete('message_reactions', 'reaction_id = ?', [(int)$existing['reaction_id']]);
-            if ($existing['emoji'] !== $emoji) {
-                // 不同 emoji → 換成新的
-                dbInsert('message_reactions', ['message_id' => $msgId, 'user_id' => $uid, 'emoji' => $emoji]);
-                Helper::success('已切換');
-            } else {
-                // 同一個 emoji → toggle 取消
-                Helper::success('已移除');
-            }
+        $prevEmoji = $existing ? $existing['emoji'] : null;
+
+        // 先全刪（解決 race condition 同時送出兩個不同 emoji 導致一人有多筆的問題）
+        dbDelete('message_reactions', 'message_id = ? AND user_id = ?', [$msgId, $uid]);
+
+        if ($prevEmoji === $emoji) {
+            // 同一個 emoji → toggle 取消（已刪，直接回傳）
+            Helper::success('已移除');
         } else {
+            // 不同 emoji 或全新 → insert
             dbInsert('message_reactions', ['message_id' => $msgId, 'user_id' => $uid, 'emoji' => $emoji]);
-            Helper::success('已新增');
+            Helper::success($prevEmoji !== null ? '已切換' : '已新增');
         }
     }
 

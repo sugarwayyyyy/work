@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store" />
     <title>系統總覽 — 管理員</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="../css/styles.css?v=20260530" />
-    <link rel="stylesheet" href="../css/admin-overview.css?v=20260528" />
+    <link rel="stylesheet" href="../css/styles.css?v=20260601" />
+    <link rel="stylesheet" href="../css/admin.css?v=20260603" />
+    <link rel="stylesheet" href="../css/admin-overview.css?v=20260603b" />
 </head>
-<body class="admin-page admin-overview-page">
+<body class="admin-page admin-shell admin-overview-page">
     <header>
         <nav>
             <a href="admin-users.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
@@ -43,25 +45,33 @@
 
         <!-- KPI 大數字列 -->
         <div class="ov-kpi-strip">
-            <div class="ov-kpi kpi-purple">
+            <div class="ov-kpi kpi-purple ov-expand-head" data-expandable role="button" tabindex="0" aria-expanded="false">
+                <svg class="ov-expand-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                 <p class="ov-kpi-label">總用戶</p>
                 <div class="ov-kpi-value" id="ov-u-total">-</div>
                 <div class="ov-kpi-sub">本週新增 <b class="pos" id="ov-u-new">-</b></div>
+                <div class="ov-chart-drawer" data-chart="trend-users"></div>
             </div>
-            <div class="ov-kpi kpi-green">
+            <div class="ov-kpi kpi-green ov-expand-head" data-expandable role="button" tabindex="0" aria-expanded="false">
+                <svg class="ov-expand-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                 <p class="ov-kpi-label">活躍社團</p>
                 <div class="ov-kpi-value" id="ov-c-active">-</div>
                 <div class="ov-kpi-sub">共 <b id="ov-c-total">-</b> 社團</div>
+                <div class="ov-chart-drawer" data-chart="trend-clubs"></div>
             </div>
-            <div class="ov-kpi kpi-blue">
+            <div class="ov-kpi kpi-blue ov-expand-head" data-expandable role="button" tabindex="0" aria-expanded="false">
+                <svg class="ov-expand-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                 <p class="ov-kpi-label">即將舉行活動</p>
                 <div class="ov-kpi-value" id="ov-e-upcoming">-</div>
                 <div class="ov-kpi-sub"><b id="ov-e-published">-</b> 已發布</div>
+                <div class="ov-chart-drawer" data-chart="trend-events"></div>
             </div>
-            <div class="ov-kpi kpi-amber">
+            <div class="ov-kpi kpi-amber ov-expand-head" data-expandable role="button" tabindex="0" aria-expanded="false">
+                <svg class="ov-expand-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                 <p class="ov-kpi-label">生效公告</p>
                 <div class="ov-kpi-value" id="ov-a-active">-</div>
                 <div class="ov-kpi-sub">置頂 <b class="warn" id="ov-a-pinned">-</b></div>
+                <div class="ov-chart-drawer" data-chart="trend-ann"></div>
             </div>
         </div>
 
@@ -77,8 +87,11 @@
         <div class="ov-detail-grid">
 
             <!-- 用戶分佈 -->
-            <div class="ov-card">
-                <p class="ov-card-title">用戶分佈</p>
+            <div class="ov-card" data-expandable>
+                <div class="ov-card-head ov-expand-head" role="button" tabindex="0" aria-expanded="false">
+                    <p class="ov-card-title">用戶分佈</p>
+                    <svg class="ov-expand-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
                 <div class="ov-metric-list">
                     <div class="ov-metric">
                         <span class="ov-metric-name">總用戶數</span>
@@ -101,11 +114,15 @@
                         <span class="ov-metric-value v-pos" id="ov-d-u-new">-</span>
                     </div>
                 </div>
+                <div class="ov-chart-drawer" data-chart="users-dist"></div>
             </div>
 
             <!-- 社團健康度 -->
-            <div class="ov-card">
-                <p class="ov-card-title">社團健康度</p>
+            <div class="ov-card" data-expandable>
+                <div class="ov-card-head ov-expand-head" role="button" tabindex="0" aria-expanded="false">
+                    <p class="ov-card-title">社團健康度</p>
+                    <svg class="ov-expand-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
                 <div class="ov-metric-list">
                     <div class="ov-metric">
                         <span class="ov-metric-name">社團總數</span>
@@ -128,11 +145,15 @@
                         <span class="ov-metric-value v-warn" id="ov-d-c-stale">-</span>
                     </div>
                 </div>
+                <div class="ov-chart-drawer" data-chart="clubs-health"></div>
             </div>
 
             <!-- 活動概覽 -->
-            <div class="ov-card">
-                <p class="ov-card-title">活動概覽</p>
+            <div class="ov-card" data-expandable>
+                <div class="ov-card-head ov-expand-head" role="button" tabindex="0" aria-expanded="false">
+                    <p class="ov-card-title">活動概覽</p>
+                    <svg class="ov-expand-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
                 <div class="ov-metric-list">
                     <div class="ov-metric">
                         <span class="ov-metric-name">活動總數</span>
@@ -150,20 +171,16 @@
                         <span class="ov-metric-name">已取消</span>
                         <span class="ov-metric-value v-warn" id="ov-d-e-cancelled">-</span>
                     </div>
-                    <div class="ov-metric">
-                        <span class="ov-metric-name">總報名人數</span>
-                        <span class="ov-metric-value" id="ov-d-e-registrations">-</span>
-                    </div>
-                    <div class="ov-metric">
-                        <span class="ov-metric-name">平均評分</span>
-                        <span class="ov-metric-value" id="ov-d-e-rating">-</span>
-                    </div>
                 </div>
+                <div class="ov-chart-drawer" data-chart="events-overview"></div>
             </div>
 
             <!-- 公告 & 待處理 -->
-            <div class="ov-card">
-                <p class="ov-card-title">公告 &amp; 待處理</p>
+            <div class="ov-card" data-expandable>
+                <div class="ov-card-head ov-expand-head" role="button" tabindex="0" aria-expanded="false">
+                    <p class="ov-card-title">公告 &amp; 待處理</p>
+                    <svg class="ov-expand-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
                 <div class="ov-metric-list">
                     <div class="ov-metric">
                         <span class="ov-metric-name">生效公告</span>
@@ -192,13 +209,16 @@
                         <span class="ov-metric-name">待審評價</span>
                         <span class="ov-metric-value v-warn" id="ov-d-p-reviews">-</span>
                     </div>
-                    <div class="ov-metric">
-                        <span class="ov-metric-name">未回答 Q&amp;A</span>
-                        <span class="ov-metric-value v-warn" id="ov-d-p-qa">-</span>
-                    </div>
                 </div>
+                <div class="ov-chart-drawer" data-chart="pending"></div>
             </div>
 
+        </div>
+
+        <!-- 統計分析 -->
+        <h2 class="ov-section-title">統計分析</h2>
+        <div id="ov-analytics-panel">
+            <div class="ov-analytics-loading">載入中…</div>
         </div>
     </div>
 
@@ -206,7 +226,7 @@
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>
 
-    <script src="../js/main.js?v=20260530"></script>
-    <script src="../js/admin-overview.js?v=20260528"></script>
+    <script src="../js/main.js?v=20260603"></script>
+    <script src="../js/admin-overview.js?v=20260603b"></script>
 </body>
 </html>

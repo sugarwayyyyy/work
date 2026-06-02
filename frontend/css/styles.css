@@ -1448,10 +1448,12 @@ footer p {
     width: 100%;
     min-width: 900px;
     background-color: var(--surface);
+    table-layout: fixed;
 }
 
 .table-select {
-    min-width: 120px;
+    min-width: 85px;
+    max-width: 100px;
     margin: 0;
     padding: 0.45rem 0.55rem;
 }
@@ -1461,6 +1463,10 @@ footer p {
     flex-wrap: nowrap;
     gap: 0.35rem;
     align-items: center;
+}
+
+.row-actions .btn {
+    max-width: 140px;
 }
 
 .status-chip {
@@ -1951,7 +1957,7 @@ footer p {
     color: var(--text-light);
     margin: 0;
 }
-.event-reg-block { }
+/* .event-reg-block { } */
 .event-reg-meta {
     font-size: 0.875rem;
     color: var(--text-light);

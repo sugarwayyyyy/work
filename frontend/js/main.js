@@ -713,6 +713,21 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePage();
 });
 
+// 用本地快取的使用者立刻套用管理側邊欄版型（在等待 session 驗證前），避免閃一下頂部導覽
+function applyAdminShellEarly() {
+    const user = StorageUtils.getUser();
+    if (!user || user.role !== 'platform_admin') return;
+    const navLinks = document.querySelector('.nav-links');
+    if (!navLinks) return;
+    if (isAdminShellPage() || isUserProfilePage() || isNotificationsPage()) {
+        document.body.classList.add('admin-shell');
+        navLinks.innerHTML = '';
+        renderAdminSidebar();
+    } else if (isMessagesPage()) {
+        navLinks.innerHTML = `<li><a href="${getPageLink('admin-overview.html')}">← 返回管理後台</a></li>`;
+    }
+}
+
 async function initializePage() {
     ensureSiteFavicon();
     ensureHamburger();
@@ -720,6 +735,7 @@ async function initializePage() {
     applyActiveNavLink();
     injectClubNavDropdown();
     injectMessagesNavLink();
+    applyAdminShellEarly();
     try {
         await hydrateUserFromSession();
     } finally {
@@ -1300,8 +1316,10 @@ function setupSidebarToggle(section) {
 
 async function renderGlobalFollowSidebar() {
     const user = StorageUtils.getUser();
-    const isAdminPage = isAdminSubPage() || isAdminOverviewPage() || isAdminDashboardPage()
-        || (isNotificationsPage() && !!(user && user.role === 'platform_admin'));
+    // 平台管理員一律不顯示「追蹤社團」浮動側欄——包含 event-detail / club-detail 等共用頁，
+    // 避免從後台（如 admin-events）點進活動詳情時跑出使用者端側欄。
+    const isPlatformAdmin = !!(user && user.role === 'platform_admin');
+    const isAdminPage = isAdminSubPage() || isAdminOverviewPage() || isAdminDashboardPage() || isPlatformAdmin;
     if (isAdminPage) {
         const existingSection = document.getElementById('followed-clubs-section');
         if (existingSection) existingSection.remove();
@@ -1414,8 +1432,72 @@ function isAdminOverviewPage() {
 
 function isAdminSubPage() {
     const path = window.location.pathname || '';
-    const pages = ['admin-users.html', 'admin-clubs.html', 'admin-reports.html', 'admin-announcements.html', 'admin-transfers.html'];
+    const pages = ['admin-users.html', 'admin-clubs.html', 'admin-events.html', 'admin-reports.html', 'admin-announcements.html', 'admin-transfers.html'];
     return pages.some(p => path.endsWith('/frontend/pages/' + p) || path.endsWith('/pages/' + p));
+}
+
+// 平台管理員專屬頁（套用左側側邊欄版型）
+function isAdminShellPage() {
+    return isAdminSubPage() || isAdminOverviewPage() || isAdminDashboardPage();
+}
+
+// 左側側邊欄選單設定（圖示為 inline SVG，stroke=currentColor 會隨 active/hover 變色）
+const ADMIN_SIDEBAR_ICONS = {
+    overview:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/></svg>',
+    users:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>',
+    clubs:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    events:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    reports:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>',
+    announce:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>',
+    transfers:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+    messages:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+};
+
+const ADMIN_SIDEBAR_GROUPS = [
+    { title: '總覽與管理', items: [
+        { file: 'admin-overview.html', label: '系統總覽', icon: 'overview' },
+        { file: 'admin-users.html',    label: '帳號管理', icon: 'users' },
+        { file: 'admin-clubs.html',    label: '社團管理', icon: 'clubs' },
+        { file: 'admin-events.html',   label: '活動查詢', icon: 'events' },
+    ] },
+    { title: '內容', items: [
+        { file: 'admin-reports.html',       label: '報告管理', icon: 'reports' },
+        { file: 'admin-announcements.html', label: '系統公告', icon: 'announce' },
+        { file: 'admin-transfers.html',     label: '帳戶轉讓', icon: 'transfers' },
+    ] },
+    { title: '溝通', items: [
+        { file: 'messages.html', label: '私訊', icon: 'messages' },
+    ] },
+];
+
+function renderAdminSidebar() {
+    const header = document.querySelector('header');
+    if (!header) return;
+
+    let filename = (window.location.pathname || '').split('/').pop() || '';
+    if (filename === 'admin-dashboard.html') filename = 'admin-users.html';
+
+    const groupsHtml = ADMIN_SIDEBAR_GROUPS.map(group => {
+        const itemsHtml = group.items.map(item => {
+            const isActive = item.file === filename ? ' is-active' : '';
+            return `<a class="admin-sidebar__item${isActive}" href="${getPageLink(item.file)}" title="${item.label}">
+                <span class="admin-sidebar__icon">${ADMIN_SIDEBAR_ICONS[item.icon] || ''}</span>
+                <span class="admin-sidebar__label">${item.label}</span>
+            </a>`;
+        }).join('');
+        return `<div class="admin-sidebar__group">${group.title}</div>${itemsHtml}`;
+    }).join('');
+
+    const html = `
+        <nav class="admin-sidebar__nav" aria-label="管理選單">${groupsHtml}</nav>`;
+
+    let aside = document.querySelector('.admin-sidebar');
+    if (!aside) {
+        aside = document.createElement('aside');
+        aside.className = 'admin-sidebar';
+        header.insertAdjacentElement('afterend', aside);
+    }
+    aside.innerHTML = html;
 }
 
 function isClubAdminSubPage() {
@@ -1785,10 +1867,16 @@ function closeNavDropdown() {
 function updateNavigation() {
     const user = StorageUtils.getUser();
 
+    // 非平台管理員：移除可能由靜態 HTML 預設的 admin-shell（避免一般使用者誤套側邊欄版型）
+    if (!(user && user.role === 'platform_admin')) {
+        document.body.classList.remove('admin-shell');
+    }
+
     if (user && user.role === 'platform_admin') {
         const path = window.location.pathname || '';
         const isAllowedPage = isAdminSubPage() || isAdminDashboardPage() || isAdminOverviewPage()
             || isUserProfilePage() || isNotificationsPage() || isMessagesPage()
+            || path.endsWith('/event-detail.html')
             || path.endsWith('/login.html') || path.endsWith('/register.html');
         if (!isAllowedPage) {
             window.location.replace(getPageLink('admin-users.html'));
@@ -1946,17 +2034,14 @@ function updateNavigation() {
 
         const navLinks = document.querySelector('.nav-links');
         if (navLinks) {
-            const isPlatformAdminAuxPage = user.role === 'platform_admin' && (isUserProfilePage() || isNotificationsPage() || isMessagesPage());
-            if (isAdminSubPage() || isAdminDashboardPage() || isAdminOverviewPage() || isPlatformAdminAuxPage) {
-                navLinks.innerHTML = `
-                    <li><a href="${getPageLink('admin-overview.html')}">系統總覽</a></li>
-                    <li><a href="${getPageLink('admin-users.html')}">帳號管理</a></li>
-                    <li><a href="${getPageLink('admin-clubs.html')}">社團管理</a></li>
-                    <li><a href="${getPageLink('admin-reports.html')}">報告管理</a></li>
-                    <li><a href="${getPageLink('admin-announcements.html')}">系統公告</a></li>
-                    <li><a href="${getPageLink('admin-transfers.html')}">帳戶轉讓</a></li>
-                    <li><a href="${getPageLink('messages.html')}">私訊</a></li>
-                `;
+            if (user.role === 'platform_admin' && (isAdminShellPage() || isUserProfilePage() || isNotificationsPage())) {
+                // 平台管理員：管理專屬頁 + 個人中心/通知中心，皆套用左側側邊欄
+                document.body.classList.add('admin-shell');
+                navLinks.innerHTML = '';
+                renderAdminSidebar();
+            } else if (user.role === 'platform_admin' && isMessagesPage()) {
+                // 私訊維持自身全螢幕聊天版型，僅在頂部提供返回鈕（不套側邊欄、不影響非管理員）
+                navLinks.innerHTML = `<li><a href="${getPageLink('admin-overview.html')}">← 返回管理後台</a></li>`;
             }
 
             if (isClubAdminSubPage()) {

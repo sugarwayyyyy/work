@@ -441,10 +441,16 @@ class AdminAPI {
         $club_id = (int)$data['club_id'];
         $status = in_array($data['activity_status'], ['active', 'inactive', 'suspended', 'pending']) ? $data['activity_status'] : 'inactive';
 
-        $result = dbUpdate('clubs', ['activity_status' => $status], 'club_id = ?', [$club_id]);
-        if (!$result) Helper::error('更新社團狀態失敗', 500);
+        // 顯示狀態與啟用狀態連動：僅「啟用」對外顯示，其餘（停用/暫停/待審核）一律隱藏
+        $isVisible = ($status === 'active');
+        $result = dbUpdate('clubs', [
+            'activity_status' => $status,
+            'deleted_at'      => $isVisible ? null : date('Y-m-d H:i:s'),
+            'last_updated'    => date('Y-m-d H:i:s'),
+        ], 'club_id = ?', [$club_id]);
+        if ($result === false) Helper::error('更新社團狀態失敗', 500);
 
-        Helper::success('社團狀態更新成功');
+        Helper::success('社團狀態更新成功', ['deleted' => !$isVisible]);
     }
 
     public static function getEventReports() {
@@ -462,6 +468,88 @@ class AdminAPI {
             ORDER BY e.created_at DESC
         ');
         Helper::success('取得活動報告成功', ['reports' => $reports]);
+    }
+
+    /**
+     * 統計分析：社團適配測驗填寫數/趨勢、測驗最常推薦社團、熱門社團（依追蹤數）
+     * GET /api/admin.php?action=club_analytics
+     */
+    public static function getClubAnalytics() {
+        self::requireAdmin();
+        $db = Database::getInstance();
+
+        // 1) 社團適配測驗填寫數（club_match_result）
+        $totalRow = $db->fetchOne(
+            "SELECT COUNT(*) AS n FROM bot_messages WHERE message_type = 'club_match_result'"
+        );
+        $total = (int)($totalRow['n'] ?? 0);
+
+        $monthRow = $db->fetchOne(
+            "SELECT COUNT(*) AS n FROM bot_messages
+             WHERE message_type = 'club_match_result'
+               AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+        );
+        $thisMonth = (int)($monthRow['n'] ?? 0);
+
+        // 近 6 個月趨勢（補滿沒有資料的月份為 0）
+        $trendRows = $db->fetchAll(
+            "SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS n
+             FROM bot_messages
+             WHERE message_type = 'club_match_result'
+               AND created_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01')
+             GROUP BY ym ORDER BY ym ASC"
+        );
+        $byMonth = [];
+        foreach ($trendRows as $r) { $byMonth[$r['ym']] = (int)$r['n']; }
+        $monthly = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $ym = date('Y-m', strtotime("first day of -$i month"));
+            $monthly[] = ['ym' => $ym, 'count' => $byMonth[$ym] ?? 0];
+        }
+
+        // 2) 測驗最常推薦的社團 Top 10（PHP 解析 meta.clubs）
+        $metaRows = $db->fetchAll(
+            "SELECT meta FROM bot_messages
+             WHERE message_type = 'club_match_result' AND meta IS NOT NULL
+             ORDER BY created_at DESC LIMIT 2000"
+        );
+        $tally = [];
+        foreach ($metaRows as $row) {
+            $meta = json_decode($row['meta'] ?? '', true);
+            if (!is_array($meta) || empty($meta['clubs']) || !is_array($meta['clubs'])) continue;
+            foreach ($meta['clubs'] as $club) {
+                $cid = (int)($club['club_id'] ?? 0);
+                if ($cid <= 0) continue;
+                if (!isset($tally[$cid])) {
+                    $tally[$cid] = [
+                        'club_id'   => $cid,
+                        'club_name' => (string)($club['club_name'] ?? ('#' . $cid)),
+                        'count'     => 0,
+                    ];
+                }
+                $tally[$cid]['count']++;
+            }
+        }
+        $topRecommended = array_values($tally);
+        usort($topRecommended, function ($a, $b) { return $b['count'] <=> $a['count']; });
+        $topRecommended = array_slice($topRecommended, 0, 10);
+
+        // 3) 熱門社團 Top 10（依追蹤數）
+        $popular = $db->fetchAll(
+            "SELECT c.club_id, c.club_name, COUNT(f.follower_id) AS followers
+             FROM clubs c
+             LEFT JOIN club_followers f ON f.club_id = c.club_id
+             WHERE c.activity_status = 'active' AND c.deleted_at IS NULL
+             GROUP BY c.club_id, c.club_name
+             ORDER BY followers DESC, c.club_name ASC
+             LIMIT 10"
+        );
+
+        Helper::success('取得統計成功', [
+            'quiz'            => ['total' => $total, 'this_month' => $thisMonth, 'monthly' => $monthly],
+            'top_recommended' => $topRecommended,
+            'popular_clubs'   => $popular,
+        ]);
     }
 
     public static function submitFeedback($data) {
@@ -985,6 +1073,8 @@ if ($method === 'GET') {
         AdminAPI::getClubAdminAssignments();
     } elseif ($action === 'event_reports') {
         AdminAPI::getEventReports();
+    } elseif ($action === 'club_analytics') {
+        AdminAPI::getClubAnalytics();
     } elseif ($action === 'reports') {
         AdminAPI::getReports();
     } elseif ($action === 'user_feedback') {

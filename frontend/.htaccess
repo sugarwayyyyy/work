@@ -1,0 +1,8 @@
+# 前端靜態資源快取策略
+# HTML 一律重新驗證，確保更新後（含 ?v= 版本連結）一定生效，避免瀏覽器服務舊頁
+<IfModule mod_headers.c>
+    <FilesMatch "\.html$">
+        Header set Cache-Control "no-cache, must-revalidate"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+</IfModule>

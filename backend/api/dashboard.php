@@ -15,6 +15,39 @@ if (!Auth::isAdmin()) {
 
 $db = Database::getInstance();
 
+// ── 月趨勢 API（近 6 個月，缺月補 0）─────────────────────────
+// GET dashboard.php?action=trends → 給總覽各磚塊的展開趨勢圖用
+if (($_GET['action'] ?? '') === 'trends') {
+    // 共用：回傳近 6 個月每月筆數，格式比照 club_analytics 的 monthly
+    $monthlySeries = function (string $table, string $dateCol, string $extraWhere = '') use ($db) {
+        $where = "$dateCol >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01')";
+        if ($extraWhere !== '') $where .= " AND $extraWhere";
+        $rows = $db->fetchAll(
+            "SELECT DATE_FORMAT($dateCol, '%Y-%m') AS ym, COUNT(*) AS n
+             FROM $table
+             WHERE $where
+             GROUP BY ym ORDER BY ym ASC"
+        );
+        $byMonth = [];
+        foreach ($rows as $r) { $byMonth[$r['ym']] = (int)$r['n']; }
+        $series = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $ym = date('Y-m', strtotime("first day of -$i month"));
+            $series[] = ['ym' => $ym, 'count' => $byMonth[$ym] ?? 0];
+        }
+        return $series;
+    };
+
+    Helper::success('取得趨勢成功', [
+        'users'         => $monthlySeries('users', 'created_at', 'is_active = 1'),
+        'clubs'         => $monthlySeries('clubs', 'created_at', 'deleted_at IS NULL'),
+        'events'        => $monthlySeries('events', 'created_at'),
+        'registrations' => $monthlySeries('event_registrations', 'registered_at', "status = 'approved'"),
+        'announcements' => $monthlySeries('system_announcements', 'created_at'),
+        'generated_at'  => date('Y-m-d H:i:s'),
+    ]);
+}
+
 // ── 1. 用戶統計 ──────────────────────────────────────────────
 $userRows = $db->fetchAll('
     SELECT

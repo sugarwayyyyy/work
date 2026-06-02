@@ -134,14 +134,20 @@
         }
 
         async function loadQA() {
+            document.getElementById('qa-container').innerHTML = '<div class="loading"><div class="spinner"></div><p>載入中...</p></div>';
             try {
-                const search = document.getElementById('qa-search').value.trim();
-                const club_id = document.getElementById('qa-club-filter').value;
-                const status = document.getElementById('qa-status-filter').value;
+                const search      = document.getElementById('qa-search').value.trim();
+                const club_id     = document.getElementById('qa-club-filter').value;
+                const category_id = document.getElementById('qa-category-filter').value;
+                const status      = document.getElementById('qa-status-filter').value;
                 let url = 'qa.php';
                 const params = new URLSearchParams();
                 if (search) params.append('search', search);
-                if (club_id) params.append('club_id', club_id);
+                if (club_id) {
+                    params.append('club_id', club_id);
+                } else if (category_id) {
+                    params.append('category_id', category_id);
+                }
                 if (status) params.append('status', status);
                 if ([...params.keys()].length > 0) {
                     url += `?${params.toString()}`;

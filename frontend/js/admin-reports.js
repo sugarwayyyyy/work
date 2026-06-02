@@ -286,30 +286,6 @@ function handleReportAction(reportId, action, card) {
     });
 }
 
-// ── 活動成效 ──────────────────────────────────────────────
-async function loadEventReports() {
-    const response = await APIClient.get('admin.php?action=event_reports');
-    if (!response.success) return console.error(response.message);
-    const container = document.getElementById('reports-panel-events');
-    container.innerHTML = '';
-    const reports = response.data.reports || [];
-    if (reports.length === 0) { renderEmptyState(container, '目前沒有活動報告', '等有活動成果資料後，這裡會顯示統計內容。'); return; }
-    const list = document.createElement('div');
-    list.className = 'feed-stream-list';
-    reports.forEach(report => {
-        const article = document.createElement('article');
-        article.className = 'feed-item-card';
-        article.innerHTML = `
-            <div class="feed-item-head">
-                <h3 class="feed-item-title">${escapeHtml(report.event_name||'-')}</h3>
-                <span class="feed-item-badge feed-item-badge--neutral">${escapeHtml(CLUB_STATUS_LABELS[report.event_status]||report.event_status||'-')}</span>
-            </div>
-            <p class="feed-item-meta"><span>參與人數：${report.participants_count??0}</span><span>平均評分：${report.average_rating??'無'}</span></p>`;
-        list.appendChild(article);
-    });
-    container.appendChild(list);
-}
-
 // ── 用戶回饋 ──────────────────────────────────────────────
 async function loadUserFeedback() {
     const response = await APIClient.get('admin.php?action=user_feedback');
@@ -342,8 +318,8 @@ async function loadUserFeedback() {
 }
 
 // ── Tab 切換 ──────────────────────────────────────────────
-const reportsLoaded  = { events: false, feedback: false, cases: false };
-const reportsLoaders = { events: loadEventReports, feedback: loadUserFeedback, cases: loadReportCases };
+const reportsLoaded  = { feedback: false, cases: false };
+const reportsLoaders = { feedback: loadUserFeedback, cases: loadReportCases };
 
 function switchReportsSubTab(key) {
     document.querySelectorAll('.feed-tab[data-sub-tab]').forEach(t => { t.classList.remove('is-active'); t.setAttribute('aria-selected','false'); });
@@ -382,5 +358,5 @@ if (_urlReportId > 0) {
 } else if (_urlTab === 'cases') {
     switchReportsSubTab('cases');
 } else {
-    switchReportsSubTab('events');
+    switchReportsSubTab('feedback');
 }

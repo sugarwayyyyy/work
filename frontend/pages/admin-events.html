@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <title>活動查詢 — 管理員</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/styles.css?v=20260601" />
+    <link rel="stylesheet" href="../css/events.css?v=20260601" />
+    <link rel="stylesheet" href="../css/home.css?v=20260601" />
+    <link rel="stylesheet" href="../css/admin.css?v=20260603" />
+    <style>
+        /* ── 活動唯讀詳情 Modal ── */
+        #event-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        #event-modal[hidden] { display: none; }
+
+        .ae-modal__overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.5); }
+
+        .ae-modal__card {
+            position: relative;
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            width: min(560px, 100%);
+            max-height: calc(100vh - 2rem);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .ae-modal__head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 1.1rem 1.35rem 0.9rem;
+            border-bottom: 1px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+        .ae-modal__title { margin: 0; font-size: 1.1rem; font-weight: 700; color: #111827; }
+        .ae-modal__close {
+            background: none; border: none; cursor: pointer; color: #9ca3af;
+            font-size: 1.05rem; width: 2rem; height: 2rem; border-radius: 0.5rem;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            transition: background 0.15s, color 0.15s;
+        }
+        .ae-modal__close:hover { background: #f3f4f6; color: #374151; }
+
+        .ae-modal__body { padding: 1.2rem 1.35rem 1.4rem; overflow-y: auto; }
+        .ae-modal__badges { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .ae-badge {
+            display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px;
+            font-size: 0.75rem; font-weight: 700; background: #ede9fe; color: #6d28d9;
+        }
+        .ae-badge--muted { background: #f3f4f6; color: #4b5563; }
+
+        .ae-dl { margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+        .ae-dl__row { display: flex; gap: 0.75rem; }
+        .ae-dl__row dt { flex-shrink: 0; width: 5rem; color: #6b7280; font-size: 0.85rem; }
+        .ae-dl__row dd { margin: 0; color: #111827; font-size: 0.9rem; word-break: break-word; }
+        .ae-dl__row dd a { color: #2563eb; }
+
+        .ae-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        .ae-tag {
+            display: inline-block; padding: 0.1rem 0.55rem; border-radius: 0.4rem;
+            background: #f3f4f6; color: #4b5563; font-size: 0.78rem;
+        }
+
+        .ae-modal__desc { margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+        .ae-modal__desc h3 { margin: 0 0 0.5rem; font-size: 0.9rem; font-weight: 700; color: #374151; }
+        .ae-modal__desc p { margin: 0; color: #4b5563; font-size: 0.88rem; line-height: 1.6; }
+        .ae-modal__error { color: #dc2626; margin: 0; }
+
+        /* Dark mode */
+        [data-theme="dark"] .ae-modal__card { background: #212121; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+        [data-theme="dark"] .ae-modal__head { border-bottom-color: #2A2A2A; }
+        [data-theme="dark"] .ae-modal__title { color: #F5F5F5; }
+        [data-theme="dark"] .ae-modal__close { color: #888888; }
+        [data-theme="dark"] .ae-modal__close:hover { background: #303030; color: #F5F5F5; }
+        [data-theme="dark"] .ae-badge { background: rgba(124, 58, 237, 0.22); color: #c4b5fd; }
+        [data-theme="dark"] .ae-badge--muted { background: rgba(255, 255, 255, 0.08); color: #D4D4D4; }
+        [data-theme="dark"] .ae-dl__row dt { color: #888888; }
+        [data-theme="dark"] .ae-dl__row dd { color: #F5F5F5; }
+        [data-theme="dark"] .ae-tag { background: rgba(255, 255, 255, 0.08); color: #D4D4D4; }
+        [data-theme="dark"] .ae-modal__desc { border-top-color: #2A2A2A; }
+        [data-theme="dark"] .ae-modal__desc h3 { color: #D4D4D4; }
+        [data-theme="dark"] .ae-modal__desc p { color: #b3b3b3; }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .ae-modal__card { background: #212121; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+            :root:not([data-theme="light"]) .ae-modal__head { border-bottom-color: #2A2A2A; }
+            :root:not([data-theme="light"]) .ae-modal__title { color: #F5F5F5; }
+            :root:not([data-theme="light"]) .ae-modal__close { color: #888888; }
+            :root:not([data-theme="light"]) .ae-modal__close:hover { background: #303030; color: #F5F5F5; }
+            :root:not([data-theme="light"]) .ae-badge { background: rgba(124, 58, 237, 0.22); color: #c4b5fd; }
+            :root:not([data-theme="light"]) .ae-badge--muted { background: rgba(255, 255, 255, 0.08); color: #D4D4D4; }
+            :root:not([data-theme="light"]) .ae-dl__row dt { color: #888888; }
+            :root:not([data-theme="light"]) .ae-dl__row dd { color: #F5F5F5; }
+            :root:not([data-theme="light"]) .ae-tag { background: rgba(255, 255, 255, 0.08); color: #D4D4D4; }
+            :root:not([data-theme="light"]) .ae-modal__desc { border-top-color: #2A2A2A; }
+            :root:not([data-theme="light"]) .ae-modal__desc h3 { color: #D4D4D4; }
+            :root:not([data-theme="light"]) .ae-modal__desc p { color: #b3b3b3; }
+        }
+    </style>
+</head>
+<body class="admin-page admin-shell admin-events-page">
+    <header>
+        <nav>
+            <a href="admin-overview.html" class="logo">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
+            <ul class="nav-links">
+                <li><a href="admin-overview.html">系統總覽</a></li>
+                <li><a href="admin-users.html">帳號管理</a></li>
+                <li><a href="admin-clubs.html">社團管理</a></li>
+                <li><a href="admin-events.html" class="active">活動查詢</a></li>
+                <li><a href="admin-reports.html">報告管理</a></li>
+                <li><a href="admin-announcements.html">系統公告</a></li>
+                <li><a href="admin-transfers.html">帳戶轉讓</a></li>
+                <li><a href="messages.html">私訊</a></li>
+            </ul>
+            <div class="nav-right">
+                <button id="logout-btn" class="btn btn-secondary btn-sm" onclick="handleLogout()">登出</button>
+                <span id="user-dropdown" style="display: none;"></span>
+            </div>
+        </nav>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <div class="event-list-page">
+        <div class="container event-list-container">
+
+            <!-- 篩選卡 -->
+            <div class="event-filter-card filter-card">
+                <div class="filter-card__body">
+
+                    <!-- 關鍵字搜尋列 -->
+                    <div class="event-filter-topbar">
+                        <div class="filter-field event-filter-keyword">
+                            <input type="text" id="filter-search" placeholder="輸入活動名稱、社團或地點…">
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm" id="search-btn">查詢</button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="clear-btn">清除</button>
+                    </div>
+
+                    <!-- 快速範圍選取 -->
+                    <div class="ae-quickrow">
+                        <div class="ae-presets" role="group" aria-label="快速範圍">
+                            <button type="button" data-range="today">今天</button>
+                            <button type="button" data-range="tomorrow">明天</button>
+                            <button type="button" data-range="this_week">本週</button>
+                            <button type="button" data-range="next_week">下週</button>
+                            <button type="button" data-range="this_month">本月</button>
+                        </div>
+                        <div class="ae-weekstrip" id="ae-weekstrip" hidden>
+                            <span class="ae-weekstrip__label" id="ae-weekstrip-label">下週指定日</span>
+                            <button type="button" data-weekday="1">一</button>
+                            <button type="button" data-weekday="2">二</button>
+                            <button type="button" data-weekday="3">三</button>
+                            <button type="button" data-weekday="4">四</button>
+                            <button type="button" data-weekday="5">五</button>
+                            <button type="button" data-weekday="6">六</button>
+                            <button type="button" data-weekday="7">日</button>
+                        </div>
+                    </div>
+
+                    <!-- 條件 -->
+                    <div class="event-filter-grid event-filter-grid--advanced">
+                        <div class="filter-field">
+                            <label for="filter-category">社團類別</label>
+                            <select id="filter-category">
+                                <option value="">全部類別</option>
+                            </select>
+                        </div>
+                        <div class="filter-field">
+                            <label for="filter-status">活動狀態</label>
+                            <select id="filter-status">
+                                <option value="any">全部</option>
+                                <option value="published" selected>已發布</option>
+                                <option value="ongoing">進行中</option>
+                                <option value="completed">已結束</option>
+                                <option value="cancelled">已取消</option>
+                                <option value="draft">草稿</option>
+                            </select>
+                        </div>
+                        <div class="filter-field">
+                            <label for="filter-date-from">活動日期（起）</label>
+                            <input type="date" id="filter-date-from">
+                        </div>
+                        <div class="filter-field">
+                            <label for="filter-date-to">活動日期（迄）</label>
+                            <input type="date" id="filter-date-to">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 結果區 -->
+            <section class="portal-section portal-section--dynamic">
+                <div class="portal-section-head">
+                    <h2 class="portal-section-title">活動列表</h2>
+                    <div style="font-size:0.78rem;color:var(--text-muted);display:flex;gap:0.75rem;align-items:center;">
+                        <span id="result-count">請設定條件後查詢</span>
+                        <span id="results-page-info"></span>
+                    </div>
+                </div>
+
+                <div id="events-container" class="feed-stream-list">
+                    <div class="event-state">
+                        <p class="event-state__desc">設定條件後按「查詢」，或點上方快速選取。</p>
+                    </div>
+                </div>
+
+                <div class="feed-footer">
+                    <div id="pagination-container"></div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- 活動唯讀詳情 Modal -->
+    <div id="event-modal" hidden>
+        <div class="ae-modal__overlay" data-close></div>
+        <div class="ae-modal__card" role="dialog" aria-modal="true" aria-labelledby="ae-modal-title">
+            <div class="ae-modal__head">
+                <h2 class="ae-modal__title" id="ae-modal-title">活動詳情</h2>
+                <button type="button" class="ae-modal__close" data-close aria-label="關閉">✕</button>
+            </div>
+            <div class="ae-modal__body" id="event-modal-body"></div>
+        </div>
+    </div>
+
+    <script src="../js/main.js?v=20260603"></script>
+    <script src="../js/admin-events.js?v=20260603"></script>
+    <footer>
+        <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
+    </footer>
+</body>
+</html>

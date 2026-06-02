@@ -444,6 +444,7 @@ class EventAPI {
             $status = $_GET['status'] ?? '';
             $search = $_GET['search'] ?? '';
             $filter = strtolower($_GET['filter'] ?? 'open');
+            $category_id = isset($_GET['category_id']) && $_GET['category_id'] !== '' ? (int)$_GET['category_id'] : null;
             $event_start_from = $_GET['event_start_from'] ?? ($_GET['date_from'] ?? null);
             $event_end_to     = $_GET['event_end_to'] ?? null;
             $deadline_to      = $_GET['deadline_to'] ?? ($_GET['date_to'] ?? null);
@@ -460,7 +461,11 @@ class EventAPI {
             $selectColumns = 'events.*';
             
             // Default public listing: show both published and ongoing events
-            if ($status === '' || $status === 'published') {
+            if ($status === 'any' && Auth::isAdmin()) {
+                // 管理員查詢工具：不限活動狀態
+                $conditions = [];
+                $params = [];
+            } elseif ($status === '' || $status === 'published') {
                 $conditions = ['(events.event_status = "published" OR events.event_status = "ongoing")'];
                 $params = [];
             } else {
@@ -481,6 +486,11 @@ class EventAPI {
             if ($club_keyword) {
                 $conditions[] = 'EXISTS (SELECT 1 FROM clubs c WHERE c.club_id = events.club_id AND c.club_name LIKE ?)';
                 $params[] = "%$club_keyword%";
+            }
+
+            if ($category_id !== null) {
+                $conditions[] = 'events.club_id IN (SELECT c.club_id FROM clubs c WHERE c.category_id = ?)';
+                $params[] = $category_id;
             }
 
             if ($event_start_from) {
@@ -614,7 +624,11 @@ class EventAPI {
                     return $rightScore <=> $leftScore;
                 });
             } else {
-                $sql = "SELECT $selectColumns FROM events WHERE $where ORDER BY " . implode(', ', $orderParts) . " LIMIT ? OFFSET ?";
+                $sql = "SELECT events.*, c.club_name, cc.category_name
+                        FROM events
+                        LEFT JOIN clubs c ON c.club_id = events.club_id
+                        LEFT JOIN club_categories cc ON cc.category_id = c.category_id
+                        WHERE $where ORDER BY " . implode(', ', $orderParts) . " LIMIT ? OFFSET ?";
                 $stmt = Database::getInstance()->prepare($sql);
                 if ($stmt === false) {
                     throw new Exception('查詢準備失敗: ' . Database::getInstance()->error . ' | SQL=' . $sql);
@@ -639,12 +653,6 @@ class EventAPI {
                 $stmt->close();
 
                 foreach ($events as &$event) {
-                    $club = Database::getInstance()->fetchOne(
-                        'SELECT club_name FROM clubs WHERE club_id = ?',
-                        [$event['club_id']]
-                    );
-                    $event['club_name'] = $club['club_name'] ?? '';
-
                     $tags = Database::getInstance()->fetchAll(
                         'SELECT t.* FROM club_tags t
                          JOIN event_tag_relations etr ON t.tag_id = etr.tag_id
@@ -1029,7 +1037,12 @@ class EventAPI {
         if (!Auth::isLoggedIn()) {
             Helper::error('請先登入', 401);
         }
-        
+
+        // 平台管理員為唯讀檢視，不得報名活動
+        if (Auth::isAdmin()) {
+            Helper::error('平台管理員無法報名活動', 403);
+        }
+
         try {
             $event = Database::getInstance()->fetchOne(
                 'SELECT * FROM events WHERE event_id = ?',

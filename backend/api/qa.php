@@ -173,20 +173,24 @@ class QandAAPI {
      */
     public static function getQuestions() {
         try {
-            $club_id = $_GET['club_id'] ?? null;
-            $tag_id = $_GET['tag_id'] ?? null;
-            $search = $_GET['search'] ?? '';
-            $status = $_GET['status'] ?? null;
-            $page = (int)($_GET['page'] ?? 1);
-            $per_page = ITEMS_PER_PAGE;
-            $offset = ($page - 1) * $per_page;
-            
+            $club_id    = $_GET['club_id'] ?? null;
+            $category_id = isset($_GET['category_id']) && $_GET['category_id'] !== '' ? (int)$_GET['category_id'] : null;
+            $tag_id     = $_GET['tag_id'] ?? null;
+            $search     = $_GET['search'] ?? '';
+            $status     = $_GET['status'] ?? null;
+            $page       = (int)($_GET['page'] ?? 1);
+            $per_page   = ITEMS_PER_PAGE;
+            $offset     = ($page - 1) * $per_page;
+
             $conditions = [];
             $params = [];
-            
+
             if ($club_id) {
                 $conditions[] = 'qa.club_id = ?';
                 $params[] = $club_id;
+            } elseif ($category_id) {
+                $conditions[] = 'qa.club_id IN (SELECT club_id FROM clubs WHERE category_id = ?)';
+                $params[] = $category_id;
             }
 
             if ($tag_id) {
