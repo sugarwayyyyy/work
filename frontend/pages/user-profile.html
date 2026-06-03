@@ -287,6 +287,25 @@
                                     <button type="submit" class="btn btn-primary">更新資料</button>
                                 </form>
 
+                                <!-- 變更密碼 -->
+                                <form id="change-password-form" class="profile-form" style="margin-top:1.5rem; padding-top:1.25rem; border-top:1px solid var(--border);">
+                                    <p style="font-weight:600; margin-bottom:0.75rem; font-size:0.95rem; color:var(--text-strong);">變更密碼</p>
+                                    <div class="form-group">
+                                        <label for="current-password">目前密碼</label>
+                                        <input type="password" id="current-password" name="old_password" autocomplete="current-password" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="new-password">新密碼</label>
+                                        <input type="password" id="new-password" name="new_password" autocomplete="new-password" minlength="6" required>
+                                        <small>密碼至少需要 6 個字元。</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="confirm-password">確認新密碼</label>
+                                        <input type="password" id="confirm-password" name="confirm_password" autocomplete="new-password" minlength="6" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">變更密碼</button>
+                                </form>
+
                                 <!-- Google 帳號綁定 -->
                                 <div id="google-bind-section" style="margin-top:1.5rem; padding-top:1.25rem; border-top:1px solid var(--border);">
                                     <p style="font-weight:600; margin-bottom:0.5rem; font-size:0.95rem; color:var(--text-strong);">Google 帳號綁定</p>
@@ -340,8 +359,8 @@
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>
 
-    <script src="../js/main.js?v=20260603"></script>
-    <script src="../js/user-profile.js?v=20260528"></script>
+    <script src="../js/main.js?v=20260603c"></script>
+    <script src="../js/user-profile.js?v=20260603"></script>
 </body>
 
 </html>

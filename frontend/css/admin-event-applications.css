@@ -1,0 +1,79 @@
+/* 活動申請審核頁：沿用 admin-reports.css 的 .report-card / .cases-filter-bar，
+   此處補上場地申請特有的狀態色、附件與審核操作區 */
+
+.report-status-badge--needs_supplement { background: #dbeafe; color: #1e40af; }
+.report-status-badge--rejected         { background: #fee2e2; color: #991b1b; }
+.report-status-badge--approved         { background: #d1fae5; color: #065f46; }
+
+/* 附件清單 */
+.vapp-files {
+    margin: 4px 0 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--color-border-light, #f1f5f9);
+}
+.vapp-files-label {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 6px;
+}
+.vapp-file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0 8px 6px 0;
+    padding: 5px 11px;
+    border: 1px solid var(--color-border-default, #e5e7eb);
+    border-radius: 7px;
+    font-size: 0.82rem;
+    color: var(--color-primary-600, #2563eb);
+    text-decoration: none;
+    background: var(--color-bg-subtle, #f9fafb);
+    max-width: 100%;
+}
+.vapp-file-link:hover { background: #eff6ff; border-color: #bfdbfe; }
+.vapp-file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+
+/* 審核操作區 */
+.vapp-review {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border-light, #f1f5f9);
+}
+.vapp-review-textarea {
+    width: 100%;
+    min-height: 70px;
+    padding: 9px 11px;
+    border: 1px solid var(--color-border-default, #d1d5db);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    resize: vertical;
+    box-sizing: border-box;
+    font-family: inherit;
+    color: var(--color-text, #374151);
+    background: var(--color-bg-default, #f9fafb);
+}
+.vapp-review-textarea:focus { outline: none; border-color: var(--color-primary-400, #60a5fa); }
+.vapp-review-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+.vapp-btn-approve { background: #16a34a; color: #fff; border: 1px solid #16a34a; }
+.vapp-btn-approve:hover { background: #15803d; }
+.vapp-btn-supplement { background: #f59e0b; color: #fff; border: 1px solid #f59e0b; }
+.vapp-btn-supplement:hover { background: #d97706; }
+.vapp-btn-reject { background: #ef4444; color: #fff; border: 1px solid #ef4444; }
+.vapp-btn-reject:hover { background: #dc2626; }
+
+.vapp-reviewed-note {
+    font-size: 0.82rem;
+    color: var(--color-text-muted, #6b7280);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border-light, #f1f5f9);
+}
+.vapp-reviewed-note strong { color: var(--color-text, #374151); }

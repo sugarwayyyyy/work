@@ -156,12 +156,14 @@ async function loadOverview() {
         anim('ov-d-a-pinned',   announcements.pinned);
         anim('ov-d-a-expiring', announcements.expiring_soon);
         anim('ov-d-p-reports',  pending.reports);
+        anim('ov-d-p-venue',    pending.venue_applications);
         anim('ov-d-p-transfers', pending.transfers);
         anim('ov-d-p-reviews',  pending.reviews);
 
         // Alert bar chips
         const chipData = [
             { id: 'ov-chip-reports',   val: pending.reports,          label: '待審檢舉',    base: 'chip-red' },
+            { id: 'ov-chip-venue',     val: pending.venue_applications, label: '待審場地',  base: 'chip-amber' },
             { id: 'ov-chip-transfers', val: pending.transfers,        label: '待審轉讓',    base: 'chip-amber' },
             { id: 'ov-chip-reviews',   val: pending.reviews,          label: '待審評價',    base: 'chip-amber' },
             { id: 'ov-chip-qa',        val: pending.unanswered_qa,    label: '未回答 Q&A', base: 'chip-amber' },
@@ -175,7 +177,7 @@ async function loadOverview() {
             el.className = 'ov-chip ' + (n > 0 ? base : 'chip-zero');
         });
 
-        const totalPending = ['reports', 'transfers', 'reviews', 'unanswered_qa']
+        const totalPending = ['reports', 'venue_applications', 'transfers', 'reviews', 'unanswered_qa']
             .reduce((s, k) => s + Number(pending[k] ?? 0), 0);
         const alertBar  = document.getElementById('ov-alert-bar');
         const alertLabel = document.getElementById('ov-alert-label');
@@ -246,6 +248,7 @@ async function renderDrawerChart(drawer) {
         const p = d.pending || {};
         drawer.innerHTML = svgHBars([
             { label: '待審檢舉', value: p.reports },
+            { label: '待審場地', value: p.venue_applications },
             { label: '待審轉讓', value: p.transfers },
             { label: '待審評價', value: p.reviews },
         ]);

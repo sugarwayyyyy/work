@@ -57,7 +57,19 @@ class ClubAdminAPI {
                 SELECT COUNT(*)
                 FROM event_registrations er
                 WHERE er.event_id = e.event_id AND er.status = "approved"
-             ) AS registered_count
+             ) AS registered_count,
+             (
+                SELECT a.status FROM event_venue_applications a
+                WHERE a.event_id = e.event_id ORDER BY a.application_id DESC LIMIT 1
+             ) AS venue_status,
+             (
+                SELECT a.review_comment FROM event_venue_applications a
+                WHERE a.event_id = e.event_id ORDER BY a.application_id DESC LIMIT 1
+             ) AS venue_comment,
+             (
+                SELECT a.application_id FROM event_venue_applications a
+                WHERE a.event_id = e.event_id ORDER BY a.application_id DESC LIMIT 1
+             ) AS venue_application_id
              FROM events e
              WHERE (
                 e.club_id = ?
@@ -778,6 +790,40 @@ class ClubAdminAPI {
         Helper::success('取得我的轉讓申請成功', ['requests' => $rows]);
     }
 
+    /**
+     * 解析活動所屬社團（供通知導向時自動切換社團使用）
+     * GET /api/club-admin.php?action=event_club&id=<event_id>
+     */
+    public static function getEventClub($event_id) {
+        self::requireClubAdmin();
+
+        $event = Database::getInstance()->fetchOne(
+            'SELECT e.event_id, e.club_id, c.club_name
+             FROM events e JOIN clubs c ON c.club_id = e.club_id
+             WHERE e.event_id = ?',
+            [(int)$event_id]
+        );
+        if (!$event) {
+            Helper::error('活動不存在', 404);
+        }
+
+        // 驗證目前使用者為該社團現任幹部（平台管理員不受限）
+        if (!Auth::isAdmin()) {
+            $isOfficer = Database::getInstance()->fetchOne(
+                'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
+                [$event['club_id'], Auth::getCurrentUserId()]
+            );
+            if (!$isOfficer) {
+                Helper::error('您無權限檢視此活動', 403);
+            }
+        }
+
+        Helper::success('取得活動社團成功', [
+            'club_id' => (int)$event['club_id'],
+            'club_name' => $event['club_name'],
+        ]);
+    }
+
 }
 
 $method = Helper::getRequestMethod();
@@ -799,6 +845,8 @@ if ($method === 'GET') {
         ClubAdminAPI::getJoinApplications($club_id);
     } elseif ($action === 'pending_app_count') {
         ClubAdminAPI::getPendingAppCount();
+    } elseif ($action === 'event_club' && $club_id) {
+        ClubAdminAPI::getEventClub($club_id);
     }
 }
 

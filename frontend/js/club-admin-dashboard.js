@@ -1125,6 +1125,45 @@
             _eventsListCache = response.data.events || [];
             _eventsCurrentPage = 1;
             renderFilteredEvents();
+            maybeHighlightEventFromUrl();
+        }
+
+        let _highlightConsumed = false;
+        let _highlightSwitchTried = false;
+        async function maybeHighlightEventFromUrl() {
+            if (_highlightConsumed) return;
+            const id = Number(new URLSearchParams(location.search).get('highlight')) || 0;
+            if (!id) return;
+
+            const inCache = _eventsListCache.some(e => Number(e.event_id) === id);
+            // 若該活動不屬於目前管理的社團，解析其社團並自動切換（僅嘗試一次，避免迴圈）
+            if (!inCache && !_highlightSwitchTried) {
+                _highlightSwitchTried = true;
+                try {
+                    const res = await APIClient.get('club-admin.php?action=event_club&id=' + id);
+                    const cid = Number(res?.data?.club_id) || 0;
+                    if (res?.success && cid && cid !== Number(currentClubId)) {
+                        switchToClub(cid, res.data.club_name || '');
+                        return; // clubadmin:switch → loadClubEvents → 會再次呼叫本函式並完成標示
+                    }
+                } catch (e) { /* 解析失敗則略過自動切換 */ }
+            }
+
+            _highlightConsumed = true;
+            // 若目標活動不在第一頁，切到它所在的分頁
+            const idx = _eventsListCache.findIndex(e => Number(e.event_id) === id);
+            if (idx >= 0) {
+                _eventsCurrentPage = Math.floor(idx / _eventsPerPage) + 1;
+                renderFilteredEvents();
+            }
+            setTimeout(() => {
+                const card = document.querySelector(`.feed-item-card[data-event-id="${id}"]`);
+                if (!card) return;
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.style.outline = '2px solid #2563eb';
+                card.style.outlineOffset = '2px';
+                setTimeout(() => { card.style.outline = ''; }, 3000);
+            }, 200);
         }
 
         function ensureEventsPaginationContainer() {
@@ -1251,8 +1290,11 @@
                     }
                     return safeText;
                 })();
+                const venueBadgeHtml = renderVenueBadge(event.venue_status);
+                const venueNoteHtml = renderVenueNote(event);
                 const article = document.createElement('article');
                 article.className = 'feed-item-card';
+                article.dataset.eventId = event.event_id;
                 article.innerHTML = `
                     <div class="feed-item-head">
                         <div style="min-width:0;flex:1;">
@@ -1261,6 +1303,7 @@
                         </div>
                         <div style="display:flex;gap:0.4rem;flex-wrap:wrap;justify-content:flex-end;align-items:center;flex-shrink:0;">
                             <span class="feed-item-badge feed-item-badge--neutral">${safeStatus}</span>
+                            ${venueBadgeHtml}
                             <button class="btn btn-secondary btn-sm" onclick="editEvent(${event.event_id})">編輯</button>
                             <button class="btn btn-secondary btn-sm" onclick="openParticipantsPanel(${event.event_id})">參與者</button>
                             <button class="btn btn-secondary btn-sm" onclick="exportRegistrations(${event.event_id})">匯出 CSV</button>
@@ -1273,10 +1316,121 @@
                         <span>報名：${Number(event.registered_count || 0)} 人</span>
                         ${coHostNames.length > 0 ? `<span>協辦：${coHostNames.join('、')}</span>` : ''}
                     </p>
+                    ${venueNoteHtml}
                 `;
                 list.appendChild(article);
             });
             renderEventsPagination(totalItems);
+        }
+
+        const VENUE_STATUS_META = {
+            pending:          { label: '場地申請：待審核', color: '#92400e', bg: '#fef3c7' },
+            needs_supplement: { label: '場地申請：需補件', color: '#1e40af', bg: '#dbeafe' },
+            rejected:         { label: '場地申請：已退件', color: '#991b1b', bg: '#fee2e2' },
+            approved:         { label: '場地申請：已通過', color: '#065f46', bg: '#d1fae5' },
+        };
+
+        function renderVenueBadge(status) {
+            const meta = VENUE_STATUS_META[status];
+            if (!meta) return '';
+            return `<span class="feed-item-badge" style="background:${meta.bg};color:${meta.color};">${meta.label}</span>`;
+        }
+
+        function renderVenueNote(event) {
+            const status = event.venue_status;
+            if (!status || status === 'approved') return '';
+            const comment = (event.venue_comment || '').trim();
+            let html = '';
+            if (comment) {
+                html += `<p class="feed-item-meta" style="color:var(--text-muted,#6b7280);"><span>行政意見：${PageUtils.escapeHtml(comment)}</span></p>`;
+            }
+            if (status === 'needs_supplement') {
+                html += `<p class="feed-item-meta" style="color:#1e40af;"><span>需補件：請點「編輯」上傳補件文件後重新提交。</span></p>`;
+            }
+            return html;
+        }
+
+        /* ── 場地申請補件（編輯視窗，先暫存再一次提交）── */
+        let _pendingSupplementDocs = [];
+
+        function renderSupplementDocsList() {
+            const list = document.getElementById('event-supplement-docs-list');
+            if (!list) return;
+            list.innerHTML = '';
+            _pendingSupplementDocs.forEach((file, idx) => {
+                const li = document.createElement('li');
+                li.className = 'cad-venue-doc-item';
+                const name = document.createElement('span');
+                name.className = 'cad-venue-doc-name';
+                name.textContent = file.name;
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'cad-venue-doc-remove';
+                removeBtn.setAttribute('aria-label', '移除');
+                removeBtn.textContent = '×';
+                removeBtn.addEventListener('click', () => {
+                    _pendingSupplementDocs.splice(idx, 1);
+                    renderSupplementDocsList();
+                });
+                li.appendChild(name);
+                li.appendChild(removeBtn);
+                list.appendChild(li);
+            });
+        }
+
+        function handleSupplementDocsSelected(event) {
+            const files = Array.from(event.target.files || []);
+            for (const f of files) {
+                const ext = (f.name.split('.').pop() || '').toLowerCase();
+                if (!VENUE_DOC_EXT.includes(ext)) {
+                    PageUtils.showAlert(`「${f.name}」不是支援的格式，僅接受 PDF／Word`, 'error');
+                    continue;
+                }
+                if (f.size > 10 * 1024 * 1024) {
+                    PageUtils.showAlert(`「${f.name}」超過 10MB 上限`, 'error');
+                    continue;
+                }
+                if (_pendingSupplementDocs.length >= VENUE_DOC_MAX) {
+                    PageUtils.showAlert(`最多只能上傳 ${VENUE_DOC_MAX} 份文件`, 'warning');
+                    break;
+                }
+                _pendingSupplementDocs.push(f);
+            }
+            event.target.value = '';
+            renderSupplementDocsList();
+        }
+
+        async function submitSupplementDocs(applicationId) {
+            if (_pendingSupplementDocs.length < 1) {
+                PageUtils.showAlert('請至少選擇一份補件文件', 'error');
+                return;
+            }
+            if (_pendingSupplementDocs.length > VENUE_DOC_MAX) {
+                PageUtils.showAlert(`最多只能上傳 ${VENUE_DOC_MAX} 份文件`, 'error');
+                return;
+            }
+            const btn = document.getElementById('event-edit-supplement-btn');
+            if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
+            try {
+                const uploaded = [];
+                for (const f of _pendingSupplementDocs) uploaded.push(await uploadVenueDocument(currentClubId, f));
+                const res = await APIClient.post('events.php?action=resubmit_venue_application', {
+                    application_id: applicationId,
+                    venue_files: uploaded
+                });
+                if (res.success) {
+                    PageUtils.showAlert('補件已提交，待行政重新審核', 'success');
+                    _pendingSupplementDocs = [];
+                    if (typeof closeEventModal === 'function') closeEventModal();
+                    loadClubEvents(currentClubId);
+                } else {
+                    PageUtils.showAlert('補件提交失敗：' + res.message, 'error');
+                }
+            } catch (e) {
+                PageUtils.showAlert('補件文件上傳失敗：' + (e.message || '未知錯誤'), 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '提交補件'; }
+            }
         }
 
         async function archiveEvent(eventId) {
@@ -1356,11 +1510,24 @@
             const submitBtn = document.getElementById('event-modal-submit');
             const title = document.getElementById('event-modal-title');
 
+            const venueSection = document.getElementById('event-venue-section');
+            const venueCheckbox = document.getElementById('event-request-venue');
+            const venueDocsWrap = document.getElementById('event-venue-docs-wrap');
+            const supplementSection = document.getElementById('event-edit-supplement-section');
+            if (supplementSection) supplementSection.style.display = 'none'; // 由 editEvent 視情況開啟
+            _pendingSupplementDocs = [];
+            renderSupplementDocsList();
             if (mode === 'create') {
                 if (title) title.textContent = '建立活動';
                 if (submitBtn) submitBtn.textContent = '建立活動';
                 const form = document.getElementById('update-event-form');
                 if (form) form.reset();
+                // 重置場地申請狀態
+                _pendingVenueDocs = [];
+                if (venueCheckbox) venueCheckbox.checked = false;
+                if (venueDocsWrap) venueDocsWrap.style.display = 'none';
+                if (venueSection) venueSection.style.display = '';
+                renderVenueDocsList();
                 ['update-event-date', 'update-event-end', 'update-event-reg-start', 'update-event-deadline'].forEach(id => {
                     setDateTimeParts(id, '');
                     syncDateTimeFromParts(id, false);
@@ -1383,6 +1550,10 @@
             } else {
                 if (title) title.textContent = '編輯活動';
                 if (submitBtn) submitBtn.textContent = '更新活動';
+                // 編輯模式不顯示申請場地
+                if (venueSection) venueSection.style.display = 'none';
+                if (venueCheckbox) venueCheckbox.checked = false;
+                _pendingVenueDocs = [];
             }
 
             modal.style.display = 'block';
@@ -1410,6 +1581,89 @@
 
         let _pendingPosterFiles = [];
         let _currentEventPosters = [];
+
+        /* ── 場地申請文件 ── */
+        const VENUE_DOC_MAX = 5;
+        const VENUE_DOC_EXT = ['pdf', 'doc', 'docx'];
+        let _pendingVenueDocs = [];
+
+        function renderVenueDocsList() {
+            const list = document.getElementById('event-venue-docs-list');
+            if (!list) return;
+            list.innerHTML = '';
+            _pendingVenueDocs.forEach((file, idx) => {
+                const li = document.createElement('li');
+                li.className = 'cad-venue-doc-item';
+                const name = document.createElement('span');
+                name.className = 'cad-venue-doc-name';
+                name.textContent = file.name;
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'cad-venue-doc-remove';
+                removeBtn.setAttribute('aria-label', '移除');
+                removeBtn.textContent = '×';
+                removeBtn.addEventListener('click', () => {
+                    _pendingVenueDocs.splice(idx, 1);
+                    renderVenueDocsList();
+                });
+                li.appendChild(name);
+                li.appendChild(removeBtn);
+                list.appendChild(li);
+            });
+        }
+
+        function handleVenueToggle() {
+            const checkbox = document.getElementById('event-request-venue');
+            const docsWrap = document.getElementById('event-venue-docs-wrap');
+            const submitBtn = document.getElementById('event-modal-submit');
+            if (!checkbox) return;
+            const on = checkbox.checked;
+            if (docsWrap) docsWrap.style.display = on ? '' : 'none';
+            if (submitBtn && _eventModalMode === 'create') {
+                submitBtn.textContent = on ? '提交申請' : '建立活動';
+            }
+        }
+
+        function handleVenueDocsSelected(event) {
+            const files = Array.from(event.target.files || []);
+            for (const f of files) {
+                const ext = (f.name.split('.').pop() || '').toLowerCase();
+                if (!VENUE_DOC_EXT.includes(ext)) {
+                    PageUtils.showAlert(`「${f.name}」不是支援的格式，僅接受 PDF／Word`, 'error');
+                    continue;
+                }
+                if (f.size > 10 * 1024 * 1024) {
+                    PageUtils.showAlert(`「${f.name}」超過 10MB 上限`, 'error');
+                    continue;
+                }
+                if (_pendingVenueDocs.length >= VENUE_DOC_MAX) {
+                    PageUtils.showAlert(`最多只能上傳 ${VENUE_DOC_MAX} 份文件`, 'warning');
+                    break;
+                }
+                _pendingVenueDocs.push(f);
+            }
+            event.target.value = '';
+            renderVenueDocsList();
+        }
+
+        async function uploadVenueDocument(clubId, file) {
+            const fd = new FormData();
+            fd.append('document', file);
+            fd.append('club_id', String(clubId));
+            const csrfHeaders = await APIClient.getCSRFHeaders();
+            const resp = await fetch(getUploadApiUrl('upload_venue_document'), {
+                method: 'POST',
+                body: fd,
+                credentials: 'include',
+                headers: { ...APIClient.getAuthHeaders(), ...csrfHeaders }
+            });
+            const rawText = await resp.text();
+            let result = null;
+            try { result = JSON.parse(rawText); }
+            catch (e) { throw new Error(`文件上傳回應格式錯誤（HTTP ${resp.status}）`); }
+            if (!resp.ok || !result.success) throw new Error(result.message || '文件上傳失敗');
+            return { path: result.path, original_name: result.original_name };
+        }
 
         async function uploadEventPosterFile(eventId, file) {
             if (!file || !eventId) return null;
@@ -1561,6 +1815,26 @@
 
             _currentEventPosters = event.posters || [];
             renderPosterGallery('edit');
+
+            // 場地申請補件：僅當此活動有「需補件」的場地申請時，於編輯視窗提供補件上傳
+            const cached = (_eventsListCache || []).find(e => Number(e.event_id) === Number(eventId));
+            const supplementSection = document.getElementById('event-edit-supplement-section');
+            if (supplementSection) {
+                if (cached && cached.venue_status === 'needs_supplement' && cached.venue_application_id) {
+                    const reasonEl = document.getElementById('event-edit-supplement-reason');
+                    if (reasonEl) {
+                        const comment = (cached.venue_comment || '').trim();
+                        reasonEl.textContent = comment ? `行政退回原因：${comment}` : '行政要求補件，請補上文件後重新提交。';
+                    }
+                    _pendingSupplementDocs = [];
+                    renderSupplementDocsList();
+                    const btn = document.getElementById('event-edit-supplement-btn');
+                    if (btn) { btn.disabled = false; btn.onclick = () => submitSupplementDocs(Number(cached.venue_application_id)); }
+                    supplementSection.style.display = '';
+                } else {
+                    supplementSection.style.display = 'none';
+                }
+            }
         }
 
         let _existingLogoUrl = null;
@@ -1612,6 +1886,28 @@
 
 
         // ── Club switch popup ────────────────────────────────────────────────
+        function switchToClub(clubId, clubName) {
+            clubId = Number(clubId);
+            sessionStorage.setItem('clubAdmin_clubId', clubId);
+            sessionStorage.setItem('clubAdmin_clubName', clubName);
+            currentClubId = clubId;
+            currentClubName = clubName;
+
+            const banner = document.getElementById('selected-club-banner');
+            if (banner) banner.style.display = '';
+            const bannerName = document.getElementById('selected-club-name');
+            if (bannerName) bannerName.textContent = clubName;
+            const statName = document.getElementById('stat-current-club');
+            if (statName) statName.textContent = clubName;
+            document.querySelectorAll('.stat-club-only').forEach(el => el.classList.remove('is-loaded'));
+            loadClubAdminStats(clubId);
+            if (!document.getElementById('applications-section')) {
+                updateNavApplicationsBadge(clubId);
+            }
+
+            document.dispatchEvent(new CustomEvent('clubadmin:switch', { detail: { clubId, clubName } }));
+        }
+
         function closeClubSwitchPopup() {
             const modal = document.getElementById('club-switch-modal');
             if (modal) modal.style.display = 'none';
@@ -1674,26 +1970,8 @@
                     if (!btn) return;
                     const clubId = Number(btn.dataset.clubId);
                     const clubName = btn.dataset.clubName;
-
-                    sessionStorage.setItem('clubAdmin_clubId', clubId);
-                    sessionStorage.setItem('clubAdmin_clubName', clubName);
-                    currentClubId = clubId;
-                    currentClubName = clubName;
-
-                    const banner = document.getElementById('selected-club-banner');
-                    if (banner) banner.style.display = '';
-                    const bannerName = document.getElementById('selected-club-name');
-                    if (bannerName) bannerName.textContent = clubName;
-                    const statName = document.getElementById('stat-current-club');
-                    if (statName) statName.textContent = clubName;
-                    document.querySelectorAll('.stat-club-only').forEach(el => el.classList.remove('is-loaded'));
-                    loadClubAdminStats(clubId);
-                    if (!document.getElementById('applications-section')) {
-                        updateNavApplicationsBadge(clubId);
-                    }
-
                     closeClubSwitchPopup();
-                    document.dispatchEvent(new CustomEvent('clubadmin:switch', { detail: { clubId, clubName } }));
+                    switchToClub(clubId, clubName);
                 }, { once: true });
             } catch (err) {
                 body.innerHTML = `<p class="csm-status csm-status--error">載入失敗：${PageUtils.escapeHtml(err.message)}</p>`;
@@ -1958,6 +2236,13 @@
             const savedForCollab = sessionStorage.getItem('clubAdmin_clubId');
             if (savedForCollab) loadCollaborativeClubOptions(Number(savedForCollab));
 
+            const venueCheckbox = document.getElementById('event-request-venue');
+            if (venueCheckbox) venueCheckbox.addEventListener('change', handleVenueToggle);
+            const venueDocsInput = document.getElementById('event-venue-docs');
+            if (venueDocsInput) venueDocsInput.addEventListener('change', handleVenueDocsSelected);
+            const supplementDocsInput = document.getElementById('event-supplement-docs');
+            if (supplementDocsInput) supplementDocsInput.addEventListener('change', handleSupplementDocsSelected);
+
             form.addEventListener('submit', async event => {
                 event.preventDefault();
                 if (!validateEventForm('update-')) return;
@@ -1974,6 +2259,26 @@
                             PageUtils.showAlert('請先選擇要管理的社團', 'error');
                             return;
                         }
+                        const requestVenue = !!document.getElementById('event-request-venue')?.checked;
+                        let venueFiles = [];
+                        if (requestVenue) {
+                            if (_pendingVenueDocs.length < 1) {
+                                PageUtils.showAlert('申請場地需至少上傳一份文件', 'error');
+                                return;
+                            }
+                            if (_pendingVenueDocs.length > VENUE_DOC_MAX) {
+                                PageUtils.showAlert(`最多只能上傳 ${VENUE_DOC_MAX} 份文件`, 'error');
+                                return;
+                            }
+                            try {
+                                for (const f of _pendingVenueDocs) {
+                                    venueFiles.push(await uploadVenueDocument(currentClubId, f));
+                                }
+                            } catch (e) {
+                                PageUtils.showAlert('場地申請文件上傳失敗：' + (e.message || '未知錯誤'), 'error');
+                                return;
+                            }
+                        }
                         const payload = {
                             club_id: currentClubId,
                             event_name: g('update-event-name').value,
@@ -1989,9 +2294,13 @@
                             is_registration_open: g('update-event-registration-open').checked ? '1' : '0',
                             collaborative_club_ids: collabIds
                         };
+                        if (requestVenue) {
+                            payload.venue_application = '1';
+                            payload.venue_files = venueFiles;
+                        }
                         const response = await APIClient.post('events.php?action=create', payload);
                         if (!response.success) {
-                            PageUtils.showAlert('建立活動失敗：' + response.message, 'error');
+                            PageUtils.showAlert((requestVenue ? '提交場地申請失敗：' : '建立活動失敗：') + response.message, 'error');
                             return;
                         }
                         const createdId = response?.data?.event_id;
@@ -2010,7 +2319,8 @@
                                 });
                             } catch (e) { console.error('保存活動標籤失敗:', e); }
                         }
-                        PageUtils.showAlert('活動建立成功', 'success');
+                        _pendingVenueDocs = [];
+                        PageUtils.showAlert(response?.data?.venue_application ? '場地申請已提交，待行政審核' : '活動建立成功', 'success');
                         closeEventModal();
                         loadClubEvents(currentClubId);
                     } else {

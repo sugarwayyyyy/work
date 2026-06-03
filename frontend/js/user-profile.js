@@ -535,6 +535,54 @@
             }
         }
 
+        /* ── 變更密碼 ── */
+        async function handleChangePassword(e) {
+            e.preventDefault();
+            const oldPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (!oldPassword || !newPassword || !confirmPassword) {
+                PageUtils.showAlert('請填寫所有密碼欄位', 'error');
+                return;
+            }
+            if (newPassword.length < 6) {
+                PageUtils.showAlert('新密碼至少需要 6 個字元', 'error');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                PageUtils.showAlert('兩次輸入的新密碼不一致', 'error');
+                return;
+            }
+            if (newPassword === oldPassword) {
+                PageUtils.showAlert('新密碼不可與目前密碼相同', 'error');
+                return;
+            }
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '處理中…';
+
+            try {
+                const response = await APIClient.post('auth.php?action=change_password', {
+                    old_password: oldPassword,
+                    new_password: newPassword
+                });
+                if (response.success) {
+                    PageUtils.showAlert('密碼變更成功', 'success');
+                    e.target.reset();
+                } else {
+                    PageUtils.showAlert(response.message || '密碼變更失敗', 'error');
+                }
+            } catch (err) {
+                console.error('Change password error:', err);
+                PageUtils.showAlert('密碼變更失敗，請稍後再試', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '變更密碼';
+            }
+        }
+
         /* ── 註銷帳號 ── */
         function openDeactivateModal() {
             document.getElementById('deactivate-password').value = '';
@@ -583,6 +631,7 @@
             initTabs();
             loadUserProfile();
             document.getElementById('edit-profile-form').addEventListener('submit', handleProfileUpdate);
+            document.getElementById('change-password-form').addEventListener('submit', handleChangePassword);
             document.getElementById('deactivate-form').addEventListener('submit', handleDeactivateSubmit);
             // 點擊遮罩關閉 modal
             document.getElementById('deactivate-modal').addEventListener('click', function (e) {

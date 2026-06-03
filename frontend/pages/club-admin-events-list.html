@@ -6,7 +6,7 @@
     <title>活動列表 — 幹部後台</title>
     <link rel="stylesheet" href="../css/styles.css?v=20260530" />
     <link rel="stylesheet" href="../css/admin.css?v=20260502k" />
-    <link rel="stylesheet" href="../css/club-admin-dashboard.css?v=20260502k" />
+    <link rel="stylesheet" href="../css/club-admin-dashboard.css?v=20260603d" />
     <link rel="stylesheet" href="../css/home.css" />
 </head>
 <body class="admin-dashboard-page club-admin-page">
@@ -215,6 +215,32 @@
                             <div id="update-event-tag-results" class="cad-scroll-150"></div>
                         </div>
                     </div>
+                    <div class="form-field admin-span-2" id="event-edit-supplement-section" style="display:none;">
+                        <label>場地申請補件</label>
+                        <div id="event-edit-supplement-reason" class="cad-supplement-reason"></div>
+                        <label class="btn btn-secondary btn-sm poster-add-label" id="supplement-doc-add-label">
+                            ＋ 新增文件
+                            <input type="file" id="event-supplement-docs" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple style="display:none">
+                        </label>
+                        <ul id="event-supplement-docs-list" class="cad-venue-docs-list"></ul>
+                        <button type="button" class="btn btn-primary btn-sm" id="event-edit-supplement-btn">提交補件</button>
+                        <small class="cad-help-text">支援 PDF／Word（.pdf／.doc／.docx），最多 5 份；可先選取多份再一次提交。提交後將取代先前文件並重新進入待審核。</small>
+                    </div>
+                    <div class="form-field admin-span-2" id="event-venue-section">
+                        <label class="cad-venue-toggle">
+                            <input type="checkbox" id="event-request-venue">
+                            申請場地（需經行政管理端審核）
+                        </label>
+                        <small class="cad-help-text">勾選後請上傳場地申請文件；活動會先存為草稿，待行政審核通過才會公開發布。</small>
+                        <div id="event-venue-docs-wrap" style="display:none; margin-top:0.6rem;">
+                            <label class="btn btn-secondary btn-sm poster-add-label" id="venue-doc-add-label">
+                                ＋ 新增文件
+                                <input type="file" id="event-venue-docs" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple style="display:none">
+                            </label>
+                            <small class="cad-help-text">支援 PDF／Word（.pdf／.doc／.docx），最多 5 份，每份上限 10MB。</small>
+                            <ul id="event-venue-docs-list" class="cad-venue-docs-list"></ul>
+                        </div>
+                    </div>
                     <div class="form-actions admin-span-2">
                         <button type="submit" id="event-modal-submit" class="btn btn-primary">更新活動</button>
                         <button type="button" class="btn btn-secondary" onclick="closeEventModal()">取消</button>
@@ -243,14 +269,26 @@
         </div>
     </div>
 
-    <script src="../js/main.js?v=20260530"></script>
-    <script src="../js/club-admin-dashboard.js?v=20260530"></script>
+    <script src="../js/main.js?v=20260603c"></script>
+    <script src="../js/club-admin-dashboard.js?v=20260603f"></script>
     <script>
         (function () {
             const clubId = Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
             const clubName = sessionStorage.getItem('clubAdmin_clubName') || '';
             if (!clubId) {
-                openClubSwitchPopup();
+                // 由通知（含 ?highlight）進來但尚未選社團時，解析該活動所屬社團並自動切換
+                const hid = Number(new URLSearchParams(location.search).get('highlight')) || 0;
+                if (hid) {
+                    APIClient.get('club-admin.php?action=event_club&id=' + hid)
+                        .then(res => {
+                            const cid = Number(res && res.data && res.data.club_id) || 0;
+                            if (res && res.success && cid) switchToClub(cid, (res.data.club_name) || '');
+                            else openClubSwitchPopup();
+                        })
+                        .catch(() => openClubSwitchPopup());
+                } else {
+                    openClubSwitchPopup();
+                }
                 return;
             }
             currentClubId = clubId;

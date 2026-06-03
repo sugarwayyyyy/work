@@ -119,6 +119,9 @@ class UploadAPI {
             case 'upload_user_avatar':
                 $this->uploadUserAvatar();
                 break;
+            case 'upload_venue_document':
+                $this->uploadVenueDocument();
+                break;
             default:
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => '無效的操作']);
@@ -276,6 +279,89 @@ class UploadAPI {
         }
 
         $this->respondJson(200, $result);
+    }
+
+    private function uploadVenueDocument() {
+        $clubId = (int)($_POST['club_id'] ?? 0);
+        if (!$clubId) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '缺少社團ID']);
+            return;
+        }
+
+        if (!$this->canManageClub($clubId)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => '權限不足']);
+            return;
+        }
+
+        $file = $_FILES['document'] ?? null;
+        if (!$file) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '沒有上傳文件']);
+            return;
+        }
+
+        $result = $this->processDocumentUpload($file, 'venue_' . $clubId);
+        $this->respondJson(200, $result);
+    }
+
+    private function processDocumentUpload($file, $prefix) {
+        $uploadError = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($uploadError !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'message' => $this->getUploadErrorMessage($uploadError)];
+        }
+
+        if ($file['size'] > $this->maxFileSize) {
+            return ['success' => false, 'message' => '文件大小超過 10MB 限制'];
+        }
+
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowedExtensions = ['pdf', 'doc', 'docx'];
+        if (!in_array($extension, $allowedExtensions, true)) {
+            return ['success' => false, 'message' => '僅支援 PDF 或 Word（.pdf／.doc／.docx）文件'];
+        }
+
+        // MIME 偵測：Office 文件偵測常不穩定，允許通用型別作為後援
+        $allowedMimes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/octet-stream',
+            'application/zip',
+            'application/x-ole-storage',
+            'application/CDFV2',
+        ];
+        $detectedType = null;
+        if (!empty($file['tmp_name']) && function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo) {
+                $detectedType = finfo_file($finfo, $file['tmp_name']) ?: null;
+                finfo_close($finfo);
+            }
+        }
+        if ($detectedType !== null && !in_array($detectedType, $allowedMimes, true)) {
+            return ['success' => false, 'message' => '文件內容格式不符，請上傳有效的 PDF 或 Word 文件'];
+        }
+
+        $subDir = 'venue-docs/';
+        $targetDir = $this->uploadDir . $subDir;
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        $filename = $prefix . '_' . time() . '_' . uniqid() . '.' . $extension;
+        $filepath = $targetDir . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            return [
+                'success' => true,
+                'message' => '上傳成功',
+                'path' => 'assets/uploads/' . $subDir . $filename,
+                'original_name' => (string)($file['name'] ?? $filename),
+            ];
+        }
+        return ['success' => false, 'message' => '文件保存失敗'];
     }
 
     private function processUpload($file, $prefix) {

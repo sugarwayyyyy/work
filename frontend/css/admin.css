@@ -369,6 +369,21 @@
     vertical-align: middle;
 }
 
+/* Email 為無空白長字串，固定欄寬下需允許換行，避免溢出蓋到社團身分欄 */
+.user-mgmt-table td[data-label="Email"] {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* table-layout: fixed 下指定各欄寬度，給 Email 較合理空間、收窄短內容欄 */
+.user-mgmt-table th:nth-child(1), .user-mgmt-table td:nth-child(1) { width: 12%; } /* 姓名 */
+.user-mgmt-table th:nth-child(2), .user-mgmt-table td:nth-child(2) { width: 22%; } /* Email */
+.user-mgmt-table th:nth-child(3), .user-mgmt-table td:nth-child(3) { width: 12%; } /* 社團身分 */
+.user-mgmt-table th:nth-child(4), .user-mgmt-table td:nth-child(4) { width: 9%;  } /* 帳號狀態 */
+.user-mgmt-table th:nth-child(5), .user-mgmt-table td:nth-child(5) { width: 11%; } /* 平台權限 */
+.user-mgmt-table th:nth-child(6), .user-mgmt-table td:nth-child(6) { width: 14%; } /* 加入日期 */
+.user-mgmt-table th:nth-child(7), .user-mgmt-table td:nth-child(7) { width: 20%; } /* 操作 */
+
 .user-mgmt-club-id {
     font-size: 0.78rem;
     color: #6b7280;
@@ -377,6 +392,14 @@
 
 .user-mgmt-actions .btn {
     border-radius: 999px;
+}
+
+/* 統一審核類頁面的篩選/分頁列位置：標題在上，篩選列置於標題下方靠左
+   （與「活動申請審核」頁一致，避免報告管理/帳戶轉讓的分頁靠右而顯得凌亂） */
+.admin-reports-page .portal-section-head,
+.admin-transfers-page .portal-section-head {
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .user-edit-modal-content {

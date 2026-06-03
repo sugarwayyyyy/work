@@ -1057,6 +1057,194 @@ class AdminAPI {
         Helper::success('取得轉讓歷史成功', ['transfers' => $transfers]);
     }
 
+    /**
+     * 取得活動場地申請列表（可依狀態篩選）+ 各狀態計數
+     * GET /api/admin.php?action=venue_applications&status=pending
+     */
+    public static function getVenueApplications() {
+        self::requireAdmin();
+
+        $status = trim((string)($_GET['status'] ?? ''));
+        $where = '';
+        $params = [];
+        if ($status !== '' && in_array($status, ['pending', 'approved', 'needs_supplement', 'rejected'], true)) {
+            $where = 'WHERE a.status = ?';
+            $params[] = $status;
+        }
+
+        $db = Database::getInstance();
+        $applications = $db->fetchAll(
+            'SELECT a.*,
+                e.event_name, e.event_date, e.event_end_date, e.location,
+                e.capacity, e.fee, e.description, e.event_status,
+                c.club_name,
+                u.name AS applicant_name, u.email AS applicant_email,
+                ru.name AS reviewer_name
+             FROM event_venue_applications a
+             JOIN events e ON a.event_id = e.event_id
+             JOIN clubs c ON a.club_id = c.club_id
+             JOIN users u ON a.applicant_id = u.user_id
+             LEFT JOIN users ru ON a.reviewer_id = ru.user_id
+             ' . $where . '
+             ORDER BY (a.status = "pending") DESC, a.created_at DESC',
+            $params
+        );
+
+        // 附加每筆申請的附件
+        if (!empty($applications)) {
+            $ids = array_map('intval', array_column($applications, 'application_id'));
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $files = $db->fetchAll(
+                'SELECT file_id, application_id, file_path, original_name
+                 FROM event_venue_application_files
+                 WHERE application_id IN (' . $placeholders . ')
+                 ORDER BY file_id ASC',
+                $ids
+            );
+            $filesByApp = [];
+            foreach ($files as $f) {
+                $filesByApp[(int)$f['application_id']][] = $f;
+            }
+            foreach ($applications as &$app) {
+                $app['files'] = $filesByApp[(int)$app['application_id']] ?? [];
+            }
+            unset($app);
+        }
+
+        $countRows = $db->fetchAll(
+            'SELECT status, COUNT(*) AS cnt FROM event_venue_applications GROUP BY status'
+        );
+        $counts = ['all' => 0, 'pending' => 0, 'approved' => 0, 'needs_supplement' => 0, 'rejected' => 0];
+        foreach ($countRows as $row) {
+            $s = $row['status'];
+            if (isset($counts[$s])) $counts[$s] = (int)$row['cnt'];
+            $counts['all'] += (int)$row['cnt'];
+        }
+
+        Helper::success('取得活動申請列表成功', ['applications' => $applications, 'counts' => $counts]);
+    }
+
+    /**
+     * 審核活動場地申請：通過 / 要求補件 / 退件
+     * POST /api/admin.php?action=review_venue_application
+     */
+    public static function reviewVenueApplication($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['application_id', 'decision']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $applicationId = (int)$data['application_id'];
+        $decision = trim((string)$data['decision']);
+        $comment = trim((string)($data['comment'] ?? ''));
+
+        $decisionMap = [
+            'approve'    => 'approved',
+            'supplement' => 'needs_supplement',
+            'reject'     => 'rejected',
+        ];
+        if (!isset($decisionMap[$decision])) {
+            Helper::error('decision 必須為 approve、supplement 或 reject', 400);
+        }
+        $newStatus = $decisionMap[$decision];
+
+        if (($decision === 'supplement' || $decision === 'reject') && $comment === '') {
+            Helper::error('要求補件或退件時必須填寫審核意見', 400);
+        }
+
+        if ($comment !== '' && ContentFilter::hasRestrictedInFields(['comment' => $comment], ['comment'])) {
+            Helper::error('審核意見包含不適當字眼，請修改後再送出', 400);
+        }
+
+        $db = Database::getInstance();
+        $application = $db->fetchOne(
+            'SELECT a.*, e.event_name FROM event_venue_applications a
+             JOIN events e ON a.event_id = e.event_id
+             WHERE a.application_id = ?',
+            [$applicationId]
+        );
+        if (!$application) {
+            Helper::error('找不到此申請', 404);
+        }
+        if ($application['status'] !== 'pending') {
+            Helper::error('此申請已審核過，無法重複處理', 409);
+        }
+
+        $adminUserId = Auth::getCurrentUserId();
+        $eventId = (int)$application['event_id'];
+
+        try {
+            $db->beginTransaction();
+
+            dbUpdate('event_venue_applications', [
+                'status' => $newStatus,
+                'review_comment' => $comment,
+                'reviewer_id' => $adminUserId,
+                'reviewed_at' => date('Y-m-d H:i:s')
+            ], 'application_id = ?', [$applicationId]);
+
+            // 通過：發布活動
+            if ($decision === 'approve') {
+                dbUpdate('events', [
+                    'event_status' => 'published',
+                    'published_at' => date('Y-m-d H:i:s')
+                ], 'event_id = ?', [$eventId]);
+            }
+
+            // 通知申請者審核結果
+            $titleMap = [
+                'approve'    => '場地申請已通過',
+                'supplement' => '場地申請需補件',
+                'reject'     => '場地申請已退件',
+            ];
+            $msgMap = [
+                'approve'    => '你的活動「' . $application['event_name'] . '」場地申請已通過，活動已發布。',
+                'supplement' => '你的活動「' . $application['event_name'] . '」場地申請需補件：' . $comment,
+                'reject'     => '你的活動「' . $application['event_name'] . '」場地申請已退件：' . $comment,
+            ];
+            dbInsert('notifications', [
+                'user_id' => (int)$application['applicant_id'],
+                'title' => $titleMap[$decision],
+                'message' => $msgMap[$decision],
+                'notification_type' => 'event',
+                'related_type' => 'event',
+                'related_id' => $eventId,
+                'is_read' => 0,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+
+            $db->commit();
+        } catch (Exception $e) {
+            $db->rollback();
+            Helper::error('審核失敗：' . $e->getMessage(), 500);
+        }
+
+        // 通過後通知追蹤者有新活動（比照 EventAPI::notifyFollowersForNewEvent）
+        if ($decision === 'approve') {
+            try {
+                $followers = $db->fetchAll(
+                    'SELECT user_id FROM club_followers WHERE club_id = ? AND is_subscribing_notifications = 1',
+                    [(int)$application['club_id']]
+                );
+                foreach ($followers as $follower) {
+                    dbInsert('notifications', [
+                        'user_id' => $follower['user_id'],
+                        'title' => '新活動通知',
+                        'message' => '你追蹤的社團發布新活動：' . $application['event_name'],
+                        'notification_type' => 'event',
+                        'related_type' => 'event',
+                        'related_id' => $eventId,
+                        'is_read' => 0,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                }
+            } catch (Throwable $e) {
+                Helper::logError('場地申請通過後通知追蹤者失敗：' . $e->getMessage());
+            }
+        }
+
+        Helper::success('審核完成', ['status' => $newStatus]);
+    }
+
 }
 
 $method = Helper::getRequestMethod();
@@ -1087,6 +1275,8 @@ if ($method === 'GET') {
         AdminAPI::getTransferRequests();
     } elseif ($action === 'report_identity') {
         AdminAPI::getAnonymousContentIdentity();
+    } elseif ($action === 'venue_applications') {
+        AdminAPI::getVenueApplications();
     }
 }
 
@@ -1122,6 +1312,8 @@ if ($method === 'POST') {
         AdminAPI::reviewTransferRequest($data);
     } elseif ($action === 'review_report') {
         AdminAPI::reviewReport($data);
+    } elseif ($action === 'review_venue_application') {
+        AdminAPI::reviewVenueApplication($data);
     } elseif ($action === 'submit_feedback') {
         AdminAPI::submitFeedback($data);
     }

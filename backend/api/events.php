@@ -405,6 +405,26 @@ class EventAPI {
         }
     }
 
+    private static function notifyAdminsVenuePending($event_id, $event_name, $isResubmit = false) {
+        $admins = Database::getInstance()->fetchAll(
+            "SELECT user_id FROM users WHERE role = 'platform_admin' AND is_active = 1"
+        );
+        $message = ($isResubmit ? '已補件，請重新審核' : '有新的場地申請待審核')
+            . '：活動「' . $event_name . '」';
+        foreach ($admins as $admin) {
+            dbInsert('notifications', [
+                'user_id' => $admin['user_id'],
+                'title' => '場地申請待審核',
+                'message' => $message,
+                'notification_type' => 'system',
+                'related_type' => 'event',
+                'related_id' => $event_id,
+                'is_read' => 0,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+        }
+    }
+
     private static function notifyFollowersForNewEvent($event_id, $club_id, $event_name) {
         $followers = Database::getInstance()->fetchAll(
             'SELECT user_id FROM club_followers WHERE club_id = ? AND is_subscribing_notifications = 1',
@@ -854,7 +874,31 @@ class EventAPI {
             if (!$member) {
                 Helper::error('您無權限發布活動', 403);
             }
-            
+
+            // 場地申請：勾選後活動先存為 draft（前台不顯示），待行政審核通過才發布
+            $isVenueApplication = !empty($data['venue_application']);
+            $venueFiles = [];
+            if ($isVenueApplication) {
+                $rawFiles = $data['venue_files'] ?? [];
+                if (is_array($rawFiles)) {
+                    foreach ($rawFiles as $vf) {
+                        $path = is_array($vf) ? ($vf['path'] ?? '') : '';
+                        if ($path !== '') {
+                            $venueFiles[] = [
+                                'path' => (string)$path,
+                                'original_name' => is_array($vf) ? (string)($vf['original_name'] ?? '') : '',
+                            ];
+                        }
+                    }
+                }
+                if (count($venueFiles) < 1) {
+                    Helper::error('申請場地需至少上傳一份文件', 400);
+                }
+                if (count($venueFiles) > 5) {
+                    Helper::error('申請場地最多上傳五份文件', 400);
+                }
+            }
+
             $event_id = dbInsert('events', [
                 'club_id' => $data['club_id'],
                 'event_name' => $data['event_name'],
@@ -866,13 +910,33 @@ class EventAPI {
                 'capacity' => !empty($data['capacity']) ? (int)$data['capacity'] : null,
                 'fee' => !empty($data['fee']) ? (int)$data['fee'] : 0,
                 'registration_deadline' => !empty($data['registration_deadline']) ? $data['registration_deadline'] : null,
-                'event_status' => 'published',
+                'event_status' => $isVenueApplication ? 'draft' : 'published',
                 'is_registration_open' => !empty($data['is_registration_open']) ? 1 : 0,
-                'published_at' => date('Y-m-d H:i:s')
+                'published_at' => $isVenueApplication ? null : date('Y-m-d H:i:s')
             ]);
-            
+
             if (!$event_id) {
                 Helper::error('建立活動失敗', 500);
+            }
+
+            // 建立場地申請紀錄與附件
+            if ($isVenueApplication) {
+                $application_id = dbInsert('event_venue_applications', [
+                    'event_id' => $event_id,
+                    'club_id' => $data['club_id'],
+                    'applicant_id' => Auth::getCurrentUserId(),
+                    'status' => 'pending'
+                ]);
+                if ($application_id) {
+                    foreach ($venueFiles as $vf) {
+                        dbInsert('event_venue_application_files', [
+                            'application_id' => $application_id,
+                            'file_path' => $vf['path'],
+                            'original_name' => $vf['original_name']
+                        ]);
+                    }
+                    self::notifyAdminsVenuePending((int)$event_id, (string)$data['event_name'], false);
+                }
             }
 
             // 保存活動標籤
@@ -903,9 +967,16 @@ class EventAPI {
                 'last_activity_date' => date('Y-m-d H:i:s')
             ], 'club_id = ?', [$data['club_id']]);
 
-            self::notifyFollowersForNewEvent($event_id, (int)$data['club_id'], $data['event_name']);
-            
-            Helper::success('活動建立成功', ['event_id' => $event_id]);
+            // 場地申請的活動尚未公開，待審核通過後才通知追蹤者
+            if (!$isVenueApplication) {
+                self::notifyFollowersForNewEvent($event_id, (int)$data['club_id'], $data['event_name']);
+            }
+
+            if ($isVenueApplication) {
+                Helper::success('場地申請已提交，待行政審核', ['event_id' => $event_id, 'venue_application' => true]);
+            } else {
+                Helper::success('活動建立成功', ['event_id' => $event_id]);
+            }
             
         } catch (Exception $e) {
             self::handleInternalError('建立活動失敗', $e);
@@ -1537,6 +1608,11 @@ class EventAPI {
                 'updated_at' => date('Y-m-d H:i:s')
             ], 'event_id = ?', [$event_id]);
 
+            // 歸檔時刪除與此活動相關的通知（場地申請、新活動通知等）
+            if ($archive) {
+                Database::getInstance()->delete('notifications', 'related_type = ? AND related_id = ?', ['event', $event_id]);
+            }
+
             $logMessage = $archive
                 ? ('將活動設為歷史紀錄: ' . ($event['event_name'] ?? ''))
                 : ('還原歷史活動: ' . ($event['event_name'] ?? ''));
@@ -1701,6 +1777,91 @@ class EventAPI {
             self::handleInternalError('匯出參與證明失敗', $e);
         }
     }
+
+    /**
+     * 場地申請補件並重新提交（將需補件的申請補上文件並改回待審核）
+     * POST /api/events.php?action=resubmit_venue_application
+     */
+    public static function resubmitVenueApplication($data) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+        try {
+            $applicationId = (int)($data['application_id'] ?? 0);
+            if (!$applicationId) {
+                Helper::error('缺少申請識別碼', 400);
+            }
+
+            $application = Database::getInstance()->fetchOne(
+                'SELECT a.*, e.event_name FROM event_venue_applications a
+                 JOIN events e ON e.event_id = a.event_id
+                 WHERE a.application_id = ?',
+                [$applicationId]
+            );
+            if (!$application) {
+                Helper::error('找不到此申請', 404);
+            }
+
+            // 權限：須為該社團幹部
+            $member = Database::getInstance()->fetchOne(
+                'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 AND role IN ("president", "vice_president", "director", "public_relations", "treasurer")',
+                [$application['club_id'], Auth::getCurrentUserId()]
+            );
+            if (!$member && !Auth::isAdmin()) {
+                Helper::error('您無權限操作此申請', 403);
+            }
+
+            if ($application['status'] !== 'needs_supplement') {
+                Helper::error('僅「需補件」的申請可重新提交', 400);
+            }
+
+            // 解析新增文件
+            $newFiles = [];
+            $rawFiles = $data['venue_files'] ?? [];
+            if (is_array($rawFiles)) {
+                foreach ($rawFiles as $vf) {
+                    $path = is_array($vf) ? ($vf['path'] ?? '') : '';
+                    if ($path !== '') {
+                        $newFiles[] = [
+                            'path' => (string)$path,
+                            'original_name' => is_array($vf) ? (string)($vf['original_name'] ?? '') : '',
+                        ];
+                    }
+                }
+            }
+            if (count($newFiles) < 1) {
+                Helper::error('請至少上傳一份補件文件', 400);
+            }
+            if (count($newFiles) > 5) {
+                Helper::error('附件最多五份', 400);
+            }
+
+            // 補件以新文件取代舊文件（清除先前的申請文件）
+            Database::getInstance()->delete('event_venue_application_files', 'application_id = ?', [$applicationId]);
+
+            foreach ($newFiles as $vf) {
+                dbInsert('event_venue_application_files', [
+                    'application_id' => $applicationId,
+                    'file_path' => $vf['path'],
+                    'original_name' => $vf['original_name']
+                ]);
+            }
+
+            // 改回待審核
+            dbUpdate('event_venue_applications', [
+                'status' => 'pending',
+                'reviewer_id' => null,
+                'reviewed_at' => null
+            ], 'application_id = ?', [$applicationId]);
+
+            // 通知行政管理端有補件待重新審核
+            self::notifyAdminsVenuePending((int)$application['event_id'], (string)$application['event_name'], true);
+
+            Helper::success('補件已提交，待行政重新審核');
+        } catch (Exception $e) {
+            self::handleInternalError('補件提交失敗', $e);
+        }
+    }
 }
 
 // 路由處理
@@ -1745,6 +1906,8 @@ if ($method === 'POST') {
         EventAPI::addComment($data);
     } elseif ($action === 'update_event_tags') {
         EventAPI::updateEventTags($data);
+    } elseif ($action === 'resubmit_venue_application') {
+        EventAPI::resubmitVenueApplication($data);
     }
 }
 

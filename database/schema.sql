@@ -192,6 +192,34 @@ CREATE TABLE event_comments (
     UNIQUE KEY unique_event_user_comment (event_id, user_id)
 );
 
+-- 活動場地申請表（幹部建立活動時申請校內場地，審核通過才發布）
+CREATE TABLE event_venue_applications (
+    application_id INT PRIMARY KEY AUTO_INCREMENT,
+    event_id INT NOT NULL,
+    club_id INT NOT NULL,
+    applicant_id INT NOT NULL,
+    status ENUM('pending', 'approved', 'needs_supplement', 'rejected') DEFAULT 'pending',
+    review_comment TEXT,
+    reviewer_id INT DEFAULT NULL,
+    reviewed_at DATETIME DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE,
+    FOREIGN KEY (club_id) REFERENCES clubs(club_id),
+    FOREIGN KEY (applicant_id) REFERENCES users(user_id),
+    FOREIGN KEY (reviewer_id) REFERENCES users(user_id)
+);
+
+-- 活動場地申請附件表（PDF / Word，每筆申請最多 5 件）
+CREATE TABLE event_venue_application_files (
+    file_id INT PRIMARY KEY AUTO_INCREMENT,
+    application_id INT NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255),
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (application_id) REFERENCES event_venue_applications(application_id) ON DELETE CASCADE
+);
+
 -- 校園地點表
 CREATE TABLE campus_locations (
     location_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -437,6 +465,8 @@ CREATE INDEX idx_events_status ON events(event_status);
 CREATE INDEX idx_registrations_event ON event_registrations(event_id);
 CREATE INDEX idx_registrations_user ON event_registrations(user_id);
 CREATE INDEX idx_event_comments_event ON event_comments(event_id);
+CREATE INDEX idx_venue_app_status ON event_venue_applications(status);
+CREATE INDEX idx_venue_app_event ON event_venue_applications(event_id);
 CREATE INDEX idx_qa_club ON q_and_a(club_id);
 CREATE INDEX idx_qa_user ON q_and_a(user_id);
 CREATE INDEX idx_reviews_club ON reviews(club_id);

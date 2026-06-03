@@ -152,6 +152,10 @@ $pendingTransfers = (int)($db->fetchOne('
     SELECT COUNT(*) AS cnt FROM account_transfer_requests WHERE request_status = "pending"
 ')['cnt'] ?? 0);
 
+$pendingVenueApplications = (int)($db->fetchOne('
+    SELECT COUNT(*) AS cnt FROM event_venue_applications WHERE status = "pending"
+')['cnt'] ?? 0);
+
 // 待審核評價：review_status 不是 approved / rejected 的
 $pendingReviews = (int)($db->fetchOne('
     SELECT COUNT(*) AS cnt FROM reviews
@@ -172,6 +176,7 @@ $pending = [
     'transfers'  => $pendingTransfers,
     'reviews'    => $pendingReviews,
     'unanswered_qa' => $unansweredQa,
+    'venue_applications' => $pendingVenueApplications,
 ];
 
 // ── 5. 公告統計 ──────────────────────────────────────────────

@@ -1432,7 +1432,7 @@ function isAdminOverviewPage() {
 
 function isAdminSubPage() {
     const path = window.location.pathname || '';
-    const pages = ['admin-users.html', 'admin-clubs.html', 'admin-events.html', 'admin-reports.html', 'admin-announcements.html', 'admin-transfers.html'];
+    const pages = ['admin-users.html', 'admin-clubs.html', 'admin-events.html', 'admin-event-applications.html', 'admin-reports.html', 'admin-announcements.html', 'admin-transfers.html'];
     return pages.some(p => path.endsWith('/frontend/pages/' + p) || path.endsWith('/pages/' + p));
 }
 
@@ -1451,6 +1451,7 @@ const ADMIN_SIDEBAR_ICONS = {
     announce:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>',
     transfers:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
     messages:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+    venue:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
 };
 
 const ADMIN_SIDEBAR_GROUPS = [
@@ -1461,6 +1462,7 @@ const ADMIN_SIDEBAR_GROUPS = [
         { file: 'admin-events.html',   label: '活動查詢', icon: 'events' },
     ] },
     { title: '內容', items: [
+        { file: 'admin-event-applications.html', label: '活動申請', icon: 'venue' },
         { file: 'admin-reports.html',       label: '報告管理', icon: 'reports' },
         { file: 'admin-announcements.html', label: '系統公告', icon: 'announce' },
         { file: 'admin-transfers.html',     label: '帳戶轉讓', icon: 'transfers' },

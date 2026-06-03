@@ -142,6 +142,18 @@
                     : `admin-reports.html?tab=cases`;
             }
 
+            // 場地申請通知
+            if (String(notification.title || '').includes('場地申請')) {
+                // 給行政管理端的「待審核」通知 → 活動申請審核頁
+                if (String(notification.title).includes('待審核')) {
+                    return 'admin-event-applications.html?status=pending';
+                }
+                // 給申請者的審核結果通知 → 幹部活動列表並標示該活動
+                return relatedId > 0
+                    ? `club-admin-events-list.html?highlight=${relatedId}`
+                    : 'club-admin-events-list.html';
+            }
+
             if (!relatedId) return '';
             if (relatedType === 'event') return `event-detail.html?id=${relatedId}`;
             if (notificationType === 'qa_reply') {
