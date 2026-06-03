@@ -2551,9 +2551,9 @@
                 const isOfficer = ['president','vice_president','public_relations','treasurer','director'].includes(myRole) || myRole === 'platform_admin';
 
                 let html = '<div class="table-shell" style="border-radius:8px;">'
-                    + '<table class="table" style="min-width:0;"><thead><tr>'
+                    + '<table class="table"><thead><tr>'
                     + '<th>姓名</th><th>學號</th><th>職稱</th><th>社費</th><th>繳費狀態</th>'
-                    + (isPresident ? '<th>操作</th>' : '')
+                    + (isPresident ? '<th style="min-width:17rem;">操作</th>' : '')
                     + '</tr></thead><tbody>';
 
                 members.forEach(m => {
@@ -2630,9 +2630,9 @@
                             `<option value="${v}"${m.role === v ? ' selected' : ''}>${l}</option>`
                         ).join('');
 
-                        actionCell = `<td>`
-                            + `<div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">`
-                            + `<select class="member-role-select" data-uid="${uid}" style="font-size:0.75rem;padding:0.2rem 0.35rem;height:1.8rem;width:6rem;">${opts}</select>`
+                        actionCell = `<td style="white-space:nowrap;">`
+                            + `<div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:nowrap;">`
+                            + `<select class="member-role-select" data-uid="${uid}" style="font-size:0.75rem;padding:0.2rem 0.35rem;height:1.8rem;width:7rem;">${opts}</select>`
                             + `<button type="button" class="btn btn-primary btn-sm member-role-save-btn" data-uid="${uid}">儲存</button>`
                             + `<button type="button" class="btn btn-danger-outline btn-sm member-kick-btn" data-uid="${uid}">踢出</button>`
                             + `</div></td>`;
