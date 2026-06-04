@@ -1060,3 +1060,17 @@ header { flex-shrink: 0; }
     /* prevent sidebar-tab from showing over the mobile slide-panel */
     .sidebar-tab { display: none; }
 }
+
+/* ── Admin back link（僅管理員角色可見，由 JS 注入） ── */
+#msg-admin-back { flex-shrink: 0; }
+.msg-admin-back-link {
+    display: block;
+    padding: 7px 16px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-border-light, #f1f5f9);
+    transition: color 0.13s;
+}
+.msg-admin-back-link:hover { color: var(--brand); }

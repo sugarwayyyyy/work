@@ -728,7 +728,7 @@ function applyAdminShellEarly() {
             renderAdminSidebar();
         }
     } else if (isMessagesPage()) {
-        navLinks.innerHTML = `<li><a href="${getPageLink('admin-clubs.html')}">← 返回管理後台</a></li>`;
+        navLinks.innerHTML = '';
     }
 }
 
@@ -1641,6 +1641,13 @@ function isMessagesPage() {
     return path.endsWith('/frontend/pages/messages.html') || path.endsWith('/pages/messages.html');
 }
 
+function injectMsgAdminBack(href) {
+    const container = document.getElementById('msg-admin-back');
+    if (!container) return;
+    container.innerHTML = `<a class="msg-admin-back-link" href="${href}">← 返回管理後台</a>`;
+    container.style.display = '';
+}
+
 function userCanManageClubs(user) {
     if (!user) return false;
     if (user.role === 'platform_admin') return true;
@@ -2163,14 +2170,15 @@ function updateNavigation() {
                 navLinks.innerHTML = '';
                 renderAdminSidebar();
             } else if (user.role === 'platform_admin' && isMessagesPage()) {
-                // 私訊維持自身全螢幕聊天版型，僅在頂部提供返回鈕（不套側邊欄、不影響非管理員）
-                navLinks.innerHTML = `<li><a href="${getPageLink('admin-overview.html')}">← 返回管理後台</a></li>`;
+                navLinks.innerHTML = '';
+                injectMsgAdminBack(getPageLink('admin-overview.html'));
             } else if (user.role === 'category_assistant' && (isAdminShellPage() || isUserProfilePage() || isNotificationsPage())) {
                 document.body.classList.add('admin-shell');
                 navLinks.innerHTML = '';
                 renderCategoryAssistantSidebar();
             } else if (user.role === 'category_assistant' && isMessagesPage()) {
-                navLinks.innerHTML = `<li><a href="${getPageLink('admin-clubs.html')}">← 返回管理後台</a></li>`;
+                navLinks.innerHTML = '';
+                injectMsgAdminBack(getPageLink('admin-clubs.html'));
             }
 
             if (isClubAdminSubPage()) {
