@@ -53,7 +53,7 @@ class AdminAPI {
         }
 
         $user = Database::getInstance()->fetchOne('SELECT role FROM users WHERE user_id = ?', [$user_id]);
-        if ($user && $user['role'] !== 'platform_admin') {
+        if ($user && !in_array($user['role'], ['platform_admin', 'category_assistant'])) {
             dbUpdate('users', ['role' => 'student'], 'user_id = ?', [$user_id]);
         }
     }
@@ -78,6 +78,23 @@ class AdminAPI {
         if (!Auth::isAdmin()) {
             Helper::error('您無權限執行此操作', 403);
         }
+    }
+
+    public static function requireAdminOrAssistant() {
+        if (!Auth::isAdminOrAssistant()) {
+            Helper::error('您無權限執行此操作', 403);
+        }
+    }
+
+    // 平台管理員可操作所有社團；類別助教僅能操作其負責類別內的社團
+    private static function assertCanAccessClub($club_id) {
+        if (Auth::isAdmin()) return;
+        if (Auth::isCategoryAssistant()) {
+            $assistantCat = Auth::getCategoryAssistantCategoryId();
+            $club = Database::getInstance()->fetchOne('SELECT category_id FROM clubs WHERE club_id = ?', [(int)$club_id]);
+            if ($club && $assistantCat && (int)$club['category_id'] === (int)$assistantCat) return;
+        }
+        Helper::error('您無權限操作此社團', 403);
     }
 
     public static function getUsers() {
@@ -158,8 +175,8 @@ class AdminAPI {
             [$user_key, $user_key, $user_key]
         );
         if (!$user) Helper::error('找不到對應帳號', 404);
-        if (($user['role'] ?? '') === 'platform_admin') {
-            Helper::error('平台管理員不能成為社團管理員', 403);
+        if (in_array($user['role'] ?? '', ['platform_admin', 'category_assistant'])) {
+            Helper::error('平台管理員或助教不能成為社團管理員', 403);
         }
 
         $member = Database::getInstance()->fetchOne(
@@ -246,13 +263,108 @@ class AdminAPI {
     }
 
     public static function getClubs() {
-        self::requireAdmin();
-        $clubs = Database::getInstance()->fetchAll('SELECT club_id, club_code, club_name, category_id, activity_status, deleted_at, created_at FROM clubs ORDER BY created_at DESC');
+        self::requireAdminOrAssistant();
+        $categoryId = Auth::isCategoryAssistant() ? Auth::getCategoryAssistantCategoryId() : null;
+        if ($categoryId) {
+            $clubs = Database::getInstance()->fetchAll(
+                'SELECT club_id, club_code, club_name, category_id, activity_status, deleted_at, created_at FROM clubs WHERE category_id = ? ORDER BY created_at DESC',
+                [$categoryId]
+            );
+        } else {
+            $clubs = Database::getInstance()->fetchAll(
+                'SELECT club_id, club_code, club_name, category_id, activity_status, deleted_at, created_at FROM clubs ORDER BY created_at DESC'
+            );
+        }
         Helper::success('取得社團清單成功', ['clubs' => $clubs]);
     }
 
-    public static function createClubBase($data) {
+    public static function getCategoryAssistantInfo() {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+        if (!Auth::isCategoryAssistant()) {
+            Helper::success('取得助教資訊成功', ['is_assistant' => false, 'category_id' => null, 'category_name' => null]);
+            return;
+        }
+        $categoryId = Auth::getCategoryAssistantCategoryId();
+        $category = $categoryId ? Database::getInstance()->fetchOne(
+            'SELECT category_id, category_name FROM club_categories WHERE category_id = ?',
+            [$categoryId]
+        ) : null;
+        Helper::success('取得助教資訊成功', [
+            'is_assistant'  => true,
+            'category_id'   => $categoryId,
+            'category_name' => $category ? $category['category_name'] : null,
+        ]);
+    }
+
+    public static function getCategoryAssistants() {
         self::requireAdmin();
+        $rows = Database::getInstance()->fetchAll(
+            'SELECT caa.assignment_id, caa.user_id, u.name, u.email, u.student_id,
+                    caa.category_id, cc.category_name, caa.assigned_at
+             FROM category_assistant_assignments caa
+             JOIN users u  ON u.user_id    = caa.user_id
+             JOIN club_categories cc ON cc.category_id = caa.category_id
+             ORDER BY cc.category_name ASC'
+        );
+        Helper::success('取得助教清單成功', ['assignments' => $rows]);
+    }
+
+    public static function assignCategoryAssistant($data) {
+        self::requireAdmin();
+        $errors = Helper::validateRequired($data, ['user_id', 'category_id']);
+        if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
+
+        $userId     = (int)$data['user_id'];
+        $categoryId = (int)$data['category_id'];
+
+        $user = Database::getInstance()->fetchOne('SELECT user_id, role FROM users WHERE user_id = ?', [$userId]);
+        if (!$user) Helper::error('找不到此帳號', 404);
+        if ($user['role'] === 'platform_admin') Helper::error('平台管理員不能成為助教', 403);
+
+        $category = Database::getInstance()->fetchOne(
+            'SELECT category_id FROM club_categories WHERE category_id = ?', [$categoryId]
+        );
+        if (!$category) Helper::error('找不到此分類', 404);
+
+        $existing = Database::getInstance()->fetchOne(
+            'SELECT assignment_id FROM category_assistant_assignments WHERE user_id = ?', [$userId]
+        );
+        if ($existing) {
+            dbUpdate('category_assistant_assignments', ['category_id' => $categoryId], 'user_id = ?', [$userId]);
+        } else {
+            dbInsert('category_assistant_assignments', ['user_id' => $userId, 'category_id' => $categoryId]);
+        }
+        dbUpdate('users', ['role' => 'category_assistant'], 'user_id = ?', [$userId]);
+
+        Helper::success('已指派助教');
+    }
+
+    public static function revokeCategoryAssistant($data) {
+        self::requireAdmin();
+        if (empty($data['user_id'])) Helper::error('缺少 user_id', 400);
+        $userId = (int)$data['user_id'];
+        dbDelete('category_assistant_assignments', 'user_id = ?', [$userId]);
+
+        // 撤銷後重新計算角色：有社團幹部資格 → club_admin，否則 → student。
+        // 不可直接用 syncUserRoleByClubAdminMembership，因其會保護 category_assistant 不被降級。
+        $user = Database::getInstance()->fetchOne('SELECT role FROM users WHERE user_id = ?', [$userId]);
+        if ($user && $user['role'] === 'category_assistant') {
+            $hasClubAdmin = Database::getInstance()->fetchOne(
+                'SELECT 1 FROM club_members
+                 WHERE user_id = ? AND is_active = 1
+                   AND role IN ("president","vice_president","public_relations","treasurer","director")
+                 LIMIT 1',
+                [$userId]
+            );
+            dbUpdate('users', ['role' => $hasClubAdmin ? 'club_admin' : 'student'], 'user_id = ?', [$userId]);
+        }
+        Helper::success('已撤銷助教資格');
+    }
+
+    public static function createClubBase($data) {
+        self::requireAdminOrAssistant();
         $errors = Helper::validateRequired($data, ['club_code', 'club_name', 'category_id']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
@@ -260,10 +372,18 @@ class AdminAPI {
             Helper::error('社團資料包含不適當字眼，請修改後再送出', 400);
         }
 
+        // 助教只能在自己負責的類別下建立社團
+        $categoryId = (int)$data['category_id'];
+        if (Auth::isCategoryAssistant()) {
+            $assistantCat = Auth::getCategoryAssistantCategoryId();
+            if (!$assistantCat) Helper::error('您尚未被指派負責類別', 403);
+            $categoryId = (int)$assistantCat;
+        }
+
         $club_id = dbInsert('clubs', [
             'club_code' => trim($data['club_code']),
             'club_name' => trim($data['club_name']),
-            'category_id' => (int)$data['category_id'],
+            'category_id' => $categoryId,
             'description' => $data['description'] ?? '',
             'meeting_time' => $data['meeting_time'] ?? '',
             'contact_email' => $data['contact_email'] ?? '',
@@ -298,16 +418,17 @@ class AdminAPI {
     }
 
     public static function getClubDetail($club_id) {
-        self::requireAdmin();
+        self::requireAdminOrAssistant();
         $club_id = (int)$club_id;
         if (!$club_id) Helper::error('無效的社團ID', 400);
+        self::assertCanAccessClub($club_id);
         $club = Database::getInstance()->fetchOne('SELECT * FROM clubs WHERE club_id = ?', [$club_id]);
         if (!$club) Helper::error('社團不存在', 404);
         Helper::success('取得社團詳情成功', ['club' => $club]);
     }
 
     public static function updateClubDetail($data) {
-        self::requireAdmin();
+        self::requireAdminOrAssistant();
         $errors = Helper::validateRequired($data, ['club_id', 'club_code', 'club_name']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
@@ -316,10 +437,18 @@ class AdminAPI {
         }
 
         $club_id = (int)$data['club_id'];
+        self::assertCanAccessClub($club_id);
+
+        // 決定類別：助教一律維持原類別（不可將社團移出自己負責的類別）
+        $categoryId = isset($data['category_id']) && $data['category_id'] !== '' ? (int)$data['category_id'] : null;
+        if (Auth::isCategoryAssistant()) {
+            $categoryId = Auth::getCategoryAssistantCategoryId();
+        }
+
         $result = dbUpdate('clubs', [
             'club_code'          => trim($data['club_code']),
             'club_name'          => trim($data['club_name']),
-            'category_id'        => isset($data['category_id']) && $data['category_id'] !== '' ? (int)$data['category_id'] : null,
+            'category_id'        => $categoryId,
             'description'        => $data['description'] ?? '',
             'founding_year'      => isset($data['founding_year']) && $data['founding_year'] !== '' ? (int)$data['founding_year'] : null,
             'meeting_day'        => $data['meeting_day'] ?? '',
@@ -337,11 +466,12 @@ class AdminAPI {
     }
 
     public static function softDeleteClub($data) {
-        self::requireAdmin();
+        self::requireAdminOrAssistant();
         $errors = Helper::validateRequired($data, ['club_id']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
         $club_id = (int)$data['club_id'];
+        self::assertCanAccessClub($club_id);
         $hide = isset($data['hide']) ? (bool)$data['hide'] : true;
 
         $update = [
@@ -425,7 +555,7 @@ class AdminAPI {
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
         $user_id = (int)$data['user_id'];
-        $role = in_array($data['role'], ['student', 'club_admin', 'platform_admin']) ? $data['role'] : 'student';
+        $role = in_array($data['role'], ['student', 'club_admin', 'platform_admin', 'category_assistant']) ? $data['role'] : 'student';
 
         $result = dbUpdate('users', ['role' => $role], 'user_id = ?', [$user_id]);
         if (!$result) Helper::error('更新用戶角色失敗', 500);
@@ -434,11 +564,12 @@ class AdminAPI {
     }
 
     public static function updateClubStatus($data) {
-        self::requireAdmin();
+        self::requireAdminOrAssistant();
         $errors = Helper::validateRequired($data, ['club_id', 'activity_status']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
         $club_id = (int)$data['club_id'];
+        self::assertCanAccessClub($club_id);
         $status = in_array($data['activity_status'], ['active', 'inactive', 'suspended', 'pending']) ? $data['activity_status'] : 'inactive';
 
         // 顯示狀態與啟用狀態連動：僅「啟用」對外顯示，其餘（停用/暫停/待審核）一律隱藏
@@ -937,8 +1068,8 @@ class AdminAPI {
             'SELECT role FROM users WHERE user_id = ? LIMIT 1',
             [$request['target_user_id']]
         );
-        if (($targetUserRole['role'] ?? '') === 'platform_admin') {
-            Helper::error('平台管理員不能成為社團管理員', 403);
+        if (in_array($targetUserRole['role'] ?? '', ['platform_admin', 'category_assistant'])) {
+            Helper::error('平台管理員或助教不能成為社團管理員', 403);
         }
 
         if ($decision === 'rejected' && $review_note === '') {
@@ -1062,15 +1193,23 @@ class AdminAPI {
      * GET /api/admin.php?action=venue_applications&status=pending
      */
     public static function getVenueApplications() {
-        self::requireAdmin();
+        self::requireAdminOrAssistant();
+
+        // 助教只看自己負責類別的申請
+        $assistantCat = Auth::isCategoryAssistant() ? Auth::getCategoryAssistantCategoryId() : null;
 
         $status = trim((string)($_GET['status'] ?? ''));
-        $where = '';
+        $conds = [];
         $params = [];
         if ($status !== '' && in_array($status, ['pending', 'approved', 'needs_supplement', 'rejected'], true)) {
-            $where = 'WHERE a.status = ?';
+            $conds[] = 'a.status = ?';
             $params[] = $status;
         }
+        if ($assistantCat) {
+            $conds[] = 'c.category_id = ?';
+            $params[] = (int)$assistantCat;
+        }
+        $where = $conds ? ('WHERE ' . implode(' AND ', $conds)) : '';
 
         $db = Database::getInstance();
         $applications = $db->fetchAll(
@@ -1112,7 +1251,10 @@ class AdminAPI {
         }
 
         $countRows = $db->fetchAll(
-            'SELECT status, COUNT(*) AS cnt FROM event_venue_applications GROUP BY status'
+            $assistantCat
+                ? 'SELECT a.status, COUNT(*) AS cnt FROM event_venue_applications a JOIN clubs c ON c.club_id = a.club_id WHERE c.category_id = ? GROUP BY a.status'
+                : 'SELECT status, COUNT(*) AS cnt FROM event_venue_applications GROUP BY status',
+            $assistantCat ? [(int)$assistantCat] : []
         );
         $counts = ['all' => 0, 'pending' => 0, 'approved' => 0, 'needs_supplement' => 0, 'rejected' => 0];
         foreach ($countRows as $row) {
@@ -1129,7 +1271,7 @@ class AdminAPI {
      * POST /api/admin.php?action=review_venue_application
      */
     public static function reviewVenueApplication($data) {
-        self::requireAdmin();
+        self::requireAdminOrAssistant();
         $errors = Helper::validateRequired($data, ['application_id', 'decision']);
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
@@ -1165,6 +1307,8 @@ class AdminAPI {
         if (!$application) {
             Helper::error('找不到此申請', 404);
         }
+        // 助教只能審核自己負責類別內社團的申請
+        self::assertCanAccessClub((int)$application['club_id']);
         if ($application['status'] !== 'pending') {
             Helper::error('此申請已審核過，無法重複處理', 409);
         }
@@ -1277,6 +1421,10 @@ if ($method === 'GET') {
         AdminAPI::getAnonymousContentIdentity();
     } elseif ($action === 'venue_applications') {
         AdminAPI::getVenueApplications();
+    } elseif ($action === 'category_assistants') {
+        AdminAPI::getCategoryAssistants();
+    } elseif ($action === 'category_assistant_info') {
+        AdminAPI::getCategoryAssistantInfo();
     }
 }
 
@@ -1316,6 +1464,10 @@ if ($method === 'POST') {
         AdminAPI::reviewVenueApplication($data);
     } elseif ($action === 'submit_feedback') {
         AdminAPI::submitFeedback($data);
+    } elseif ($action === 'assign_category_assistant') {
+        AdminAPI::assignCategoryAssistant($data);
+    } elseif ($action === 'revoke_category_assistant') {
+        AdminAPI::revokeCategoryAssistant($data);
     }
 }
 

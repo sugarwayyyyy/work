@@ -346,6 +346,44 @@
     min-width: 170px;
 }
 
+/* ── 類別助教管理 ── */
+.ca-panel { margin-top: 1.5rem; }
+.ca-panel .user-mgmt-toolbar select { width: 100%; }
+.ca-panel .user-mgmt-toolbar__action .btn { width: 100%; }
+.ca-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.85rem;
+}
+.ca-group {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    background: #fff;
+}
+.ca-group__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+.ca-group__title { font-weight: 600; }
+.ca-group__count { font-size: 0.78rem; color: #6b7280; }
+.ca-assistant {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+}
+.ca-assistant + .ca-assistant { border-top: 1px dashed #eef2f7; }
+.ca-assistant__info { min-width: 0; }
+.ca-assistant__name { font-size: 0.9rem; font-weight: 500; }
+.ca-assistant__email { font-size: 0.76rem; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ca-empty { color: #9ca3af; font-size: 0.85rem; padding: 0.3rem 0; }
+
 .user-mgmt-table-shell {
     border: 1px solid #e5e7eb;
     border-radius: 10px;

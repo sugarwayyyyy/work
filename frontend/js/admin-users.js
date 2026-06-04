@@ -1,5 +1,5 @@
         const PAGE_SIZE = 8;
-        const PLATFORM_ROLE_LABELS = { student: '一般帳號', platform_admin: '平台管理員' };
+        const PLATFORM_ROLE_LABELS = { student: '一般帳號', platform_admin: '平台管理員', category_assistant: '類別助教' };
         const CLUB_OFFICER_ROLE_LABELS = { president: '社長', vice_president: '副社長', public_relations: '公關', treasurer: '總務', director: '幹事' };
 
         const usersState = { rows: [], query: '', platformRoleFilter: 'all', statusFilter: 'all', page: 1 };
@@ -339,3 +339,126 @@
         loadUsers();
         loadClubs();
         loadClubAdminAssignments();
+
+        // ── 類別助教管理（依六大分類分組顯示）─────────────────────────────
+        (async function initCategoryAssistants() {
+            const userSel   = document.getElementById('ca-user-select');
+            const catSel    = document.getElementById('ca-category-select');
+            const assignBtn = document.getElementById('ca-assign-btn');
+            const groupsEl  = document.getElementById('ca-groups');
+            if (!userSel || !catSel || !assignBtn || !groupsEl) return;
+
+            let caCategories = [];
+
+            async function loadCaUsers() {
+                try {
+                    const res = await APIClient.get('admin.php?action=users');
+                    const users = (res && res.data && res.data.users) ? res.data.users : [];
+                    const eligible = users.filter(u => u.role !== 'platform_admin' && u.is_active != 0);
+                    userSel.innerHTML = '<option value="">請選擇帳號</option>' +
+                        eligible.map(u => `<option value="${u.user_id}">${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>`).join('');
+                } catch (e) {
+                    userSel.innerHTML = '<option value="">載入失敗</option>';
+                }
+            }
+
+            async function loadCaCategories() {
+                try {
+                    const res = await APIClient.get('clubs.php?action=categories');
+                    caCategories = (res && res.data && res.data.categories) ? res.data.categories : [];
+                    catSel.innerHTML = '<option value="">請選擇類別</option>' +
+                        caCategories.map(c => `<option value="${c.category_id}">${escapeHtml(c.category_name)}</option>`).join('');
+                } catch (e) {
+                    catSel.innerHTML = '<option value="">載入失敗</option>';
+                }
+            }
+
+            function bindRevokeButtons() {
+                groupsEl.querySelectorAll('.ca-revoke-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!confirm('確定撤銷此助教資格？')) return;
+                        btn.disabled = true;
+                        try {
+                            const res = await APIClient.post('admin.php?action=revoke_category_assistant', { user_id: Number(btn.dataset.uid) });
+                            if (res && res.success) {
+                                PageUtils.showAlert('已撤銷助教資格', 'success');
+                                await Promise.all([loadCaGroups(), loadCaUsers()]);
+                            } else {
+                                PageUtils.showAlert(res.message || '撤銷失敗', 'error');
+                                btn.disabled = false;
+                            }
+                        } catch (e) {
+                            PageUtils.showAlert('操作失敗', 'error');
+                            btn.disabled = false;
+                        }
+                    });
+                });
+            }
+
+            async function loadCaGroups() {
+                if (caCategories.length === 0) await loadCaCategories();
+                let rows = [];
+                try {
+                    const res = await APIClient.get('admin.php?action=category_assistants');
+                    rows = (res && res.data && res.data.assignments) ? res.data.assignments : [];
+                } catch (e) {
+                    groupsEl.innerHTML = '<p class="widget-empty">載入失敗</p>';
+                    return;
+                }
+                if (caCategories.length === 0) {
+                    groupsEl.innerHTML = '<p class="widget-empty">尚無分類資料</p>';
+                    return;
+                }
+                const byCat = {};
+                rows.forEach(r => { (byCat[r.category_id] = byCat[r.category_id] || []).push(r); });
+
+                groupsEl.innerHTML = caCategories.map(cat => {
+                    const list = byCat[cat.category_id] || [];
+                    const body = list.length
+                        ? list.map(r => `
+                            <div class="ca-assistant">
+                                <div class="ca-assistant__info">
+                                    <div class="ca-assistant__name">${escapeHtml(r.name)}</div>
+                                    <div class="ca-assistant__email">${escapeHtml(r.email)}</div>
+                                </div>
+                                <button class="btn btn-danger-outline btn-sm ca-revoke-btn" data-uid="${r.user_id}">撤銷</button>
+                            </div>`).join('')
+                        : '<div class="ca-empty">尚未指派助教</div>';
+                    return `
+                        <div class="ca-group">
+                            <div class="ca-group__head">
+                                <span class="ca-group__title">${escapeHtml(cat.category_name)}</span>
+                                <span class="ca-group__count">${list.length} 位助教</span>
+                            </div>
+                            ${body}
+                        </div>`;
+                }).join('');
+                bindRevokeButtons();
+            }
+
+            assignBtn.addEventListener('click', async () => {
+                const userId     = Number(userSel.value);
+                const categoryId = Number(catSel.value);
+                if (!userId)     { PageUtils.showAlert('請選擇帳號', 'error'); return; }
+                if (!categoryId) { PageUtils.showAlert('請選擇類別', 'error'); return; }
+                assignBtn.disabled = true;
+                try {
+                    const res = await APIClient.post('admin.php?action=assign_category_assistant', { user_id: userId, category_id: categoryId });
+                    if (res && res.success) {
+                        PageUtils.showAlert('已指派助教', 'success');
+                        userSel.value = '';
+                        catSel.value  = '';
+                        await Promise.all([loadCaGroups(), loadCaUsers(), loadUsers()]);
+                    } else {
+                        PageUtils.showAlert(res.message || '指派失敗', 'error');
+                    }
+                } catch (e) {
+                    PageUtils.showAlert('操作失敗', 'error');
+                } finally {
+                    assignBtn.disabled = false;
+                }
+            });
+
+            await loadCaCategories();
+            await Promise.all([loadCaUsers(), loadCaGroups()]);
+        })();

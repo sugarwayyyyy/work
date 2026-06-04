@@ -716,19 +716,25 @@ document.addEventListener('DOMContentLoaded', function() {
 // 用本地快取的使用者立刻套用管理側邊欄版型（在等待 session 驗證前），避免閃一下頂部導覽
 function applyAdminShellEarly() {
     const user = StorageUtils.getUser();
-    if (!user || user.role !== 'platform_admin') return;
+    if (!user || (user.role !== 'platform_admin' && user.role !== 'category_assistant')) return;
     const navLinks = document.querySelector('.nav-links');
     if (!navLinks) return;
     if (isAdminShellPage() || isUserProfilePage() || isNotificationsPage()) {
         document.body.classList.add('admin-shell');
         navLinks.innerHTML = '';
-        renderAdminSidebar();
+        if (user.role === 'category_assistant') {
+            renderCategoryAssistantSidebar();
+        } else {
+            renderAdminSidebar();
+        }
     } else if (isMessagesPage()) {
-        navLinks.innerHTML = `<li><a href="${getPageLink('admin-overview.html')}">← 返回管理後台</a></li>`;
+        navLinks.innerHTML = `<li><a href="${getPageLink('admin-clubs.html')}">← 返回管理後台</a></li>`;
     }
 }
 
 async function initializePage() {
+    // 類別助教越權守衛：最先執行，若在不允許的頁面立即導回，避免閃現其他頁內容
+    enforceCategoryAssistantScope();
     ensureSiteFavicon();
     ensureHamburger();
     injectFjuLogoIcon();
@@ -736,6 +742,7 @@ async function initializePage() {
     injectClubNavDropdown();
     injectMessagesNavLink();
     applyAdminShellEarly();
+    fixLogoForCategoryAssistant();
     try {
         await hydrateUserFromSession();
     } finally {
@@ -888,6 +895,35 @@ function isPagesDir() {
 
 function getPageLink(fileName) {
     return isPagesDir() ? fileName : `pages/${fileName}`;
+}
+
+// 類別助教可停留的工作頁（含登入/註冊以免登出流程被卡）
+const CATEGORY_ASSISTANT_ALLOWED_PAGES = [
+    'admin-clubs.html', 'admin-event-applications.html', 'messages.html',
+    'user-profile.html', 'notifications.html', 'login.html', 'register.html'
+];
+
+function getCurrentPageFile() {
+    const path = window.location.pathname || '';
+    const file = path.split('/').pop() || '';
+    return file === '' ? 'index.html' : file;
+}
+
+// 將 .logo 連結導向助教的主頁（避免點 logo 跳到 admin-users 等不允許頁）
+function fixLogoForCategoryAssistant() {
+    const user = StorageUtils.getUser();
+    if (!user || user.role !== 'category_assistant') return;
+    const logo = document.querySelector('header .logo');
+    if (logo) logo.setAttribute('href', getPageLink('admin-clubs.html'));
+}
+
+// 類別助教存取守衛：不在允許清單的頁面（index.html、其他 admin 頁、幹部後台等）一律導回社團管理
+function enforceCategoryAssistantScope() {
+    const user = StorageUtils.getUser();
+    if (!user || user.role !== 'category_assistant') return;
+    const file = getCurrentPageFile();
+    if (CATEGORY_ASSISTANT_ALLOWED_PAGES.includes(file)) return;
+    window.location.replace(getPageLink('admin-clubs.html'));
 }
 
 function shouldRenderGlobalFollowSidebar() {
@@ -1454,6 +1490,16 @@ const ADMIN_SIDEBAR_ICONS = {
     venue:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
 };
 
+const CATEGORY_ASSISTANT_SIDEBAR_GROUPS = [
+    { title: '社團管理', items: [
+        { file: 'admin-clubs.html', label: '社團管理', icon: 'clubs' },
+        { file: 'admin-event-applications.html', label: '活動審核', icon: 'venue' },
+    ] },
+    { title: '其他', items: [
+        { file: 'messages.html', label: '私訊', icon: 'messages' },
+    ] },
+];
+
 const ADMIN_SIDEBAR_GROUPS = [
     { title: '總覽與管理', items: [
         { file: 'admin-overview.html', label: '系統總覽', icon: 'overview' },
@@ -1492,6 +1538,34 @@ function renderAdminSidebar() {
 
     const html = `
         <nav class="admin-sidebar__nav" aria-label="管理選單">${groupsHtml}</nav>`;
+
+    let aside = document.querySelector('.admin-sidebar');
+    if (!aside) {
+        aside = document.createElement('aside');
+        aside.className = 'admin-sidebar';
+        header.insertAdjacentElement('afterend', aside);
+    }
+    aside.innerHTML = html;
+}
+
+function renderCategoryAssistantSidebar() {
+    const header = document.querySelector('header');
+    if (!header) return;
+
+    let filename = (window.location.pathname || '').split('/').pop() || '';
+
+    const groupsHtml = CATEGORY_ASSISTANT_SIDEBAR_GROUPS.map(group => {
+        const itemsHtml = group.items.map(item => {
+            const isActive = item.file === filename ? ' is-active' : '';
+            return `<a class="admin-sidebar__item${isActive}" href="${getPageLink(item.file)}" title="${item.label}">
+                <span class="admin-sidebar__icon">${ADMIN_SIDEBAR_ICONS[item.icon] || ''}</span>
+                <span class="admin-sidebar__label">${item.label}</span>
+            </a>`;
+        }).join('');
+        return `<div class="admin-sidebar__group">${group.title}</div>${itemsHtml}`;
+    }).join('');
+
+    const html = `<nav class="admin-sidebar__nav" aria-label="助教管理選單">${groupsHtml}</nav>`;
 
     let aside = document.querySelector('.admin-sidebar');
     if (!aside) {
@@ -1634,7 +1708,7 @@ function injectFjuLogoIcon() {
     wrapper.appendChild(logo);
 }
 
-function injectClubNavDropdown() {
+async function injectClubNavDropdown() {
     const navLinks = document.querySelector('.nav-links');
     if (!navLinks) return;
     if (navLinks.querySelector('.nav-dropdown')) return;
@@ -1646,13 +1720,14 @@ function injectClubNavDropdown() {
     if (!li) return;
 
     const base = clubLink.getAttribute('href') || 'club-list.html';
-    const categories = [
-        { label: '休閒性', id: '5' },
-        { label: '學術性', id: '2' },
-        { label: '服務性', id: '4' },
-        { label: '藝文性', id: '3' },
-        { label: '體育性', id: '1' },
-    ];
+
+    let categories = [];
+    try {
+        const res = await APIClient.get('clubs.php?action=categories');
+        categories = (res && res.data && Array.isArray(res.data.categories)) ? res.data.categories : [];
+    } catch (_) { return; }
+
+    if (categories.length === 0) return;
 
     const arrow = document.createElement('span');
     arrow.className = 'nav-dropdown-arrow';
@@ -1661,11 +1736,11 @@ function injectClubNavDropdown() {
     li.classList.add('nav-has-dropdown');
     const ul = document.createElement('ul');
     ul.className = 'nav-dropdown';
-    categories.forEach(({ label, id }) => {
+    categories.forEach(cat => {
         const item = document.createElement('li');
         const a = document.createElement('a');
-        a.href = id ? `${base}?category_id=${id}` : base;
-        a.textContent = label;
+        a.href = `${base}?category_id=${cat.category_id}`;
+        a.textContent = cat.category_name;
         item.appendChild(a);
         ul.appendChild(item);
     });
@@ -1917,9 +1992,11 @@ function updateNavigation() {
 
             const roleLink = user.role === 'platform_admin'
                 ? `<a href="${getPageLink('admin-dashboard.html')}"><img class="ndp-menu-icon" src="${dashboardIcon}" alt="">管理員後台</a>`
-                : (userCanManageClubs(user)
-                    ? `<a href="${getPageLink('club-admin-club-manage.html')}"><img class="ndp-menu-icon" src="${dashboardIcon}" alt="">幹部後台</a>`
-                    : '');
+                : user.role === 'category_assistant'
+                    ? `<a href="${getPageLink('admin-clubs.html')}"><img class="ndp-menu-icon" src="${dashboardIcon}" alt="">管理後台</a>`
+                    : (userCanManageClubs(user)
+                        ? `<a href="${getPageLink('club-admin-club-manage.html')}"><img class="ndp-menu-icon" src="${dashboardIcon}" alt="">幹部後台</a>`
+                        : '');
 
             const avatarTriggerContent = relativeAvatarUrl
                 ? `<img class="nav-avatar-img" src="${safeAvatarUrl}" alt="個人頭像">`
@@ -2044,6 +2121,12 @@ function updateNavigation() {
             } else if (user.role === 'platform_admin' && isMessagesPage()) {
                 // 私訊維持自身全螢幕聊天版型，僅在頂部提供返回鈕（不套側邊欄、不影響非管理員）
                 navLinks.innerHTML = `<li><a href="${getPageLink('admin-overview.html')}">← 返回管理後台</a></li>`;
+            } else if (user.role === 'category_assistant' && (isAdminShellPage() || isUserProfilePage() || isNotificationsPage())) {
+                document.body.classList.add('admin-shell');
+                navLinks.innerHTML = '';
+                renderCategoryAssistantSidebar();
+            } else if (user.role === 'category_assistant' && isMessagesPage()) {
+                navLinks.innerHTML = `<li><a href="${getPageLink('admin-clubs.html')}">← 返回管理後台</a></li>`;
             }
 
             if (isClubAdminSubPage()) {
@@ -2056,7 +2139,7 @@ function updateNavigation() {
                     <li><a href="${getPageLink('club-admin-transfer.html')}">帳戶轉讓</a></li>
                 `;
             } else if (!isAdminSubPage() && !isAdminDashboardPage() && !isAdminOverviewPage()) {
-                if (userCanManageClubs(user) && user.role !== 'platform_admin') {
+                if (userCanManageClubs(user) && user.role !== 'platform_admin' && user.role !== 'category_assistant') {
                     if (!document.getElementById('club-admin-dashboard-link')) {
                         const li = document.createElement('li');
                         li.id = 'club-admin-dashboard-link';

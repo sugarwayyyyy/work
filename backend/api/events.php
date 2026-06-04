@@ -406,14 +406,33 @@ class EventAPI {
     }
 
     private static function notifyAdminsVenuePending($event_id, $event_name, $isResubmit = false) {
-        $admins = Database::getInstance()->fetchAll(
+        $db = Database::getInstance();
+        // 收件者：平台管理員 + 該社團所屬類別的助教（通知分流，助教只收自己屬性的申請）
+        $recipients = $db->fetchAll(
             "SELECT user_id FROM users WHERE role = 'platform_admin' AND is_active = 1"
         );
+        $cat = $db->fetchOne(
+            'SELECT cl.category_id FROM events e JOIN clubs cl ON cl.club_id = e.club_id WHERE e.event_id = ?',
+            [$event_id]
+        );
+        if ($cat && !empty($cat['category_id'])) {
+            $assistants = $db->fetchAll(
+                'SELECT caa.user_id FROM category_assistant_assignments caa
+                 JOIN users u ON u.user_id = caa.user_id
+                 WHERE caa.category_id = ? AND u.is_active = 1',
+                [(int)$cat['category_id']]
+            );
+            $recipients = array_merge($recipients, $assistants);
+        }
         $message = ($isResubmit ? '已補件，請重新審核' : '有新的場地申請待審核')
             . '：活動「' . $event_name . '」';
-        foreach ($admins as $admin) {
+        $seen = [];
+        foreach ($recipients as $r) {
+            $uid = (int)$r['user_id'];
+            if ($uid <= 0 || isset($seen[$uid])) continue;
+            $seen[$uid] = true;
             dbInsert('notifications', [
-                'user_id' => $admin['user_id'],
+                'user_id' => $uid,
                 'title' => '場地申請待審核',
                 'message' => $message,
                 'notification_type' => 'system',

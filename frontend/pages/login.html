@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -80,7 +80,7 @@
         </div>
     </div>
 
-    <script src="../js/main.js?v=20260603c"></script>
+    <script src="../js/main.js?v=20260604c"></script>
     <script src="../js/auth-pages.js?v=20260528"></script>
     <script>
         FormUtils.bindPasswordToggles();
@@ -91,6 +91,7 @@
             failText: '登入',
             onSuccess: (data) => {
                 if (data.role === 'platform_admin') window.location.href = 'admin-users.html?_reload=1';
+                else if (data.role === 'category_assistant') window.location.href = 'admin-clubs.html?_reload=1';
                 else window.location.href = '../index.html?_reload=1';
             }
         });
@@ -125,6 +126,7 @@
                     PageUtils.showAlert('登入成功，正在重定向...', 'success');
                     setTimeout(() => {
                         if (response.data.role === 'platform_admin') window.location.href = 'admin-users.html?_reload=1';
+                        else if (response.data.role === 'category_assistant') window.location.href = 'admin-clubs.html?_reload=1';
                         else window.location.href = '../index.html?_reload=1';
                     }, 1000);
                 } else {

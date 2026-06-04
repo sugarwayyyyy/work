@@ -133,6 +133,15 @@ class UploadAPI {
             return true;
         }
 
+        // 類別助教：僅能管理其負責類別內的社團
+        if (Auth::isCategoryAssistant()) {
+            $assistantCat = Auth::getCategoryAssistantCategoryId();
+            $club = $this->db->fetchOne('SELECT category_id FROM clubs WHERE club_id = ?', [(int)$clubId]);
+            if ($club && $assistantCat && (int)$club['category_id'] === (int)$assistantCat) {
+                return true;
+            }
+        }
+
         $userId = Auth::getCurrentUserId();
         if (!$userId) {
             return false;

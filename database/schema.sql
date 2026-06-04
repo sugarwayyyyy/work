@@ -13,7 +13,7 @@ CREATE TABLE users (
     student_id VARCHAR(20) UNIQUE,
     name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
-    role ENUM('student', 'club_admin', 'platform_admin') DEFAULT 'student',
+    role ENUM('student', 'club_admin', 'platform_admin', 'category_assistant') DEFAULT 'student',
     profile_image VARCHAR(255),
     avatar_path VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -478,14 +478,25 @@ CREATE INDEX idx_clubs_deleted_at ON clubs(deleted_at);
 CREATE INDEX idx_notifications_user_created ON notifications(user_id, created_at);
 CREATE INDEX idx_transfer_requests_status_time ON account_transfer_requests(request_status, requested_at);
 
+CREATE TABLE IF NOT EXISTS category_assistant_assignments (
+    assignment_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id       INT NOT NULL,
+    category_id   INT NOT NULL,
+    assigned_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_user (user_id),
+    FOREIGN KEY (user_id)     REFERENCES users(user_id)              ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES club_categories(category_id) ON DELETE CASCADE
+);
+
 -- ============ 初始化基本分類與標籤 ============
 
 INSERT INTO club_categories (category_name, description) VALUES
-('體育性', '運動、競賽相關社團'),
-('學術性', '學術研究、技能進修相關社團'),
-('藝文性', '文化、藝術、音樂相關社團'),
-('服務性', '社會服務、志願服務相關社團'),
-('休閒性', '娛樂、休閒活動相關社團');
+('運動', '運動、競賽相關社團'),
+('學術', '學術研究、技能進修相關社團'),
+('服務', '社會服務、志願服務相關社團'),
+('休閒', '娛樂、休閒活動相關社團'),
+('音樂', '音樂演奏、聲樂、樂器相關社團'),
+('藝術', '視覺藝術、設計、創作相關社團');
 
 INSERT INTO club_tags (tag_name, tag_type, description) VALUES
 ('無經驗可', 'experience', '不需要先前經驗'),

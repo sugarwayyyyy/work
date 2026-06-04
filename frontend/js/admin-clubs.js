@@ -3,6 +3,7 @@ const CLUB_STATUS_LABELS = { active: '啟用', inactive: '停用', suspended: '�
 
 const clubsState = { rows: [], query: '', sort: 'club_code_asc', page: 1 };
 let clubCategories = [];
+let assistantCategoryId = null; // 類別助教被鎖定的類別（平台管理員為 null）
 
 function escapeHtml(value) {
     return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -178,11 +179,27 @@ document.getElementById('clubs-sort').addEventListener('change', event => { club
 document.getElementById('create-club-base-form').addEventListener('submit', async event => {
     event.preventDefault();
     if (!validateCreateClubBaseForm()) return;
-    const payload = { club_code: document.getElementById('new-club-code').value.trim(), club_name: document.getElementById('new-club-name').value.trim(), category_id: Number(document.getElementById('new-club-category').value) };
+    // 助教一律使用自己被指派的類別；平台管理員用下拉所選
+    const categoryId = assistantCategoryId || Number(document.getElementById('new-club-category').value);
+    const payload = { club_code: document.getElementById('new-club-code').value.trim(), club_name: document.getElementById('new-club-name').value.trim(), category_id: categoryId };
     const response = await APIClient.post('admin.php?action=create_club', payload);
-    if (response.success) { event.target.reset(); loadClubs(); PageUtils.showAlert('社團基礎名單新增成功', 'success'); }
+    if (response.success) {
+        event.target.reset();
+        lockCategoryForAssistant(); // reset 會清掉鎖定值，需重新套用
+        loadClubs();
+        PageUtils.showAlert('社團基礎名單新增成功', 'success');
+    }
     else PageUtils.showAlert('新增失敗：' + response.message, 'error');
 });
+
+// 將建立/編輯表單的類別下拉鎖定為助教負責的類別
+function lockCategoryForAssistant() {
+    if (!assistantCategoryId) return;
+    const createSel = document.getElementById('new-club-category');
+    if (createSel) { createSel.value = String(assistantCategoryId); createSel.disabled = true; }
+    const editSel = document.getElementById('edit-club-category');
+    if (editSel) { editSel.disabled = true; }
+}
 
 function initEditHourSelect(id) {
     const sel = document.getElementById(id);
@@ -375,5 +392,17 @@ initEditHourSelect('edit-meeting-end-hour');
     if (el) el.addEventListener('change', syncEditMeetingTime);
 });
 
-loadClubCategories();
-loadClubs();
+(async function initClubsPage() {
+    await loadClubCategories();
+    loadClubs();
+    // 若為類別助教：鎖定類別、調整頁面說明
+    try {
+        const info = await APIClient.get('admin.php?action=category_assistant_info');
+        if (info && info.success && info.data && info.data.is_assistant && info.data.category_id) {
+            assistantCategoryId = Number(info.data.category_id);
+            lockCategoryForAssistant();
+            const subtext = document.querySelector('.admin-panel-head .admin-panel-subtext');
+            if (subtext) subtext.textContent = `您是「${info.data.category_name}」類別助教，僅能管理此類別的社團`;
+        }
+    } catch (e) { /* 忽略：非助教或取得失敗時維持平台管理員行為 */ }
+})();

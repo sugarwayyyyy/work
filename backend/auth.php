@@ -371,6 +371,28 @@ class Auth {
     public static function isAdmin() {
         return self::hasRole('platform_admin');
     }
+
+    // 檢查是否是類別助教
+    public static function isCategoryAssistant() {
+        return self::hasRole('category_assistant');
+    }
+
+    // 管理員或助教均可
+    public static function isAdminOrAssistant() {
+        return self::isAdmin() || self::isCategoryAssistant();
+    }
+
+    // 取得助教負責的類別 ID（非助教回傳 null）
+    public static function getCategoryAssistantCategoryId() {
+        if (!self::isCategoryAssistant()) return null;
+        $uid = (int)self::getCurrentUserId();
+        if ($uid <= 0) return null;
+        $row = Database::getInstance()->fetchOne(
+            'SELECT category_id FROM category_assistant_assignments WHERE user_id = ? LIMIT 1',
+            [$uid]
+        );
+        return $row ? (int)$row['category_id'] : null;
+    }
     
     // 檢查是否是社團幹部（平台管理員不等於社團幹部）
     public static function isClubAdmin() {
