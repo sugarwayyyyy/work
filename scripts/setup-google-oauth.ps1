@@ -143,7 +143,7 @@ $dbPasswordLine
 define('GOOGLE_CLIENT_ID', '$GOOGLE_CLIENT_ID');
 $certLine
 "@
-    Set-Content -Path $configPath -Value $content -Encoding UTF8
+    [System.IO.File]::WriteAllText($configPath, $content, [System.Text.UTF8Encoding]::new($false))
     Write-Host "  OK: Created: $configPath" -ForegroundColor Green
 }
 
