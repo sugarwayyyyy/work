@@ -488,6 +488,21 @@ CREATE TABLE IF NOT EXISTS category_assistant_assignments (
     FOREIGN KEY (category_id) REFERENCES club_categories(category_id) ON DELETE CASCADE
 );
 
+-- 幹部操作紀錄（稽核 Log）：記錄哪位幹部核准入社、確認收費等，釐清責任
+CREATE TABLE IF NOT EXISTS club_operation_logs (
+    log_id          INT AUTO_INCREMENT PRIMARY KEY,
+    club_id         INT NOT NULL,
+    actor_user_id   INT NOT NULL,
+    actor_role      VARCHAR(30) DEFAULT NULL,
+    action          VARCHAR(40) NOT NULL,
+    target_user_id  INT DEFAULT NULL,
+    detail          VARCHAR(255) DEFAULT NULL,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (club_id) REFERENCES clubs(club_id) ON DELETE CASCADE,
+    INDEX idx_col_club_time (club_id, created_at),
+    INDEX idx_col_actor (actor_user_id)
+);
+
 -- ============ 初始化基本分類與標籤 ============
 
 INSERT INTO club_categories (category_name, description) VALUES
