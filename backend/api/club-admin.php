@@ -20,6 +20,32 @@ class ClubAdminAPI {
         }
     }
 
+    // 寫入幹部操作紀錄（稽核 Log）。失敗時僅記錄錯誤，不中斷主流程。
+    private static function logOp($club_id, $action, $target_user_id = null, $detail = null) {
+        try {
+            $actorId = (int)Auth::getCurrentUserId();
+            $actorRole = null;
+            if ($actorId > 0 && (int)$club_id > 0) {
+                $row = Database::getInstance()->fetchOne(
+                    'SELECT role FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1 LIMIT 1',
+                    [(int)$club_id, $actorId]
+                );
+                $actorRole = $row['role'] ?? (Auth::isAdmin() ? 'platform_admin' : null);
+            }
+            dbInsert('club_operation_logs', [
+                'club_id'        => (int)$club_id,
+                'actor_user_id'  => $actorId,
+                'actor_role'     => $actorRole,
+                'action'         => $action,
+                'target_user_id' => $target_user_id !== null ? (int)$target_user_id : null,
+                'detail'         => $detail,
+                'created_at'     => date('Y-m-d H:i:s'),
+            ]);
+        } catch (Throwable $e) {
+            Helper::logError('club_operation_logs 寫入失敗: ' . $e->getMessage());
+        }
+    }
+
     public static function getMyClubs() {
         self::requireClubAdmin();
 
@@ -411,6 +437,8 @@ class ClubAdminAPI {
             [$targetUserId]
         );
 
+        self::logOp($club_id, 'assign_role', $targetUserId, $targetMember['role'] . ' → ' . $newRole);
+
         Helper::success('角色已更新');
     }
 
@@ -456,6 +484,8 @@ class ClubAdminAPI {
             [$target['member_id']]
         );
 
+        self::logOp($club_id, 'change_fee_type', $targetUserId, '費用類型改為 ' . $feeType);
+
         Helper::success('費用類型已更新');
     }
 
@@ -497,6 +527,8 @@ class ClubAdminAPI {
             'member_id = ?',
             [$target['member_id']]
         );
+
+        self::logOp($club_id, $feePaid ? 'confirm_fee' : 'unconfirm_fee', $targetUserId, $feePaid ? '確認已繳費' : '改為未繳費');
 
         Helper::success('繳費狀態已更新');
     }
@@ -568,6 +600,8 @@ class ClubAdminAPI {
             'user_id = ? AND role != "platform_admin"',
             [$targetUserId]
         );
+
+        self::logOp($club_id, 'remove_member', $targetUserId, '移除成員（原職稱 ' . $target['role'] . '）');
 
         Helper::success('成員已移除');
     }
@@ -679,6 +713,7 @@ class ClubAdminAPI {
                 'content'      => '您申請加入「' . $app['club_name'] . '」的申請未獲批准。',
                 'meta'         => json_encode(['club_id' => (int)$app['club_id'], 'club_name' => $app['club_name']]),
             ]);
+            self::logOp((int)$app['club_id'], 'reject_join', (int)$app['user_id'], '拒絕加入申請');
             Helper::success('已拒絕申請');
             return;
         }
@@ -761,6 +796,7 @@ class ClubAdminAPI {
                 'application_id'    => $appId,
             ]),
         ]);
+        self::logOp((int)$app['club_id'], 'approve_join', (int)$app['user_id'], '核准加入申請');
         Helper::success('已批准申請，驗證碼已傳送給用戶');
     }
 
@@ -822,6 +858,47 @@ class ClubAdminAPI {
             'club_id' => (int)$event['club_id'],
             'club_name' => $event['club_name'],
         ]);
+    }
+
+    /**
+     * 取得社團操作紀錄（稽核 Log）
+     * 權限：平台管理員 / 該社團幹部 / 該社團所屬類別的助教
+     * GET /api/club-admin.php?action=operation_logs&id=<club_id>
+     */
+    public static function getOperationLogs($club_id) {
+        if (!Auth::isLoggedIn()) { Helper::error('請先登入', 401); }
+        $club_id = (int)$club_id;
+        if ($club_id <= 0) Helper::error('缺少社團', 400);
+
+        $allowed = Auth::isAdmin();
+        if (!$allowed) {
+            $isOfficer = Database::getInstance()->fetchOne(
+                'SELECT 1 FROM club_members WHERE club_id = ? AND user_id = ? AND is_active = 1
+                 AND role IN ("president","vice_president","public_relations","treasurer","director")',
+                [$club_id, Auth::getCurrentUserId()]
+            );
+            $allowed = (bool)$isOfficer;
+        }
+        if (!$allowed && Auth::isCategoryAssistant()) {
+            $catId = Auth::getCategoryAssistantCategoryId();
+            $club = Database::getInstance()->fetchOne('SELECT category_id FROM clubs WHERE club_id = ?', [$club_id]);
+            if ($club && $catId && (int)$club['category_id'] === (int)$catId) $allowed = true;
+        }
+        if (!$allowed) Helper::error('您無權限檢視此社團的操作紀錄', 403);
+
+        $logs = Database::getInstance()->fetchAll(
+            'SELECT l.log_id, l.action, l.actor_role, l.detail, l.created_at,
+                    actor.name  AS actor_name,
+                    target.name AS target_name
+             FROM club_operation_logs l
+             LEFT JOIN users actor  ON actor.user_id  = l.actor_user_id
+             LEFT JOIN users target ON target.user_id = l.target_user_id
+             WHERE l.club_id = ?
+             ORDER BY l.created_at DESC, l.log_id DESC
+             LIMIT 200',
+            [$club_id]
+        );
+        Helper::success('取得操作紀錄成功', ['logs' => $logs]);
     }
 
 }

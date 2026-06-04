@@ -74,6 +74,7 @@ mysql -u root -p club_platform < database/migrations/2026_05_24_message_reaction
 mysql -u root -p club_platform < database/migrations/2026_05_24_private_message_reply.sql
 mysql -u root -p club_platform < database/migrations/2026_06_03_add_event_venue_applications.sql
 mysql -u root -p club_platform < database/migrations/2026_06_04_category_assistant.sql
+mysql -u root -p club_platform < database/migrations/2026_06_04_club_operation_logs.sql
 mysql -u root -p club_platform < database/seeds/2026_04_02_school_clubs_seed.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
