@@ -388,6 +388,8 @@ npx playwright test
 
 ## 版本與發布紀錄
 
+- 2026-06-04：管理員後台 sidebar 全面改版（Google Sites 文字清單風格、響應式 hamburger、logo 整合至 sidebar 頂部）
+- 2026-06-03：新增場地活動申請管理頁面（`admin-event-applications.html`）
 - 2026-05-29：補強檢舉通知導頁與管理端資料完整性（commit: 709b601）
 - 2026-05-29：個人頁腳本模組化，移除頁內 inline script，並清理過期文件（commit: 056b665）
 - 2026-05-24：新增活動多圖海報 `event_posters` 資料表與對應 migration。
@@ -411,6 +413,15 @@ npx playwright test
 - 全站版面採全寬設計（`layout.css` container / nav 均不限寬），各頁面一致。
 - 登入表單已加入送出防抖保護，避免短時間內重複觸發。
 - 私訊系統（`messages.html`）已上線，支援多對話管理、搜尋用戶、歷史紀錄、響應式排版（行動版全螢幕切換、平板雙欄壓縮、桌面可折疊側欄）。
+
+### 最近更新（2026-06-04）
+
+| 項目 | 說明 |
+|------|------|
+| Admin sidebar 全面改版 | 改採 Google Sites 文字清單風格：移除 rounded button 感，改用 `box-shadow: inset 2px 0 0` 作為 active 指示線 |
+| Logo 整合至 sidebar | `logo-wrapper` 從 header 移至 sidebar 頂部（`top: 0; height: 100vh; z-index: 101`），header 只保留右側 user widget |
+| 響應式 hamburger 修正 | 改用與一般頁面一致的 ≤768px 斷點；手機版 sidebar 以 overlay 從 header 底部展開並附帶背景遮罩 |
+| 群組標籤對齊修正 | 覆寫全局 `nav { align-items: center }` 造成的置中問題，加入 `align-items: stretch; justify-content: flex-start` |
 
 ### 最近更新（2026-05-28）
 

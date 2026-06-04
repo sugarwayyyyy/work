@@ -79,7 +79,7 @@ async function navigateToMessages(page) {
 
 /** 搜尋用戶並開啟對話（透過新增對話 modal） */
 async function openConversationWith(page, searchQuery) {
-  await page.click('.msg-new-btn');
+  await page.click('#new-conversation-btn');
   await expect(page.locator('#search-modal')).not.toHaveAttribute('hidden', { timeout: 5000 });
   await page.fill('#search-input', searchQuery);
   await page.click('.msg-modal button:has-text("搜尋")');
@@ -175,12 +175,12 @@ test.describe('私訊功能', () => {
     // 找到包含此 bubble 的 row，點 ⋯
     const menu = await openMessageMenu(page, msgText);
 
-    // 點收回（recallMessage 有 confirm 對話框，預先接受）
-    page.once('dialog', d => d.accept());
-    await Promise.all([
-      page.waitForResponse(r => r.url().includes('action=recall_message'), { timeout: 12000 }),
-      menu.locator('.msg-menu-item--danger').click(),
-    ]);
+    // 點收回 → 等待自訂 confirm overlay 出現 → 點確認
+    await menu.locator('.msg-menu-item--danger').click();
+    await expect(page.locator('#msg-confirm-ok')).toBeVisible({ timeout: 5000 });
+    const recallResponse = page.waitForResponse(r => r.url().includes('action=recall_message'), { timeout: 12000 });
+    await page.locator('#msg-confirm-ok').click();
+    await recallResponse;
 
     await expect(
       page.locator('.msg-bubble--mine').filter({ hasText: msgText })
@@ -268,12 +268,12 @@ test.describe('私訊功能', () => {
     // 點 ⋯ → 刪除
     const menu = await openMessageMenu(page, noteText);
 
-    // recallNoteMessage 有 confirm 對話框，預先接受
-    page.once('dialog', d => d.accept());
-    await Promise.all([
-      page.waitForResponse(r => r.url().includes('action=recall_note_message'), { timeout: 12000 }),
-      menu.locator('.msg-menu-item--danger').click(),
-    ]);
+    // 點刪除 → 等待自訂 confirm overlay 出現 → 點確認
+    await menu.locator('.msg-menu-item--danger').click();
+    await expect(page.locator('#msg-confirm-ok')).toBeVisible({ timeout: 5000 });
+    const recallNoteResponse = page.waitForResponse(r => r.url().includes('action=recall_note_message'), { timeout: 12000 });
+    await page.locator('#msg-confirm-ok').click();
+    await recallNoteResponse;
 
     await expect(
       page.locator('#messages-area .msg-bubble').filter({ hasText: noteText })

@@ -566,8 +566,9 @@ test.describe('Additional Regression: 會話與導向自檢', () => {
     await detailLink.click();
     await page.waitForURL('**/club-detail.html**');
 
+    await page.waitForLoadState('networkidle');
     const followBtn = page.locator('#follow-btn');
-    await expect(followBtn).toBeVisible();
+    await expect(followBtn).toBeVisible({ timeout: 10000 });
     await expect(followBtn).toHaveText('登入後可查看追蹤狀態');
   });
 
@@ -909,10 +910,7 @@ test.describe('Additional Regression: 管理員私訊導覽', () => {
     await expect(
       page.locator('.nav-links a[href*="admin-overview.html"]')
     ).toBeVisible({ timeout: 10000 });
-    // 且含有私訊連結本身
-    await expect(
-      page.locator('.nav-links a[href*="messages.html"]')
-    ).toBeVisible({ timeout: 5000 });
+    // 管理員私訊頁 nav 只保留「返回管理後台」，不會再出現 messages.html 自我連結
   });
 });
 

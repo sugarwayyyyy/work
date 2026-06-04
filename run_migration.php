@@ -58,6 +58,9 @@ try {
         __DIR__ . '/database/migrations/2026_05_29_cancel_kicked_member_applications.sql',
         __DIR__ . '/database/migrations/2026_05_29_join_code_expiry.sql',
         __DIR__ . '/database/migrations/2026_05_30_feedback.sql',
+        __DIR__ . '/database/migrations/2026_05_30_message_reactions_emoji_bin_collation.sql',
+        __DIR__ . '/database/migrations/2026_05_30_message_reactions_unique_per_user.sql',
+        __DIR__ . '/database/migrations/2026_06_03_add_event_venue_applications.sql',
     ];
 
     foreach ($files as $file) {

@@ -883,83 +883,149 @@
 
 
 /* ════════ 行政管理端：頂部條 + 左側側邊欄 ════════ */
-:root { --admin-sidebar-w: 200px; --admin-topbar-h: 60px; }
+:root { --admin-sidebar-w: 220px; --admin-topbar-h: 60px; }
 
 body.admin-shell { padding-left: var(--admin-sidebar-w); }
 
-/* 頂部列維持全寬、固定高度（蓋過側邊欄上緣） */
+/* header 只佔右側內容區，不再延伸蓋過 sidebar */
 body.admin-shell > header {
-    margin-left: calc(-1 * var(--admin-sidebar-w));
-    width: calc(100% + var(--admin-sidebar-w));
+    background-color: var(--page-bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    border-bottom: none;
 }
+body.admin-shell > header .logo-wrapper { display: none; }
 body.admin-shell > header nav {
     min-height: var(--admin-topbar-h);
     padding-top: 0;
     padding-bottom: 0;
+    justify-content: flex-end;
 }
-body.admin-shell .hamburger { display: none !important; }
-/* 管理側邊欄版型不使用頂部水平導覽（避免載入時閃一下頂部連結） */
+
+@media (min-width: 769px) {
+    body.admin-shell .hamburger { display: none; }
+}
 body.admin-shell .nav-links { display: none !important; }
 
+/* ── Sidebar 基礎：從頁面頂端延伸全高 ── */
 .admin-sidebar {
     position: fixed;
-    top: var(--admin-topbar-h);
+    top: 0;
     left: 0;
     width: var(--admin-sidebar-w);
-    height: calc(100vh - var(--admin-topbar-h));
+    height: 100vh;
     overflow-y: auto;
-    padding: 1rem 0.75rem 2rem;
-    background: var(--surface, #fff);
-    border-right: 1px solid var(--color-border-default);
-    z-index: 90;
+    overflow-x: hidden;
+    background: var(--surface);
+    border-right: 1px solid var(--color-border-light);
+    z-index: 101;
+    display: flex;
+    flex-direction: column;
 }
 
-.admin-sidebar__nav { display: flex; flex-direction: column; gap: 0.15rem; }
+/* ── Sidebar logo header：與右側 header nav 等高 ── */
+.admin-sidebar__header {
+    display: flex;
+    align-items: center;
+    min-height: var(--admin-topbar-h);
+    padding: 0 0.85rem;
+    flex-shrink: 0;
+}
+.admin-sidebar__header .logo {
+    font-size: 0.78rem;
+    white-space: normal;
+    word-break: keep-all;
+}
+.admin-sidebar__header .logo-fju-icon {
+    height: 1.55rem;
+}
 
+/* ── 導覽容器 ── */
+.admin-sidebar__nav {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0.6rem 0.45rem 1.5rem;
+    flex: 1;
+}
+
+/* ── 分組標籤 ── */
 .admin-sidebar__group {
-    margin: 1.15rem 0.7rem 0.35rem;
-    padding-top: 0.85rem;
-    border-top: 1px solid var(--color-border-light);
-    font-size: 0.68rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    color: var(--text-light);
-    opacity: 0.75;
+    padding: 0 0.85rem;
+    margin: 1.1rem 0 0.2rem;
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
 }
-.admin-sidebar__group:first-child { margin-top: 0.2rem; padding-top: 0; border-top: none; }
+.admin-sidebar__group:first-child { margin-top: 0.35rem; }
 
+/* ── 導覽項目：文字清單風格（低干擾，無 button 感） ── */
+/* inset box-shadow 不影響 box model，item 保持 edge-to-edge */
 .admin-sidebar__item {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
-    padding: 0.55rem 0.7rem;
-    border-radius: 8px;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.45rem 0.85rem;
     color: var(--text-default);
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    line-height: 1.3;
+    min-height: 34px;
+    transition: color 0.13s ease;
 }
-.admin-sidebar__item:hover { background: var(--color-primary-50, #f3f0ff); color: var(--brand, #7c3aed); }
-.admin-sidebar__item.is-active { background: var(--brand, #7c3aed); color: #fff; font-weight: 600; }
+.admin-sidebar__item:hover {
+    color: var(--brand);
+}
+.admin-sidebar__item.is-active {
+    color: var(--brand);
+    font-weight: 600;
+    box-shadow: inset 2px 0 0 var(--brand);
+}
 
 .admin-sidebar__icon { display: inline-flex; flex: 0 0 auto; }
-.admin-sidebar__icon svg { width: 18px; height: 18px; display: block; }
+.admin-sidebar__icon svg { width: 17px; height: 17px; display: block; }
 
-@media (max-width: 900px) {
+/* ── Mobile ≤768px: hamburger + overlay（與其他頁面 hamburger 模式一致） ── */
+@media (max-width: 768px) {
     body.admin-shell { padding-left: 0; }
-    body.admin-shell > header { margin-left: 0; width: 100%; }
+
     .admin-sidebar {
-        position: static;
+        position: fixed;
+        top: var(--admin-topbar-h);
+        left: 0;
+        right: 0;
         width: 100%;
+        max-height: calc(100vh - var(--admin-topbar-h));
         height: auto;
         border-right: none;
         border-bottom: 1px solid var(--color-border-default);
-        padding: 0.75rem;
+        box-shadow: 0 8px 32px rgba(15, 23, 42, 0.18);
+        display: none;
+        z-index: 200;
+        overflow-y: auto;
     }
-    .admin-sidebar__nav { flex-flow: row wrap; gap: 0.4rem; }
-    .admin-sidebar__group { width: 100%; margin: 0.4rem 0.2rem 0.1rem; }
-    .admin-sidebar__item { padding: 0.4rem 0.7rem; }
+    .admin-sidebar.is-open { display: flex; }
+    .admin-sidebar__nav { padding: 0.5rem 0.55rem 1rem; }
+    .admin-sidebar__item { padding: 0.55rem 0.75rem; min-height: 40px; }
+    .admin-sidebar__group { margin: 0.85rem 0.4rem 0.25rem; }
+    .admin-sidebar__item.is-active::before { display: none; }
+
+    #admin-sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        top: var(--admin-topbar-h);
+        background: rgba(0, 0, 0, 0.32);
+        z-index: 199;
+        cursor: pointer;
+    }
+    #admin-sidebar-backdrop.is-visible { display: block; }
 }
 
 /* ── admin-events 快速範圍選取（分段控制 + 下週展開） ── */

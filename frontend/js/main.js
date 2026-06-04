@@ -1536,7 +1536,18 @@ function renderAdminSidebar() {
         return `<div class="admin-sidebar__group">${group.title}</div>${itemsHtml}`;
     }).join('');
 
+    const adminHomeHref = getPageLink('admin-users.html');
+    const fjuIconSrc = resolveFrontendAssetUrl('assets/icons/fju-logo.png');
+
     const html = `
+        <div class="admin-sidebar__header">
+            <div class="logo-wrapper">
+                <a href="${adminHomeHref}" tabindex="-1" aria-hidden="true">
+                    <img class="logo-fju-icon" src="${fjuIconSrc}" alt="">
+                </a>
+                <a class="logo" href="${adminHomeHref}">輔大社團活動資訊系統<span class="logo__sub">FJCU CLUB ACTIVITY INFORMATION SYSTEM</span></a>
+            </div>
+        </div>
         <nav class="admin-sidebar__nav" aria-label="管理選單">${groupsHtml}</nav>`;
 
     let aside = document.querySelector('.admin-sidebar');
@@ -1546,6 +1557,39 @@ function renderAdminSidebar() {
         header.insertAdjacentElement('afterend', aside);
     }
     aside.innerHTML = html;
+
+    // 手機版：掛接 hamburger 按鈕開關 sidebar（≤768px），與其他頁面 hamburger 模式一致
+    setTimeout(() => {
+        const hamburger = document.getElementById('hamburger-btn');
+        if (!hamburger || hamburger.dataset.adminSidebarBound) return;
+        hamburger.dataset.adminSidebarBound = 'true';
+
+        let backdrop = document.getElementById('admin-sidebar-backdrop');
+        if (!backdrop) {
+            backdrop = document.createElement('div');
+            backdrop.id = 'admin-sidebar-backdrop';
+            document.body.appendChild(backdrop);
+        }
+
+        function openSidebar() {
+            aside.classList.add('is-open');
+            backdrop.classList.add('is-visible');
+            hamburger.setAttribute('aria-expanded', 'true');
+        }
+        function closeSidebar() {
+            aside.classList.remove('is-open');
+            backdrop.classList.remove('is-visible');
+            hamburger.setAttribute('aria-expanded', 'false');
+        }
+
+        hamburger.addEventListener('click', () => {
+            aside.classList.contains('is-open') ? closeSidebar() : openSidebar();
+        });
+        backdrop.addEventListener('click', closeSidebar);
+        aside.querySelectorAll('.admin-sidebar__item').forEach(item => {
+            item.addEventListener('click', closeSidebar);
+        });
+    }, 0);
 }
 
 function renderCategoryAssistantSidebar() {

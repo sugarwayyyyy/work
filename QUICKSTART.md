@@ -72,6 +72,14 @@ mysql -u root -p club_platform < database/migrations/2026_05_24_private_message_
 mysql -u root -p club_platform < database/migrations/2026_05_24_note_messages_recall.sql
 mysql -u root -p club_platform < database/migrations/2026_05_24_message_reactions.sql
 mysql -u root -p club_platform < database/migrations/2026_05_24_private_message_reply.sql
+mysql -u root -p club_platform < database/migrations/2026_05_26_clubs_enrich_data.sql
+mysql -u root -p club_platform < database/migrations/2026_05_26_login_rate_limiting.sql
+mysql -u root -p club_platform < database/migrations/2026_05_29_fix_join_application_fee_type.sql
+mysql -u root -p club_platform < database/migrations/2026_05_29_cancel_kicked_member_applications.sql
+mysql -u root -p club_platform < database/migrations/2026_05_29_join_code_expiry.sql
+mysql -u root -p club_platform < database/migrations/2026_05_30_feedback.sql
+mysql -u root -p club_platform < database/migrations/2026_05_30_message_reactions_emoji_bin_collation.sql
+mysql -u root -p club_platform < database/migrations/2026_05_30_message_reactions_unique_per_user.sql
 mysql -u root -p club_platform < database/migrations/2026_06_03_add_event_venue_applications.sql
 mysql -u root -p club_platform < database/migrations/2026_06_04_category_assistant.sql
 mysql -u root -p club_platform < database/migrations/2026_06_04_club_operation_logs.sql
@@ -79,7 +87,7 @@ mysql -u root -p club_platform < database/seeds/2026_04_02_school_clubs_seed.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
 
-> migration 清單需與 `database/migrations/` 完全一致（目前共 26 支）；新增 migration 後請同步更新此段。
+> migration 清單需與 `database/migrations/` 完全一致（目前共 34 支）；新增 migration 後請同步更新此段。
 
 #### 活動海報規格（對應資料庫）
 - 活動海報資料表：`event_posters`（migration：`2026_05_24_event_posters.sql`）。
@@ -228,8 +236,7 @@ php -S localhost:8080
 ## 相關文件
 
 - [README](README.md)
-- [專案進度](PROJECT_STATUS.md)
-- [完成總結](COMPLETION_REPORT.md)
-- [測試報告](TESTING_REPORT.md)
 - [手動驗收清單](tests/manual/user_story_acceptance_checklist.md)
-- [版本發布紀錄](RELEASE_NOTES_2026-04-04.md)
+- [E2E 測試說明](tests/e2e/README.md)
+- [E2E 執行指南](tests/e2e/RUNNING_TESTS.md)
+- [Git 自動化操作](docs/GIT_AUTOMATION.md)
