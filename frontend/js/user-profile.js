@@ -70,6 +70,7 @@
                     StorageUtils.setUser(currentUser);
                     displayUserProfile(currentUser);
                     applyProfileTabsByRole(currentUser);
+                    renderPasswordSection(currentUser);
                     renderGoogleBindStatus(currentUser);
 
                     if (currentUser.role !== 'platform_admin') {
@@ -535,28 +536,65 @@
             }
         }
 
+        /* ── 密碼區塊依帳號類型切換 ── */
+        function renderPasswordSection(user) {
+            const isGoogleOnly = user && user.google_id && user.oauth_provider === 'google';
+            const oldRow  = document.getElementById('current-password-row');
+            const title   = document.getElementById('password-section-title');
+            const submitBtn = document.getElementById('password-submit-btn');
+            const hint    = document.getElementById('password-section-hint');
+
+            if (isGoogleOnly) {
+                if (oldRow)    oldRow.style.display = 'none';
+                if (title)     title.textContent = '設定密碼';
+                if (submitBtn) submitBtn.textContent = '設定密碼';
+                if (hint)      hint.textContent = '您的帳號透過 Google 建立，請先設定密碼才能解除 Google 綁定。密碼至少 8 個字元。';
+            } else {
+                if (oldRow)    oldRow.style.display = '';
+                if (title)     title.textContent = '變更密碼';
+                if (submitBtn) submitBtn.textContent = '變更密碼';
+                if (hint)      hint.textContent = '密碼至少需要 6 個字元。';
+            }
+        }
+
         /* ── 變更密碼 ── */
         async function handleChangePassword(e) {
             e.preventDefault();
-            const oldPassword = document.getElementById('current-password').value;
-            const newPassword = document.getElementById('new-password').value;
+            const isGoogleOnly = currentUser && currentUser.google_id && currentUser.oauth_provider === 'google';
+            const oldPassword    = document.getElementById('current-password').value;
+            const newPassword    = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
 
-            if (!oldPassword || !newPassword || !confirmPassword) {
-                PageUtils.showAlert('請填寫所有密碼欄位', 'error');
-                return;
-            }
-            if (newPassword.length < 6) {
-                PageUtils.showAlert('新密碼至少需要 6 個字元', 'error');
-                return;
-            }
-            if (newPassword !== confirmPassword) {
-                PageUtils.showAlert('兩次輸入的新密碼不一致', 'error');
-                return;
-            }
-            if (newPassword === oldPassword) {
-                PageUtils.showAlert('新密碼不可與目前密碼相同', 'error');
-                return;
+            if (isGoogleOnly) {
+                if (!newPassword || !confirmPassword) {
+                    PageUtils.showAlert('請填寫所有密碼欄位', 'error');
+                    return;
+                }
+                if (newPassword.length < 8) {
+                    PageUtils.showAlert('密碼至少需要 8 個字元', 'error');
+                    return;
+                }
+                if (newPassword !== confirmPassword) {
+                    PageUtils.showAlert('兩次輸入的密碼不一致', 'error');
+                    return;
+                }
+            } else {
+                if (!oldPassword || !newPassword || !confirmPassword) {
+                    PageUtils.showAlert('請填寫所有密碼欄位', 'error');
+                    return;
+                }
+                if (newPassword.length < 6) {
+                    PageUtils.showAlert('新密碼至少需要 6 個字元', 'error');
+                    return;
+                }
+                if (newPassword !== confirmPassword) {
+                    PageUtils.showAlert('兩次輸入的新密碼不一致', 'error');
+                    return;
+                }
+                if (newPassword === oldPassword) {
+                    PageUtils.showAlert('新密碼不可與目前密碼相同', 'error');
+                    return;
+                }
             }
 
             const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -564,22 +602,34 @@
             submitBtn.textContent = '處理中…';
 
             try {
-                const response = await APIClient.post('auth.php?action=change_password', {
-                    old_password: oldPassword,
-                    new_password: newPassword
-                });
-                if (response.success) {
-                    PageUtils.showAlert('密碼變更成功', 'success');
-                    e.target.reset();
+                let response;
+                if (isGoogleOnly) {
+                    response = await APIClient.post('auth.php?action=set_password', {
+                        new_password: newPassword,
+                        confirm_password: confirmPassword,
+                    });
                 } else {
-                    PageUtils.showAlert(response.message || '密碼變更失敗', 'error');
+                    response = await APIClient.post('auth.php?action=change_password', {
+                        old_password: oldPassword,
+                        new_password: newPassword,
+                    });
+                }
+                if (response.success) {
+                    PageUtils.showAlert(isGoogleOnly ? '密碼設定成功，現在可以解除 Google 綁定' : '密碼變更成功', 'success');
+                    e.target.reset();
+                    if (isGoogleOnly && currentUser) {
+                        currentUser.oauth_provider = 'email';
+                        renderPasswordSection(currentUser);
+                        renderGoogleBindStatus(currentUser);
+                    }
+                } else {
+                    PageUtils.showAlert(response.message || '操作失敗', 'error');
                 }
             } catch (err) {
-                console.error('Change password error:', err);
-                PageUtils.showAlert('密碼變更失敗，請稍後再試', 'error');
+                PageUtils.showAlert('操作失敗，請稍後再試', 'error');
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = '變更密碼';
+                submitBtn.textContent = isGoogleOnly ? '設定密碼' : '變更密碼';
             }
         }
 
@@ -673,11 +723,17 @@
                 label.textContent = '已綁定 Google 帳號';
                 label.style.color = 'var(--cta)';
 
+                const isGoogleOnly = user.oauth_provider === 'google';
                 const unlinkBtn = document.createElement('button');
                 unlinkBtn.type = 'button';
                 unlinkBtn.className = 'btn btn-secondary btn-sm';
                 unlinkBtn.textContent = '解除綁定';
-                unlinkBtn.addEventListener('click', handleUnlinkGoogle);
+                if (isGoogleOnly) {
+                    unlinkBtn.disabled = true;
+                    unlinkBtn.title = '請先在下方設定密碼，才能解除 Google 帳號綁定';
+                } else {
+                    unlinkBtn.addEventListener('click', handleUnlinkGoogle);
+                }
                 statusDiv.appendChild(unlinkBtn);
             } else {
                 label.textContent = '尚未綁定 Google 帳號';

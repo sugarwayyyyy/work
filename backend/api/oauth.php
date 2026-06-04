@@ -306,6 +306,11 @@ class OAuthBindAPI {
             Helper::error('目前尚未綁定 Google 帳號', 400);
         }
 
+        // Google 純建帳號（oauth_provider = 'google'）表示從未自行設定過密碼，解綁後將無法登入
+        if ($user['oauth_provider'] === 'google') {
+            Helper::error('請先設定密碼後再解除 Google 帳號綁定', 403);
+        }
+
         dbUpdate('users',
             ['google_id' => null, 'oauth_provider' => 'email'],
             'user_id = ?',

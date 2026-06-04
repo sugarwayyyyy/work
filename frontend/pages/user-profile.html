@@ -287,23 +287,23 @@
                                     <button type="submit" class="btn btn-primary">更新資料</button>
                                 </form>
 
-                                <!-- 變更密碼 -->
+                                <!-- 變更/設定密碼 -->
                                 <form id="change-password-form" class="profile-form" style="margin-top:1.5rem; padding-top:1.25rem; border-top:1px solid var(--border);">
-                                    <p style="font-weight:600; margin-bottom:0.75rem; font-size:0.95rem; color:var(--text-strong);">變更密碼</p>
-                                    <div class="form-group">
+                                    <p id="password-section-title" style="font-weight:600; margin-bottom:0.75rem; font-size:0.95rem; color:var(--text-strong);">變更密碼</p>
+                                    <div id="current-password-row" class="form-group">
                                         <label for="current-password">目前密碼</label>
-                                        <input type="password" id="current-password" name="old_password" autocomplete="current-password" required>
+                                        <input type="password" id="current-password" name="old_password" autocomplete="current-password">
                                     </div>
                                     <div class="form-group">
                                         <label for="new-password">新密碼</label>
                                         <input type="password" id="new-password" name="new_password" autocomplete="new-password" minlength="6" required>
-                                        <small>密碼至少需要 6 個字元。</small>
+                                        <small id="password-section-hint">密碼至少需要 6 個字元。</small>
                                     </div>
                                     <div class="form-group">
                                         <label for="confirm-password">確認新密碼</label>
                                         <input type="password" id="confirm-password" name="confirm_password" autocomplete="new-password" minlength="6" required>
                                     </div>
-                                    <button type="submit" class="btn btn-primary">變更密碼</button>
+                                    <button type="submit" id="password-submit-btn" class="btn btn-primary">變更密碼</button>
                                 </form>
 
                                 <!-- Google 帳號綁定 -->

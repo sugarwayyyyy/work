@@ -432,13 +432,50 @@ class UserAPI {
             dbUpdate('users', [
                 'password' => Helper::hashPassword($data['new_password'])
             ], 'user_id = ?', [$user['user_id']]);
-            
+
             Helper::success('密碼變更成功');
-            
+
         } catch (Exception $e) {
             Helper::logError('變更失敗: ' . $e->getMessage());
             Helper::error('變更失敗', 500);
         }
+    }
+
+    /**
+     * 首次設定密碼（Google 純建帳號專用，不需舊密碼）
+     * POST /api/auth.php?action=set_password
+     */
+    public static function setPassword($data) {
+        if (!Auth::isLoggedIn()) {
+            Helper::error('請先登入', 401);
+        }
+
+        $userId = (int)Auth::getCurrentUserId();
+        $user   = dbFetchOne('SELECT oauth_provider FROM users WHERE user_id = ? LIMIT 1', [$userId]);
+
+        if (!$user || $user['oauth_provider'] !== 'google') {
+            Helper::error('此功能僅供以 Google 建立且尚未設定密碼的帳號使用', 403);
+        }
+
+        $errors = Helper::validateRequired($data, ['new_password', 'confirm_password']);
+        if (!empty($errors)) {
+            Helper::error('請填寫所有欄位', 400);
+        }
+
+        if (strlen($data['new_password']) < 8) {
+            Helper::error('密碼至少需要 8 個字元', 400);
+        }
+
+        if ($data['new_password'] !== $data['confirm_password']) {
+            Helper::error('兩次輸入的密碼不一致', 400);
+        }
+
+        dbUpdate('users', [
+            'password'       => Helper::hashPassword($data['new_password']),
+            'oauth_provider' => 'email',
+        ], 'user_id = ?', [$userId]);
+
+        Helper::success('密碼設定成功');
     }
 }
 
@@ -471,6 +508,9 @@ switch ($action) {
         break;
     case 'change_password':
         UserAPI::changePassword($data);
+        break;
+    case 'set_password':
+        UserAPI::setPassword($data);
         break;
     case 'deactivate_account':
         UserAPI::deactivateAccount($data);
