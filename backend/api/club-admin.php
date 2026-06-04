@@ -25,9 +25,10 @@ class ClubAdminAPI {
 
         $user_id = Auth::getCurrentUserId();
         $clubs = Database::getInstance()->fetchAll(
-            'SELECT c.club_id, c.club_name, c.activity_status FROM clubs c '
+            'SELECT c.club_id, c.club_code, c.club_name, c.activity_status FROM clubs c '
             . 'JOIN club_members cm ON c.club_id = cm.club_id '
-            . 'WHERE cm.user_id = ? AND cm.is_active = 1 AND cm.role IN ("president", "vice_president", "public_relations", "treasurer", "director")',
+            . 'WHERE cm.user_id = ? AND cm.is_active = 1 AND cm.role IN ("president", "vice_president", "public_relations", "treasurer", "director") '
+            . 'ORDER BY c.club_code ASC',
             [$user_id]
         );
 

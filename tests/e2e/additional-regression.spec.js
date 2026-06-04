@@ -13,6 +13,12 @@ const CLUB_ADMIN = {
   password: 'Test123456'
 };
 
+const MUTABLE_CLUB_BY_BROWSER = {
+  chromium: 'CSC001',
+  firefox: '090',
+  webkit: 'TST001',
+};
+
 async function login(page, email, password) {
   await page.goto(`${BASE_URL}/pages/login.html`);
   await page.fill('input[name="email"]', email);
@@ -52,6 +58,18 @@ async function fetchMyManagedClubId(page, index = 0) {
     const club = clubs[idx] ?? clubs[0] ?? null;
     return Number(club?.club_id || 0) || null;
   }, index);
+}
+
+async function fetchMyManagedClubIdByCode(page, clubCode) {
+  await page.waitForLoadState('networkidle');
+  return await page.evaluate(async (targetCode) => {
+    const myClubsResp = await window.APIClient.get('club-admin.php?action=my_clubs');
+    if (!myClubsResp?.success) return null;
+    const clubs = Array.isArray(myClubsResp?.data?.clubs) ? myClubsResp.data.clubs : [];
+    const normalizedCode = String(targetCode || '').trim().toUpperCase();
+    const club = clubs.find(item => String(item?.club_code || '').trim().toUpperCase() === normalizedCode) || null;
+    return Number(club?.club_id || 0) || null;
+  }, clubCode);
 }
 
 async function fetchClubDetailById(page, clubId) {
@@ -618,14 +636,16 @@ test.describe('Additional Regression: 會話與導向自檢', () => {
 });
 
 test.describe('Additional Regression: Data Integrity & Safety', () => {
+  test.describe.configure({ mode: 'serial' });
+
   test('AR-28 should reject stale last_updated on concurrent club update', async ({ page, browserName }) => {
     test.setTimeout(60000);
     // 每個 browser 使用不同社團，避免並行時互相打出 409
-    const clubIndex = browserName === 'firefox' ? 1 : browserName === 'webkit' ? 2 : 0;
+    const clubCode = MUTABLE_CLUB_BY_BROWSER[browserName] || MUTABLE_CLUB_BY_BROWSER.chromium;
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
     await page.waitForLoadState('networkidle');
 
-    const clubId = await fetchMyManagedClubId(page, clubIndex);
+    const clubId = await fetchMyManagedClubIdByCode(page, clubCode);
     expect(clubId).toBeTruthy();
 
     const snapshot = await fetchClubDetailById(page, clubId);
@@ -635,8 +655,10 @@ test.describe('Additional Regression: Data Integrity & Safety', () => {
     let workingSnapshot = snapshot;
     let staleLastUpdated = snapshot.last_updated;
 
+    const buildSafeDescription = (label) => `club safe text ${label}`;
+
     const buildPayloadA = (snap) => ({
-      description: `${snap.description || ''}\n[AR-28-A-${Date.now().toString(36)}]`,
+      description: buildSafeDescription('alpha'),
       meeting_day: snap.meeting_day || '',
       meeting_time: snap.meeting_time || '',
       meeting_location: snap.meeting_location || '',
@@ -647,20 +669,22 @@ test.describe('Additional Regression: Data Integrity & Safety', () => {
     });
 
     // payloadA 若拿到 409 代表並行 worker 剛好同時修改了同一社團，重取快照再試一次
-    let firstUpdate = await apiPutJson(page, `clubs.php?action=update&id=${clubId}`, buildPayloadA(workingSnapshot));
+    let firstPayload = buildPayloadA(workingSnapshot);
+    let firstUpdate = await apiPutJson(page, `clubs.php?action=update&id=${clubId}`, firstPayload);
     if (firstUpdate.status === 409) {
       workingSnapshot = await fetchClubDetailById(page, clubId);
       expect(workingSnapshot).toBeTruthy();
       staleLastUpdated = workingSnapshot.last_updated;
-      firstUpdate = await apiPutJson(page, `clubs.php?action=update&id=${clubId}`, buildPayloadA(workingSnapshot));
+      firstPayload = buildPayloadA(workingSnapshot);
+      firstUpdate = await apiPutJson(page, `clubs.php?action=update&id=${clubId}`, firstPayload);
     }
-    expect(firstUpdate.status).toBe(200);
+    expect(firstUpdate.status, `Unexpected first update response: ${JSON.stringify(firstUpdate.body)}`).toBe(200);
     expect(firstUpdate.body?.success).toBeTruthy();
 
     // payloadB 使用同一個 staleLastUpdated，此時伺服器已更新，必須回 409
     const payloadB = {
       ...buildPayloadA(workingSnapshot),
-      description: `${workingSnapshot.description || ''}\n[AR-28-B-${Date.now().toString(36)}]`,
+      description: buildSafeDescription('beta'),
       last_updated: staleLastUpdated
     };
     const secondUpdate = await apiPutJson(page, `clubs.php?action=update&id=${clubId}`, payloadB);
@@ -826,19 +850,20 @@ test.describe('Additional Regression: Data Integrity & Safety', () => {
     expect(String(forbiddenEventArchive.body?.message || '').length).toBeGreaterThan(0);
   });
 
-  test('AR-35 club update should be visible immediately to student (no stale cache)', async ({ page, browser }) => {
+  test('AR-35 club update should be visible immediately to student (no stale cache)', async ({ page, browser, browserName }) => {
     test.setTimeout(90000);
     await login(page, CLUB_ADMIN.email, CLUB_ADMIN.password);
 
-    const clubId = await fetchMyManagedClubId(page);
+    const clubCode = MUTABLE_CLUB_BY_BROWSER[browserName] || MUTABLE_CLUB_BY_BROWSER.chromium;
+    const clubId = await fetchMyManagedClubIdByCode(page, clubCode);
     expect(clubId).toBeTruthy();
 
     const snapshot = await fetchClubDetailById(page, clubId);
     expect(snapshot).toBeTruthy();
     expect(snapshot.last_updated).toBeTruthy();
 
-    const marker = `[AR-35-${Date.now().toString(36)}]`;
-    const nextDescription = `${snapshot.description || ''}\n${marker}`;
+    const marker = 'club safe text fresh';
+    const nextDescription = marker;
 
     const updatePayload = {
       description: nextDescription,
