@@ -91,6 +91,10 @@
     padding: 0.75rem;
 }
 
+#advanced-search-form {
+    border: 0;
+}
+
 .portal-search-top {
     display: grid;
     grid-template-columns: 220px 1fr;
