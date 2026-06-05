@@ -541,14 +541,21 @@ class MessagesAPI {
         $intensity = trim($_GET['intensity'] ?? 'any');
         $style     = trim($_GET['style']     ?? 'any');
 
-        $catMap = [
-            '體育性' => '運動', '學術性' => '學術',
-            '藝文性' => '藝文', '服務性' => '服務', '休閒性' => '休閒',
+        // 各測驗類別對應「可能的 DB 分類名稱」清單，相容不同 seed 命名
+        //（含「性」字舊命名、schema 預設命名、以及藝文→藝術改名）
+        $catAliases = [
+            '體育性' => ['體育性', '運動', '體育'],
+            '學術性' => ['學術性', '學術'],
+            '藝文性' => ['藝文性', '藝文', '藝術', '音樂'],
+            '服務性' => ['服務性', '服務'],
+            '休閒性' => ['休閒性', '休閒'],
         ];
-        if (!array_key_exists($category, $catMap)) {
+        if (!array_key_exists($category, $catAliases)) {
             Helper::error('無效的社團類別', 400);
         }
-        $dbCategory = $catMap[$category];
+        $dbCategories = $catAliases[$category];
+        // 全部來自白名單常數，動態產生 placeholder 不含使用者輸入
+        $catPlaceholders = implode(',', array_fill(0, count($dbCategories), '?'));
 
         if (!in_array($budget,    ['0', '500', 'any'], true))                    $budget    = 'any';
         if (!in_array($intensity, ['light', 'active', 'any'], true))             $intensity = 'any';
@@ -588,7 +595,7 @@ class MessagesAPI {
                          WHERE cm2.club_id = c.club_id AND cm2.is_active = 1) AS member_count
                  FROM clubs c
                  LEFT JOIN club_categories cat ON cat.category_id = c.category_id
-                 WHERE cat.category_name = ?
+                 WHERE cat.category_name IN ($catPlaceholders)
                    AND c.activity_status = 'active'
                    AND c.club_id NOT IN (
                        SELECT club_id FROM club_members WHERE user_id = ? AND is_active = 1
@@ -598,7 +605,7 @@ class MessagesAPI {
                    $badgeOrder,
                    member_count DESC
                  LIMIT 3",
-                [$dbCategory, $uid]
+                array_merge($dbCategories, [$uid])
             );
 
             // is_read=1：結果當下就看到了，不應觸發未讀紅點
