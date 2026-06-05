@@ -1142,7 +1142,8 @@ window.addEventListener('DOMContentLoaded', async function () {
     const targetUserId = Number(params.get('user_id') || 0);
     const targetName = decodeURIComponent(params.get('name') || '');
     if (params.get('open') === 'bot') {
-        openBotConversation();
+        await openBotConversation();
+        if (params.get('quiz') === 'start') startClubQuiz();
     } else if (targetUserId > 0) {
         openConversation(targetUserId, targetName, '');
     }

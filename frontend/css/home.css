@@ -540,6 +540,27 @@
     }
 }
 
-
-
+/* 社團適配測驗 widget（同 messages 邀請卡樣式） */
+.quiz-icon-wrap {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #ede9fe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.quiz-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #5b21b6;
+    line-height: 1.3;
+}
+.quiz-subtitle {
+    font-size: 0.73rem;
+    color: #9ca3af;
+    margin-top: 1px;
+}
 

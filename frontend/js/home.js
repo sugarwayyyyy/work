@@ -430,6 +430,17 @@ async function resolveMapLocations(container) {
     }));
 }
 
+/* ── 社團適配測驗入口 ── */
+
+function goClubQuiz() {
+    const user = (typeof StorageUtils !== 'undefined') ? StorageUtils.getUser() : null;
+    if (!user) {
+        window.location.href = 'pages/login.html';
+        return;
+    }
+    window.location.href = 'pages/messages.html?open=bot&quiz=start';
+}
+
 /* ── Init ── */
 
 window.addEventListener('DOMContentLoaded', async function () {
