@@ -124,35 +124,49 @@ function initGoogleOAuth({ formSelector, loadingText, failText, onSuccess }) {
             cancel_on_tap_outside: true,
         });
 
-        // 改用官方 renderButton（點擊開帳號選擇彈窗），取代易被瀏覽器抑制的 One Tap prompt()。
-        // 自訂按鈕 #google-signin-btn 以官方按鈕取代並隱藏。
+        // 疊合技巧：自訂按鈕 #google-signin-btn 在底層顯示（與其他按鈕同款），
+        // Google 官方 renderButton 生成的原生按鈕透明疊在上層接收點擊，
+        // 兼顧「外觀一致」與「renderButton 可靠彈窗」（避免 One Tap prompt() 被瀏覽器抑制）。
         const customBtn = document.getElementById('google-signin-btn');
-        let btnContainer = document.getElementById('google-btn-container');
-        if (!btnContainer && customBtn && customBtn.parentNode) {
-            btnContainer = document.createElement('div');
-            btnContainer.id = 'google-btn-container';
-            btnContainer.style.display = 'flex';
-            btnContainer.style.justifyContent = 'center';
-            customBtn.parentNode.insertBefore(btnContainer, customBtn);
-            customBtn.style.display = 'none';
-        }
-        if (btnContainer && window.google && google.accounts && google.accounts.id.renderButton) {
-            try {
-                google.accounts.id.renderButton(btnContainer, {
+        if (customBtn && customBtn.parentNode && window.google && google.accounts && google.accounts.id.renderButton) {
+            const wrap = document.createElement('div');
+            wrap.className = 'gsi-overlay-wrap';
+            customBtn.parentNode.insertBefore(wrap, customBtn);
+            wrap.appendChild(customBtn);
+
+            const overlay = document.createElement('div');
+            overlay.id = 'google-btn-container';
+            overlay.className = 'gsi-overlay';
+            wrap.appendChild(overlay);
+
+            const renderOverlay = () => {
+                overlay.innerHTML = '';
+                const raw = Math.round(customBtn.offsetWidth) || 300;
+                const width = Math.max(200, Math.min(raw, 400)); // renderButton width 限 400
+                google.accounts.id.renderButton(overlay, {
                     theme: 'outline',
                     size: 'large',
                     type: 'standard',
                     text: 'signin_with',
-                    shape: 'rectangular',
+                    shape: 'pill',
                     locale: 'zh_TW',
-                    width: 300,
+                    width,
+                });
+            };
+
+            try {
+                renderOverlay();
+                // 視窗縮放時重新渲染，維持與底層按鈕等寬
+                let resizeTimer;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(renderOverlay, 200);
                 });
             } catch (e) {
-                // renderButton 失敗時退回自訂按鈕 + One Tap
-                if (customBtn) {
-                    customBtn.style.display = '';
-                    customBtn.addEventListener('click', () => google.accounts.id.prompt());
-                }
+                // renderButton 失敗：拆掉疊合、露出自訂按鈕並改用 One Tap
+                wrap.parentNode.insertBefore(customBtn, wrap);
+                wrap.remove();
+                customBtn.addEventListener('click', () => google.accounts.id.prompt());
             }
         } else if (customBtn) {
             customBtn.addEventListener('click', () => google.accounts.id.prompt());

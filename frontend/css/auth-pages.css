@@ -89,3 +89,25 @@ html, body { height: 100%; overflow: hidden; }
     .auth-carousel { display: none; }
     .auth-form-side { flex: 1; }
 }
+
+/* ── Google 登入按鈕疊合 ──
+   底層為自訂 .btn-secondary（與其他按鈕同款），
+   上層為 Google 原生 renderButton 按鈕，近乎透明但仍可點，撐滿整個底層按鈕。 */
+.gsi-overlay-wrap {
+    position: relative;
+}
+.gsi-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    opacity: 0.001;       /* 幾乎不可見，但保留可點擊（避免被判定為隱藏按鈕） */
+    overflow: hidden;
+    cursor: pointer;
+}
+/* 強制 Google 按鈕填滿底層按鈕區域，確保整塊都能點 */
+.gsi-overlay > div,
+.gsi-overlay iframe {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+}
