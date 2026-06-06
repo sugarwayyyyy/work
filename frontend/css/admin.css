@@ -792,6 +792,102 @@
 [data-theme="dark"] .user-edit-club-role-label { color: #888888; }
 [data-theme="dark"] .user-edit-club-add        { border-top-color: #2A2A2A; }
 
+/* ── Dark mode: tables ── */
+[data-theme="dark"] .user-mgmt-table-shell {
+    background: #171717;
+    border-color: #2A2A2A;
+}
+
+[data-theme="dark"] .user-mgmt-table thead th {
+    background: #212121;
+    color: #D4D4D4;
+}
+
+[data-theme="dark"] .user-mgmt-table tbody tr {
+    border-color: #2A2A2A;
+}
+
+[data-theme="dark"] .user-mgmt-table td {
+    color: #D4D4D4;
+}
+
+[data-theme="dark"] .user-mgmt-table tbody tr:hover {
+    background-color: #1F1F1F;
+}
+
+[data-theme="dark"] .user-mgmt-club-id {
+    color: #888888;
+}
+
+/* ── Dark mode: user management panels and category assistants ── */
+[data-theme="dark"] .user-mgmt-head h2 {
+    color: #D4D4D4;
+}
+
+[data-theme="dark"] .user-mgmt-head p {
+    color: #888888;
+}
+
+[data-theme="dark"] .ca-group {
+    background: #171717;
+    border-color: #2A2A2A;
+}
+
+[data-theme="dark"] .ca-group__head {
+    border-bottom-color: #2A2A2A;
+}
+
+[data-theme="dark"] .ca-group__title {
+    color: #D4D4D4;
+}
+
+[data-theme="dark"] .ca-group__count {
+    color: #888888;
+}
+
+[data-theme="dark"] .ca-assistant__name {
+    color: #D4D4D4;
+}
+
+[data-theme="dark"] .ca-assistant__email {
+    color: #888888;
+}
+
+[data-theme="dark"] .ca-assistant + .ca-assistant {
+    border-top-color: #2A2A2A;
+}
+
+[data-theme="dark"] .ca-empty {
+    color: #888888;
+}
+
+[data-theme="dark"] .ca-autocomplete {
+    background: #212121;
+    border-color: #2A2A2A;
+}
+
+[data-theme="dark"] .ca-ac-item {
+    border-bottom-color: #2A2A2A;
+    color: #D4D4D4;
+}
+
+[data-theme="dark"] .ca-ac-item:hover,
+[data-theme="dark"] .ca-ac-item.is-active {
+    background: #2A2A2A;
+}
+
+[data-theme="dark"] .ca-ac-item__name {
+    color: #D4D4D4;
+}
+
+[data-theme="dark"] .ca-ac-item__meta {
+    color: #888888;
+}
+
+[data-theme="dark"] .ca-ac-empty {
+    color: #888888;
+}
+
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .user-edit-modal-content,
     :root:not([data-theme="light"]) .club-admin-quick-card {
@@ -812,6 +908,35 @@
     :root:not([data-theme="light"]) .user-edit-club-role-name  { color: #F5F5F5; }
     :root:not([data-theme="light"]) .user-edit-club-role-label { color: #888888; }
     :root:not([data-theme="light"]) .user-edit-club-add        { border-top-color: #2A2A2A; }
+    
+    /* ── Dark mode: tables ── */
+    :root:not([data-theme="light"]) .user-mgmt-table-shell { background: #171717; border-color: #2A2A2A; }
+    :root:not([data-theme="light"]) .user-mgmt-table thead th { background: #212121; color: #D4D4D4; }
+    :root:not([data-theme="light"]) .user-mgmt-table tbody tr { border-color: #2A2A2A; }
+    :root:not([data-theme="light"]) .user-mgmt-table td { color: #D4D4D4; }
+    :root:not([data-theme="light"]) .user-mgmt-table tbody tr:hover { background-color: #1F1F1F; }
+    :root:not([data-theme="light"]) .user-mgmt-club-id { color: #888888; }
+    
+    /* ── Dark mode: user management panels ── */
+    :root:not([data-theme="light"]) .user-mgmt-head h2 { color: #D4D4D4; }
+    :root:not([data-theme="light"]) .user-mgmt-head p { color: #888888; }
+    
+    /* ── Dark mode: category assistants ── */
+    :root:not([data-theme="light"]) .ca-group { background: #171717; border-color: #2A2A2A; }
+    :root:not([data-theme="light"]) .ca-group__head { border-bottom-color: #2A2A2A; }
+    :root:not([data-theme="light"]) .ca-group__title { color: #D4D4D4; }
+    :root:not([data-theme="light"]) .ca-group__count { color: #888888; }
+    :root:not([data-theme="light"]) .ca-assistant__name { color: #D4D4D4; }
+    :root:not([data-theme="light"]) .ca-assistant__email { color: #888888; }
+    :root:not([data-theme="light"]) .ca-assistant + .ca-assistant { border-top-color: #2A2A2A; }
+    :root:not([data-theme="light"]) .ca-empty { color: #888888; }
+    :root:not([data-theme="light"]) .ca-autocomplete { background: #212121; border-color: #2A2A2A; }
+    :root:not([data-theme="light"]) .ca-ac-item { border-bottom-color: #2A2A2A; color: #D4D4D4; }
+    :root:not([data-theme="light"]) .ca-ac-item:hover,
+    :root:not([data-theme="light"]) .ca-ac-item.is-active { background: #2A2A2A; }
+    :root:not([data-theme="light"]) .ca-ac-item__name { color: #D4D4D4; }
+    :root:not([data-theme="light"]) .ca-ac-item__meta { color: #888888; }
+    :root:not([data-theme="light"]) .ca-ac-empty { color: #888888; }
 }
 
 

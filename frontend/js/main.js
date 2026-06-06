@@ -2003,7 +2003,7 @@ function updateNavigation() {
     if (user && user.role === 'platform_admin') {
         const path = window.location.pathname || '';
         const isAllowedPage = isAdminSubPage() || isAdminDashboardPage() || isAdminOverviewPage()
-            || isUserProfilePage() || isNotificationsPage() || isMessagesPage()
+            || isUserProfilePage() || isMessagesPage()
             || path.endsWith('/event-detail.html')
             || path.endsWith('/login.html') || path.endsWith('/register.html');
         if (!isAllowedPage) {
@@ -2103,7 +2103,12 @@ function updateNavigation() {
                 bellBtn.onclick = (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    window.location.href = getPageLink('notifications.html');
+                    const user = StorageUtils.getUser();
+                    if (user && user.role === 'platform_admin') {
+                        window.location.href = getPageLink('admin-overview.html');
+                    } else {
+                        window.location.href = getPageLink('notifications.html');
+                    }
                 };
                 (async () => {
                     try {
@@ -2164,8 +2169,8 @@ function updateNavigation() {
 
         const navLinks = document.querySelector('.nav-links');
         if (navLinks) {
-            if (user.role === 'platform_admin' && (isAdminShellPage() || isUserProfilePage() || isNotificationsPage())) {
-                // 平台管理員：管理專屬頁 + 個人中心/通知中心，皆套用左側側邊欄
+            if (user.role === 'platform_admin' && (isAdminShellPage() || isUserProfilePage())) {
+                // 平台管理員：管理專屬頁 + 個人中心，皆套用左側側邊欄
                 document.body.classList.add('admin-shell');
                 navLinks.innerHTML = '';
                 renderAdminSidebar();
