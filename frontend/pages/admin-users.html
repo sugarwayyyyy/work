@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../css/styles.css?v=20260530" />
-    <link rel="stylesheet" href="../css/admin.css?v=20260604p" />
+    <link rel="stylesheet" href="../css/admin.css?v=20260604r" />
 </head>
 <body class="admin-page admin-shell admin-users-page">
     <header>
@@ -89,9 +89,11 @@
                 <p>為每個社團類別指派負責的助教；助教登入後只能檢視與管理其負責類別的社團。</p>
             </div>
             <div class="user-mgmt-toolbar">
-                <div class="form-field user-mgmt-toolbar__search">
-                    <label for="ca-user-select">選擇帳號</label>
-                    <select id="ca-user-select"><option value="">載入中…</option></select>
+                <div class="form-field user-mgmt-toolbar__search ca-user-picker">
+                    <label for="ca-user-search">選擇帳號（可搜尋姓名 / Email / 學號）</label>
+                    <input type="text" id="ca-user-search" autocomplete="off" placeholder="輸入關鍵字搜尋帳號…" />
+                    <input type="hidden" id="ca-user-id" />
+                    <div id="ca-user-results" class="ca-autocomplete" style="display:none;"></div>
                 </div>
                 <div class="form-field">
                     <label for="ca-category-select">負責類別</label>
@@ -150,8 +152,9 @@
                         <select id="user-edit-platform-role">
                             <option value="student">一般帳號</option>
                             <option value="platform_admin">平台管理員</option>
-                            <option value="category_assistant">類別助教</option>
+                            <option value="category_assistant" hidden>類別助教</option>
                         </select>
+                        <small id="user-edit-role-note" style="display:none;color:var(--text-light);font-size:0.78rem;">此帳號為類別助教，權限請於下方「類別助教管理」面板指派或撤銷。</small>
                     </div>
                     <div class="form-field admin-span-2" id="user-edit-password-wrap" style="display:none;">
                         <label for="user-edit-admin-password">請輸入您自己的管理員密碼以確認此操作</label>
@@ -191,7 +194,7 @@
     </div>
 
     <script src="../js/main.js?v=20260604c"></script>
-    <script src="../js/admin-users.js?v=20260604b"></script>
+    <script src="../js/admin-users.js?v=20260604d"></script>
     <footer>
         <p>&copy; 2026 社團活動資訊統整平台 - 打造最好的校園社團生態</p>
     </footer>

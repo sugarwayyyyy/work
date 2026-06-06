@@ -124,9 +124,39 @@ function initGoogleOAuth({ formSelector, loadingText, failText, onSuccess }) {
             cancel_on_tap_outside: true,
         });
 
-        document.getElementById('google-signin-btn').addEventListener('click', function () {
-            google.accounts.id.prompt();
-        });
+        // 改用官方 renderButton（點擊開帳號選擇彈窗），取代易被瀏覽器抑制的 One Tap prompt()。
+        // 自訂按鈕 #google-signin-btn 以官方按鈕取代並隱藏。
+        const customBtn = document.getElementById('google-signin-btn');
+        let btnContainer = document.getElementById('google-btn-container');
+        if (!btnContainer && customBtn && customBtn.parentNode) {
+            btnContainer = document.createElement('div');
+            btnContainer.id = 'google-btn-container';
+            btnContainer.style.display = 'flex';
+            btnContainer.style.justifyContent = 'center';
+            customBtn.parentNode.insertBefore(btnContainer, customBtn);
+            customBtn.style.display = 'none';
+        }
+        if (btnContainer && window.google && google.accounts && google.accounts.id.renderButton) {
+            try {
+                google.accounts.id.renderButton(btnContainer, {
+                    theme: 'outline',
+                    size: 'large',
+                    type: 'standard',
+                    text: 'signin_with',
+                    shape: 'rectangular',
+                    locale: 'zh_TW',
+                    width: 300,
+                });
+            } catch (e) {
+                // renderButton 失敗時退回自訂按鈕 + One Tap
+                if (customBtn) {
+                    customBtn.style.display = '';
+                    customBtn.addEventListener('click', () => google.accounts.id.prompt());
+                }
+            }
+        } else if (customBtn) {
+            customBtn.addEventListener('click', () => google.accounts.id.prompt());
+        }
 
         async function handleGoogleCallback(googleResponse) {
             const credential = googleResponse.credential;

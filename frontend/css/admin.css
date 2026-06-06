@@ -384,6 +384,33 @@
 .ca-assistant__email { font-size: 0.76rem; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ca-empty { color: #9ca3af; font-size: 0.85rem; padding: 0.3rem 0; }
 
+/* 帳號搜尋自動完成 */
+.ca-user-picker { position: relative; }
+.ca-autocomplete {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    margin-top: 2px;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+.ca-ac-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+}
+.ca-ac-item:last-child { border-bottom: none; }
+.ca-ac-item:hover, .ca-ac-item.is-active { background: #eff6ff; }
+.ca-ac-item__name { font-size: 0.9rem; font-weight: 500; }
+.ca-ac-item__meta { font-size: 0.76rem; color: #6b7280; }
+.ca-ac-empty { padding: 0.6rem 0.75rem; color: #9ca3af; font-size: 0.85rem; }
+
 .user-mgmt-table-shell {
     border: 1px solid #e5e7eb;
     border-radius: 10px;

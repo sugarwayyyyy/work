@@ -199,16 +199,24 @@
             const currentUser = (window.StorageUtils && typeof window.StorageUtils.getUser === 'function') ? window.StorageUtils.getUser() : null;
             const isSelf = Number(currentUser?.user_id || 0) === Number(user.user_id);
             const isPlatformAdmin = user.role === 'platform_admin';
+            const isCategoryAssistant = user.role === 'category_assistant';
             document.getElementById('user-edit-id').value = String(user.user_id || '');
             document.getElementById('user-edit-name').value = user.name || '';
             document.getElementById('user-edit-email').value = user.email || '';
             document.getElementById('user-edit-student-id').value = user.student_id || '';
             document.getElementById('user-edit-status').value = Number(user.is_active) === 1 ? '1' : '0';
-            document.getElementById('user-edit-platform-role').value = isPlatformAdmin ? 'platform_admin' : 'student';
+            const roleSel = document.getElementById('user-edit-platform-role');
+            // 類別助教選項僅在該帳號本身是助教時顯示（用於正確呈現現況）；其餘帳號不可由此設為助教
+            const caOption = roleSel.querySelector('option[value="category_assistant"]');
+            if (caOption) caOption.hidden = !isCategoryAssistant;
+            roleSel.value = isPlatformAdmin ? 'platform_admin' : (isCategoryAssistant ? 'category_assistant' : 'student');
             document.getElementById('user-edit-meta-name').textContent = user.name || '-';
             document.getElementById('user-edit-meta-email').textContent = user.email || '-';
             document.getElementById('user-edit-admin-password').value = '';
-            document.getElementById('user-edit-platform-role').disabled = isSelf && isPlatformAdmin;
+            // 類別助教不可從此處更改權限（須透過下方面板指派/撤銷）；自己若是平台管理員也不可改自己
+            roleSel.disabled = (isSelf && isPlatformAdmin) || isCategoryAssistant;
+            const roleNote = document.getElementById('user-edit-role-note');
+            if (roleNote) roleNote.style.display = isCategoryAssistant ? '' : 'none';
             document.getElementById('user-edit-status').disabled = isSelf;
             const clubSection = document.getElementById('user-edit-club-section');
             if (clubSection) clubSection.style.display = isPlatformAdmin ? 'none' : '';
@@ -229,14 +237,20 @@
             document.getElementById('user-edit-meta-email').textContent = '-';
             document.getElementById('user-edit-status').disabled = false;
             document.getElementById('user-edit-platform-role').disabled = false;
+            const caOption = document.querySelector('#user-edit-platform-role option[value="category_assistant"]');
+            if (caOption) caOption.hidden = true;
+            const roleNote = document.getElementById('user-edit-role-note');
+            if (roleNote) roleNote.style.display = 'none';
             syncModalBodyScrollLock();
         }
 
         function toggleUserEditPasswordField(focus = false) {
             const user = userEditState.originalUser;
             const nextRole = document.getElementById('user-edit-platform-role').value;
-            const originalSelectRole = user ? (user.role === 'platform_admin' ? 'platform_admin' : 'student') : 'student';
-            const roleChanged = user && originalSelectRole !== nextRole;
+            // 類別助教不在此處改權限，視為未變更
+            const isAssistantOriginal = user && user.role === 'category_assistant';
+            const originalSelectRole = user ? (user.role === 'platform_admin' ? 'platform_admin' : (isAssistantOriginal ? 'category_assistant' : 'student')) : 'student';
+            const roleChanged = user && !isAssistantOriginal && originalSelectRole !== nextRole;
             const crossingPlatformBoundary = roleChanged && (user.role === 'platform_admin' || nextRole === 'platform_admin');
             const wrap = document.getElementById('user-edit-password-wrap');
             const input = document.getElementById('user-edit-admin-password');
@@ -294,8 +308,10 @@
             if (!nextName) { PageUtils.showAlert('姓名不可為空', 'error'); return; }
             if (!nextEmail || !Validator.validateEmail(nextEmail)) { PageUtils.showAlert('請輸入有效的 Email', 'error'); return; }
             const profileChanged = nextName !== (original.name || '') || nextEmail !== (original.email || '') || nextStudentId !== (original.student_id || '');
-            const originalSelectRole = original.role === 'platform_admin' ? 'platform_admin' : 'student';
-            const roleChanged = nextRole !== originalSelectRole;
+            // 類別助教的權限不可由此表單變更（須走下方面板），一律視為未變更
+            const isAssistantOriginal = original.role === 'category_assistant';
+            const originalSelectRole = original.role === 'platform_admin' ? 'platform_admin' : (isAssistantOriginal ? 'category_assistant' : 'student');
+            const roleChanged = !isAssistantOriginal && nextRole !== originalSelectRole;
             const statusChanged = nextStatus !== (Number(original.is_active) === 1 ? 1 : 0);
             if (!profileChanged && !roleChanged && !statusChanged) { closeUserEditModal(); return; }
             if (roleChanged) {
@@ -342,25 +358,68 @@
 
         // ── 類別助教管理（依六大分類分組顯示）─────────────────────────────
         (async function initCategoryAssistants() {
-            const userSel   = document.getElementById('ca-user-select');
+            const userInput = document.getElementById('ca-user-search');
+            const userIdEl  = document.getElementById('ca-user-id');
+            const resultsEl = document.getElementById('ca-user-results');
             const catSel    = document.getElementById('ca-category-select');
             const assignBtn = document.getElementById('ca-assign-btn');
             const groupsEl  = document.getElementById('ca-groups');
-            if (!userSel || !catSel || !assignBtn || !groupsEl) return;
+            if (!userInput || !userIdEl || !resultsEl || !catSel || !assignBtn || !groupsEl) return;
 
             let caCategories = [];
+            let caEligibleUsers = [];   // 可被指派的帳號（非平台管理員、啟用中）
 
             async function loadCaUsers() {
                 try {
                     const res = await APIClient.get('admin.php?action=users');
                     const users = (res && res.data && res.data.users) ? res.data.users : [];
-                    const eligible = users.filter(u => u.role !== 'platform_admin' && u.is_active != 0);
-                    userSel.innerHTML = '<option value="">請選擇帳號</option>' +
-                        eligible.map(u => `<option value="${u.user_id}">${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>`).join('');
+                    caEligibleUsers = users.filter(u => u.role !== 'platform_admin' && u.is_active != 0);
                 } catch (e) {
-                    userSel.innerHTML = '<option value="">載入失敗</option>';
+                    caEligibleUsers = [];
                 }
             }
+
+            // ── 帳號搜尋自動完成 ──────────────────────────────────────────
+            function renderUserResults(keyword) {
+                const kw = keyword.trim().toLowerCase();
+                let matches = caEligibleUsers;
+                if (kw) {
+                    matches = caEligibleUsers.filter(u =>
+                        (u.name || '').toLowerCase().includes(kw) ||
+                        (u.email || '').toLowerCase().includes(kw) ||
+                        (u.student_id || '').toLowerCase().includes(kw)
+                    );
+                }
+                matches = matches.slice(0, 20);
+                if (matches.length === 0) {
+                    resultsEl.innerHTML = '<div class="ca-ac-empty">查無符合的帳號</div>';
+                } else {
+                    resultsEl.innerHTML = matches.map(u => {
+                        const roleTag = u.role === 'category_assistant' ? '（目前為類別助教）' : '';
+                        const meta = [u.email, u.student_id].filter(Boolean).map(escapeHtml).join(' · ');
+                        return `<div class="ca-ac-item" data-uid="${u.user_id}" data-name="${escapeHtml(u.name || '')}">
+                            <div class="ca-ac-item__name">${escapeHtml(u.name || '—')}${roleTag}</div>
+                            <div class="ca-ac-item__meta">${meta}</div>
+                        </div>`;
+                    }).join('');
+                    resultsEl.querySelectorAll('.ca-ac-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            userIdEl.value = item.dataset.uid;
+                            userInput.value = item.dataset.name;
+                            resultsEl.style.display = 'none';
+                        });
+                    });
+                }
+                resultsEl.style.display = '';
+            }
+            userInput.addEventListener('input', () => {
+                userIdEl.value = '';   // 重新輸入即清除先前選定
+                renderUserResults(userInput.value);
+            });
+            userInput.addEventListener('focus', () => renderUserResults(userInput.value));
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.ca-user-picker')) resultsEl.style.display = 'none';
+            });
 
             async function loadCaCategories() {
                 try {
@@ -437,17 +496,19 @@
             }
 
             assignBtn.addEventListener('click', async () => {
-                const userId     = Number(userSel.value);
+                const userId     = Number(userIdEl.value);
                 const categoryId = Number(catSel.value);
-                if (!userId)     { PageUtils.showAlert('請選擇帳號', 'error'); return; }
+                if (!userId)     { PageUtils.showAlert('請從搜尋結果選擇帳號', 'error'); return; }
                 if (!categoryId) { PageUtils.showAlert('請選擇類別', 'error'); return; }
                 assignBtn.disabled = true;
                 try {
                     const res = await APIClient.post('admin.php?action=assign_category_assistant', { user_id: userId, category_id: categoryId });
                     if (res && res.success) {
                         PageUtils.showAlert('已指派助教', 'success');
-                        userSel.value = '';
-                        catSel.value  = '';
+                        userInput.value = '';
+                        userIdEl.value  = '';
+                        catSel.value    = '';
+                        resultsEl.style.display = 'none';
                         await Promise.all([loadCaGroups(), loadCaUsers(), loadUsers()]);
                     } else {
                         PageUtils.showAlert(res.message || '指派失敗', 'error');

@@ -2519,6 +2519,23 @@
             director: '幹事', member: '一般成員', advisor: '顧問'
         };
 
+        // 七層角色中的「社團內身分」分層色彩標示：社長 / 幹部 / 一般社員 / 顧問
+        const ROLE_TIER = {
+            president:        { label: '社長',     bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
+            vice_president:   { label: '副社長',   bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+            public_relations: { label: '公關',     bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+            treasurer:        { label: '總務',     bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+            director:         { label: '幹事',     bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+            member:           { label: '一般社員', bg: '#f3f4f6', color: '#374151', border: '#d1d5db' },
+            advisor:          { label: '顧問',     bg: '#ede9fe', color: '#5b21b6', border: '#c4b5fd' },
+        };
+        function roleBadge(role) {
+            const t = ROLE_TIER[role] || { label: role, bg: '#f3f4f6', color: '#374151', border: '#d1d5db' };
+            const style = `display:inline-block;padding:0.2rem 0.6rem;border-radius:12px;font-size:0.74rem;`
+                + `font-weight:600;background:${t.bg};color:${t.color};border:1px solid ${t.border};white-space:nowrap;`;
+            return `<span style="${style}">${PageUtils.escapeHtml(t.label)}</span>`;
+        }
+
         const FEE_PAID_TAG_STYLE   = 'display:inline-block;padding:0.18rem 0.55rem;border-radius:12px;font-size:0.72rem;font-weight:500;background:#dcfce7;color:#166534;border:1px solid #86efac;white-space:nowrap;';
         const FEE_UNPAID_TAG_STYLE = 'display:inline-block;padding:0.18rem 0.55rem;border-radius:12px;font-size:0.72rem;font-weight:500;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;white-space:nowrap;';
         const FEE_NONE_TAG_STYLE   = 'display:inline-block;padding:0.18rem 0.55rem;border-radius:12px;font-size:0.72rem;background:#f3f4f6;color:#6b7280;border:1px solid #d1d5db;white-space:nowrap;';
@@ -2560,7 +2577,7 @@
                     const uid = Number(m.user_id);
                     const safeN = PageUtils.escapeHtml(m.name || '—');
                     const safeS = PageUtils.escapeHtml(m.student_id || '—');
-                    const roleLabel = PageUtils.escapeHtml(ROLE_LABELS[m.role] || m.role);
+                    const roleLabel = roleBadge(m.role);
                     const isSelf = uid === currentUserId;
                     const isTargetPresident = m.role === 'president';
 
@@ -2690,6 +2707,7 @@
                 if (res && res.success) {
                     PageUtils.showAlert('角色已更新', 'success');
                     loadClubMembers(clubId);
+                    if (typeof loadOperationLogs === 'function') loadOperationLogs(clubId);
                 } else {
                     PageUtils.showAlert(res?.message || '更新失敗', 'error');
                     if (selectEl) selectEl.disabled = false;
@@ -2713,6 +2731,7 @@
                 if (res && res.success) {
                     PageUtils.showAlert('費用類型已更新', 'success');
                     await loadClubMembers(clubId);
+                    if (typeof loadOperationLogs === 'function') loadOperationLogs(clubId);
                 } else {
                     PageUtils.showAlert(res?.message || '更新失敗', 'error');
                     sel.disabled = false;
@@ -2733,6 +2752,7 @@
                 });
                 if (res && res.success) {
                     await loadClubMembers(clubId);
+                    if (typeof loadOperationLogs === 'function') loadOperationLogs(clubId);
                 } else {
                     PageUtils.showAlert(res?.message || '更新失敗', 'error');
                     sel.disabled = false;
@@ -2755,6 +2775,7 @@
                 if (res && res.success) {
                     PageUtils.showAlert('成員已移除', 'success');
                     loadClubMembers(clubId);
+                    if (typeof loadOperationLogs === 'function') loadOperationLogs(clubId);
                 } else {
                     PageUtils.showAlert(res?.message || '移除失敗', 'error');
                     kickBtn.disabled = false;

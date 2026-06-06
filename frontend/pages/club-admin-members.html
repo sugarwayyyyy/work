@@ -86,10 +86,22 @@
             </div>
         </section>
 
+        <section class="portal-section portal-section--dynamic reveal-up" id="oplog-section">
+            <div class="portal-section-head">
+                <div>
+                    <h2 class="portal-section-title">操作紀錄</h2>
+                    <p class="portal-section-desc">記錄哪位幹部核准入社、確認收費、變更職稱等，釐清管理與帳務責任。</p>
+                </div>
+            </div>
+            <div id="oplog-wrap">
+                <p class="widget-empty">載入中…</p>
+            </div>
+        </section>
+
     </div>
 
     <script src="../js/main.js?v=20260604c"></script>
-    <script src="../js/club-admin-dashboard.js?v=20260603f"></script>
+    <script src="../js/club-admin-dashboard.js?v=20260604a"></script>
     <script>
         // ── 成員列表前端篩選 ──────────────────────────────────────────
         function filterMembers() {
@@ -130,6 +142,50 @@
         document.getElementById('member-search')?.addEventListener('input', filterMembers);
         document.getElementById('member-role-filter')?.addEventListener('change', filterMembers);
 
+        // ── 操作紀錄載入 ──────────────────────────────────────────────
+        const OPLOG_ACTION_LABELS = {
+            approve_join:  '核准入社',
+            reject_join:   '拒絕入社',
+            confirm_fee:   '確認收費',
+            unconfirm_fee: '取消收費',
+            change_fee_type: '變更費用類型',
+            assign_role:   '指派/變更職稱',
+            remove_member: '移除成員',
+        };
+        const OPLOG_ROLE_LABELS = {
+            president: '社長', vice_president: '副社長', public_relations: '公關',
+            treasurer: '總務', director: '幹事', platform_admin: '平台管理員',
+        };
+        async function loadOperationLogs(clubId) {
+            const wrap = document.getElementById('oplog-wrap');
+            if (!wrap) return;
+            wrap.innerHTML = '<p class="widget-empty">載入中…</p>';
+            try {
+                const res = await APIClient.get('club-admin.php?action=operation_logs&id=' + clubId);
+                const logs = (res && res.success && res.data && Array.isArray(res.data.logs)) ? res.data.logs : [];
+                if (logs.length === 0) {
+                    wrap.innerHTML = '<p class="widget-empty">尚無操作紀錄</p>';
+                    return;
+                }
+                const esc = (s) => PageUtils.escapeHtml(String(s ?? ''));
+                let html = '<div class="table-shell" style="border-radius:8px;"><table class="table"><thead><tr>'
+                    + '<th>時間</th><th>操作</th><th>執行幹部</th><th>對象</th><th>說明</th>'
+                    + '</tr></thead><tbody>';
+                logs.forEach(l => {
+                    const actionLabel = OPLOG_ACTION_LABELS[l.action] || l.action;
+                    const roleLabel = l.actor_role ? (OPLOG_ROLE_LABELS[l.actor_role] || l.actor_role) : '';
+                    const actor = esc(l.actor_name || '（已移除帳號）') + (roleLabel ? `（${esc(roleLabel)}）` : '');
+                    const when = l.created_at ? esc(String(l.created_at).slice(0, 16)) : '-';
+                    html += `<tr><td style="white-space:nowrap;">${when}</td><td>${esc(actionLabel)}</td>`
+                        + `<td>${actor}</td><td>${esc(l.target_name || '-')}</td><td>${esc(l.detail || '-')}</td></tr>`;
+                });
+                html += '</tbody></table></div>';
+                wrap.innerHTML = html;
+            } catch (err) {
+                wrap.innerHTML = `<p class="widget-empty">載入失敗：${PageUtils.escapeHtml(err.message || '未知錯誤')}</p>`;
+            }
+        }
+
         // ── 頁面初始化 ────────────────────────────────────────────────
         (async function () {
             if (window._pageInitReady) {
@@ -169,6 +225,7 @@
 
             loadClubAdminStats(clubId);
             loadClubMembers(clubId);
+            loadOperationLogs(clubId);
             updateNavApplicationsBadge(clubId);
         })();
     </script>

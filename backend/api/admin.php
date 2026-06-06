@@ -555,7 +555,17 @@ class AdminAPI {
         if (!empty($errors)) Helper::error('驗證失敗: ' . implode(', ', $errors), 400);
 
         $user_id = (int)$data['user_id'];
-        $role = in_array($data['role'], ['student', 'club_admin', 'platform_admin', 'category_assistant']) ? $data['role'] : 'student';
+
+        // 類別助教的權限只能透過「類別助教管理」面板（assign/revoke）調整，不可由此通用端點變更
+        $current = Database::getInstance()->fetchOne('SELECT role FROM users WHERE user_id = ?', [$user_id]);
+        if (($current['role'] ?? '') === 'category_assistant') {
+            Helper::error('類別助教的權限請透過下方「類別助教管理」面板調整', 400);
+        }
+        if (($data['role'] ?? '') === 'category_assistant') {
+            Helper::error('請透過「類別助教管理」面板指派類別助教', 400);
+        }
+
+        $role = in_array($data['role'], ['student', 'club_admin', 'platform_admin']) ? $data['role'] : 'student';
 
         $result = dbUpdate('users', ['role' => $role], 'user_id = ?', [$user_id]);
         if (!$result) Helper::error('更新用戶角色失敗', 500);

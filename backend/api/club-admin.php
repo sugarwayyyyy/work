@@ -925,6 +925,8 @@ if ($method === 'GET') {
         ClubAdminAPI::getPendingAppCount();
     } elseif ($action === 'event_club' && $club_id) {
         ClubAdminAPI::getEventClub($club_id);
+    } elseif ($action === 'operation_logs' && $club_id) {
+        ClubAdminAPI::getOperationLogs($club_id);
     }
 }
 
