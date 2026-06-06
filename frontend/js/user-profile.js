@@ -717,7 +717,7 @@
             const statusDiv = document.getElementById('google-bind-status');
             if (!label || !statusDiv) return;
 
-            statusDiv.querySelectorAll('button, .google-link-wrap').forEach(el => el.remove());
+            statusDiv.querySelectorAll('button, .google-link-wrap, .google-bind-hint').forEach(el => el.remove());
 
             if (user && user.google_id) {
                 label.textContent = '已綁定 Google 帳號';
@@ -735,6 +735,15 @@
                     unlinkBtn.addEventListener('click', handleUnlinkGoogle);
                 }
                 statusDiv.appendChild(unlinkBtn);
+
+                // disabled 按鈕的 title tooltip 多半不會觸發，補一段可見文字提示
+                if (isGoogleOnly) {
+                    const hint = document.createElement('span');
+                    hint.className = 'google-bind-hint';
+                    hint.textContent = '此帳號以 Google 建立，需先在下方「設定密碼」後才能解除綁定';
+                    hint.style.cssText = 'font-size:0.8rem; color:var(--text-muted); flex-basis:100%; margin-top:-0.25rem;';
+                    statusDiv.appendChild(hint);
+                }
             } else {
                 label.textContent = '尚未綁定 Google 帳號';
                 label.style.color = 'var(--text-muted)';

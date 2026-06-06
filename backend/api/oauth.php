@@ -180,13 +180,14 @@ class OAuthAPI {
 
         $user = dbFetchOne('SELECT * FROM users WHERE email = ? LIMIT 1', [$email]);
         if ($user) {
+            // 既有 email 帳號（已有自設密碼）綁定 Google：只補 google_id，
+            // 不可改 oauth_provider — 維持原值，否則解綁會被誤判為「Google 純建帳號」而擋下。
             dbUpdate('users',
-                ['google_id' => $googleId, 'oauth_provider' => 'google'],
+                ['google_id' => $googleId],
                 'user_id = ?',
                 [$user['user_id']]
             );
-            $user['google_id']      = $googleId;
-            $user['oauth_provider'] = 'google';
+            $user['google_id'] = $googleId;
             return $user;
         }
 
@@ -276,8 +277,11 @@ class OAuthBindAPI {
             Helper::error('此 Google 帳號已綁定其他帳戶', 409);
         }
 
+        // 主動綁定 Google：只設 google_id，不可改 oauth_provider。
+        // 此帳號是登入中的既有帳號（多半已有自設密碼），維持原 oauth_provider，
+        // 否則之後解綁會被誤判為「Google 純建帳號」而要求先設定密碼。
         dbUpdate('users',
-            ['google_id' => $googleId, 'oauth_provider' => 'google'],
+            ['google_id' => $googleId],
             'user_id = ?',
             [$userId]
         );
