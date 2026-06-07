@@ -1065,6 +1065,18 @@ body.admin-shell > header nav {
 }
 body.admin-shell .nav-links { display: none !important; }
 
+/* 共用頁（如通知中心）在管理員側邊欄模式下：移除 home-shell 的置中/高度限制，
+   改用與其他後台頁一致的內距佈局，避免 home 置中容器與固定側邊欄衝突跑版 */
+body.admin-shell .home-shell {
+    min-height: 0;
+    background: transparent;
+}
+body.admin-shell .home-container {
+    max-width: none;
+    margin: 0;
+    padding: 1.25rem 2rem 1.5rem;
+}
+
 /* ── Sidebar 基礎：從頁面頂端延伸全高 ── */
 .admin-sidebar {
     position: fixed;
