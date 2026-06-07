@@ -1006,6 +1006,51 @@ footer p {
 
 .admin-users-page .user-mgmt-panel {
     margin-bottom: 0;
+    background: var(--page-bg);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.admin-users-page .user-mgmt-panel::before {
+    content: none;
+}
+
+.admin-users-page .user-mgmt-panel:hover {
+    box-shadow: none;
+    transform: none;
+}
+
+.admin-clubs-page .admin-panel {
+    background: var(--page-bg);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.admin-clubs-page .admin-panel::before {
+    content: none;
+}
+
+.admin-clubs-page .admin-panel:hover {
+    box-shadow: none;
+    transform: none;
+}
+
+.admin-announcements-page .admin-panel {
+    background: var(--page-bg);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.admin-announcements-page .admin-panel::before {
+    content: none;
+}
+
+.admin-announcements-page .admin-panel:hover {
+    box-shadow: none;
+    transform: none;
 }
 
 .admin-users-page footer {
