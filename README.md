@@ -43,6 +43,16 @@
 
 **本節適用於所有 AI 編碼工具（Codex、Claude、GitHub Copilot 等），尤其是後端修改。違反以下原則會直接影響安全性或資料完整性。**
 
+### 檔案編碼（鐵則，最優先）
+
+> **所有檔案一律使用 UTF-8（不含 BOM）編碼**，含 `.sql`、`.php`、`.html`、`.css`、`.js`、`.md`。
+
+- 本專案在 **Windows + CP950 / Big5** 環境開發。若以非 UTF-8 儲存含中文的檔案，會出現亂碼（例如把中文寫成 2708 個 `?`、或 `锟斤拷` 之類），且 **AI 工具讀檔時會把它誤判成亂碼並反覆回報**——這通常不是內容錯誤，而是編碼錯誤。
+- 編輯器請固定以 **UTF-8** 儲存。**不要**用記事本「ANSI」另存。
+- **PowerShell 寫檔**：用 `[System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))`。**不要**用 `Set-Content -Encoding UTF8` 或 `Out-File -Encoding UTF8`——PowerShell 5.1 會寫入 BOM，可能導致 PHP 輸出 BOM、`headers already sent` 等問題。
+- **匯入 / 連線 MySQL** 時指定字元集：`mysql --default-character-set=utf8mb4 ...`；資料表使用 `utf8mb4`。
+- 看到中文變成 `?`、`锟斤拷`、`�` 等，先確認是否為編碼問題（以 UTF-8 重新儲存），**不要**直接改內容或回報「亂碼 bug」。
+
 ### 後端安全
 
 #### 1. 認證與授權（必查）
