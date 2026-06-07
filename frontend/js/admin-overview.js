@@ -187,8 +187,40 @@ async function loadOverview() {
         const timeEl = document.getElementById('ov-generated-at');
         if (timeEl && generated_at) timeEl.textContent = formatDateTime(generated_at);
 
+        loadCaDistribution();   // 類別助教分佈（唯讀）
+
     } catch (err) {
         console.error('載入總覽失敗:', err);
+    }
+}
+
+// 類別助教分佈（唯讀）：依六大分類列出每類的助教姓名；指派/撤銷一律走帳號管理 modal
+async function loadCaDistribution() {
+    const wrap = document.getElementById('ov-ca-list');
+    if (!wrap) return;
+    try {
+        const [catRes, caRes] = await Promise.all([
+            APIClient.get('clubs.php?action=categories'),
+            APIClient.get('admin.php?action=category_assistants'),
+        ]);
+        const cats = (catRes && catRes.data && catRes.data.categories) ? catRes.data.categories : [];
+        const rows = (caRes && caRes.data && caRes.data.assignments) ? caRes.data.assignments : [];
+        if (cats.length === 0) {
+            wrap.innerHTML = '<div class="ov-metric"><span class="ov-metric-name">尚無分類資料</span></div>';
+            return;
+        }
+        const byCat = {};
+        rows.forEach(r => { (byCat[r.category_id] = byCat[r.category_id] || []).push(r.name); });
+        wrap.innerHTML = cats.map(c => {
+            const names = byCat[c.category_id] || [];
+            const detail = names.length ? names.map(escapeHtml).join('、') : '—';
+            return `<div class="ov-metric">
+                <span class="ov-metric-name">${escapeHtml(c.category_name)}<br><small style="color:var(--text-muted);font-weight:400;">${detail}</small></span>
+                <span class="ov-metric-value">${names.length} 位</span>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        wrap.innerHTML = '<div class="ov-metric"><span class="ov-metric-name">載入失敗</span></div>';
     }
 }
 

@@ -26,7 +26,8 @@
 ### 角色分工
 - 學生：瀏覽社團、追蹤或加入社團（含費用方案選擇）、報名活動、參與評價與提問。
 - 社團幹部：更新社團資訊、建立活動、管理海報與內容、管理成員職稱。
-- 管理員：維護社團資料、公告、帳號轉讓與平台報表、指派幹部。
+- 管理員：維護社團資料、公告、帳號轉讓與平台報表、指派幹部、指派類別助教。
+- 類別助教：由管理員指派負責單一社團分類，僅能檢視與管理其負責類別下的社團。
 
 ## AI 與新同事啟用
 
@@ -81,8 +82,9 @@
 
 ### 角色系統（容易踩錯）
 
-- `users.role` 有三種有效值：`platform_admin`、`club_admin`、`student`。
+- `users.role` 有四種有效值：`platform_admin`、`club_admin`、`student`、`category_assistant`。
   - `club_admin` 由系統自動維護：當使用者在任一社團擔任幹部（`president`、`vice_president` 等）時寫入；失去所有幹部職位後降回 `student`。**不要**手動在其他情境寫入 `club_admin`。
+  - `category_assistant`（類別助教）：由平台管理員在帳號管理頁指派，負責一個社團分類；指派關係存於 `category_assistant_assignments`（`user_id` 唯一，一人僅負責一類）。助教登入後只能檢視與管理其負責類別下的社團（`Auth::getCategoryAssistantCategoryId()`）。撤銷時自動依幹部資格降回 `club_admin` 或 `student`。
 - 社團幹部身份的詳細職稱由 `club_members.role` 決定（`president`、`vice_president`、`public_relations`、`treasurer`、`director`）。
 - `Auth::isClubAdmin()` 查的是 `club_members` 資料表，不是 `users.role`。
 - 若需要判斷某使用者是否能管理某社團，呼叫 `canManageClub($clubId)`，不要自己查資料表。
@@ -153,11 +155,13 @@
 
 ### 管理員端
 - 用戶與社團管理
+- 類別助教指派（於帳號編輯 modal 以「負責類別」下拉設定；助教僅能管理該類社團）
 - 系統公告發布與刪除（過期自動顯示「已下架」）
 - 帳號轉讓審核（含審核者姓名與時間紀錄）
 - 報表、回饋與檢舉管理
 - 社團狀態與權限控制
 - 新檢舉與轉讓申請自動推送至通知鈴
+- 系統總覽儀表板（KPI、用戶／社團／活動分佈、待處理項目、類別助教分佈）
 
 ## 專案結構
 
@@ -388,6 +392,9 @@ npx playwright test
 
 ## 版本與發布紀錄
 
+- 2026-06-07：類別助教管理整合進帳號編輯 modal（移除獨立面板）、帳號列表角色欄顯示「○○助教」、系統總覽新增類別助教分佈卡片、帳號管理表格改不換行可橫向捲動
+- 2026-06-05：首頁與私訊機器人新增社團適配測驗（7 題問卷推薦社團）；Google OAuth 帳號強制先設定密碼才能解除綁定
+- 2026-06-04：新增類別助教角色（`category_assistant`）與 `category_assistant_assignments` 指派表（`2026_06_04_category_assistant.sql`）
 - 2026-06-04：管理員後台 sidebar 全面改版（Google Sites 文字清單風格、響應式 hamburger、logo 整合至 sidebar 頂部）
 - 2026-06-03：新增場地活動申請管理頁面（`admin-event-applications.html`）
 - 2026-05-29：補強檢舉通知導頁與管理端資料完整性（commit: 709b601）
@@ -414,10 +421,22 @@ npx playwright test
 - 登入表單已加入送出防抖保護，避免短時間內重複觸發。
 - 私訊系統（`messages.html`）已上線，支援多對話管理、搜尋用戶、歷史紀錄、響應式排版（行動版全螢幕切換、平板雙欄壓縮、桌面可折疊側欄）。
 
+### 最近更新（2026-06-05 ～ 06-07）
+
+| 項目 | 說明 |
+|------|------|
+| 類別助教管理整合 | 移除帳號管理頁獨立的「類別助教管理」面板，改於帳號編輯 modal 用「負責類別」下拉指派／撤銷：選分類即成該類助教、選「無」即撤銷；後端沿用 `assign_category_assistant` / `revoke_category_assistant` |
+| 列表角色欄顯示對應身分 | 帳號列表「平台權限」欄改顯示：一般帳號／社團幹部／平台管理員／「○○助教」（帶負責類別，如「體育性助教」） |
+| 系統總覽新增卡片 | 「類別助教分佈」唯讀卡片，按分類列出各類助教姓名與人數 |
+| 帳號表格橫向捲動 | 表格前六欄改不換行（覆蓋全域 `table-layout:fixed` 為 `auto` + `nowrap`），內容過寬時由 `.table-shell` 底部橫向捲動，避免換行擠壓 |
+| Google OAuth 解綁保護 | 以 Google 建立、從未設密碼的帳號須先在個人頁設定密碼才能解綁；修正 `link_google` / `findOrCreateUser` 綁定既有 email 帳號時誤改 `oauth_provider` 的問題 |
+| 社團適配測驗 | 首頁與私訊機器人提供 7 題問卷，依答案加權推薦最多 3 個社團（`messages.php?action=quiz_recommend`，分類比對相容新舊命名） |
+
 ### 最近更新（2026-06-04）
 
 | 項目 | 說明 |
 |------|------|
+| 類別助教角色 | 新增 `category_assistant` 角色與 `category_assistant_assignments` 指派表；助教僅能管理其負責分類的社團 |
 | Admin sidebar 全面改版 | 改採 Google Sites 文字清單風格：移除 rounded button 感，改用 `box-shadow: inset 2px 0 0` 作為 active 指示線 |
 | Logo 整合至 sidebar | `logo-wrapper` 從 header 移至 sidebar 頂部（`top: 0; height: 100vh; z-index: 101`），header 只保留右側 user widget |
 | 響應式 hamburger 修正 | 改用與一般頁面一致的 ≤768px 斷點；手機版 sidebar 以 overlay 從 header 底部展開並附帶背景遮罩 |

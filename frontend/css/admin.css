@@ -420,7 +420,13 @@
 
 .user-mgmt-table {
     width: 100%;
-    font-size: clamp(0.82rem, 0.6vw + 0.5rem, 1rem);
+    font-size: clamp(0.78rem, 0.55vw + 0.5rem, 1rem);
+}
+
+/* 解除全域 .table-shell .table 的 table-layout:fixed（需同等 specificity 才覆蓋得了）：
+   欄寬改依內容自動分配，配合下方各欄 nowrap，內容放不下時由 shell 底部橫向捲動 */
+.user-mgmt-table-shell .user-mgmt-table {
+    table-layout: auto;
 }
 
 .user-mgmt-table thead th {
@@ -434,20 +440,12 @@
     vertical-align: middle;
 }
 
-/* Email 為無空白長字串，固定欄寬下需允許換行，避免溢出蓋到社團身分欄 */
-.user-mgmt-table td[data-label="Email"] {
-    overflow-wrap: anywhere;
-    word-break: break-word;
+/* 前六欄（姓名/Email/社團身分/帳號狀態/平台權限/加入日期）一律不換行；
+   內容放不下時由 .user-mgmt-table-shell 底部橫向捲動，操作欄(第7欄)不受影響仍可換行 */
+.user-mgmt-table th:nth-child(-n+6),
+.user-mgmt-table td:nth-child(-n+6) {
+    white-space: nowrap;
 }
-
-/* table-layout: fixed 下指定各欄寬度，給 Email 較合理空間、收窄短內容欄 */
-.user-mgmt-table th:nth-child(1), .user-mgmt-table td:nth-child(1) { width: 12%; } /* 姓名 */
-.user-mgmt-table th:nth-child(2), .user-mgmt-table td:nth-child(2) { width: 22%; } /* Email */
-.user-mgmt-table th:nth-child(3), .user-mgmt-table td:nth-child(3) { width: 12%; } /* 社團身分 */
-.user-mgmt-table th:nth-child(4), .user-mgmt-table td:nth-child(4) { width: 9%;  } /* 帳號狀態 */
-.user-mgmt-table th:nth-child(5), .user-mgmt-table td:nth-child(5) { width: 11%; } /* 平台權限 */
-.user-mgmt-table th:nth-child(6), .user-mgmt-table td:nth-child(6) { width: 14%; } /* 加入日期 */
-.user-mgmt-table th:nth-child(7), .user-mgmt-table td:nth-child(7) { width: 20%; } /* 操作 */
 
 .user-mgmt-club-id {
     font-size: 0.78rem;
@@ -455,8 +453,15 @@
     margin-top: 0.1rem;
 }
 
+/* 操作欄較窄時允許按鈕換行，避免溢出表格 */
+.user-mgmt-actions {
+    flex-wrap: wrap;
+}
 .user-mgmt-actions .btn {
     border-radius: 999px;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
 }
 
 /* 統一審核類頁面的篩選/分頁列位置：標題在上，篩選列置於標題下方靠左
