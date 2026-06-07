@@ -933,7 +933,7 @@ test.describe('Additional Regression: 管理員私訊導覽', () => {
 
     // 管理員導覽列含有系統總覽（一般學生導覽列沒有此連結）
     await expect(
-      page.locator('.nav-links a[href*="admin-overview.html"]')
+      page.locator('#msg-admin-back a[href*="admin-overview.html"]')
     ).toBeVisible({ timeout: 10000 });
     // 管理員私訊頁 nav 只保留「返回管理後台」，不會再出現 messages.html 自我連結
   });
@@ -1033,7 +1033,17 @@ test.describe('Additional Regression: 社長唯一性限制', () => {
       const resp = await window.APIClient.get('admin.php?action=clubs');
       return (resp?.data?.clubs || []).map(c => Number(c.club_id)).filter(id => id > 0);
     });
-    const targetClubId = clubIds.find(id => id !== presidentInfo.clubId);
+    const targetClubId = await page.evaluate(async ({ clubIds, presidentClubId }) => {
+      const resp = await window.APIClient.get('admin.php?action=club_admin_assignments');
+      const admins = resp?.data?.assignments || resp?.data?.club_admins || [];
+      const clubsWithPresidents = new Set(
+        admins
+          .filter(a => a.role === 'president')
+          .map(a => Number(a.club_id))
+          .filter(id => id > 0)
+      );
+      return clubIds.find(id => id !== presidentClubId && !clubsWithPresidents.has(id)) || null;
+    }, { clubIds, presidentClubId: presidentInfo.clubId });
 
     if (!targetClubId) {
       test.skip(true, '找不到第二個社團，跳過測試');
