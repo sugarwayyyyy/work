@@ -88,7 +88,6 @@ ALTER TABLE club_members
     MODIFY COLUMN role ENUM('president', 'vice_president', 'public_relations', 'treasurer', 'director', 'member', 'advisor') DEFAULT 'member';
 
 DROP TRIGGER IF EXISTS trg_club_member_main_accounts_insert;
-DELIMITER $$
 CREATE TRIGGER trg_club_member_main_accounts_insert
 BEFORE INSERT ON club_members
 FOR EACH ROW
@@ -105,8 +104,7 @@ BEGIN
             SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '每個社團最多兩個主要幹部帳號（社長/公關）';
         END IF;
     END IF;
-END$$
-DELIMITER ;
+END;
 
 -- events：補發佈時間，供動態牆排序
 SET @exists := (

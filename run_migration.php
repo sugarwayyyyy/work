@@ -61,6 +61,8 @@ try {
         __DIR__ . '/database/migrations/2026_05_30_message_reactions_emoji_bin_collation.sql',
         __DIR__ . '/database/migrations/2026_05_30_message_reactions_unique_per_user.sql',
         __DIR__ . '/database/migrations/2026_06_03_add_event_venue_applications.sql',
+        __DIR__ . '/database/migrations/2026_06_04_category_assistant.sql',
+        __DIR__ . '/database/migrations/2026_06_04_club_operation_logs.sql',
     ];
 
     foreach ($files as $file) {

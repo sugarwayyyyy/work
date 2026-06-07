@@ -9,7 +9,35 @@ JOIN message_reactions r2
     AND r1.user_id    = r2.user_id
     AND r1.reaction_id < r2.reaction_id;
 
--- Step 2: swap unique key
-ALTER TABLE message_reactions
-    DROP KEY uq_msg_user_emoji,
-    ADD  UNIQUE KEY uq_msg_user (message_id, user_id);
+-- Step 2: swap unique key, but only if the old one still exists.
+SET @uq_msg_user_emoji_exists := (
+    SELECT COUNT(*)
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'message_reactions'
+      AND INDEX_NAME = 'uq_msg_user_emoji'
+);
+SET @sql := IF(
+    @uq_msg_user_emoji_exists > 0,
+    'ALTER TABLE message_reactions DROP INDEX uq_msg_user_emoji',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @uq_msg_user_exists := (
+    SELECT COUNT(*)
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'message_reactions'
+      AND INDEX_NAME = 'uq_msg_user'
+);
+SET @sql := IF(
+    @uq_msg_user_exists = 0,
+    'ALTER TABLE message_reactions ADD UNIQUE KEY uq_msg_user (message_id, user_id)',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

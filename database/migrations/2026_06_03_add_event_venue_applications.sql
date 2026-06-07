@@ -1,5 +1,5 @@
--- 活動場地申請與行政審核
--- 幹部建立活動時可「申請場地」，活動存為 draft，審核通過後才發布
+-- event venue applications
+-- 建立活動場地申請與附件表，索引以條件式建立避免重跑失敗。
 
 CREATE TABLE IF NOT EXISTS event_venue_applications (
     application_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -18,10 +18,38 @@ CREATE TABLE IF NOT EXISTS event_venue_applications (
     FOREIGN KEY (reviewer_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE INDEX idx_venue_app_status ON event_venue_applications(status);
-CREATE INDEX idx_venue_app_event ON event_venue_applications(event_id);
+SET @idx_venue_app_status_exists := (
+    SELECT COUNT(*)
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'event_venue_applications'
+      AND INDEX_NAME = 'idx_venue_app_status'
+);
+SET @sql := IF(
+    @idx_venue_app_status_exists = 0,
+    'CREATE INDEX idx_venue_app_status ON event_venue_applications(status)',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
--- 申請附件（PDF / Word，每筆申請最多 5 件）
+SET @idx_venue_app_event_exists := (
+    SELECT COUNT(*)
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'event_venue_applications'
+      AND INDEX_NAME = 'idx_venue_app_event'
+);
+SET @sql := IF(
+    @idx_venue_app_event_exists = 0,
+    'CREATE INDEX idx_venue_app_event ON event_venue_applications(event_id)',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
 CREATE TABLE IF NOT EXISTS event_venue_application_files (
     file_id INT AUTO_INCREMENT PRIMARY KEY,
     application_id INT NOT NULL,
