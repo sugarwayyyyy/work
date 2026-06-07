@@ -507,7 +507,26 @@ class ClubAPI {
             $count_result = $count_stmt->get_result();
             $total = $count_result->fetch_assoc()['total'];
             $count_stmt->close();
-            
+
+            // 補上目前登入者在各社團的加入狀態（is_member），供前端列表標示與篩選。
+            // 先前僅社團詳情 getClubDetail 有 is_member，列表缺漏 → 前端/測試會把已加入社團誤判為可申請。
+            if (Auth::isLoggedIn() && !empty($clubs)) {
+                $uid = (int)Auth::getCurrentUserId();
+                $ids = array_map(function ($c) { return (int)$c['club_id']; }, $clubs);
+                $ph  = implode(',', array_fill(0, count($ids), '?'));
+                $memberRows = Database::getInstance()->fetchAll(
+                    "SELECT club_id FROM club_members WHERE user_id = ? AND is_active = 1 AND club_id IN ($ph)",
+                    array_merge([$uid], $ids)
+                );
+                $memberSet = [];
+                foreach ($memberRows as $r) { $memberSet[(int)$r['club_id']] = true; }
+                foreach ($clubs as &$c) { $c['is_member'] = isset($memberSet[(int)$c['club_id']]); }
+                unset($c);
+            } else {
+                foreach ($clubs as &$c) { $c['is_member'] = false; }
+                unset($c);
+            }
+
             Helper::success('取得社團列表成功', [
                 'clubs' => $clubs,
                 'pagination' => [
