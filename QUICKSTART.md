@@ -87,7 +87,7 @@ mysql -u root -p club_platform < database/seeds/2026_04_02_school_clubs_seed.sql
 mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 ```
 
-> migration 清單需與 `database/migrations/` 完全一致（目前共 34 支）；新增 migration 後請同步更新此段。
+> 此清單需與 `database/migrations/` 目錄一致；新增 migration 後請同步更新此段，或直接改用下方的 `php run_migration.php` 自動執行整批（執行清單以 `run_migration.php` 為準）。
 
 #### 活動海報規格（對應資料庫）
 - 活動海報資料表：`event_posters`（migration：`2026_05_24_event_posters.sql`）。
@@ -157,6 +157,34 @@ define('GOOGLE_CLIENT_ID', '718377517460-kotdm5ch47ib6ije5o65tidkvukshmsb.apps.g
 確認以下資料夾存在且可寫入：
 - `frontend/assets/uploads`
 - `logs`
+
+### 4. 更新既有環境（git pull 之後）
+
+已經有可用環境的人，拉取最新程式碼後若包含資料庫異動，**只需重跑 migration**——migration 已全面冪等化，可安全重複執行，不會破壞既有資料：
+
+```bash
+php run_migration.php
+```
+
+接著驗證 schema 是否完整：
+
+```bash
+php scripts/check_tables.php
+```
+
+> **為什麼要重跑**：migration 已改為冪等（欄位／資料表已存在會自動略過），重跑只會補上缺少的結構。先前若有某支 migration 因「欄位已存在」報錯中斷，會導致後續 migration 全部沒執行、schema 落後（例如缺 `category_assistant` 角色與 `category_assistant_assignments`、`club_operation_logs` 等表）——重跑 `run_migration.php` 即可一次補齊。
+
+#### 分類命名（舊環境可選擇統一）
+
+舊環境的社團分類若為「體育性／學術性／藝文性／服務性／休閒性」等舊命名，可統一為新命名（與正式環境、`schema.sql` 一致）：
+
+```sql
+UPDATE club_categories SET category_name = CASE category_name
+  WHEN '體育性' THEN '運動' WHEN '學術性' THEN '學術' WHEN '藝文性' THEN '藝術'
+  WHEN '服務性' THEN '服務' WHEN '休閒性' THEN '休閒' ELSE category_name END;
+```
+
+> 只改顯示名稱、不動 `category_id`，社團關聯完全不受影響。後端 quiz 推薦查詢已相容新舊命名，不改也能運作（只是前端分類顯示會是舊名稱）。
 
 ## 啟動方式
 
