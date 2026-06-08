@@ -1297,6 +1297,13 @@ function renderGlobalFollowSidebarMessage(nodes) {
     const container = document.getElementById('followed-clubs-container');
     if (!container) return;
     PageUtils.replaceFollowRailChildren(container, Array.isArray(nodes) ? nodes : [nodes]);
+    const section = document.getElementById('followed-clubs-section');
+    const isExpanded = section && section.classList.contains('sidebar-expanded');
+    if (!isExpanded) {
+        container.querySelectorAll('[data-label-expanded]').forEach(el => {
+            el.textContent = el.dataset.labelCollapsed;
+        });
+    }
 }
 
 const SIDEBAR_STORAGE_KEY = 'followSidebarExpanded';
