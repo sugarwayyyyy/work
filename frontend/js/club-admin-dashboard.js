@@ -302,10 +302,16 @@
             return span;
         }
 
+        const MAX_TAGS = 10;
+
         function toggleTag(tagId, tagName) {
             if (selectedTagIds.has(tagId)) {
                 selectedTagIds.delete(tagId);
             } else {
+                if (selectedTagIds.size >= MAX_TAGS) {
+                    PageUtils.showAlert(`最多只能選 ${MAX_TAGS} 個標籤`, 'warning');
+                    return;
+                }
                 selectedTagIds.add(tagId);
             }
             renderSelectedTags();
@@ -451,10 +457,14 @@
         // ========== 活動標籤管理函數 ==========
         function toggleEventTag(tagId, tagName, mode = 'create') {
             const selectedSet = mode === 'create' ? createEventSelectedTagIds : eventSelectedTagIds;
-            
+
             if (selectedSet.has(tagId)) {
                 selectedSet.delete(tagId);
             } else {
+                if (selectedSet.size >= MAX_TAGS) {
+                    PageUtils.showAlert(`最多只能選 ${MAX_TAGS} 個標籤`, 'warning');
+                    return;
+                }
                 selectedSet.add(tagId);
             }
             

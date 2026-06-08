@@ -1557,8 +1557,8 @@ class EventAPI {
             $stmt->execute();
             $stmt->close();
 
-            // 新增新標籤關聯
-            $tag_ids = array_filter(array_map('intval', $tag_ids));
+            // 新增新標籤關聯（上限 10 個）
+            $tag_ids = array_slice(array_filter(array_map('intval', $tag_ids)), 0, 10);
             foreach ($tag_ids as $tag_id) {
                 dbInsert('event_tag_relations', [
                     'event_id' => $event_id,

@@ -876,9 +876,10 @@ class ClubAPI {
                 Helper::error('建立社團失敗', 500);
             }
             
-            // 新增標籤關連
+            // 新增標籤關連（上限 10 個）
             if (isset($data['tags']) && is_array($data['tags'])) {
-                foreach ($data['tags'] as $tag_id) {
+                $create_tag_ids = array_slice(array_filter(array_map('intval', $data['tags'])), 0, 10);
+                foreach ($create_tag_ids as $tag_id) {
                     dbInsert('club_tag_relations', [
                         'club_id' => $club_id,
                         'tag_id' => $tag_id
@@ -1363,8 +1364,11 @@ class ClubAPI {
             $stmt->execute();
             $stmt->close();
 
-            // 新增新標籤關聯
-            $tag_ids = array_filter(array_map('intval', $tag_ids));
+            // 新增新標籤關聯（上限 10 個）
+            $tag_ids = array_slice(array_filter(array_map('intval', $tag_ids)), 0, 10);
+            if (count($tag_ids) > 10) {
+                Helper::error('標籤數量不可超過 10 個', 400);
+            }
             foreach ($tag_ids as $tag_id) {
                 dbInsert('club_tag_relations', [
                     'club_id' => $club_id,
