@@ -77,7 +77,9 @@ async function gotoWithRetry(page, url, options = {}) {
         message.includes('NS_ERROR_CONNECTION_REFUSED') ||
         message.includes('ERR_CONNECTION_REFUSED') ||
         message.includes('ECONNREFUSED');
-      if (!transientRefusal || attempt === 2) {
+      // auth check 在 session 還沒穩定時可能把頁面重導，打斷導航；短暫等候後重試
+      const interruptedNav = message.includes('interrupted by another navigation');
+      if ((!transientRefusal && !interruptedNav) || attempt === 2) {
         throw error;
       }
       await page.waitForTimeout(500);
