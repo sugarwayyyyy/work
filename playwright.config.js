@@ -22,8 +22,10 @@ module.exports = defineConfig({
   
   /* 共享設置 */
   use: {
-    /* 進行操作時的基本 URL */
-    baseURL: 'http://localhost:8000',
+    /* 進行操作時的基本 URL
+     * Docker 模式：E2E_BASE_URL=http://localhost:8090/frontend npm test
+     * AppServ 模式（預設）：不設定環境變數即可 */
+    baseURL: process.env.E2E_BASE_URL || 'http://localhost:8000',
     
     /* 收集追蹤 */
     trace: 'on-first-retry',
@@ -73,12 +75,15 @@ module.exports = defineConfig({
     // },
   ],
 
-  /* 在所有測試之前運行 Web 服務器 */
-  webServer: {
-    command: 'php -S localhost:8000 tests/e2e/dev-router.php',
-    url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
-  },
+  /* 在所有測試之前運行 Web 服務器
+   * Docker 模式下設定 E2E_BASE_URL 即可跳過，直接使用已運行的 Docker container */
+  ...(process.env.E2E_BASE_URL ? {} : {
+    webServer: {
+      command: 'php -S localhost:8000 tests/e2e/dev-router.php',
+      url: 'http://localhost:8000',
+      reuseExistingServer: !process.env.CI,
+    },
+  }),
 
   globalSetup: './tests/e2e/global-setup.js',
   globalTeardown: './tests/e2e/global-teardown.js',

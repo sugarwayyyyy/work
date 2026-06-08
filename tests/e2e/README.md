@@ -162,6 +162,39 @@ AI 工具注意：**不需要、也不應該**在測試中手動插入或清理�
 php run_migration.php
 ```
 
+## Docker 環境測試
+
+設定一個環境變數即可，腳本會自動切換成 Docker 模式（`baseURL` 指向 Docker、`webServer` 不啟動、cleanup/seed 改用 `docker exec`）。
+
+### 步驟
+
+**1. 啟動 Docker**
+
+```bash
+docker compose up --build -d
+```
+
+**2. 執行測試（PowerShell）**
+
+```powershell
+$env:E2E_BASE_URL = "http://localhost:8090/frontend"; npm test
+```
+
+**bash / 單行**
+
+```bash
+E2E_BASE_URL=http://localhost:8090/frontend npm test
+```
+
+### 注意事項
+
+- 不需要修改任何設定檔，移除 `E2E_BASE_URL` 即恢復 AppServ 模式。
+- cleanup / seed 腳本自動透過 `docker exec club-platform-web php ...` 執行，不需本機安裝 PHP。
+- 測試結束後若需完全重置資料庫：
+  ```bash
+  docker compose down -v && docker compose up -d
+  ```
+
 ## 測試輸出
 
 測試完成後，HTML 報告會生成在：

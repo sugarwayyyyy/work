@@ -1,4 +1,4 @@
-const { execFileSync } = require('child_process');
+const { execFileSync, execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -14,27 +14,25 @@ function resolvePhp() {
   return 'php';
 }
 
-function resolveMysql() {
-  const candidates = [
-    'C:\\xampp\\mysql\\bin\\mysql.exe',
-    'D:\\app\\AppServ\\MySQL\\bin\\mysql.exe',
-    'C:\\AppServ\\MySQL\\bin\\mysql.exe',
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
+function runPhpScript(scriptPath, args = []) {
+  if (process.env.E2E_BASE_URL) {
+    // Docker 模式：透過 docker exec 在 container 內執行
+    const containerPath = '/var/www/html/' + path.relative(path.resolve(__dirname, '../..'), scriptPath).replace(/\\/g, '/');
+    const argsStr = args.map(a => `'${a}'`).join(' ');
+    execSync(`docker exec club-platform-web php ${containerPath} ${argsStr}`, { stdio: 'inherit' });
+  } else {
+    execFileSync(resolvePhp(), [scriptPath, ...args], { stdio: 'inherit' });
   }
-  return 'mysql';
 }
 
 module.exports = async () => {
-  const php = resolvePhp();
   const cleanupScript = path.resolve(__dirname, '../../scripts/cleanup-e2e-test-data.php');
   const seedScript = path.resolve(__dirname, '../../scripts/seed-e2e-test-data.php');
 
   // 清除 E2E 產生的測試資料
-  execFileSync(php, [cleanupScript, '--full'], { stdio: 'inherit' });
+  runPhpScript(cleanupScript, ['--full']);
 
-  // 重新 seed 還原測試帳號與基礎社團（用 PHP seed 腳本，讀 config 連線，不寫死 DB 密碼，環境無關）
-  execFileSync(php, [seedScript], { stdio: 'inherit' });
+  // 重新 seed 還原測試帳號與基礎社團
+  runPhpScript(seedScript);
   console.log('✓ Base seed restored after E2E teardown');
 };
