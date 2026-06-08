@@ -128,6 +128,7 @@
 - 上傳前在前端驗證檔案大小（`file.size > MAX`），讓使用者在送出請求前就得到明確提示。
 - 路徑計算統一用 `getFrontendAssetPath()` 或 `getPageLink()`，不要手動拼接相對路徑。
 - 所有顏色必須使用 CSS 自訂屬性（`var(--token)`），禁止在任何元件中硬編 hex 值（如 `#fff`、`#333`）。深色模式透過 `[data-theme="dark"]` 覆蓋 token，硬編 hex 會導致深色模式失效。
+- **HTML 頁面禁止內嵌 JS（鐵則）**：所有 JavaScript 必須放在對應的 `.js` 檔案中，以 `<script src="...">` 引入，不可在 HTML 內寫 `<script>...</script>` 區塊。若目標頁面尚無對應 JS 檔，請新建一個（命名慣例：`{頁面名稱}.js`，例如 `login.js`、`register.js`）。需依賴某頁面特定 DOM 才能執行的初始化邏輯，在 JS 檔中用 `if (!document.getElementById('頁面特定元素id')) return;` 做 guard，讓同一份 JS 在其他頁面也能安全載入。
 
 ### 測試
 
