@@ -472,9 +472,15 @@
 }
 
 /* ── Dark mode: modals ── */
-[data-theme="dark"] .user-edit-modal-content,
+[data-theme="dark"] .user-edit-modal-content {
+    background: #212121;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
 
 [data-theme="dark"] .user-edit-modal-header,
+[data-theme="dark"] .club-admin-quick-header {
+    border-bottom-color: #2A2A2A;
+}
 
 [data-theme="dark"] .user-edit-subtitle,
 [data-theme="dark"] .club-admin-quick-subtitle { color: #888888; }
@@ -552,7 +558,10 @@
 [data-theme="dark"] .ca-ac-item:hover,
 
 @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .user-edit-modal-content,
+    :root:not([data-theme="light"]) .user-edit-modal-content {
+        background: #212121;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
     :root:not([data-theme="light"]) .user-edit-modal-header,
     :root:not([data-theme="light"]) .club-admin-quick-header { border-bottom-color: #2A2A2A; }
     :root:not([data-theme="light"]) .user-edit-subtitle,
