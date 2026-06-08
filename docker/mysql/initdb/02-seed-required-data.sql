@@ -1,6 +1,31 @@
 SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE club_platform;
 
+-- 六大社團分類（冪等，重複執行不重複插入）
+INSERT INTO club_categories (category_name, description)
+SELECT '運動', '體育競技、健身、球類等運動相關社團' FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM club_categories WHERE category_name = '運動');
+
+INSERT INTO club_categories (category_name, description)
+SELECT '學術', '學術研究、語言、科技等知識導向社團' FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM club_categories WHERE category_name = '學術');
+
+INSERT INTO club_categories (category_name, description)
+SELECT '服務', '社區服務、公益、志工相關社團' FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM club_categories WHERE category_name = '服務');
+
+INSERT INTO club_categories (category_name, description)
+SELECT '藝術', '視覺藝術、設計、創作相關社團' FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM club_categories WHERE category_name IN ('藝術', '藝文'));
+
+INSERT INTO club_categories (category_name, description)
+SELECT '音樂', '音樂演奏、聲樂、樂器相關社團' FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM club_categories WHERE category_name IN ('音樂', '音樂性'));
+
+INSERT INTO club_categories (category_name, description)
+SELECT '休閒', '娛樂、休閒活動相關社團' FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM club_categories WHERE category_name IN ('休閒', '休閒性'));
+
 SET @pwd_hash = 'Test123456';
 
 INSERT INTO users (email, password, student_id, name, role, is_active)
