@@ -27,8 +27,27 @@ docker compose up --build -d
 - MySQL listens on host port `3307`.
 - Uploaded files persist in `frontend/assets/uploads`.
 - App logs persist in `logs`.
-- Database initialization imports `database/schema.sql` and every file in `database/migrations/*.sql`.
+- Database initialization imports `database/schema.sql` then runs each migration individually.
 - Docker then applies a compatible built-in seed with the documented test accounts and core sample clubs/events because the current repo SQL seed files are not Docker-import safe.
+
+## schema.sql 必須保持完整
+
+**Docker 不能靠 migration 補欄位**：migration 普遍使用 `PREPARE/EXECUTE` 的條件語法（`IF EXISTS`），在 MySQL initdb 的 `--force` 模式下**靜默失敗**，欄位不會被建立，API 執行時才會出現 `Unknown column` Fatal Error。
+
+因此 `database/schema.sql` 必須隨時包含**所有 migration 套用後的完整 schema**。
+
+每次新增 migration 後，在本機跑完 migration，再執行：
+
+```bash
+mysqldump -uroot -p --no-data --skip-comments --default-character-set=utf8mb4 club_platform > database/schema.sql
+```
+
+然後在 `schema.sql` 開頭補上：
+
+```sql
+CREATE DATABASE IF NOT EXISTS club_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE club_platform;
+```
 
 ## 中文亂碼排查
 

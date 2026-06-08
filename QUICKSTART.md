@@ -90,6 +90,21 @@ mysql -u root -p club_platform < database/seeds/test_accounts_and_story_data.sql
 
 > 此清單需與 `database/migrations/` 目錄一致；新增 migration 後請同步更新此段，或直接改用下方的 `php run_migration.php` 自動執行整批（執行清單以 `run_migration.php` 為準）。
 
+> **⚠️ 重要：新增 migration 後必須同步更新 `database/schema.sql`**
+> `schema.sql` 必須隨時反映所有 migration 套用後的完整 schema，原因如下：
+> - Docker 初始化時 migration 的 `PREPARE/EXECUTE` 條件語法在 `--force` 模式下**靜默失敗**，欄位不會被建立，導致 API Fatal Error
+> - 新成員用 `schema.sql` 建立乾淨環境時，若缺少欄位，API 會在執行時才爆錯
+>
+> **更新方式**：在本機跑完所有 migration 後，用以下指令重新導出 schema：
+> ```bash
+> mysqldump -uroot -p --no-data --skip-comments --default-character-set=utf8mb4 club_platform > database/schema.sql
+> ```
+> 再在檔案開頭手動補上：
+> ```sql
+> CREATE DATABASE IF NOT EXISTS club_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+> USE club_platform;
+> ```
+
 #### 活動海報規格（對應資料庫）
 - 活動海報資料表：`event_posters`（migration：`2026_05_24_event_posters.sql`）。
 - 每個活動最多 10 張海報（由 `backend/api/upload.php` 上傳流程驗證）。
