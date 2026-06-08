@@ -4,7 +4,7 @@ require_once __DIR__ . '/../backend/config.php';
 
 $eventNamePrefixes = ['US15-TS-', 'US22-PUB-', 'US22-LIST-', 'US22 活動 '];
 $eventDescriptionNeedles = ['E2E 自動化建立活動：', 'Automated E2E event ', 'US22 活動內容'];
-$seededUserEmails = ['admin@univ.edu', 'clubadmin@univ.edu', 'student@univ.edu', 'student_ff@univ.edu', 'student_wk@univ.edu'];
+$seededUserEmails = ['admin@univ.edu', 'clubadmin@univ.edu', 'student@univ.edu', 'student_ff@univ.edu', 'student_wk@univ.edu', 'caassist@univ.edu'];
 $seededFollowClubCodes = ['CSC001', '090'];
 $seededEventNames = ['程式社期初說明會', '演算法工作坊', '羽球新生體驗日', '上學期舊活動（過期）', '健言社公開演講賽'];
 $seededAnnouncementTitles = ['社團博覽會公告', '平台維護通知'];
@@ -328,6 +328,15 @@ try {
             }
             if (tableExists($db, 'club_join_applications')) {
                 deleteWhereIn($db, 'club_join_applications', 'user_id', $fullSeededUserIds);
+            }
+            // 類別助教指派 + 幹部操作紀錄（新功能 E2E 殘留清理）
+            if (tableExists($db, 'category_assistant_assignments')) {
+                deleteWhereIn($db, 'category_assistant_assignments', 'user_id', $fullSeededUserIds);
+                $idsList = implode(',', array_map('intval', $fullSeededUserIds));
+                $db->query("UPDATE users SET role = 'student' WHERE user_id IN ($idsList) AND role = 'category_assistant'");
+            }
+            if (tableExists($db, 'club_operation_logs')) {
+                deleteWhereIn($db, 'club_operation_logs', 'actor_user_id', $fullSeededUserIds);
             }
         }
 

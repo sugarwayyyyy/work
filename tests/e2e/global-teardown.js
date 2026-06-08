@@ -28,17 +28,13 @@ function resolveMysql() {
 
 module.exports = async () => {
   const php = resolvePhp();
-  const mysql = resolveMysql();
   const cleanupScript = path.resolve(__dirname, '../../scripts/cleanup-e2e-test-data.php');
-  const seedFile = path.resolve(__dirname, '../../database/seeds/test_accounts_and_story_data.sql');
+  const seedScript = path.resolve(__dirname, '../../scripts/seed-e2e-test-data.php');
 
   // 清除 E2E 產生的測試資料
   execFileSync(php, [cleanupScript, '--full'], { stdio: 'inherit' });
 
-  // 重新 seed 還原測試帳號與基礎社團，讓網站在測試後仍可正常使用
-  execFileSync(mysql, ['-u', 'root', '-p12345678', '--default-character-set=utf8mb4', 'club_platform'], {
-    stdio: ['pipe', 'inherit', 'inherit'],
-    input: fs.readFileSync(seedFile),
-  });
+  // 重新 seed 還原測試帳號與基礎社團（用 PHP seed 腳本，讀 config 連線，不寫死 DB 密碼，環境無關）
+  execFileSync(php, [seedScript], { stdio: 'inherit' });
   console.log('✓ Base seed restored after E2E teardown');
 };

@@ -24,12 +24,22 @@ INSERT INTO users (email, password, student_id, name, role, is_active)
 SELECT 'student_wk@univ.edu', @pwd_hash, 'S000003', 'WebKit學生測試員', 'student', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'student_wk@univ.edu');
 
+-- 類別助教 E2E 專用帳號（僅 category-assistant.spec.js 使用，避免動到共用 student 帳號造成並行干擾）
+INSERT INTO users (email, password, student_id, name, role, is_active)
+SELECT 'caassist@univ.edu', @pwd_hash, 'S000004', '助教E2E測試員', 'student', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'caassist@univ.edu');
+
 -- 強制還原角色，防止前次測試（或外部工具）遺留錯誤的 role 值
 UPDATE users SET role = 'platform_admin', is_active = TRUE WHERE email = 'admin@univ.edu';
 UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'clubadmin@univ.edu';
 UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'student@univ.edu';
 UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'student_ff@univ.edu';
 UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'student_wk@univ.edu';
+-- caassist 還原為 student 並清掉助教指派（防止前次測試遺留）
+DELETE caa FROM category_assistant_assignments caa
+  JOIN users u ON u.user_id = caa.user_id
+  WHERE u.email = 'caassist@univ.edu';
+UPDATE users SET role = 'student',         is_active = TRUE WHERE email = 'caassist@univ.edu';
 
 
 INSERT INTO clubs (club_code, club_name, category_id, description, founding_year, club_fee, meeting_day, meeting_time, meeting_location, contact_email, contact_phone, activity_status)
