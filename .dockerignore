@@ -1,0 +1,14 @@
+.git
+.github
+.claude
+.codex
+.agents
+node_modules
+playwright-report
+test-results
+logs
+e2e-output.log
+e2e-run.log
+debug.log
+npm-debug.log
+docker-compose.override.yml

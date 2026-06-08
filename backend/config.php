@@ -12,7 +12,7 @@ defined('DB_NAME')     or define('DB_NAME',     getenv('DB_NAME')     ?: 'club_p
 defined('DB_PORT')     or define('DB_PORT',     (int)(getenv('DB_PORT') ?: 3306));
 
 define('APP_NAME', '社團活動資訊統整平台');
-define('APP_URL', 'http://localhost');
+define('APP_URL', getenv('APP_URL') ?: 'http://localhost');
 define('APP_ENV', getenv('APP_ENV') ?: 'development'); // development 或 production
 
 define('SESSION_TIMEOUT', 3600); // 秒

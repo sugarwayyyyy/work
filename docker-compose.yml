@@ -1,0 +1,50 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: club-platform-web
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: production
+      APP_URL: http://localhost:8090
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: club_platform
+      DB_USER: club_user
+      DB_PASSWORD: club_password
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    ports:
+      - "8090:80"
+    volumes:
+      - ./frontend/assets/uploads:/var/www/html/frontend/assets/uploads
+      - ./logs:/var/www/html/logs
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: club-platform-db
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: club_platform
+      MYSQL_USER: club_user
+      MYSQL_PASSWORD: club_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database:/docker-init/database:ro
+      - ./docker/mysql/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
