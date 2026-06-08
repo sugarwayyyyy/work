@@ -787,6 +787,19 @@ function ensureHamburger() {
     });
 
     nav.addEventListener('click', (e) => {
+        // 手機下拉：點 nav-has-dropdown 的 <a> 切換子選單，不關閉選單也不跳頁
+        const dropdownParent = e.target.closest('.nav-has-dropdown > a');
+        if (dropdownParent) {
+            e.preventDefault();
+            const li = dropdownParent.parentElement;
+            const isOpen = li.classList.toggle('is-open');
+            // 關閉其他已開啟的下拉
+            nav.querySelectorAll('.nav-has-dropdown.is-open').forEach(el => {
+                if (el !== li) el.classList.remove('is-open');
+            });
+            return;
+        }
+        // 點下拉子項目或其他連結：關閉選單
         if (e.target.closest('.nav-links a')) closeMenu();
     });
 }

@@ -610,6 +610,10 @@
     padding: 2rem 1rem 3rem;
 }
 
+#event-modal.is-open {
+    display: block;
+}
+
 .evm-panel {
     background: var(--surface);
     border-radius: 10px;
@@ -642,7 +646,7 @@
 }
 
 @media (max-width: 768px) {
-    #event-modal {
+    #event-modal.is-open {
         padding: 0;
         display: flex;
         align-items: flex-end;

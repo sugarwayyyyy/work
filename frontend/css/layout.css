@@ -341,8 +341,44 @@ nav {
         padding-left: calc(0.75rem - 3px);
     }
 
+    /* 手機下拉：預設隱藏，點父連結後加 .is-open 展開 */
     .nav-dropdown {
-        display: none !important;
+        display: none;
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        pointer-events: auto;
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        margin: 0 0 0.25rem 1rem;
+        background: transparent;
+        min-width: 0;
+    }
+
+    .nav-has-dropdown.is-open .nav-dropdown {
+        display: block;
+    }
+
+    .nav-dropdown a {
+        padding: 0.45rem 0.75rem;
+        font-size: 0.85rem;
+        color: var(--text-light);
+    }
+
+    .nav-dropdown a:hover {
+        background: var(--brand-soft, #ede9fe);
+        color: var(--brand, #7c3aed);
+    }
+
+    /* 手機：hover 不旋轉，只有 is-open 時才旋轉 */
+    .nav-has-dropdown:hover .nav-dropdown-arrow {
+        transform: none;
+    }
+    .nav-has-dropdown.is-open .nav-dropdown-arrow {
+        transform: rotate(180deg);
     }
 
     .grid {

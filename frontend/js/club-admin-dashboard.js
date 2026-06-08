@@ -1311,7 +1311,7 @@
                             <h3 class="feed-item-title">${safeEventName}</h3>
                             <p class="feed-item-subtitle" style="margin-top:0.18rem;">${formatDateTime(event.event_date)}${locationHtml ? `　${locationHtml}` : ''}</p>
                         </div>
-                        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;justify-content:flex-end;align-items:center;flex-shrink:0;">
+                        <div class="feed-item-actions" style="display:flex;gap:0.4rem;flex-wrap:wrap;justify-content:flex-end;align-items:center;flex-shrink:0;">
                             <span class="feed-item-badge feed-item-badge--neutral">${safeStatus}</span>
                             ${venueBadgeHtml}
                             <button class="btn btn-secondary btn-sm" onclick="editEvent(${event.event_id})">編輯</button>
@@ -1509,7 +1509,7 @@
 
         function closeEventModal() {
             const modal = document.getElementById('event-modal');
-            if (modal) modal.style.display = 'none';
+            if (modal) modal.classList.remove('is-open');
             document.body.style.overflow = '';
         }
 
@@ -1566,7 +1566,7 @@
                 _pendingVenueDocs = [];
             }
 
-            modal.style.display = 'block';
+            modal.classList.add('is-open');
             document.body.style.overflow = 'hidden';
             modal.scrollTop = 0;
         }

@@ -492,6 +492,15 @@
         flex: 1;
         text-align: center;
     }
+
+    .feed-item-head {
+        flex-wrap: wrap;
+    }
+
+    .feed-item-actions {
+        width: 100%;
+        justify-content: flex-start !important;
+    }
 }
 
 /* 社團適配測驗 widget（同 messages 邀請卡樣式） */
