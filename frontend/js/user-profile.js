@@ -29,15 +29,22 @@
             const panels = document.querySelectorAll('.profile-tab-panel');
             const exportBtn = document.getElementById('export-proof-btn');
             const isPlatformAdmin = user && user.role === 'platform_admin';
+            const isCategoryAssistant = user && user.role === 'category_assistant';
+            // 平台管理員與類別助教都只保留「編輯資料」分頁（不顯示社團/活動/動態/提問）
+            const isEditOnly = isPlatformAdmin || isCategoryAssistant;
 
             const logoLink = document.querySelector('a.logo');
-            if (logoLink) logoLink.href = isPlatformAdmin ? 'admin-users.html' : '../index.html';
+            if (logoLink) {
+                logoLink.href = isPlatformAdmin ? 'admin-users.html'
+                              : isCategoryAssistant ? 'admin-clubs.html'
+                              : '../index.html';
+            }
 
             // 非管理員才顯示危險區域
             const dangerZone = document.getElementById('danger-zone');
             if (dangerZone) dangerZone.style.display = isPlatformAdmin ? 'none' : 'block';
 
-            if (!isPlatformAdmin) {
+            if (!isEditOnly) {
                 return;
             }
 
@@ -73,7 +80,7 @@
                     renderPasswordSection(currentUser);
                     renderGoogleBindStatus(currentUser);
 
-                    if (currentUser.role !== 'platform_admin') {
+                    if (currentUser.role !== 'platform_admin' && currentUser.role !== 'category_assistant') {
                         loadFollowedClubs();
                         loadJoinedClubs();
                         loadUserEvents();
@@ -126,7 +133,7 @@
         }
 
         function getRoleName(role) {
-            const roles = { student: '學生', club_admin: '社團幹部', platform_admin: '平台管理員' };
+            const roles = { student: '學生', club_admin: '社團幹部', platform_admin: '平台管理員', category_assistant: '類別助教' };
             return roles[role] || role;
         }
 

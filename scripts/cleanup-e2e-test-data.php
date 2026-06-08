@@ -211,6 +211,8 @@ try {
         deleteWhereIn($db, 'event_registrations', 'event_id', $eventIds);
         deleteWhereIn($db, 'collaborative_events', 'event_id', $eventIds);
         deleteWhereIn($db, 'event_tag_relations', 'event_id', $eventIds);
+        // reviews.event_attended_id 參照 events 但無 ON DELETE CASCADE，需先清除以免 FK 阻擋刪除
+        deleteWhereIn($db, 'reviews', 'event_attended_id', $eventIds);
         deleteWhereIn($db, 'events', 'event_id', $eventIds);
     }
 
@@ -274,6 +276,8 @@ try {
             deleteWhereIn($db, 'event_registrations', 'event_id', $seedEventIds);
             deleteWhereIn($db, 'collaborative_events', 'event_id', $seedEventIds);
             deleteWhereIn($db, 'event_tag_relations', 'event_id', $seedEventIds);
+            // reviews.event_attended_id 參照 events 但無 ON DELETE CASCADE，需先清除以免 FK 阻擋刪除
+            deleteWhereIn($db, 'reviews', 'event_attended_id', $seedEventIds);
             deleteWhereIn($db, 'events', 'event_id', $seedEventIds);
         }
 

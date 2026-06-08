@@ -154,6 +154,16 @@
                     : 'club-admin-events-list.html';
             }
 
+            // 帳戶轉讓申請通知
+            if (String(notification.title || '').includes('帳戶轉讓')) {
+                // 給管理員的「新帳戶轉讓申請（待審核）」通知 → 帳戶轉讓審核頁（預設停在待審核分頁）
+                if (!String(notification.title).includes('審核結果')) {
+                    return 'admin-transfers.html';
+                }
+                // 申請者收到的審核結果通知 → 幹部的轉讓申請頁
+                return 'club-admin-transfer.html';
+            }
+
             if (!relatedId) return '';
             if (relatedType === 'event') return `event-detail.html?id=${relatedId}`;
             if (notificationType === 'qa_reply') {

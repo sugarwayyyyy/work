@@ -1,0 +1,608 @@
+
+> club-platform-e2e-tests@1.0.0 test
+> playwright test
+
+✓ E2E full cleanup completed
+✓ E2E test data seeded
+
+Running 225 tests using 4 workers
+
+[1A[2K[1/225] [chromium] › tests\e2e\additional-regression.spec.js:267:3 › Additional Regression: 首頁進階搜尋 › AR-03 切換搜尋類型為活動應顯示活動篩選
+[1A[2K[2/225] [chromium] › tests\e2e\additional-regression.spec.js:247:3 › Additional Regression: 首頁進階搜尋 › AR-01 首頁應顯示進階搜尋主要元素
+[1A[2K[3/225] [chromium] › tests\e2e\additional-regression.spec.js:257:3 › Additional Regression: 首頁進階搜尋 › AR-02 首頁預設應顯示社團篩選區塊
+[1A[2K[4/225] [chromium] › tests\e2e\additional-regression.spec.js:277:3 › Additional Regression: 首頁進階搜尋 › AR-04 切換搜尋類型為提問應顯示提問篩選
+[1A[2K[5/225] [chromium] › tests\e2e\additional-regression.spec.js:287:3 › Additional Regression: 首頁進階搜尋 › AR-05 清除按鈕應重置關鍵字與搜尋類型
+[1A[2K[6/225] [chromium] › tests\e2e\additional-regression.spec.js:302:3 › Additional Regression: 社團列表篩選與導覽 › AR-06 社團列表頁應顯示四個核心篩選控制項
+[1A[2K[7/225] [chromium] › tests\e2e\additional-regression.spec.js:312:3 › Additional Regression: 社團列表篩選與導覽 › AR-07 未選類別時社團下拉應為 disabled
+[1A[2K[8/225] [chromium] › tests\e2e\additional-regression.spec.js:319:3 › Additional Regression: 社團列表篩選與導覽 › AR-08 重製按鈕應清空關鍵字與費用範圍
+[1A[2K[9/225] [chromium] › tests\e2e\additional-regression.spec.js:333:3 › Additional Regression: 社團列表篩選與導覽 › AR-09 可由社團列表進入社團詳情頁
+[1A[2K[10/225] [chromium] › tests\e2e\additional-regression.spec.js:351:3 › Additional Regression: 活動頁篩選器 › AR-10 活動頁應顯示搜尋與日期篩選控制項
+[1A[2K[11/225] [chromium] › tests\e2e\additional-regression.spec.js:361:3 › Additional Regression: 活動頁篩選器 › AR-11 活動開始時間拆分欄位應能同步到 hidden 欄位
+[1A[2K[12/225] [chromium] › tests\e2e\additional-regression.spec.js:373:3 › Additional Regression: 活動頁篩選器 › AR-12 報名截止拆分欄位應能同步到 hidden 欄位
+[1A[2K[13/225] [chromium] › tests\e2e\additional-regression.spec.js:385:3 › Additional Regression: 活動頁篩選器 › AR-13 活動頁重製按鈕應清空關鍵字與隱藏日期值
+[1A[2K[14/225] [chromium] › tests\e2e\additional-regression.spec.js:401:3 › Additional Regression: QA 互動細節 › AR-14 QA 頁應顯示搜尋、篩選、發布提問按鈕
+[1A[2K[15/225] [chromium] › tests\e2e\additional-regression.spec.js:411:3 › Additional Regression: QA 互動細節 › AR-15 未登入按發布提問應導向登入頁
+[1A[2K[16/225] [chromium] › tests\e2e\additional-regression.spec.js:420:3 › Additional Regression: QA 互動細節 › AR-16 已登入學生可開啟提問 modal
+[1A[2K[17/225] [chromium] › tests\e2e\additional-regression.spec.js:430:3 › Additional Regression: QA 互動細節 › AR-17 緊急程度按鈕應同步 hidden 值
+[1A[2K[18/225] [chromium] › tests\e2e\additional-regression.spec.js:445:3 › Additional Regression: QA 互動細節 › AR-18 關閉提問 modal 後應隱藏且重置緊急程度為 normal
+[1A[2K[19/225] [chromium] › tests\e2e\additional-regression.spec.js:465:3 › Additional Regression: 會話與導向自檢 › AR-22 未登入首頁不應觸發 auth current 401
+[1A[2K[20/225] [chromium] › tests\e2e\additional-regression.spec.js:479:3 › Additional Regression: 會話與導向自檢 › AR-23 未登入首頁不應載入 uploads 404
+[1A[2K[21/225] [chromium] › tests\e2e\additional-regression.spec.js:492:3 › Additional Regression: 會話與導向自檢 › AR-24 已登入首頁不應載入 uploads 404
+[1A[2K[22/225] [chromium] › tests\e2e\additional-regression.spec.js:508:3 › Additional Regression: 會話與導向自檢 › AR-25 所有社團詳情頁不應載入 uploads 404
+[1A[2K[23/225] [chromium] › tests\e2e\additional-regression.spec.js:529:3 › Additional Regression: 會話與導向自檢 › AR-26 所有活動詳情頁不應載入 uploads 404
+[1A[2K[24/225] [chromium] › tests\e2e\additional-regression.spec.js:550:3 › Additional Regression: 會話與導向自檢 › AR-19 登出後應回到首頁且顯示未登入狀態
+[1A[2K[25/225] [chromium] › tests\e2e\additional-regression.spec.js:568:3 › Additional Regression: 會話與導向自檢 › AR-20 登出導向 URL 不應包含重複 index 路徑
+[1A[2K[26/225] [chromium] › tests\e2e\additional-regression.spec.js:578:3 › Additional Regression: 會話與導向自檢 › AR-21 未登入看社團詳情時應提示需登入才能確認追蹤狀態
+[1A[2K[27/225] [chromium] › tests\e2e\additional-regression.spec.js:593:3 › Additional Regression: 會話與導向自檢 › AR-27 追蹤狀態在登出再登入後應維持
+[1A[2K[28/225] [chromium] › tests\e2e\additional-regression.spec.js:641:3 › Additional Regression: Data Integrity & Safety › AR-28 should reject stale last_updated on concurrent club update
+[1A[2K[29/225] [chromium] › tests\e2e\additional-regression.spec.js:899:3 › Additional Regression: 登入速率限制 › AR-36 連續 10 次錯誤密碼後第 11 次應觸發速率限制 (429)
+[1A[2K[30/225] [chromium] › tests\e2e\additional-regression.spec.js:928:3 › Additional Regression: 管理員私訊導覽 › AR-37 管理員進入私訊頁應顯示管理員導覽列（含系統總覽）
+[1A[2K[31/225] [chromium] › tests\e2e\additional-regression.spec.js:945:3 › Additional Regression: 入社申請單一限制 › AR-38 已有待審核申請時申請第二個社團應回傳 409
+[1A[2K[32/225] [chromium] › tests\e2e\additional-regression.spec.js:696:3 › Additional Regression: Data Integrity & Safety › AR-29 follow request failure should not show fake success state
+[1A[2K[33/225] [chromium] › tests\e2e\additional-regression.spec.js:996:3 › Additional Regression: 社團幹部成員狀態 › AR-39 社團幹部查看自己管理的社團時 is_member 應為 true
+[1A[2K[34/225] [chromium] › tests\e2e\additional-regression.spec.js:1012:3 › Additional Regression: 社長唯一性限制 › AR-40 平台管理員不能將同一人指派為兩個社團的社長
+[1A[2K[35/225] [chromium] › tests\e2e\category-assistant.spec.js:54:3 › 類別助教與操作紀錄 (新功能) › 社團分類為六大，且含音樂/藝術、不含藝文
+[1A[2K[36/225] [chromium] › tests\e2e\messages.spec.js:137:3 › 私訊功能 › PM-01 私訊頁面可正常加載
+[1A[2K[37/225] [chromium] › tests\e2e\additional-regression.spec.js:721:3 › Additional Regression: Data Integrity & Safety › AR-30 club profile minimum fields should block empty submit
+[1A[2K[38/225] [chromium] › tests\e2e\messages.spec.js:145:3 › 私訊功能 › PM-02 搜尋用戶並開啟對話
+[1A[2K[39/225] [chromium] › tests\e2e\category-assistant.spec.js:65:3 › 類別助教與操作紀錄 (新功能) › 操作紀錄：該社幹部可讀、無關使用者被擋
+[1A[2K[40/225] [chromium] › tests\e2e\messages.spec.js:153:3 › 私訊功能 › PM-03 可傳送訊息並顯示在泡泡中
+[1A[2K[41/225] [chromium] › tests\e2e\additional-regression.spec.js:751:3 › Additional Regression: Data Integrity & Safety › AR-31 tag/keyword no-result flow should stay navigable
+[1A[2K[42/225] [chromium] › tests\e2e\messages.spec.js:165:3 › 私訊功能 › PM-04 可收回自己的訊息
+[1A[2K[43/225] [chromium] › tests\e2e\additional-regression.spec.js:769:3 › Additional Regression: Data Integrity & Safety › AR-32 upload should reject forged extension file
+[1A[2K[44/225] [chromium] › tests\e2e\messages.spec.js:190:3 › 私訊功能 › PM-05 可回復訊息並顯示引用塊
+[1A[2K[45/225] [chromium] › tests\e2e\messages.spec.js:220:3 › 私訊功能 › PM-06 可對訊息新增 emoji 反應
+[1A[2K[46/225] [chromium] › tests\e2e\additional-regression.spec.js:804:3 › Additional Regression: Data Integrity & Safety › AR-33 club admin cannot modify tags of non-owned clubs
+[1A[2K[47/225] [chromium] › tests\e2e\category-assistant.spec.js:85:3 › 類別助教與操作紀錄 (新功能) › admin 指派 caassist 為類別助教並出現在清單
+[1A[2K[48/225] [chromium] › tests\e2e\messages.spec.js:245:3 › 私訊功能 › PM-07 記事本可傳送與刪除訊息
+[1A[2K[49/225] [chromium] › tests\e2e\messages.spec.js:413:3 › 入社驗證碼功能 › VC-01 批准申請後 bot 訊息顯示驗證碼
+[1A[2K[50/225] [chromium] › tests\e2e\additional-regression.spec.js:829:3 › Additional Regression: Data Integrity & Safety › AR-34 club admin cannot archive events of non-owned clubs
+[1A[2K[51/225] [chromium] › tests\e2e\category-assistant.spec.js:121:3 › 類別助教與操作紀錄 (新功能) › caassist 只看到自己類別的社團，跨類別存取被擋
+[1A[2K[52/225] [chromium] › tests\e2e\user-stories.spec.js:301:3 › US 1.1: 社團列表與搜尋篩選 › AC1: 前台具備分類與熱門標籤介面元素
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:301:3 › US 1.1: 社團列表與搜尋篩選 › AC1: 前台具備分類與熱門標籤介面元素
+✓ E2E test data cleanup completed
+
+
+[1A[2K[53/225] [chromium] › tests\e2e\user-stories.spec.js:314:3 › US 1.1: 社團列表與搜尋篩選 › AC2: 分類與標籤 OR 篩選 API 可用
+[1A[2K[54/225] [chromium] › tests\e2e\additional-regression.spec.js:853:3 › Additional Regression: Data Integrity & Safety › AR-35 club update should be visible immediately to student (no stale cache)
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:314:3 › US 1.1: 社團列表與搜尋篩選 › AC2: 分類與標籤 OR 篩選 API 可用
+✓ E2E test data cleanup completed
+
+
+[1A[2K[55/225] [chromium] › tests\e2e\user-stories.spec.js:326:3 › US 1.1: 社團列表與搜尋篩選 › AC3: 空結果防呆 - 搜尋無結果顯示提示
+[1A[2K[56/225] [chromium] › tests\e2e\category-assistant.spec.js:142:3 › 類別助教與操作紀錄 (新功能) › caassist 登入導向社團管理，且越權守衛擋住其他管理頁
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:326:3 › US 1.1: 社團列表與搜尋篩選 › AC3: 空結果防呆 - 搜尋無結果顯示提示
+✓ E2E test data cleanup completed
+
+
+[1A[2K[57/225] [chromium] › tests\e2e\user-stories.spec.js:358:3 › US 1.3: 追蹤功能與個人動態牆 › AC1: 可追蹤/取消追蹤社團
+[1A[2K[58/225] [chromium] › tests\e2e\messages.spec.js:427:3 › 入社驗證碼功能 › VC-02 輸入錯誤驗證碼應顯示錯誤訊息
+[1A[2K[59/225] [chromium] › tests\e2e\messages.spec.js:448:3 › 入社驗證碼功能 › VC-03 輸入正確驗證碼後成功加入社團
+[1A[2K[60/225] [chromium] › tests\e2e\category-assistant.spec.js:152:3 › 類別助教與操作紀錄 (新功能) › admin 撤銷 caassist，角色還原為一般帳號
+[1A[2K[61/225] [firefox] › tests\e2e\additional-regression.spec.js:247:3 › Additional Regression: 首頁進階搜尋 › AR-01 首頁應顯示進階搜尋主要元素
+[1A[2K[62/225] [firefox] › tests\e2e\additional-regression.spec.js:257:3 › Additional Regression: 首頁進階搜尋 › AR-02 首頁預設應顯示社團篩選區塊
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:358:3 › US 1.3: 追蹤功能與個人動態牆 › AC1: 可追蹤/取消追蹤社團
+✓ E2E test data cleanup completed
+
+
+[1A[2K[63/225] [chromium] › tests\e2e\user-stories.spec.js:394:3 › US 1.3: 追蹤功能與個人動態牆 › AC2: 已追蹤社團可於個人動態牆查看
+[1A[2K[64/225] [firefox] › tests\e2e\additional-regression.spec.js:267:3 › Additional Regression: 首頁進階搜尋 › AR-03 切換搜尋類型為活動應顯示活動篩選
+[1A[2K[65/225] [firefox] › tests\e2e\additional-regression.spec.js:277:3 › Additional Regression: 首頁進階搜尋 › AR-04 切換搜尋類型為提問應顯示提問篩選
+[1A[2K[66/225] [firefox] › tests\e2e\additional-regression.spec.js:287:3 › Additional Regression: 首頁進階搜尋 › AR-05 清除按鈕應重置關鍵字與搜尋類型
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:394:3 › US 1.3: 追蹤功能與個人動態牆 › AC2: 已追蹤社團可於個人動態牆查看
+✓ E2E test data cleanup completed
+
+
+[1A[2K[67/225] [chromium] › tests\e2e\user-stories.spec.js:418:3 › US 1.5: 資料時間戳 › AC1: 社團更新時有 last_updated 時間戳
+[1A[2K[68/225] [firefox] › tests\e2e\additional-regression.spec.js:302:3 › Additional Regression: 社團列表篩選與導覽 › AR-06 社團列表頁應顯示四個核心篩選控制項
+[1A[2K[69/225] [firefox] › tests\e2e\additional-regression.spec.js:312:3 › Additional Regression: 社團列表篩選與導覽 › AR-07 未選類別時社團下拉應為 disabled
+[1A[2K[70/225] [firefox] › tests\e2e\additional-regression.spec.js:319:3 › Additional Regression: 社團列表篩選與導覽 › AR-08 重製按鈕應清空關鍵字與費用範圍
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:418:3 › US 1.5: 資料時間戳 › AC1: 社團更新時有 last_updated 時間戳
+✓ E2E test data cleanup completed
+
+
+[1A[2K[71/225] [chromium] › tests\e2e\user-stories.spec.js:435:3 › US 1.5: 資料時間戳 › AC2: 新發布活動在活動詳情頁顯示最新上傳時間
+[1A[2K[72/225] [firefox] › tests\e2e\additional-regression.spec.js:333:3 › Additional Regression: 社團列表篩選與導覽 › AR-09 可由社團列表進入社團詳情頁
+[1A[2K[73/225] [firefox] › tests\e2e\additional-regression.spec.js:351:3 › Additional Regression: 活動頁篩選器 › AR-10 活動頁應顯示搜尋與日期篩選控制項
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:435:3 › US 1.5: 資料時間戳 › AC2: 新發布活動在活動詳情頁顯示最新上傳時間
+✓ E2E test data cleanup completed
+
+
+[1A[2K[74/225] [chromium] › tests\e2e\user-stories.spec.js:458:3 › US 2.1: 社團幹部編輯社團資訊 › AC1/AC2/AC3: 幹部可編輯所屬社團資訊
+[1A[2K[75/225] [firefox] › tests\e2e\additional-regression.spec.js:361:3 › Additional Regression: 活動頁篩選器 › AR-11 活動開始時間拆分欄位應能同步到 hidden 欄位
+[1A[2K[76/225] [firefox] › tests\e2e\additional-regression.spec.js:373:3 › Additional Regression: 活動頁篩選器 › AR-12 報名截止拆分欄位應能同步到 hidden 欄位
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:458:3 › US 2.1: 社團幹部編輯社團資訊 › AC1/AC2/AC3: 幹部可編輯所屬社團資訊
+✓ E2E test data cleanup completed
+
+
+[1A[2K[77/225] [chromium] › tests\e2e\user-stories.spec.js:482:3 › US 2.2: 社團活動發布 › AC1: 幹部可發布活動
+[1A[2K[78/225] [firefox] › tests\e2e\additional-regression.spec.js:385:3 › Additional Regression: 活動頁篩選器 › AR-13 活動頁重製按鈕應清空關鍵字與隱藏日期值
+[1A[2K[79/225] [firefox] › tests\e2e\additional-regression.spec.js:401:3 › Additional Regression: QA 互動細節 › AR-14 QA 頁應顯示搜尋、篩選、發布提問按鈕
+[1A[2K[80/225] [firefox] › tests\e2e\additional-regression.spec.js:411:3 › Additional Regression: QA 互動細節 › AR-15 未登入按發布提問應導向登入頁
+[1A[2K[81/225] [firefox] › tests\e2e\additional-regression.spec.js:420:3 › Additional Regression: QA 互動細節 › AR-16 已登入學生可開啟提問 modal
+[1A[2K[82/225] [firefox] › tests\e2e\additional-regression.spec.js:430:3 › Additional Regression: QA 互動細節 › AR-17 緊急程度按鈕應同步 hidden 值
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:482:3 › US 2.2: 社團活動發布 › AC1: 幹部可發布活動
+✓ E2E test data cleanup completed
+
+
+[1A[2K[83/225] [chromium] › tests\e2e\user-stories.spec.js:494:3 › US 2.2: 社團活動發布 › AC2: 發布後可在前台查到，且活動列表為近到遠排序
+[1A[2K[84/225] [firefox] › tests\e2e\additional-regression.spec.js:445:3 › Additional Regression: QA 互動細節 › AR-18 關閉提問 modal 後應隱藏且重置緊急程度為 normal
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:494:3 › US 2.2: 社團活動發布 › AC2: 發布後可在前台查到，且活動列表為近到遠排序
+✓ E2E test data cleanup completed
+
+
+[1A[2K[85/225] [chromium] › tests\e2e\user-stories.spec.js:541:3 › US 4.1: 平台管理員功能 › AC1: 管理員可進入管理儀表板
+[1A[2K[86/225] [firefox] › tests\e2e\additional-regression.spec.js:465:3 › Additional Regression: 會話與導向自檢 › AR-22 未登入首頁不應觸發 auth current 401
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:541:3 › US 4.1: 平台管理員功能 › AC1: 管理員可進入管理儀表板
+✓ E2E test data cleanup completed
+
+
+[1A[2K[87/225] [chromium] › tests\e2e\user-stories.spec.js:551:3 › US 4.1: 平台管理員功能 › AC2: 管理員可發布全校公告
+[1A[2K[88/225] [firefox] › tests\e2e\additional-regression.spec.js:479:3 › Additional Regression: 會話與導向自檢 › AR-23 未登入首頁不應載入 uploads 404
+[1A[2K[89/225] [firefox] › tests\e2e\additional-regression.spec.js:492:3 › Additional Regression: 會話與導向自檢 › AR-24 已登入首頁不應載入 uploads 404
+[1A[2K[90/225] [firefox] › tests\e2e\additional-regression.spec.js:508:3 › Additional Regression: 會話與導向自檢 › AR-25 所有社團詳情頁不應載入 uploads 404
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:551:3 › US 4.1: 平台管理員功能 › AC2: 管理員可發布全校公告
+✓ E2E test data cleanup completed
+
+
+[1A[2K[91/225] [chromium] › tests\e2e\user-stories.spec.js:571:3 › 登入與權限 › 學生可成功登入
+[1A[2K[92/225] [firefox] › tests\e2e\additional-regression.spec.js:529:3 › Additional Regression: 會話與導向自檢 › AR-26 所有活動詳情頁不應載入 uploads 404
+[1A[2K[93/225] [firefox] › tests\e2e\additional-regression.spec.js:550:3 › Additional Regression: 會話與導向自檢 › AR-19 登出後應回到首頁且顯示未登入狀態
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:571:3 › 登入與權限 › 學生可成功登入
+✓ E2E test data cleanup completed
+
+
+[1A[2K[94/225] [chromium] › tests\e2e\user-stories.spec.js:579:3 › 登入與權限 › 社團幹部可成功登入
+[1A[2K[95/225] [firefox] › tests\e2e\additional-regression.spec.js:568:3 › Additional Regression: 會話與導向自檢 › AR-20 登出導向 URL 不應包含重複 index 路徑
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:579:3 › 登入與權限 › 社團幹部可成功登入
+✓ E2E test data cleanup completed
+
+
+[1A[2K[96/225] [chromium] › tests\e2e\user-stories.spec.js:586:3 › 登入與權限 › 平台管理員可成功登入並進入管理頁面
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:586:3 › 登入與權限 › 平台管理員可成功登入並進入管理頁面
+✓ E2E test data cleanup completed
+
+
+[1A[2K[97/225] [chromium] › tests\e2e\user-stories.spec.js:595:3 › 登入與權限 › 密碼錯誤登入失敗
+[1A[2K[98/225] [firefox] › tests\e2e\additional-regression.spec.js:578:3 › Additional Regression: 會話與導向自檢 › AR-21 未登入看社團詳情時應提示需登入才能確認追蹤狀態
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:595:3 › 登入與權限 › 密碼錯誤登入失敗
+✓ E2E test data cleanup completed
+
+
+[1A[2K[99/225] [chromium] › tests\e2e\user-stories.spec.js:617:3 › 頁面可訪問性 › 首頁可正常加載
+[1A[2K[100/225] (retries) [firefox] › tests\e2e\additional-regression.spec.js:445:3 › Additional Regression: QA 互動細節 › AR-18 關閉提問 modal 後應隱藏且重置緊急程度為 normal (retry #1)
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:617:3 › 頁面可訪問性 › 首頁可正常加載
+✓ E2E test data cleanup completed
+
+
+[1A[2K[101/225] [firefox] › tests\e2e\additional-regression.spec.js:593:3 › Additional Regression: 會話與導向自檢 › AR-27 追蹤狀態在登出再登入後應維持
+[1A[2K[102/225] [chromium] › tests\e2e\user-stories.spec.js:628:3 › 頁面可訪問性 › 社團列表頁可正常加載
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:628:3 › 頁面可訪問性 › 社團列表頁可正常加載
+✓ E2E test data cleanup completed
+
+
+[1A[2K[103/225] [chromium] › tests\e2e\user-stories.spec.js:637:3 › 頁面可訪問性 › 活動頁可正常加載
+[1A[2K[chromium] › tests\e2e\user-stories.spec.js:637:3 › 頁面可訪問性 › 活動頁可正常加載
+✓ E2E test data cleanup completed
+
+
+[1A[2K[104/225] [firefox] › tests\e2e\additional-regression.spec.js:641:3 › Additional Regression: Data Integrity & Safety › AR-28 should reject stale last_updated on concurrent club update
+[1A[2K[105/225] [firefox] › tests\e2e\additional-regression.spec.js:899:3 › Additional Regression: 登入速率限制 › AR-36 連續 10 次錯誤密碼後第 11 次應觸發速率限制 (429)
+[1A[2K[106/225] [firefox] › tests\e2e\additional-regression.spec.js:928:3 › Additional Regression: 管理員私訊導覽 › AR-37 管理員進入私訊頁應顯示管理員導覽列（含系統總覽）
+[1A[2K  1) [firefox] › tests\e2e\additional-regression.spec.js:445:3 › Additional Regression: QA 互動細節 › AR-18 關閉提問 modal 後應隱藏且重置緊急程度為 normal 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('.urgency-btn[data-urgency="urgent"]')[22m
+    [2m    - locator resolved to <button type="button" data-urgency="urgent" class="btn btn-secondary btn-sm urgency-btn">緊急</button>[22m
+    [2m  - attempting click action[22m
+    [2m    - waiting for element to be visible, enabled and stable[22m
+
+
+      449 |
+      450 |     await page.click('#ask-btn');
+    > 451 |     await page.click('.urgency-btn[data-urgency="urgent"]');
+          |                ^
+      452 |     await expect(page.locator('#ask-urgency')).toHaveValue('urgent');
+      453 |
+      454 |     await page.evaluate(() => {
+        at C:\AppServ\www\work-main\tests\e2e\additional-regression.spec.js:451:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\additional-regression-Addi-bccd9-問-modal-後應隱藏且重置緊急程度為-normal-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\additional-regression-Addi-bccd9-問-modal-後應隱藏且重置緊急程度為-normal-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\additional-regression-Addi-bccd9-問-modal-後應隱藏且重置緊急程度為-normal-firefox\error-context.md
+
+
+[1A[2K[107/225] [firefox] › tests\e2e\additional-regression.spec.js:945:3 › Additional Regression: 入社申請單一限制 › AR-38 已有待審核申請時申請第二個社團應回傳 409
+[1A[2K[108/225] [firefox] › tests\e2e\additional-regression.spec.js:996:3 › Additional Regression: 社團幹部成員狀態 › AR-39 社團幹部查看自己管理的社團時 is_member 應為 true
+[1A[2K[109/225] [firefox] › tests\e2e\additional-regression.spec.js:1012:3 › Additional Regression: 社長唯一性限制 › AR-40 平台管理員不能將同一人指派為兩個社團的社長
+[1A[2K[110/225] [firefox] › tests\e2e\additional-regression.spec.js:696:3 › Additional Regression: Data Integrity & Safety › AR-29 follow request failure should not show fake success state
+[1A[2K[111/225] [firefox] › tests\e2e\category-assistant.spec.js:54:3 › 類別助教與操作紀錄 (新功能) › 社團分類為六大，且含音樂/藝術、不含藝文
+[1A[2K[112/225] [firefox] › tests\e2e\messages.spec.js:137:3 › 私訊功能 › PM-01 私訊頁面可正常加載
+[1A[2K[113/225] [firefox] › tests\e2e\messages.spec.js:145:3 › 私訊功能 › PM-02 搜尋用戶並開啟對話
+[1A[2K[114/225] [firefox] › tests\e2e\category-assistant.spec.js:65:3 › 類別助教與操作紀錄 (新功能) › 操作紀錄：該社幹部可讀、無關使用者被擋
+[1A[2K[115/225] [firefox] › tests\e2e\messages.spec.js:153:3 › 私訊功能 › PM-03 可傳送訊息並顯示在泡泡中
+[1A[2K[116/225] [firefox] › tests\e2e\additional-regression.spec.js:721:3 › Additional Regression: Data Integrity & Safety › AR-30 club profile minimum fields should block empty submit
+[1A[2K[117/225] [firefox] › tests\e2e\messages.spec.js:165:3 › 私訊功能 › PM-04 可收回自己的訊息
+[1A[2K[118/225] [firefox] › tests\e2e\additional-regression.spec.js:751:3 › Additional Regression: Data Integrity & Safety › AR-31 tag/keyword no-result flow should stay navigable
+[1A[2K[119/225] [firefox] › tests\e2e\messages.spec.js:190:3 › 私訊功能 › PM-05 可回復訊息並顯示引用塊
+[1A[2K[120/225] [firefox] › tests\e2e\messages.spec.js:220:3 › 私訊功能 › PM-06 可對訊息新增 emoji 反應
+[1A[2K[121/225] [firefox] › tests\e2e\additional-regression.spec.js:769:3 › Additional Regression: Data Integrity & Safety › AR-32 upload should reject forged extension file
+[1A[2K[122/225] [firefox] › tests\e2e\messages.spec.js:245:3 › 私訊功能 › PM-07 記事本可傳送與刪除訊息
+[1A[2K[123/225] [firefox] › tests\e2e\category-assistant.spec.js:85:3 › 類別助教與操作紀錄 (新功能) › admin 指派 caassist 為類別助教並出現在清單
+[1A[2K[124/225] [firefox] › tests\e2e\category-assistant.spec.js:121:3 › 類別助教與操作紀錄 (新功能) › caassist 只看到自己類別的社團，跨類別存取被擋
+[1A[2K[125/225] [firefox] › tests\e2e\category-assistant.spec.js:142:3 › 類別助教與操作紀錄 (新功能) › caassist 登入導向社團管理，且越權守衛擋住其他管理頁
+[1A[2K[126/225] [firefox] › tests\e2e\category-assistant.spec.js:152:3 › 類別助教與操作紀錄 (新功能) › admin 撤銷 caassist，角色還原為一般帳號
+[1A[2K[127/225] [firefox] › tests\e2e\messages.spec.js:413:3 › 入社驗證碼功能 › VC-01 批准申請後 bot 訊息顯示驗證碼
+[1A[2K[128/225] (retries) [firefox] › tests\e2e\category-assistant.spec.js:54:3 › 類別助教與操作紀錄 (新功能) › 社團分類為六大，且含音樂/藝術、不含藝文 (retry #1)
+[1A[2K[129/225] [firefox] › tests\e2e\additional-regression.spec.js:804:3 › Additional Regression: Data Integrity & Safety › AR-33 club admin cannot modify tags of non-owned clubs
+[1A[2K[130/225] [firefox] › tests\e2e\user-stories.spec.js:301:3 › US 1.1: 社團列表與搜尋篩選 › AC1: 前台具備分類與熱門標籤介面元素
+[1A[2K[131/225] (retries) [firefox] › tests\e2e\category-assistant.spec.js:65:3 › 類別助教與操作紀錄 (新功能) › 操作紀錄：該社幹部可讀、無關使用者被擋 (retry #1)
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:301:3 › US 1.1: 社團列表與搜尋篩選 › AC1: 前台具備分類與熱門標籤介面元素
+✓ E2E test data cleanup completed
+
+
+[1A[2K[132/225] [firefox] › tests\e2e\user-stories.spec.js:314:3 › US 1.1: 社團列表與搜尋篩選 › AC2: 分類與標籤 OR 篩選 API 可用
+[1A[2K[133/225] [firefox] › tests\e2e\additional-regression.spec.js:829:3 › Additional Regression: Data Integrity & Safety › AR-34 club admin cannot archive events of non-owned clubs
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:314:3 › US 1.1: 社團列表與搜尋篩選 › AC2: 分類與標籤 OR 篩選 API 可用
+✓ E2E test data cleanup completed
+
+
+[1A[2K[134/225] [firefox] › tests\e2e\user-stories.spec.js:326:3 › US 1.1: 社團列表與搜尋篩選 › AC3: 空結果防呆 - 搜尋無結果顯示提示
+[1A[2K[135/225] [firefox] › tests\e2e\messages.spec.js:427:3 › 入社驗證碼功能 › VC-02 輸入錯誤驗證碼應顯示錯誤訊息
+[1A[2K[136/225] [firefox] › tests\e2e\messages.spec.js:448:3 › 入社驗證碼功能 › VC-03 輸入正確驗證碼後成功加入社團
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:326:3 › US 1.1: 社團列表與搜尋篩選 › AC3: 空結果防呆 - 搜尋無結果顯示提示
+✓ E2E test data cleanup completed
+
+
+[1A[2K[137/225] [firefox] › tests\e2e\user-stories.spec.js:358:3 › US 1.3: 追蹤功能與個人動態牆 › AC1: 可追蹤/取消追蹤社團
+[1A[2K[138/225] [webkit] › tests\e2e\additional-regression.spec.js:247:3 › Additional Regression: 首頁進階搜尋 › AR-01 首頁應顯示進階搜尋主要元素
+[1A[2K[139/225] [webkit] › tests\e2e\additional-regression.spec.js:257:3 › Additional Regression: 首頁進階搜尋 › AR-02 首頁預設應顯示社團篩選區塊
+[1A[2K[140/225] [firefox] › tests\e2e\additional-regression.spec.js:853:3 › Additional Regression: Data Integrity & Safety › AR-35 club update should be visible immediately to student (no stale cache)
+[1A[2K[141/225] [webkit] › tests\e2e\additional-regression.spec.js:267:3 › Additional Regression: 首頁進階搜尋 › AR-03 切換搜尋類型為活動應顯示活動篩選
+[1A[2K  2) [firefox] › tests\e2e\category-assistant.spec.js:65:3 › 類別助教與操作紀錄 (新功能) › 操作紀錄：該社幹部可讀、無關使用者被擋 ─
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+      26 |     page.click('button[type="submit"]'),
+      27 |   ]);
+    > 28 |   await page.waitForLoadState('networkidle');
+         |              ^
+      29 | }
+      30 |
+      31 | // 在頁面內透過 window.APIClient 呼叫 API（自動帶 CSRF / cookie）；錯誤一律正規化為 {success:false}
+        at login (C:\AppServ\www\work-main\tests\e2e\category-assistant.spec.js:28:14)
+        at C:\AppServ\www\work-main\tests\e2e\category-assistant.spec.js:80:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\category-assistant-類別助教與操作紀錄-新功能-操作紀錄：該社幹部可讀、無關使用者被擋-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\category-assistant-類別助教與操作紀錄-新功能-操作紀錄：該社幹部可讀、無關使用者被擋-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\category-assistant-類別助教與操作紀錄-新功能-操作紀錄：該社幹部可讀、無關使用者被擋-firefox\error-context.md
+
+
+[1A[2K[142/225] (retries) [firefox] › tests\e2e\category-assistant.spec.js:85:3 › 類別助教與操作紀錄 (新功能) › admin 指派 caassist 為類別助教並出現在清單 (retry #1)
+[1A[2K[143/225] [webkit] › tests\e2e\additional-regression.spec.js:277:3 › Additional Regression: 首頁進階搜尋 › AR-04 切換搜尋類型為提問應顯示提問篩選
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:358:3 › US 1.3: 追蹤功能與個人動態牆 › AC1: 可追蹤/取消追蹤社團
+✓ E2E test data cleanup completed
+
+
+[1A[2K[144/225] [firefox] › tests\e2e\user-stories.spec.js:394:3 › US 1.3: 追蹤功能與個人動態牆 › AC2: 已追蹤社團可於個人動態牆查看
+[1A[2K[145/225] [webkit] › tests\e2e\additional-regression.spec.js:287:3 › Additional Regression: 首頁進階搜尋 › AR-05 清除按鈕應重置關鍵字與搜尋類型
+[1A[2K[146/225] (retries) [firefox] › tests\e2e\category-assistant.spec.js:121:3 › 類別助教與操作紀錄 (新功能) › caassist 只看到自己類別的社團，跨類別存取被擋 (retry #1)
+[1A[2K[147/225] [webkit] › tests\e2e\additional-regression.spec.js:302:3 › Additional Regression: 社團列表篩選與導覽 › AR-06 社團列表頁應顯示四個核心篩選控制項
+[1A[2K[148/225] [webkit] › tests\e2e\additional-regression.spec.js:312:3 › Additional Regression: 社團列表篩選與導覽 › AR-07 未選類別時社團下拉應為 disabled
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:394:3 › US 1.3: 追蹤功能與個人動態牆 › AC2: 已追蹤社團可於個人動態牆查看
+✓ E2E test data cleanup completed
+
+
+[1A[2K[149/225] [firefox] › tests\e2e\user-stories.spec.js:418:3 › US 1.5: 資料時間戳 › AC1: 社團更新時有 last_updated 時間戳
+[1A[2K[150/225] [webkit] › tests\e2e\additional-regression.spec.js:319:3 › Additional Regression: 社團列表篩選與導覽 › AR-08 重製按鈕應清空關鍵字與費用範圍
+[1A[2K[151/225] [webkit] › tests\e2e\additional-regression.spec.js:333:3 › Additional Regression: 社團列表篩選與導覽 › AR-09 可由社團列表進入社團詳情頁
+[1A[2K[152/225] [webkit] › tests\e2e\additional-regression.spec.js:351:3 › Additional Regression: 活動頁篩選器 › AR-10 活動頁應顯示搜尋與日期篩選控制項
+[1A[2K[153/225] (retries) [firefox] › tests\e2e\category-assistant.spec.js:142:3 › 類別助教與操作紀錄 (新功能) › caassist 登入導向社團管理，且越權守衛擋住其他管理頁 (retry #1)
+[1A[2K[154/225] [webkit] › tests\e2e\additional-regression.spec.js:361:3 › Additional Regression: 活動頁篩選器 › AR-11 活動開始時間拆分欄位應能同步到 hidden 欄位
+[1A[2K[155/225] [webkit] › tests\e2e\additional-regression.spec.js:373:3 › Additional Regression: 活動頁篩選器 › AR-12 報名截止拆分欄位應能同步到 hidden 欄位
+[1A[2K[156/225] [webkit] › tests\e2e\additional-regression.spec.js:385:3 › Additional Regression: 活動頁篩選器 › AR-13 活動頁重製按鈕應清空關鍵字與隱藏日期值
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:418:3 › US 1.5: 資料時間戳 › AC1: 社團更新時有 last_updated 時間戳
+✓ E2E test data cleanup completed
+
+
+[1A[2K[157/225] [firefox] › tests\e2e\user-stories.spec.js:435:3 › US 1.5: 資料時間戳 › AC2: 新發布活動在活動詳情頁顯示最新上傳時間
+[1A[2K[158/225] [webkit] › tests\e2e\additional-regression.spec.js:401:3 › Additional Regression: QA 互動細節 › AR-14 QA 頁應顯示搜尋、篩選、發布提問按鈕
+[1A[2K[159/225] [webkit] › tests\e2e\additional-regression.spec.js:411:3 › Additional Regression: QA 互動細節 › AR-15 未登入按發布提問應導向登入頁
+[1A[2K[160/225] (retries) [firefox] › tests\e2e\category-assistant.spec.js:152:3 › 類別助教與操作紀錄 (新功能) › admin 撤銷 caassist，角色還原為一般帳號 (retry #1)
+[1A[2K[161/225] [webkit] › tests\e2e\additional-regression.spec.js:420:3 › Additional Regression: QA 互動細節 › AR-16 已登入學生可開啟提問 modal
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:435:3 › US 1.5: 資料時間戳 › AC2: 新發布活動在活動詳情頁顯示最新上傳時間
+✓ E2E test data cleanup completed
+
+
+[1A[2K[162/225] [firefox] › tests\e2e\user-stories.spec.js:458:3 › US 2.1: 社團幹部編輯社團資訊 › AC1/AC2/AC3: 幹部可編輯所屬社團資訊
+[1A[2K[163/225] [webkit] › tests\e2e\additional-regression.spec.js:430:3 › Additional Regression: QA 互動細節 › AR-17 緊急程度按鈕應同步 hidden 值
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:458:3 › US 2.1: 社團幹部編輯社團資訊 › AC1/AC2/AC3: 幹部可編輯所屬社團資訊
+✓ E2E test data cleanup completed
+
+
+[1A[2K[164/225] [firefox] › tests\e2e\user-stories.spec.js:482:3 › US 2.2: 社團活動發布 › AC1: 幹部可發布活動
+[1A[2K[165/225] [webkit] › tests\e2e\additional-regression.spec.js:465:3 › Additional Regression: 會話與導向自檢 › AR-22 未登入首頁不應觸發 auth current 401
+[1A[2K[166/225] [webkit] › tests\e2e\additional-regression.spec.js:445:3 › Additional Regression: QA 互動細節 › AR-18 關閉提問 modal 後應隱藏且重置緊急程度為 normal
+[1A[2K[167/225] [webkit] › tests\e2e\additional-regression.spec.js:479:3 › Additional Regression: 會話與導向自檢 › AR-23 未登入首頁不應載入 uploads 404
+[1A[2K[168/225] [webkit] › tests\e2e\additional-regression.spec.js:492:3 › Additional Regression: 會話與導向自檢 › AR-24 已登入首頁不應載入 uploads 404
+[1A[2K[169/225] [webkit] › tests\e2e\additional-regression.spec.js:508:3 › Additional Regression: 會話與導向自檢 › AR-25 所有社團詳情頁不應載入 uploads 404
+[1A[2K[170/225] [webkit] › tests\e2e\additional-regression.spec.js:529:3 › Additional Regression: 會話與導向自檢 › AR-26 所有活動詳情頁不應載入 uploads 404
+[1A[2K[171/225] [webkit] › tests\e2e\additional-regression.spec.js:550:3 › Additional Regression: 會話與導向自檢 › AR-19 登出後應回到首頁且顯示未登入狀態
+[1A[2K[172/225] [webkit] › tests\e2e\additional-regression.spec.js:568:3 › Additional Regression: 會話與導向自檢 › AR-20 登出導向 URL 不應包含重複 index 路徑
+[1A[2K[173/225] [webkit] › tests\e2e\additional-regression.spec.js:578:3 › Additional Regression: 會話與導向自檢 › AR-21 未登入看社團詳情時應提示需登入才能確認追蹤狀態
+[1A[2K[174/225] [webkit] › tests\e2e\additional-regression.spec.js:593:3 › Additional Regression: 會話與導向自檢 › AR-27 追蹤狀態在登出再登入後應維持
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:482:3 › US 2.2: 社團活動發布 › AC1: 幹部可發布活動
+✓ E2E test data cleanup completed
+
+
+[1A[2K[175/225] [firefox] › tests\e2e\user-stories.spec.js:494:3 › US 2.2: 社團活動發布 › AC2: 發布後可在前台查到，且活動列表為近到遠排序
+[1A[2K[176/225] [webkit] › tests\e2e\additional-regression.spec.js:641:3 › Additional Regression: Data Integrity & Safety › AR-28 should reject stale last_updated on concurrent club update
+[1A[2K[177/225] [webkit] › tests\e2e\additional-regression.spec.js:899:3 › Additional Regression: 登入速率限制 › AR-36 連續 10 次錯誤密碼後第 11 次應觸發速率限制 (429)
+[1A[2K[178/225] [webkit] › tests\e2e\additional-regression.spec.js:928:3 › Additional Regression: 管理員私訊導覽 › AR-37 管理員進入私訊頁應顯示管理員導覽列（含系統總覽）
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:494:3 › US 2.2: 社團活動發布 › AC2: 發布後可在前台查到，且活動列表為近到遠排序
+✓ E2E test data cleanup completed
+
+
+[1A[2K[179/225] [firefox] › tests\e2e\user-stories.spec.js:541:3 › US 4.1: 平台管理員功能 › AC1: 管理員可進入管理儀表板
+[1A[2K[180/225] [webkit] › tests\e2e\additional-regression.spec.js:696:3 › Additional Regression: Data Integrity & Safety › AR-29 follow request failure should not show fake success state
+[1A[2K[181/225] [webkit] › tests\e2e\additional-regression.spec.js:945:3 › Additional Regression: 入社申請單一限制 › AR-38 已有待審核申請時申請第二個社團應回傳 409
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:541:3 › US 4.1: 平台管理員功能 › AC1: 管理員可進入管理儀表板
+✓ E2E test data cleanup completed
+
+
+[1A[2K[182/225] [firefox] › tests\e2e\user-stories.spec.js:551:3 › US 4.1: 平台管理員功能 › AC2: 管理員可發布全校公告
+[1A[2K[183/225] [webkit] › tests\e2e\additional-regression.spec.js:996:3 › Additional Regression: 社團幹部成員狀態 › AR-39 社團幹部查看自己管理的社團時 is_member 應為 true
+[1A[2K[184/225] [webkit] › tests\e2e\additional-regression.spec.js:1012:3 › Additional Regression: 社長唯一性限制 › AR-40 平台管理員不能將同一人指派為兩個社團的社長
+[1A[2K[185/225] [webkit] › tests\e2e\additional-regression.spec.js:721:3 › Additional Regression: Data Integrity & Safety › AR-30 club profile minimum fields should block empty submit
+[1A[2K[186/225] [webkit] › tests\e2e\category-assistant.spec.js:54:3 › 類別助教與操作紀錄 (新功能) › 社團分類為六大，且含音樂/藝術、不含藝文
+[1A[2K[187/225] [webkit] › tests\e2e\messages.spec.js:137:3 › 私訊功能 › PM-01 私訊頁面可正常加載
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:551:3 › US 4.1: 平台管理員功能 › AC2: 管理員可發布全校公告
+✓ E2E test data cleanup completed
+
+
+[1A[2K[188/225] [firefox] › tests\e2e\user-stories.spec.js:571:3 › 登入與權限 › 學生可成功登入
+[1A[2K[189/225] [webkit] › tests\e2e\additional-regression.spec.js:751:3 › Additional Regression: Data Integrity & Safety › AR-31 tag/keyword no-result flow should stay navigable
+[1A[2K[190/225] [webkit] › tests\e2e\category-assistant.spec.js:65:3 › 類別助教與操作紀錄 (新功能) › 操作紀錄：該社幹部可讀、無關使用者被擋
+[1A[2K[191/225] [webkit] › tests\e2e\messages.spec.js:145:3 › 私訊功能 › PM-02 搜尋用戶並開啟對話
+[1A[2K[192/225] [webkit] › tests\e2e\additional-regression.spec.js:769:3 › Additional Regression: Data Integrity & Safety › AR-32 upload should reject forged extension file
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:571:3 › 登入與權限 › 學生可成功登入
+✓ E2E test data cleanup completed
+
+
+[1A[2K[193/225] [firefox] › tests\e2e\user-stories.spec.js:579:3 › 登入與權限 › 社團幹部可成功登入
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:579:3 › 登入與權限 › 社團幹部可成功登入
+✓ E2E test data cleanup completed
+
+
+[1A[2K[194/225] [webkit] › tests\e2e\additional-regression.spec.js:804:3 › Additional Regression: Data Integrity & Safety › AR-33 club admin cannot modify tags of non-owned clubs
+[1A[2K[195/225] [firefox] › tests\e2e\user-stories.spec.js:586:3 › 登入與權限 › 平台管理員可成功登入並進入管理頁面
+[1A[2K[196/225] [webkit] › tests\e2e\messages.spec.js:153:3 › 私訊功能 › PM-03 可傳送訊息並顯示在泡泡中
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:586:3 › 登入與權限 › 平台管理員可成功登入並進入管理頁面
+✓ E2E test data cleanup completed
+
+
+[1A[2K[197/225] [firefox] › tests\e2e\user-stories.spec.js:595:3 › 登入與權限 › 密碼錯誤登入失敗
+[1A[2K[198/225] [webkit] › tests\e2e\additional-regression.spec.js:829:3 › Additional Regression: Data Integrity & Safety › AR-34 club admin cannot archive events of non-owned clubs
+[1A[2K[199/225] [webkit] › tests\e2e\category-assistant.spec.js:85:3 › 類別助教與操作紀錄 (新功能) › admin 指派 caassist 為類別助教並出現在清單
+[1A[2K[200/225] [webkit] › tests\e2e\messages.spec.js:165:3 › 私訊功能 › PM-04 可收回自己的訊息
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:595:3 › 登入與權限 › 密碼錯誤登入失敗
+✓ E2E test data cleanup completed
+
+
+[1A[2K[201/225] [firefox] › tests\e2e\user-stories.spec.js:617:3 › 頁面可訪問性 › 首頁可正常加載
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:617:3 › 頁面可訪問性 › 首頁可正常加載
+✓ E2E test data cleanup completed
+
+
+[1A[2K[202/225] [firefox] › tests\e2e\user-stories.spec.js:628:3 › 頁面可訪問性 › 社團列表頁可正常加載
+[1A[2K[203/225] [webkit] › tests\e2e\additional-regression.spec.js:853:3 › Additional Regression: Data Integrity & Safety › AR-35 club update should be visible immediately to student (no stale cache)
+[1A[2K[204/225] [webkit] › tests\e2e\category-assistant.spec.js:121:3 › 類別助教與操作紀錄 (新功能) › caassist 只看到自己類別的社團，跨類別存取被擋
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:628:3 › 頁面可訪問性 › 社團列表頁可正常加載
+✓ E2E test data cleanup completed
+
+
+[1A[2K[205/225] [firefox] › tests\e2e\user-stories.spec.js:637:3 › 頁面可訪問性 › 活動頁可正常加載
+[1A[2K[206/225] [webkit] › tests\e2e\messages.spec.js:190:3 › 私訊功能 › PM-05 可回復訊息並顯示引用塊
+[1A[2K[firefox] › tests\e2e\user-stories.spec.js:637:3 › 頁面可訪問性 › 活動頁可正常加載
+✓ E2E test data cleanup completed
+
+
+[1A[2K[207/225] [webkit] › tests\e2e\category-assistant.spec.js:142:3 › 類別助教與操作紀錄 (新功能) › caassist 登入導向社團管理，且越權守衛擋住其他管理頁
+[1A[2K[208/225] [webkit] › tests\e2e\messages.spec.js:220:3 › 私訊功能 › PM-06 可對訊息新增 emoji 反應
+[1A[2K[209/225] [webkit] › tests\e2e\messages.spec.js:245:3 › 私訊功能 › PM-07 記事本可傳送與刪除訊息
+[1A[2K[210/225] [webkit] › tests\e2e\messages.spec.js:413:3 › 入社驗證碼功能 › VC-01 批准申請後 bot 訊息顯示驗證碼
+[1A[2K[211/225] [webkit] › tests\e2e\category-assistant.spec.js:152:3 › 類別助教與操作紀錄 (新功能) › admin 撤銷 caassist，角色還原為一般帳號
+[1A[2K[212/225] [webkit] › tests\e2e\user-stories.spec.js:301:3 › US 1.1: 社團列表與搜尋篩選 › AC1: 前台具備分類與熱門標籤介面元素
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:301:3 › US 1.1: 社團列表與搜尋篩選 › AC1: 前台具備分類與熱門標籤介面元素
+✓ E2E test data cleanup completed
+
+
+[1A[2K[213/225] [webkit] › tests\e2e\user-stories.spec.js:314:3 › US 1.1: 社團列表與搜尋篩選 › AC2: 分類與標籤 OR 篩選 API 可用
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:314:3 › US 1.1: 社團列表與搜尋篩選 › AC2: 分類與標籤 OR 篩選 API 可用
+✓ E2E test data cleanup completed
+
+
+[1A[2K[214/225] [webkit] › tests\e2e\user-stories.spec.js:326:3 › US 1.1: 社團列表與搜尋篩選 › AC3: 空結果防呆 - 搜尋無結果顯示提示
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:326:3 › US 1.1: 社團列表與搜尋篩選 › AC3: 空結果防呆 - 搜尋無結果顯示提示
+✓ E2E test data cleanup completed
+
+
+[1A[2K[215/225] [webkit] › tests\e2e\user-stories.spec.js:358:3 › US 1.3: 追蹤功能與個人動態牆 › AC1: 可追蹤/取消追蹤社團
+[1A[2K[216/225] [webkit] › tests\e2e\messages.spec.js:427:3 › 入社驗證碼功能 › VC-02 輸入錯誤驗證碼應顯示錯誤訊息
+[1A[2K[217/225] [webkit] › tests\e2e\messages.spec.js:448:3 › 入社驗證碼功能 › VC-03 輸入正確驗證碼後成功加入社團
+[1A[2K[218/225] (retries) [webkit] › tests\e2e\messages.spec.js:413:3 › 入社驗證碼功能 › VC-01 批准申請後 bot 訊息顯示驗證碼 (retry #1)
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:358:3 › US 1.3: 追蹤功能與個人動態牆 › AC1: 可追蹤/取消追蹤社團
+✓ E2E test data cleanup completed
+
+
+[1A[2K[219/225] [webkit] › tests\e2e\user-stories.spec.js:394:3 › US 1.3: 追蹤功能與個人動態牆 › AC2: 已追蹤社團可於個人動態牆查看
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:394:3 › US 1.3: 追蹤功能與個人動態牆 › AC2: 已追蹤社團可於個人動態牆查看
+✓ E2E test data cleanup completed
+
+
+[1A[2K[220/225] [webkit] › tests\e2e\user-stories.spec.js:418:3 › US 1.5: 資料時間戳 › AC1: 社團更新時有 last_updated 時間戳
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:418:3 › US 1.5: 資料時間戳 › AC1: 社團更新時有 last_updated 時間戳
+✓ E2E test data cleanup completed
+
+
+[1A[2K[221/225] [webkit] › tests\e2e\user-stories.spec.js:435:3 › US 1.5: 資料時間戳 › AC2: 新發布活動在活動詳情頁顯示最新上傳時間
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:435:3 › US 1.5: 資料時間戳 › AC2: 新發布活動在活動詳情頁顯示最新上傳時間
+✓ E2E test data cleanup completed
+
+
+[1A[2K[222/225] [webkit] › tests\e2e\user-stories.spec.js:458:3 › US 2.1: 社團幹部編輯社團資訊 › AC1/AC2/AC3: 幹部可編輯所屬社團資訊
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:458:3 › US 2.1: 社團幹部編輯社團資訊 › AC1/AC2/AC3: 幹部可編輯所屬社團資訊
+✓ E2E test data cleanup completed
+
+
+[1A[2K[223/225] [webkit] › tests\e2e\user-stories.spec.js:482:3 › US 2.2: 社團活動發布 › AC1: 幹部可發布活動
+[1A[2K  3) [webkit] › tests\e2e\messages.spec.js:413:3 › 入社驗證碼功能 › VC-01 批准申請後 bot 訊息顯示驗證碼 ───────────────
+
+    Error: bot_messages 中找不到驗證碼
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mnot[2m.[22mtoBeNull[2m()[22m
+
+    Received: [31mnull[39m
+
+      390 |     }
+      391 |
+    > 392 |     expect(verificationCode, 'bot_messages 中找不到驗證碼').not.toBeNull();
+          |                                                          ^
+      393 |
+      394 |     shared.verificationCode = verificationCode;
+      395 |     shared.studentCtx = studentCtx;
+        at C:\AppServ\www\work-main\tests\e2e\messages.spec.js:392:58
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\messages-入社驗證碼功能-VC-01-批准申請後-bot-訊息顯示驗證碼-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\messages-入社驗證碼功能-VC-01-批准申請後-bot-訊息顯示驗證碼-webkit\test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\messages-入社驗證碼功能-VC-01-批准申請後-bot-訊息顯示驗證碼-webkit\error-context.md
+
+    Error Context: test-results\messages-入社驗證碼功能-VC-01-批准申請後-bot-訊息顯示驗證碼-webkit\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: bot_messages 中找不到驗證碼
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mnot[2m.[22mtoBeNull[2m()[22m
+
+    Received: [31mnull[39m
+
+      390 |     }
+      391 |
+    > 392 |     expect(verificationCode, 'bot_messages 中找不到驗證碼').not.toBeNull();
+          |                                                          ^
+      393 |
+      394 |     shared.verificationCode = verificationCode;
+      395 |     shared.studentCtx = studentCtx;
+        at C:\AppServ\www\work-main\tests\e2e\messages.spec.js:392:58
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\messages-入社驗證碼功能-VC-01-批准申請後-bot-訊息顯示驗證碼-webkit-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\messages-入社驗證碼功能-VC-01-批准申請後-bot-訊息顯示驗證碼-webkit-retry1\test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\messages-入社驗證碼功能-VC-01-批准申請後-bot-訊息顯示驗證碼-webkit-retry1\error-context.md
+
+    Error Context: test-results\messages-入社驗證碼功能-VC-01-批准申請後-bot-訊息顯示驗證碼-webkit-retry1\error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\messages-入社驗證碼功能-VC-01-批准申請後-bot-訊息顯示驗證碼-webkit-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\messages-入社驗證碼功能-VC-01-批准申請後-bot-訊息顯示驗證碼-webkit-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[224/225] (retries) [webkit] › tests\e2e\messages.spec.js:427:3 › 入社驗證碼功能 › VC-02 輸入錯誤驗證碼應顯示錯誤訊息 (retry #1)
+[1A[2K[225/225] (retries) [webkit] › tests\e2e\messages.spec.js:448:3 › 入社驗證碼功能 › VC-03 輸入正確驗證碼後成功加入社團 (retry #1)
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:482:3 › US 2.2: 社團活動發布 › AC1: 幹部可發布活動
+✓ E2E test data cleanup completed
+
+
+[1A[2K[226/225] [webkit] › tests\e2e\user-stories.spec.js:494:3 › US 2.2: 社團活動發布 › AC2: 發布後可在前台查到，且活動列表為近到遠排序
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:494:3 › US 2.2: 社團活動發布 › AC2: 發布後可在前台查到，且活動列表為近到遠排序
+✓ E2E test data cleanup completed
+
+
+[1A[2K[227/225] [webkit] › tests\e2e\user-stories.spec.js:541:3 › US 4.1: 平台管理員功能 › AC1: 管理員可進入管理儀表板
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:541:3 › US 4.1: 平台管理員功能 › AC1: 管理員可進入管理儀表板
+✓ E2E test data cleanup completed
+
+
+[1A[2K[228/225] [webkit] › tests\e2e\user-stories.spec.js:551:3 › US 4.1: 平台管理員功能 › AC2: 管理員可發布全校公告
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:551:3 › US 4.1: 平台管理員功能 › AC2: 管理員可發布全校公告
+✓ E2E test data cleanup completed
+
+
+[1A[2K[229/225] [webkit] › tests\e2e\user-stories.spec.js:571:3 › 登入與權限 › 學生可成功登入
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:571:3 › 登入與權限 › 學生可成功登入
+✓ E2E test data cleanup completed
+
+
+[1A[2K[230/225] [webkit] › tests\e2e\user-stories.spec.js:579:3 › 登入與權限 › 社團幹部可成功登入
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:579:3 › 登入與權限 › 社團幹部可成功登入
+✓ E2E test data cleanup completed
+
+
+[1A[2K[231/225] [webkit] › tests\e2e\user-stories.spec.js:586:3 › 登入與權限 › 平台管理員可成功登入並進入管理頁面
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:586:3 › 登入與權限 › 平台管理員可成功登入並進入管理頁面
+✓ E2E test data cleanup completed
+
+
+[1A[2K[232/225] [webkit] › tests\e2e\user-stories.spec.js:595:3 › 登入與權限 › 密碼錯誤登入失敗
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:595:3 › 登入與權限 › 密碼錯誤登入失敗
+✓ E2E test data cleanup completed
+
+
+[1A[2K[233/225] [webkit] › tests\e2e\user-stories.spec.js:617:3 › 頁面可訪問性 › 首頁可正常加載
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:617:3 › 頁面可訪問性 › 首頁可正常加載
+✓ E2E test data cleanup completed
+
+
+[1A[2K[234/225] [webkit] › tests\e2e\user-stories.spec.js:628:3 › 頁面可訪問性 › 社團列表頁可正常加載
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:628:3 › 頁面可訪問性 › 社團列表頁可正常加載
+✓ E2E test data cleanup completed
+
+
+[1A[2K[235/225] [webkit] › tests\e2e\user-stories.spec.js:637:3 › 頁面可訪問性 › 活動頁可正常加載
+[1A[2K[webkit] › tests\e2e\user-stories.spec.js:637:3 › 頁面可訪問性 › 活動頁可正常加載
+✓ E2E test data cleanup completed
+
+
+✓ E2E full cleanup completed
+✓ E2E test data seeded
+✓ Base seed restored after E2E teardown
+[1A[2K  1 failed
+    [webkit] › tests\e2e\messages.spec.js:413:3 › 入社驗證碼功能 › VC-01 批准申請後 bot 訊息顯示驗證碼 ────────────────
+  2 flaky
+    [firefox] › tests\e2e\additional-regression.spec.js:445:3 › Additional Regression: QA 互動細節 › AR-18 關閉提問 modal 後應隱藏且重置緊急程度為 normal 
+    [firefox] › tests\e2e\category-assistant.spec.js:65:3 › 類別助教與操作紀錄 (新功能) › 操作紀錄：該社幹部可讀、無關使用者被擋 ──
+  2 did not run
+  220 passed (9.4m)

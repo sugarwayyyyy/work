@@ -1577,7 +1577,12 @@ function renderAdminSidebar() {
     }
     aside.innerHTML = html;
 
-    // 手機版：掛接 hamburger 按鈕開關 sidebar（≤768px），與其他頁面 hamburger 模式一致
+    bindAdminSidebarHamburger(aside);
+}
+
+// 手機版：掛接 hamburger 按鈕開關側邊欄（≤768px），與其他頁面 hamburger 模式一致。
+// 由 renderAdminSidebar 與 renderCategoryAssistantSidebar 共用，避免助教側邊欄漏接而點不開。
+function bindAdminSidebarHamburger(aside) {
     setTimeout(() => {
         const hamburger = document.getElementById('hamburger-btn');
         if (!hamburger || hamburger.dataset.adminSidebarBound) return;
@@ -1590,16 +1595,16 @@ function renderAdminSidebar() {
             document.body.appendChild(backdrop);
         }
 
-        function openSidebar() {
+        const openSidebar = () => {
             aside.classList.add('is-open');
             backdrop.classList.add('is-visible');
             hamburger.setAttribute('aria-expanded', 'true');
-        }
-        function closeSidebar() {
+        };
+        const closeSidebar = () => {
             aside.classList.remove('is-open');
             backdrop.classList.remove('is-visible');
             hamburger.setAttribute('aria-expanded', 'false');
-        }
+        };
 
         hamburger.addEventListener('click', () => {
             aside.classList.contains('is-open') ? closeSidebar() : openSidebar();
@@ -1637,6 +1642,7 @@ function renderCategoryAssistantSidebar() {
         header.insertAdjacentElement('afterend', aside);
     }
     aside.innerHTML = html;
+    bindAdminSidebarHamburger(aside);
 }
 
 function isClubAdminSubPage() {

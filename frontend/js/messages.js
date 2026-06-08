@@ -1226,6 +1226,43 @@ function closeScanModal() {
     document.getElementById('qr-video').srcObject = null;
 }
 
+// 上傳一張 QR 圖片（例如手機拍下的照片）直接解析，不需即時相機。
+function handleQrImageUpload(input) {
+    const file = input.files && input.files[0];
+    input.value = ''; // 允許重選同一張
+    if (!file) return;
+
+    const statusEl = document.getElementById('scan-status');
+    if (typeof jsQR === 'undefined') {
+        statusEl.textContent = 'QR 解析元件尚未載入（請確認網路連線後重試）';
+        return;
+    }
+    statusEl.textContent = '解析圖片中…';
+
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+        const canvas = document.getElementById('qr-canvas');
+        const ctx    = canvas.getContext('2d');
+        canvas.width  = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        URL.revokeObjectURL(url);
+        if (code) {
+            handleQrResult(code.data);
+        } else {
+            statusEl.textContent = '圖片中找不到可辨識的 QR 碼，請換一張更清晰的';
+        }
+    };
+    img.onerror = () => {
+        URL.revokeObjectURL(url);
+        statusEl.textContent = '圖片載入失敗，請換一張';
+    };
+    img.src = url;
+}
+
 
 async function handleQrResult(data) {
     const PREFIX = 'fjcu-chat:';

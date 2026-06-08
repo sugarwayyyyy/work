@@ -63,7 +63,9 @@
                     <div style="width:58%;height:58%;border:2.5px solid rgba(255,255,255,0.85);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,0.45);"></div>
                 </div>
             </div>
-            <p id="scan-status" style="text-align:center;color:var(--color-text-muted,#6b7280);font-size:0.85rem;margin:10px 0 8px;">對準 QR 碼進行掃描</p>
+            <p id="scan-status" style="text-align:center;color:var(--color-text-muted,#6b7280);font-size:0.85rem;margin:10px 0 8px;">對準 QR 碼進行掃描，或改用下方上傳圖片</p>
+            <input type="file" id="qr-file-input" accept="image/*" style="display:none;" onchange="handleQrImageUpload(this)">
+            <button type="button" class="msg-new-btn" style="width:100%;justify-content:center;" onclick="document.getElementById('qr-file-input').click()">上傳 QR 圖片掃描</button>
         </div>
     </div>
 
@@ -170,8 +172,8 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
-    <script src="../js/main.js?v=20260607a"></script>
-    <script src="../js/messages.js?v=20260605a"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="../js/main.js?v=20260608a"></script>
+    <script src="../js/messages.js?v=20260608a"></script>
 </body>
 </html>
