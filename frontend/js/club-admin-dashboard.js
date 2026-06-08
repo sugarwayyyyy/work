@@ -2788,17 +2788,137 @@
             }
         }
 
+        // ── 成員列表前端篩選 ──────────────────────────────────────────────────
+        function filterMembers() {
+            const search     = (document.getElementById('member-search')?.value || '').trim().toLowerCase();
+            const roleFilter = document.getElementById('member-role-filter')?.value || '';
+            const rows = document.querySelectorAll('#members-list-wrap tbody tr');
+            let visible = 0;
+            rows.forEach(tr => {
+                const cells = tr.querySelectorAll('td');
+                const name  = (cells[0]?.textContent || '').toLowerCase();
+                const stuId = (cells[1]?.textContent || '').toLowerCase();
+                const role  = (cells[2]?.textContent || '').trim();
+                const matchSearch = !search     || name.includes(search) || stuId.includes(search);
+                const matchRole   = !roleFilter || role.startsWith(roleFilter);
+                tr.style.display = (matchSearch && matchRole) ? '' : 'none';
+                if (matchSearch && matchRole) visible++;
+            });
+            const table    = document.querySelector('#members-list-wrap table');
+            const existing = document.getElementById('member-filter-empty');
+            if (table && visible === 0 && rows.length > 0) {
+                if (!existing) {
+                    const msg = document.createElement('p');
+                    msg.id = 'member-filter-empty';
+                    msg.className = 'widget-empty';
+                    msg.textContent = '沒有符合條件的成員';
+                    table.after(msg);
+                }
+            } else if (existing) {
+                existing.remove();
+            }
+        }
+
+        // ── 操作紀錄載入 ──────────────────────────────────────────────────────
+        const OPLOG_ACTION_LABELS = {
+            approve_join:    '核准入社',
+            reject_join:     '拒絕入社',
+            confirm_fee:     '確認收費',
+            unconfirm_fee:   '取消收費',
+            change_fee_type: '變更費用類型',
+            assign_role:     '指派/變更職稱',
+            remove_member:   '移除成員',
+        };
+        const OPLOG_ROLE_LABELS = {
+            president: '社長', vice_president: '副社長', public_relations: '公關',
+            treasurer: '總務', director: '幹事', platform_admin: '平台管理員',
+        };
+        async function loadOperationLogs(clubId) {
+            const wrap = document.getElementById('oplog-wrap');
+            if (!wrap) return;
+            wrap.innerHTML = '<p class="widget-empty">載入中…</p>';
+            try {
+                const res  = await APIClient.get('club-admin.php?action=operation_logs&id=' + clubId);
+                const logs = (res && res.success && res.data && Array.isArray(res.data.logs)) ? res.data.logs : [];
+                if (logs.length === 0) {
+                    wrap.innerHTML = '<p class="widget-empty">尚無操作紀錄</p>';
+                    return;
+                }
+                const esc = s => PageUtils.escapeHtml(String(s ?? ''));
+                let html = '<div class="table-shell user-mgmt-table-shell" style="border-radius:8px;">'
+                    + '<table class="table user-mgmt-table"><thead><tr>'
+                    + '<th>時間</th><th>操作</th><th>執行幹部</th><th>對象</th><th>說明</th>'
+                    + '</tr></thead><tbody>';
+                logs.forEach(l => {
+                    const actionLabel = OPLOG_ACTION_LABELS[l.action] || l.action;
+                    const roleLabel   = l.actor_role ? (OPLOG_ROLE_LABELS[l.actor_role] || l.actor_role) : '';
+                    const actor = esc(l.actor_name || '（已移除帳號）') + (roleLabel ? `（${esc(roleLabel)}）` : '');
+                    const when  = l.created_at ? esc(String(l.created_at).slice(0, 16)) : '-';
+                    html += `<tr><td style="white-space:nowrap;">${when}</td><td>${esc(actionLabel)}</td>`
+                        + `<td>${actor}</td><td>${esc(l.target_name || '-')}</td><td>${esc(l.detail || '-')}</td></tr>`;
+                });
+                html += '</tbody></table></div>';
+                wrap.innerHTML = html;
+            } catch (err) {
+                wrap.innerHTML = `<p class="widget-empty">載入失敗：${PageUtils.escapeHtml(err.message || '未知錯誤')}</p>`;
+            }
+        }
+
         // ── 成員管理 clubadmin:switch ─────────────────────────────────────────
         (function () {
             if (!document.getElementById('members-section')) return;
+            document.getElementById('member-search')?.addEventListener('input', filterMembers);
+            document.getElementById('member-role-filter')?.addEventListener('change', filterMembers);
             document.addEventListener('clubadmin:switch', e => {
                 const clubId = Number(e.detail?.clubId || 0);
                 if (!clubId) return;
                 const subtitle = document.getElementById('members-subtitle');
                 if (subtitle) subtitle.textContent = (e.detail.clubName || '') + ' 的社團成員';
                 loadClubMembers(clubId);
-                if (typeof loadOperationLogs === 'function') loadOperationLogs(clubId);
+                loadOperationLogs(clubId);
             });
+        })();
+
+        // ── 成員頁初始化 ──────────────────────────────────────────────────────
+        (function () {
+            if (!document.getElementById('members-section')) return;
+            (async function () {
+                if (window._pageInitReady) {
+                    await Promise.race([window._pageInitReady, new Promise(r => setTimeout(r, 3000))]);
+                }
+                let clubId   = Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
+                let clubName = sessionStorage.getItem('clubAdmin_clubName') || '';
+                if (!clubId) {
+                    try {
+                        const res = await APIClient.get('club-admin.php?action=my_clubs');
+                        const firstClub = (res && res.success && res.data && Array.isArray(res.data.clubs))
+                            ? res.data.clubs[0] : null;
+                        if (firstClub) {
+                            clubId   = Number(firstClub.club_id) || 0;
+                            clubName = String(firstClub.club_name || '');
+                            sessionStorage.setItem('clubAdmin_clubId', String(clubId));
+                            sessionStorage.setItem('clubAdmin_clubName', clubName);
+                        }
+                    } catch (err) {
+                        console.error('Failed to resolve default club', err);
+                    }
+                }
+                if (!clubId) { openClubSwitchPopup(); return; }
+                currentClubId   = clubId;
+                currentClubName = clubName;
+                const nameEl = document.getElementById('stat-current-club');
+                if (nameEl) nameEl.textContent = clubName || '—';
+                const banner     = document.getElementById('selected-club-banner');
+                const bannerName = document.getElementById('selected-club-name');
+                if (bannerName) bannerName.textContent = clubName || '-';
+                if (banner) banner.style.display = '';
+                const subtitle = document.getElementById('members-subtitle');
+                if (subtitle && clubName) subtitle.textContent = clubName + ' 的社團成員';
+                loadClubAdminStats(clubId);
+                loadClubMembers(clubId);
+                loadOperationLogs(clubId);
+                updateNavApplicationsBadge(clubId);
+            })();
         })();
 
         async function loadJoinApplications(clubId) {
@@ -2869,5 +2989,122 @@
                 if (badge) badge.textContent = count === 0 ? '' : (count > 99 ? '99+' : String(count));
             } catch (_) {}
         }
+
+        // ── 申請列表前端篩選 ──────────────────────────────────────────────────
+        const FEE_VALUE_TO_LABEL = { none: '免費', onetime: '一次付清', semester: '學期費', session: '單堂費' };
+
+        function filterApplications() {
+            const search   = (document.getElementById('app-search')?.value || '').trim().toLowerCase();
+            const feeVal   = document.getElementById('app-fee-filter')?.value || '';
+            const feeLabel = feeVal ? (FEE_VALUE_TO_LABEL[feeVal] || '') : '';
+            const rows = document.querySelectorAll('#applications-list-wrap tr[id^="app-row-"]');
+            let visible = 0;
+            rows.forEach(tr => {
+                const cells     = tr.querySelectorAll('td');
+                const name      = (cells[0]?.textContent || '').toLowerCase();
+                const studentId = (cells[1]?.textContent || '').toLowerCase();
+                const feeTd     = (cells[2]?.textContent || '').trim();
+                const matchSearch = !search   || name.includes(search) || studentId.includes(search);
+                const matchFee    = !feeLabel || feeTd === feeLabel;
+                tr.style.display = (matchSearch && matchFee) ? '' : 'none';
+                if (matchSearch && matchFee) visible++;
+            });
+            const table    = document.querySelector('#applications-list-wrap table');
+            const existing = document.getElementById('app-filter-empty');
+            if (table && visible === 0 && rows.length > 0) {
+                if (!existing) {
+                    const msg = document.createElement('p');
+                    msg.id = 'app-filter-empty';
+                    msg.className = 'widget-empty';
+                    msg.textContent = '沒有符合條件的申請';
+                    table.after(msg);
+                }
+            } else if (existing) {
+                existing.remove();
+            }
+        }
+
+        // ── 申請頁初始化 ──────────────────────────────────────────────────────
+        (function () {
+            if (!document.getElementById('applications-section')) return;
+            document.getElementById('app-search')?.addEventListener('input', filterApplications);
+            document.getElementById('app-fee-filter')?.addEventListener('change', filterApplications);
+            (async function () {
+                if (window._pageInitReady) {
+                    await Promise.race([window._pageInitReady, new Promise(r => setTimeout(r, 3000))]);
+                }
+                let clubId   = Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
+                let clubName = sessionStorage.getItem('clubAdmin_clubName') || '';
+                if (!clubId) {
+                    try {
+                        const res = await APIClient.get('club-admin.php?action=my_clubs');
+                        const firstClub = (res && res.success && res.data && Array.isArray(res.data.clubs))
+                            ? res.data.clubs[0] : null;
+                        if (firstClub) {
+                            clubId   = Number(firstClub.club_id) || 0;
+                            clubName = String(firstClub.club_name || '');
+                            sessionStorage.setItem('clubAdmin_clubId', String(clubId));
+                            sessionStorage.setItem('clubAdmin_clubName', clubName);
+                        }
+                    } catch (err) {
+                        console.error('Failed to resolve default club', err);
+                    }
+                }
+                if (!clubId) { openClubSwitchPopup(); return; }
+                currentClubId   = clubId;
+                currentClubName = clubName;
+                const nameEl = document.getElementById('stat-current-club');
+                if (nameEl) nameEl.textContent = clubName || '—';
+                const banner     = document.getElementById('selected-club-banner');
+                const bannerName = document.getElementById('selected-club-name');
+                if (bannerName) bannerName.textContent = clubName || '-';
+                if (banner) banner.style.display = '';
+                loadClubAdminStats(clubId);
+                await loadJoinApplications(clubId);
+            })();
+        })();
+
+        // ── 社團管理頁初始化 ───────────────────────────────────────────────────
+        (function () {
+            if (!document.getElementById('club-management-section')) return;
+            window.hideManagementPanels = function () {};
+            window.showManagementPanel  = function () {};
+            (async function () {
+                if (window._pageInitReady) {
+                    await Promise.race([window._pageInitReady, new Promise(r => setTimeout(r, 3000))]);
+                }
+                let clubId   = Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
+                let clubName = sessionStorage.getItem('clubAdmin_clubName') || '';
+                if (!clubId) {
+                    try {
+                        const res = await APIClient.get('club-admin.php?action=my_clubs');
+                        const firstClub = (res && res.success && res.data && Array.isArray(res.data.clubs))
+                            ? res.data.clubs[0] : null;
+                        if (firstClub) {
+                            clubId   = Number(firstClub.club_id) || 0;
+                            clubName = String(firstClub.club_name || '');
+                            sessionStorage.setItem('clubAdmin_clubId', String(clubId));
+                            sessionStorage.setItem('clubAdmin_clubName', clubName);
+                        }
+                    } catch (err) {
+                        console.error('Failed to resolve default club', err);
+                    }
+                }
+                if (!clubId) { openClubSwitchPopup(); return; }
+                currentClubId   = clubId;
+                currentClubName = clubName;
+                const nameEl = document.getElementById('stat-current-club');
+                if (nameEl) nameEl.textContent = clubName || '—';
+                const banner     = document.getElementById('selected-club-banner');
+                const bannerName = document.getElementById('selected-club-name');
+                if (bannerName) bannerName.textContent = clubName || '-';
+                if (banner) banner.style.display = '';
+                loadClubAdminStats(clubId);
+                updateNavApplicationsBadge(clubId);
+                if (typeof initializeClubManagePage === 'function') {
+                    await initializeClubManagePage(clubId);
+                }
+            })();
+        })();
 
         loadUnreadNotificationDot();

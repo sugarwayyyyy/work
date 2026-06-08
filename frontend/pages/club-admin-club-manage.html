@@ -214,53 +214,5 @@
 
     <script src="../js/main.js?v=20260607a"></script>
     <script src="../js/club-admin-dashboard.js?v=20260608a"></script>
-    <script>
-        // On this page only one section exists — hiding panels is a no-op
-        window.hideManagementPanels = function () {};
-        window.showManagementPanel = function () {};
-
-        (async function () {
-            // Wait for session hydration (hydrateUserFromSession) to finish before
-            // making API calls, so we don't hit concurrent PHP session lock contention.
-            if (window._pageInitReady) {
-                await Promise.race([window._pageInitReady, new Promise(r => setTimeout(r, 3000))]);
-            }
-            let clubId = Number(sessionStorage.getItem('clubAdmin_clubId') || 0);
-            let clubName = sessionStorage.getItem('clubAdmin_clubName') || '';
-            if (!clubId) {
-                try {
-                    const res = await APIClient.get('club-admin.php?action=my_clubs');
-                    const firstClub = (res && res.success && res.data && Array.isArray(res.data.clubs))
-                        ? res.data.clubs[0]
-                        : null;
-                    if (firstClub) {
-                        clubId = Number(firstClub.club_id) || 0;
-                        clubName = String(firstClub.club_name || '');
-                        sessionStorage.setItem('clubAdmin_clubId', String(clubId));
-                        sessionStorage.setItem('clubAdmin_clubName', clubName);
-                    }
-                } catch (err) {
-                    console.error('Failed to resolve default club', err);
-                }
-            }
-            if (!clubId) {
-                openClubSwitchPopup();
-                return;
-            }
-            currentClubId = clubId;
-            currentClubName = clubName;
-            const nameEl = document.getElementById('stat-current-club');
-            if (nameEl) nameEl.textContent = clubName || '—';
-            const banner = document.getElementById('selected-club-banner');
-            const bannerName = document.getElementById('selected-club-name');
-            if (bannerName) bannerName.textContent = clubName || '-';
-            if (banner) banner.style.display = '';
-            loadClubAdminStats(clubId);
-            updateNavApplicationsBadge(clubId);
-            if (typeof initializeClubManagePage === 'function') {
-                await initializeClubManagePage(clubId);
-            }
-        })();
-    </script>
 </body>
 </html>
