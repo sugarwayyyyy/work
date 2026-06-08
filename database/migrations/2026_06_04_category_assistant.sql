@@ -11,13 +11,14 @@ SET category_name = '藝術', description = '視覺藝術、設計、創作相�
 WHERE category_name = '藝文';
 
 -- 3. 新增「音樂」與「休閒」分類（具備冪等性，重複執行不會產生重複資料）
+--    同時相容舊環境的「性」字尾命名（音樂性／休閒性）：若已存在對應分類則跳過，避免重複。
 INSERT INTO club_categories (category_name, description)
 SELECT '音樂', '音樂演奏、聲樂、樂器相關社團' FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM club_categories WHERE category_name = '音樂');
+WHERE NOT EXISTS (SELECT 1 FROM club_categories WHERE category_name IN ('音樂', '音樂性'));
 
 INSERT INTO club_categories (category_name, description)
 SELECT '休閒', '娛樂、休閒活動相關社團' FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM club_categories WHERE category_name = '休閒');
+WHERE NOT EXISTS (SELECT 1 FROM club_categories WHERE category_name IN ('休閒', '休閒性'));
 
 -- 3b. 將原本混在「藝術」(舊藝文) 的 9 個音樂類社團改分到「音樂」
 --     （全新安裝時這些社團已直接歸音樂，此處 WHERE 不會命中，具冪等性）
