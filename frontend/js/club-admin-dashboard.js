@@ -2567,8 +2567,8 @@
 
                 const isOfficer = ['president','vice_president','public_relations','treasurer','director'].includes(myRole) || myRole === 'platform_admin';
 
-                let html = '<div class="table-shell" style="border-radius:8px;">'
-                    + '<table class="table"><thead><tr>'
+                let html = '<div class="table-shell user-mgmt-table-shell" style="border-radius:8px;">'
+                    + '<table class="table user-mgmt-table"><thead><tr>'
                     + '<th>姓名</th><th>學號</th><th>職稱</th><th>社費</th><th>繳費狀態</th>'
                     + (isPresident ? '<th style="min-width:17rem;">操作</th>' : '')
                     + '</tr></thead><tbody>';
@@ -2797,6 +2797,7 @@
                 const subtitle = document.getElementById('members-subtitle');
                 if (subtitle) subtitle.textContent = (e.detail.clubName || '') + ' 的社團成員';
                 loadClubMembers(clubId);
+                if (typeof loadOperationLogs === 'function') loadOperationLogs(clubId);
             });
         })();
 

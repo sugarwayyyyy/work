@@ -101,7 +101,7 @@
     </div>
 
     <script src="../js/main.js?v=20260607a"></script>
-    <script src="../js/club-admin-dashboard.js?v=20260604a"></script>
+    <script src="../js/club-admin-dashboard.js?v=20260608a"></script>
     <script>
         // ── 成員列表前端篩選 ──────────────────────────────────────────
         function filterMembers() {
@@ -168,7 +168,7 @@
                     return;
                 }
                 const esc = (s) => PageUtils.escapeHtml(String(s ?? ''));
-                let html = '<div class="table-shell" style="border-radius:8px;"><table class="table"><thead><tr>'
+                let html = '<div class="table-shell user-mgmt-table-shell" style="border-radius:8px;"><table class="table user-mgmt-table"><thead><tr>'
                     + '<th>時間</th><th>操作</th><th>執行幹部</th><th>對象</th><th>說明</th>'
                     + '</tr></thead><tbody>';
                 logs.forEach(l => {
