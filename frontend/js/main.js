@@ -840,7 +840,7 @@ function renderAuthPromoBanner() {
     banner.id = 'auth-promo-banner';
     banner.className = 'auth-promo-banner';
     banner.innerHTML = `
-        <img src="../assets/icons/fju-logo.png" alt="" class="logo-fju-icon" aria-hidden="true">
+        <img src="${resolveFrontendAssetUrl('assets/icons/fju-logo.png')}" alt="" class="logo-fju-icon" aria-hidden="true">
         <div class="auth-promo-banner__body">
             <div class="auth-promo-banner__title">從校園到社群，都能找到共鳴</div>
             <div class="auth-promo-banner__text">登入後可以追蹤社團、收藏標籤、查看活動提醒，也能參與評價與提問。</div>
