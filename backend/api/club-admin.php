@@ -581,11 +581,12 @@ class ClubAdminAPI {
             [$target['member_id']]
         );
 
-        // 取消該使用者在此社團的 pending/approved 申請，避免被踢後仍顯示「前往驗證」
-        Database::getInstance()->update(
+        // 被踢出後清除其在此社團的所有申請紀錄，重置為「未申請過」。
+        // （改為刪除而非設 cancelled：uq_active_app 唯一鍵每個 status 只允許一筆，
+        //  殘留的 approved/cancelled 會卡住未來重新加入與重新批准。）
+        Database::getInstance()->delete(
             'club_join_applications',
-            ['status' => 'cancelled'],
-            'club_id = ? AND user_id = ? AND status IN ("pending","approved")',
+            'club_id = ? AND user_id = ?',
             [$club_id, $targetUserId]
         );
 

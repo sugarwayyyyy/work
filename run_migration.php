@@ -63,6 +63,7 @@ try {
         __DIR__ . '/database/migrations/2026_06_03_add_event_venue_applications.sql',
         __DIR__ . '/database/migrations/2026_06_04_category_assistant.sql',
         __DIR__ . '/database/migrations/2026_06_04_club_operation_logs.sql',
+        __DIR__ . '/database/migrations/2026_06_08_clear_dead_join_applications.sql',
     ];
 
     foreach ($files as $file) {

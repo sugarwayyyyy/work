@@ -1152,11 +1152,12 @@ class ClubAPI {
                 [$membership['member_id']]
             );
 
-            // 同步取消殘留的 pending/approved 申請，避免重整後顯示「前往驗證」
-            Database::getInstance()->update(
+            // 退出後清除此社團的所有申請紀錄，重置為「未申請過」狀態。
+            // （改為刪除而非設 cancelled：uq_active_app 唯一鍵每個 status 只允許一筆，
+            //  殘留的 approved/cancelled 會卡住未來重新加入與重新批准。）
+            Database::getInstance()->delete(
                 'club_join_applications',
-                ['status' => 'cancelled'],
-                'club_id = ? AND user_id = ? AND status IN ("pending","approved")',
+                'club_id = ? AND user_id = ?',
                 [$club_id, $userId]
             );
 
@@ -1248,6 +1249,15 @@ class ClubAPI {
                     Helper::error('您已有「' . $activeApp['club_name'] . '」的待審核申請，請等待審核結果', 409);
                 }
             }
+
+            // 重新申請前先清除此社團殘留的舊申請紀錄（已退出/被踢/已拒絕等），
+            // 重置為「未申請過」。此時已確認使用者無進行中的 pending/approved 申請（見上方檢查），
+            // 故僅會刪到已失效的歷史列，避免 uq_active_app 唯一鍵造成後續批准衝突。
+            Database::getInstance()->delete(
+                'club_join_applications',
+                'club_id = ? AND user_id = ?',
+                [$club_id, $userId]
+            );
 
             dbInsert('club_join_applications', [
                 'club_id'  => $club_id,
