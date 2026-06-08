@@ -328,6 +328,12 @@ class AdminAPI {
         );
         if (!$category) Helper::error('找不到此分類', 404);
 
+        $categoryTaken = Database::getInstance()->fetchOne(
+            'SELECT user_id FROM category_assistant_assignments WHERE category_id = ? AND user_id != ?',
+            [$categoryId, $userId]
+        );
+        if ($categoryTaken) Helper::error('此分類已有助教，請先撤銷現任助教再重新指派', 409);
+
         $existing = Database::getInstance()->fetchOne(
             'SELECT assignment_id FROM category_assistant_assignments WHERE user_id = ?', [$userId]
         );
