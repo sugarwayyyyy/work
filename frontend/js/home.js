@@ -262,20 +262,25 @@ function renderUpcomingEventsSummary(events) {
         return;
     }
 
-    container.innerHTML = target.map((item, index) => {
+    container.innerHTML = `<div class="feed-stream-list">${target.map((item, index) => {
         const eventId = Number(item.event_id) || 0;
         const title = normalizeEventTitle(item.event_name, eventId, index + 1);
         const locStr   = String(item.location || '').trim();
         const _mapsUrl = extractMapsUrl(locStr);
         const mapsAttr = (_mapsUrl && !locationLabel(locStr)) ? ` data-maps-url="${escapeHtml(_mapsUrl)}"` : '';
         return `
-            <a href="pages/event-detail.html?id=${eventId}" class="home-summary-item home-summary-item--link">
-                <div class="home-summary-item__title">${escapeHtml(title)}</div>
-                <div class="home-summary-item__time">${safeDate(item.event_date)}</div>
-                <div class="home-summary-item__meta"${mapsAttr}>${escapeHtml(formatLocation(locStr))}</div>
-            </a>
+            <article class="feed-item-card">
+                <a href="pages/event-detail.html?id=${eventId}" class="feed-item-link">
+                    <div class="feed-item-head">
+                        <h3 class="feed-item-title">${escapeHtml(title)}</h3>
+                        <span class="feed-item-badge">活動</span>
+                    </div>
+                    <div class="feed-item-subtitle">${safeDate(item.event_date)}</div>
+                    <div class="feed-item-time"${mapsAttr}>${escapeHtml(formatLocation(locStr))}</div>
+                </a>
+            </article>
         `;
-    }).join('');
+    }).join('')}</div>`;
     resolveMapLocations(container);
 }
 
