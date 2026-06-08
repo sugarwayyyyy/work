@@ -35,6 +35,8 @@ npx playwright install
 npm test
 ```
 
+> **跑完測試後務必執行 `npx playwright show-report`** 開啟 HTML 報告，逐項確認結果（特別是 skip／fail 的測試與失敗截圖／影片）。終端機的綠字摘要不等於全綠——skip 可能藏著環境或髒資料問題。詳見 [測試輸出](#測試輸出)。
+
 ### 互動式 UI 模式
 ```bash
 npm run test:ui
@@ -167,10 +169,12 @@ php run_migration.php
 playwright-report/index.html
 ```
 
-### 查看報告
+### 查看報告（每次跑完必做）
 ```bash
 npx playwright show-report
 ```
+
+> 不論測試通過與否，**跑完一定要開報告檢查**。終端機摘要只顯示 pass/fail/skip 數量，看不出 skip 的真正原因；HTML 報告可逐項展開查看 skip 註解、失敗截圖、影片與 trace，才能確認沒有測試因環境或髒資料被靜默跳過。
 
 ## 撰寫新測試
 
