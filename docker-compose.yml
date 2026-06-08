@@ -16,6 +16,7 @@ services:
       DB_USER: club_user
       DB_PASSWORD: club_password
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      LANG: C.UTF-8
     ports:
       - "8090:80"
     volumes:
@@ -26,7 +27,11 @@ services:
   db:
     image: mysql:8.0
     container_name: club-platform-db
-    command: --default-authentication-plugin=mysql_native_password
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --log-bin-trust-function-creators=1
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     environment:
       MYSQL_DATABASE: club_platform
       MYSQL_USER: club_user

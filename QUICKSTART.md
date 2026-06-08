@@ -246,6 +246,27 @@ php -S localhost:8080
 - 幹部：clubadmin@univ.edu / Test123456
 - 學生：student@univ.edu / Test123456
 
+## Docker 部署
+
+AppServ/XAMPP 以外的替代方案，不需本機安裝 PHP / MySQL。
+
+```bash
+docker compose up --build -d
+```
+
+網站：`http://localhost:8090`
+
+**重置資料庫（含清除 volume）：**
+
+```bash
+docker compose down -v
+docker compose up --build -d
+```
+
+> **注意**：若資料庫中文顯示亂碼，必須用 `down -v` 連 volume 一起刪除重建，單純 `down` + `up` 不夠。詳見 [docker/README.md](docker/README.md)。
+
+---
+
 ## 常見問題
 
 ### 無法連線資料庫

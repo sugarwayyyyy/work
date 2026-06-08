@@ -1,6 +1,6 @@
 -- 社團活動資訊統整平台 資料庫設計
 -- 建立資料庫
-CREATE DATABASE IF NOT EXISTS club_platform;
+CREATE DATABASE IF NOT EXISTS club_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE club_platform;
 
 -- ============ 用戶相關表 ============

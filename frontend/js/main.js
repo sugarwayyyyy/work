@@ -1416,6 +1416,7 @@ async function renderGlobalFollowSidebar() {
             PageUtils.createFollowRailActionItem({
                 href: getPageLink('login.html'),
                 label: '前往登入',
+                labelCollapsed: '+',
                 title: 'Login to view followed clubs',
                 ariaLabel: 'Login to view followed clubs',
                 modifier: 'action'
