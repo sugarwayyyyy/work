@@ -44,9 +44,15 @@
 }
 
 .rail-card.card:hover {
+    background: var(--surface);
     border-color: var(--color-border-strong);
     box-shadow: 0 2px 8px rgba(26, 23, 20, 0.08);
     transform: none;
+}
+
+.home-right-rail .rail-card:nth-of-type(2).card:hover {
+    background: var(--surface);
+    border-color: var(--color-primary-200);
 }
 
 .home-welcome-card {
