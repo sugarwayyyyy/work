@@ -1,4 +1,8 @@
 ﻿/* 版面層：導航 / 容器 / 網格 */
+html, body {
+    overflow-x: hidden;
+}
+
 header {
     background-color: var(--header-bg);
     backdrop-filter: blur(24px);

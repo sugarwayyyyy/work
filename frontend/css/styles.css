@@ -1423,6 +1423,7 @@ footer p {
     position: relative;
     aspect-ratio: 1 / 1;
     max-width: 540px;
+    width: 100%;
     overflow: hidden;
     background: #111;
     border-radius: 12px;
@@ -1533,6 +1534,12 @@ footer p {
     grid-template-columns: 1fr 272px;
     gap: 3rem;
     align-items: start;
+    min-width: 0;
+}
+.event-main {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 .event-main > section.event-section { border-top: 1px solid var(--border-color); padding: 2rem 0; }
 .event-main > section.event-section:first-of-type { border-top: none; padding-top: 0; }
