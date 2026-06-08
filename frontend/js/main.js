@@ -505,7 +505,7 @@ class PageUtils {
         return item;
     }
 
-    static createFollowRailActionItem({ href, label, title, ariaLabel, modifier = 'action' }) {
+    static createFollowRailActionItem({ href, label, labelCollapsed, title, ariaLabel, modifier = 'action' }) {
         const item = document.createElement('a');
         item.className = `home-follow-rail__item followed-club-float__item home-follow-rail__item--${modifier} followed-club-float__item--${modifier}`;
         item.href = href;
@@ -515,6 +515,10 @@ class PageUtils {
         text.className = modifier === 'more'
             ? 'home-follow-rail__more-label followed-club-float__more-label'
             : 'home-follow-rail__message followed-club-float__message';
+        if (labelCollapsed) {
+            text.dataset.labelExpanded = label;
+            text.dataset.labelCollapsed = labelCollapsed;
+        }
         text.textContent = label;
         item.appendChild(text);
         return item;
@@ -1178,7 +1182,7 @@ function ensureGlobalFollowSidebarStyles() {
             opacity: 1;
         }
 
-        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__message {
+        body.has-global-follow-sidebar #followed-clubs-section .home-follow-rail__item:not(.home-follow-rail__item--action) .home-follow-rail__message {
             opacity: 0;
             max-width: 0;
             overflow: hidden;
@@ -1187,7 +1191,7 @@ function ensureGlobalFollowSidebarStyles() {
             transition: opacity 0.18s ease, max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded .home-follow-rail__message {
+        body.has-global-follow-sidebar #followed-clubs-section.sidebar-expanded .home-follow-rail__item:not(.home-follow-rail__item--action) .home-follow-rail__message {
             opacity: 1;
             max-width: 130px;
         }
@@ -1314,6 +1318,10 @@ function setupSidebarToggle(section) {
     if (savedExpanded && !isMobile()) {
         section.classList.add('sidebar-expanded');
         document.body.classList.add('sidebar-expanded');
+    } else {
+        section.querySelectorAll('[data-label-expanded]').forEach(el => {
+            el.textContent = el.dataset.labelCollapsed;
+        });
     }
 
     // Backdrop for mobile overlay
@@ -1340,6 +1348,9 @@ function setupSidebarToggle(section) {
         const isExpanded = section.classList.toggle('sidebar-expanded');
         document.body.classList.toggle('sidebar-expanded', isExpanded);
         setSidebarBtnIcon(btn, isExpanded);
+        section.querySelectorAll('[data-label-expanded]').forEach(el => {
+            el.textContent = isExpanded ? el.dataset.labelExpanded : el.dataset.labelCollapsed;
+        });
         if (isMobile()) {
             backdrop.classList.toggle('is-visible', isExpanded);
         } else {
@@ -1419,9 +1430,10 @@ async function renderGlobalFollowSidebar() {
             renderGlobalFollowSidebarMessage(
                 PageUtils.createFollowRailActionItem({
                     href: `${window.location.origin}${APP_BASE_PATH}/frontend/pages/club-list.html`,
-                    label: '+',
-                    title: 'Explore club list',
-                    ariaLabel: 'Explore club list',
+                    label: '新增社團',
+                    labelCollapsed: '+',
+                    title: '探索社團列表',
+                    ariaLabel: '探索社團列表',
                     modifier: 'action'
                 })
             );

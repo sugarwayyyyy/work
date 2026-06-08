@@ -445,7 +445,9 @@
 }
 
 .home-follow-rail__item > .home-follow-rail__message,
-.followed-club-float__item > .followed-club-float__message {
+.home-follow-rail__item--action > .home-follow-rail__message,
+.followed-club-float__item > .followed-club-float__message,
+.followed-club-float__item--action > .followed-club-float__message {
     width: auto;
     height: auto;
     min-width: 0;
