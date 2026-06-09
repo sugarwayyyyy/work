@@ -212,7 +212,10 @@ class MessagesAPI {
 
     /**
      * GET ?action=search_user&q=X
-     * 以 user_id（精確）、student_id（精確）、email（模糊）或姓名（模糊）搜尋用戶
+     * 依前端契約「輸入用戶 ID 或 Gmail」：
+     *   - 純數字 → 以 user_id 精確查詢
+     *   - 其他   → 以 email 精確查詢（不分大小寫，由 collation 處理）
+     * 採精確比對，避免回傳多筆不相關用戶。
      */
     public static function searchUser() {
         $uid = self::requireLogin();
@@ -224,24 +227,19 @@ class MessagesAPI {
         }
 
         try {
-            $qLike = '%' . $q . '%';
-
-            if (is_numeric($q)) {
+            if (ctype_digit($q)) {
                 $results = Database::getInstance()->fetchAll(
                     'SELECT user_id, name, avatar_path, student_id FROM users
-                     WHERE (user_id = ? OR student_id = ? OR name LIKE ? OR email LIKE ?)
-                       AND user_id != ?
-                     ORDER BY (user_id = ? OR student_id = ?) DESC
+                     WHERE user_id = ? AND user_id != ? AND is_active = 1
                      LIMIT 10',
-                    [(int)$q, $q, $qLike, $qLike, $uid, (int)$q, $q]
+                    [(int)$q, $uid]
                 );
             } else {
                 $results = Database::getInstance()->fetchAll(
                     'SELECT user_id, name, avatar_path, student_id FROM users
-                     WHERE (name LIKE ? OR email LIKE ?)
-                       AND user_id != ?
+                     WHERE email = ? AND user_id != ? AND is_active = 1
                      LIMIT 10',
-                    [$qLike, $qLike, $uid]
+                    [$q, $uid]
                 );
             }
 
