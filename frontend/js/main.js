@@ -787,16 +787,22 @@ function ensureHamburger() {
     });
 
     nav.addEventListener('click', (e) => {
-        // 手機下拉：點 nav-has-dropdown 的 <a> 切換子選單，不關閉選單也不跳頁
+        // 手機下拉：點 nav-has-dropdown 的 <a>
+        // 第一次點：展開子選單（阻止跳頁）
+        // 已展開時再點：允許跳頁
         const dropdownParent = e.target.closest('.nav-has-dropdown > a');
         if (dropdownParent) {
-            e.preventDefault();
             const li = dropdownParent.parentElement;
-            const isOpen = li.classList.toggle('is-open');
-            // 關閉其他已開啟的下拉
-            nav.querySelectorAll('.nav-has-dropdown.is-open').forEach(el => {
-                if (el !== li) el.classList.remove('is-open');
-            });
+            if (!li.classList.contains('is-open')) {
+                e.preventDefault();
+                li.classList.add('is-open');
+                nav.querySelectorAll('.nav-has-dropdown.is-open').forEach(el => {
+                    if (el !== li) el.classList.remove('is-open');
+                });
+                return;
+            }
+            // 已開啟 → 允許跳頁，關閉選單
+            closeMenu();
             return;
         }
         // 點下拉子項目或其他連結：關閉選單
