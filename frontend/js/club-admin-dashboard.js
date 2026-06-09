@@ -2388,7 +2388,7 @@
             const modalCloseBtn = document.getElementById('event-modal-close');
             if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeEventModal);
             const eventModal = document.getElementById('event-modal');
-            if (eventModal) eventModal.addEventListener('click', e => { if (e.target === eventModal) closeEventModal(); });
+            // 背景點擊不關閉 modal（手機誤觸保護）
             document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEventModal(); });
 
             const saved = sessionStorage.getItem('clubAdmin_clubId');
