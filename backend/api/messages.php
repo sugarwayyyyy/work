@@ -52,13 +52,41 @@ class MessagesAPI {
                     GROUP BY other_id
                  ) sub
                  JOIN users u ON u.user_id = sub.other_id
+                 LEFT JOIN hidden_conversations hc
+                    ON hc.user_id = ? AND hc.other_user_id = sub.other_id
+                 WHERE hc.id IS NULL OR sub.last_time > hc.hidden_at
                  ORDER BY sub.last_time DESC',
-                [$uid, $uid, $uid, $uid, $uid, $uid]
+                [$uid, $uid, $uid, $uid, $uid, $uid, $uid]
             );
 
             Helper::success('取得對話列表成功', ['conversations' => $rows]);
         } catch (Exception $e) {
             Helper::error('取得對話列表失敗: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * POST ?action=hide_conversation
+     * 隱藏與指定用戶的對話（類 LINE，對方傳新訊後自動重現）
+     */
+    public static function hideConversation($data) {
+        $uid = self::requireLogin();
+        $otherId = (int)($data['other_user_id'] ?? 0);
+        if ($otherId <= 0) {
+            Helper::error('無效的用戶 ID', 400);
+        }
+
+        try {
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->prepare(
+                'INSERT INTO hidden_conversations (user_id, other_user_id, hidden_at)
+                 VALUES (?, ?, NOW())
+                 ON DUPLICATE KEY UPDATE hidden_at = NOW()'
+            );
+            $stmt->execute([$uid, $otherId]);
+            Helper::success('對話已隱藏');
+        } catch (Exception $e) {
+            Helper::error('隱藏對話失敗: ' . $e->getMessage(), 500);
         }
     }
 
@@ -227,19 +255,24 @@ class MessagesAPI {
         }
 
         try {
-            if (ctype_digit($q)) {
+            $qLike = '%' . $q . '%';
+
+            if (is_numeric($q)) {
                 $results = Database::getInstance()->fetchAll(
                     'SELECT user_id, name, avatar_path, student_id FROM users
-                     WHERE user_id = ? AND user_id != ? AND is_active = 1
+                     WHERE (user_id = ? OR student_id = ? OR name LIKE ? OR email LIKE ?)
+                       AND user_id != ? AND is_active = 1
+                     ORDER BY (user_id = ? OR student_id = ?) DESC
                      LIMIT 10',
-                    [(int)$q, $uid]
+                    [(int)$q, $q, $qLike, $qLike, $uid, (int)$q, $q]
                 );
             } else {
                 $results = Database::getInstance()->fetchAll(
                     'SELECT user_id, name, avatar_path, student_id FROM users
-                     WHERE email = ? AND user_id != ? AND is_active = 1
+                     WHERE (name LIKE ? OR email LIKE ?)
+                       AND user_id != ? AND is_active = 1
                      LIMIT 10',
-                    [$q, $uid]
+                    [$qLike, $qLike, $uid]
                 );
             }
 
@@ -763,6 +796,7 @@ if ($method === 'POST') {
     elseif ($action === 'recall_note_message') { MessagesAPI::recallNoteMessage($data); }
     elseif ($action === 'toggle_reaction')     { MessagesAPI::toggleReaction($data); }
     elseif ($action === 'verify_join_code')   { MessagesAPI::verifyJoinCode($data); }
+    elseif ($action === 'hide_conversation')  { MessagesAPI::hideConversation($data); }
 }
 
 Helper::error('無效的請求', 400);

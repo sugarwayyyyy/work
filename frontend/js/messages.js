@@ -234,6 +234,95 @@ async function loadBotUnreadStatus() {
     } catch (e) { /* silent */ }
 }
 
+// ── 對話隱藏（swipe 左滑 / 桌面右鍵）──────────────────────────
+
+let _contextMenu = null;
+
+function getOrCreateContextMenu() {
+    if (_contextMenu) return _contextMenu;
+    _contextMenu = document.createElement('div');
+    _contextMenu.className = 'msg-conv-context-menu';
+    _contextMenu.innerHTML = `<div class="msg-conv-context-menu__item msg-conv-context-menu__item--danger" id="ctx-hide-conv">🗑 刪除對話</div>`;
+    document.body.appendChild(_contextMenu);
+    document.addEventListener('click', () => hideContextMenu(), true);
+    document.addEventListener('scroll', () => hideContextMenu(), true);
+    return _contextMenu;
+}
+
+function hideContextMenu() {
+    if (_contextMenu) _contextMenu.classList.remove('is-visible');
+}
+
+function attachConvItemGestures(el) {
+    const userId = Number(el.dataset.userId);
+    if (!userId) return;
+
+    // 桌面右鍵選單
+    el.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const menu = getOrCreateContextMenu();
+        menu.style.left = e.clientX + 'px';
+        menu.style.top = e.clientY + 'px';
+        menu.classList.add('is-visible');
+        document.getElementById('ctx-hide-conv').onclick = (ev) => {
+            ev.stopPropagation();
+            hideContextMenu();
+            hideConversation(userId);
+        };
+    });
+
+    // 手機 swipe 左滑
+    let startX = 0, startY = 0, swiping = false;
+    el.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        swiping = false;
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        if (!swiping && Math.abs(dy) > Math.abs(dx)) return;
+        swiping = true;
+        if (dx < -10) e.preventDefault();
+    }, { passive: false });
+
+    el.addEventListener('touchend', (e) => {
+        if (!swiping) return;
+        const dx = e.changedTouches[0].clientX - startX;
+        if (dx < -60) {
+            // 收回其他已展開的項目
+            document.querySelectorAll('.msg-conv-item.is-swiped').forEach(other => {
+                if (other !== el) other.classList.remove('is-swiped');
+            });
+            el.classList.add('is-swiped');
+        } else if (dx > 20) {
+            el.classList.remove('is-swiped');
+        }
+    }, { passive: true });
+}
+
+async function hideConversation(otherUserId) {
+    try {
+        const res = await APIClient.post('messages.php?action=hide_conversation', {
+            other_user_id: otherUserId,
+        });
+        if (!res || !res.success) { alert('操作失敗，請稍後再試'); return; }
+        const item = document.querySelector(`.msg-conv-item[data-user-id="${otherUserId}"]`);
+        if (item) item.remove();
+        if (currentConvUserId == otherUserId) showMobileSidebar();
+    } catch (e) {
+        alert('操作失敗，請稍後再試');
+    }
+}
+
+// 點擊其他地方收回 swipe
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.msg-conv-item')) {
+        document.querySelectorAll('.msg-conv-item.is-swiped').forEach(el => el.classList.remove('is-swiped'));
+    }
+});
+
 function renderConvList(convs) {
     const list = document.getElementById('conv-list');
     if (!convs.length) {
@@ -250,18 +339,26 @@ function renderConvList(convs) {
             ? `<span class="msg-conv-badge">${Number(c.unread_count)}</span>` : '';
         const timeStr = c.last_time ? PageUtils.timeAgo(c.last_time) : '';
         const preview = PageUtils.escapeHtml((c.last_content || '').substring(0, 40));
-        return `<div class="msg-conv-item${isActive ? ' msg-conv-item--active' : ''}" onclick="openConversation(${Number(c.user_id)}, '${PageUtils.escapeAttribute(c.name || '')}', '${PageUtils.escapeAttribute(c.avatar_path || '')}')">
-            <div class="msg-conv-avatar">${avatarHtml}</div>
-            <div class="msg-conv-info">
-                <div class="msg-conv-name">${PageUtils.escapeHtml(c.name || '')}</div>
-                <div class="msg-conv-preview">${preview}</div>
+        return `<div class="msg-conv-item${isActive ? ' msg-conv-item--active' : ''}" data-user-id="${Number(c.user_id)}" onclick="openConversation(${Number(c.user_id)}, '${PageUtils.escapeAttribute(c.name || '')}', '${PageUtils.escapeAttribute(c.avatar_path || '')}')">
+            <div class="msg-conv-item__inner">
+                <div class="msg-conv-avatar">${avatarHtml}</div>
+                <div class="msg-conv-info">
+                    <div class="msg-conv-name">${PageUtils.escapeHtml(c.name || '')}</div>
+                    <div class="msg-conv-preview">${preview}</div>
+                </div>
+                <div class="msg-conv-meta">
+                    <span class="msg-conv-time">${timeStr}</span>
+                    ${badge}
+                </div>
             </div>
-            <div class="msg-conv-meta">
-                <span class="msg-conv-time">${timeStr}</span>
-                ${badge}
-            </div>
+            <button class="msg-conv-delete-btn" onclick="event.stopPropagation();hideConversation(${Number(c.user_id)})">刪除</button>
         </div>`;
     }).join('');
+
+    // 掛載 swipe 手勢與桌面右鍵選單
+    list.querySelectorAll('.msg-conv-item[data-user-id]').forEach(el => {
+        attachConvItemGestures(el);
+    });
 }
 
 function deactivateAllSidebarItems() {

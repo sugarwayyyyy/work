@@ -166,6 +166,8 @@ header { flex-shrink: 0; }
     cursor: pointer;
     border-left: 3px solid transparent;
     transition: background 0.12s;
+    position: relative;
+    overflow: hidden;
 }
 .msg-conv-item:hover { background: var(--color-bg-subtle, #f3f4f6); }
 .msg-conv-item--active {
@@ -1077,3 +1079,82 @@ header { flex-shrink: 0; }
     transition: color 0.13s;
 }
 .msg-admin-back-link:hover { color: var(--brand); }
+
+/* ── 對話隱藏（swipe/右鍵刪除）── */
+.msg-conv-item__inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    transition: transform 0.2s ease;
+}
+
+.msg-conv-delete-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 72px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateX(100%);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.msg-conv-item.is-swiped .msg-conv-item__inner {
+    transform: translateX(-72px);
+}
+
+.msg-conv-item.is-swiped .msg-conv-delete-btn {
+    transform: translateX(0);
+}
+
+/* 右鍵選單 */
+.msg-conv-context-menu {
+    position: fixed;
+    z-index: 9999;
+    background: var(--surface, #fff);
+    border: 1px solid var(--color-border-light, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    min-width: 140px;
+    padding: 4px 0;
+    display: none;
+}
+
+.msg-conv-context-menu.is-visible {
+    display: block;
+}
+
+.msg-conv-context-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: var(--text-default);
+    transition: background 0.1s;
+}
+
+.msg-conv-context-menu__item:hover {
+    background: var(--surface-subtle, #f3f4f6);
+}
+
+.msg-conv-context-menu__item--danger {
+    color: #ef4444;
+}
+
+.msg-conv-context-menu__item--danger:hover {
+    background: #fef2f2;
+}
