@@ -362,8 +362,8 @@
 .followed-club-float__all-link:hover {
     color: var(--brand-hover);
     background: var(--brand-soft);
-    border-color: var(--color-primary-200);
-    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+    border-color: transparent;
+    box-shadow: none;
     transform: translateY(-1px);
 }
 
