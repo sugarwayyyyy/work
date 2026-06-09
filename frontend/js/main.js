@@ -787,11 +787,11 @@ function ensureHamburger() {
     });
 
     nav.addEventListener('click', (e) => {
-        // 手機下拉：點 nav-has-dropdown 的 <a>
-        // 第一次點：展開子選單（阻止跳頁）
-        // 已展開時再點：允許跳頁
         const dropdownParent = e.target.closest('.nav-has-dropdown > a');
         if (dropdownParent) {
+            // 電腦版（>768px）：直接跳頁，不攔截
+            if (window.innerWidth > 768) return;
+            // 手機版：第一次點展開子選單，已展開時才跳頁
             const li = dropdownParent.parentElement;
             if (!li.classList.contains('is-open')) {
                 e.preventDefault();
@@ -801,11 +801,9 @@ function ensureHamburger() {
                 });
                 return;
             }
-            // 已開啟 → 允許跳頁，關閉選單
             closeMenu();
             return;
         }
-        // 點下拉子項目或其他連結：關閉選單
         if (e.target.closest('.nav-links a')) closeMenu();
     });
 }

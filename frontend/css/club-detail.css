@@ -112,6 +112,18 @@
 [data-theme="dark"] .modal-close-btn { color: #888888; }
 [data-theme="dark"] .modal-close-btn:hover { color: #F5F5F5; background-color: #303030; }
 
+.club-detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 2rem;
+}
+
+@media (max-width: 700px) {
+    .club-detail-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .review-modal-card { background: #212121; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
     :root:not([data-theme="light"]) .modal-header { border-bottom-color: #2A2A2A; }
