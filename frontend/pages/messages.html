@@ -47,7 +47,8 @@
             <button class="msg-modal-close" onclick="closeQrModal()">✕</button>
             <div class="msg-modal-title">我的 QR 碼</div>
             <div id="qr-display" style="display:flex;justify-content:center;margin:16px 0;min-height:220px;align-items:center;"></div>
-            <p style="font-size:0.85rem;color:var(--color-text-muted,#6b7280);margin:0;">掃描此 QR 碼即可傳送私訊給我</p>
+            <p style="font-size:0.85rem;color:var(--color-text-muted,#6b7280);margin:0 0 12px;">掃描此 QR 碼即可傳送私訊給我</p>
+            <button class="btn btn-primary btn-sm" style="width:100%;" onclick="downloadQr()">下載 QR 碼</button>
         </div>
     </div>
 
@@ -174,6 +175,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="../js/main.js?v=20260608a"></script>
-    <script src="../js/messages.js?v=20260608a"></script>
+    <script src="../js/messages.js?v=20260609a"></script>
 </body>
 </html>

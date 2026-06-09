@@ -1189,6 +1189,32 @@ function closeQrModal() {
     document.getElementById('qr-modal').setAttribute('hidden', '');
 }
 
+// 下載 QR 碼（手機端無法右鍵存檔，改用按鈕下載 PNG）
+function downloadQr() {
+    const displayEl = document.getElementById('qr-display');
+    const canvas = displayEl ? displayEl.querySelector('canvas') : null;
+    const img = displayEl ? displayEl.querySelector('img') : null;
+
+    let dataUrl = '';
+    if (canvas) {
+        dataUrl = canvas.toDataURL('image/png');
+    } else if (img && img.src) {
+        dataUrl = img.src;
+    }
+    if (!dataUrl) {
+        PageUtils.showAlert('QR 碼尚未產生，請稍候再試', 'warning');
+        return;
+    }
+
+    const user = StorageUtils.getUser();
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `qrcode-${user && user.user_id ? user.user_id : 'me'}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
 async function openScanModal() {
     const modal = document.getElementById('scan-modal');
     modal.removeAttribute('hidden');
